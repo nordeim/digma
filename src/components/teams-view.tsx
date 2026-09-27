@@ -1,0 +1,473 @@
+"use client";
+
+import * as React from "react";
+import { Plus, UserPlus, Users } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { AppHeader, type HeaderUser } from "@/components/app-header";
+import { toast } from "@/hooks/use-toast";
+import { memberColorFor } from "@/lib/team";
+
+type TeamMemberDTO = {
+  id: string;
+  name: string;
+  email: string | null;
+  role: string | null;
+  avatarColor: string;
+};
+
+type TeamDTO = {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  members: TeamMemberDTO[];
+};
+
+async function call<T>(url: string, init?: RequestInit): Promise<T | null> {
+  try {
+    const response = await fetch(url, {
+      ...init,
+      ...(init?.body ? { headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } } : {}),
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok || !body?.ok) {
+      toast.error("Something went wrong", body?.error?.message ?? `Request failed (${response.status}).`);
+      return null;
+    }
+    return (body.data ?? null) as T | null;
+  } catch {
+    toast.error("Network error", "Could not reach the server.");
+    return null;
+  }
+}
+
+const TEAM_COLORS = ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#06B6D4"];
+
+export function TeamsView({ user }: { user: HeaderUser }) {
+  const [teams, setTeams] = React.useState<TeamDTO[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [inviteFor, setInviteFor] = React.useState<TeamDTO | null>(null);
+
+  const refresh = React.useCallback(async () => {
+    const data = await call<{ teams: TeamDTO[] }>("/api/teams");
+    if (data) setTeams(data.teams);
+    setLoading(false);
+  }, []);
+
+  // Initial fetch — the docs-approved effect pattern (async function inside
+  // the effect; setState only in the awaited continuation).
+  React.useEffect(() => {
+    let ignore = false;
+    async function run() {
+      const data = await call<{ teams: TeamDTO[] }>("/api/teams");
+      if (ignore) return;
+      if (data) setTeams(data.teams);
+      setLoading(false);
+    }
+    run();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  return (
+    <>
+      <AppHeader user={user} />
+      <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-white to-purple-50">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+          {/* Header — measured: h1 + subtitle + Create Team (purple) on the row. */}
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h1 className="mb-1 text-3xl font-bold text-gray-900">Teams</h1>
+              <p className="text-sm text-gray-600">Collaborate with your team members</p>
+            </div>
+            <Button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 font-semibold text-white hover:from-purple-700 hover:to-pink-700"
+            >
+              <Plus />
+              Create Team
+            </Button>
+          </div>
+
+          <div className="mt-8">
+            {loading ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-44 animate-pulse rounded-xl bg-gray-100" />
+                ))}
+              </div>
+            ) : teams.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {teams.map((team) => (
+                  <TeamCard
+                    key={team.id}
+                    team={team}
+                    onInvite={() => setInviteFor(team)}
+                    onDeleted={(id) => setTeams((prev) => prev.filter((t) => t.id !== id))}
+                    onMemberAdded={refresh}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
+                  <Users className="h-8 w-8 text-white" aria-hidden />
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-gray-900">No teams yet</h3>
+                <p className="mb-6 text-sm text-gray-600">Create a team to collaborate with others</p>
+                <Button
+                  type="button"
+                  onClick={() => setCreateOpen(true)}
+                  className="h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-6 font-semibold text-white hover:from-purple-700 hover:to-pink-700"
+                >
+                  <Plus />
+                  Create Your First Team
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      <CreateTeamDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={() => refresh()}
+      />
+      <InviteMemberDialog
+        key={inviteFor?.id ?? "none"}
+        team={inviteFor}
+        onOpenChange={(open) => !open && setInviteFor(null)}
+        onInvited={refresh}
+      />
+    </>
+  );
+}
+
+function TeamCard({
+  team,
+  onInvite,
+  onDeleted,
+  onMemberAdded,
+}: {
+  team: TeamDTO;
+  onInvite: () => void;
+  onDeleted: (id: string) => void;
+  onMemberAdded: () => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+
+  async function deleteTeam() {
+    const data = await call<{ deleted: boolean }>(`/api/teams/${team.id}`, { method: "DELETE" });
+    if (data) {
+      onDeleted(team.id);
+      toast.success("Team deleted", team.name);
+    }
+  }
+
+  const shown = team.members.slice(0, 5);
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-gray-300 hover:shadow-md">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{ backgroundColor: team.color }}
+            aria-hidden
+          >
+            <Users className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">{team.name}</h3>
+            <p className="text-xs text-gray-500">
+              {team.members.length} {team.members.length === 1 ? "member" : "members"}
+            </p>
+          </div>
+        </div>
+        {confirmDelete ? (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-gray-500">Delete team?</span>
+            <Button variant="destructive" size="sm" onClick={deleteTeam}>
+              Yes, Delete
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)} aria-label={`Delete ${team.name}`}>
+            Delete
+          </Button>
+        )}
+      </div>
+
+      {team.description && <p className="mb-4 line-clamp-2 text-sm text-gray-600">{team.description}</p>}
+
+      <ul className="mb-4 space-y-2">
+        {shown.map((member) => (
+          <li key={member.id} className="flex items-center gap-3">
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium text-white"
+              style={{ backgroundColor: member.avatarColor || memberColorFor(member.name) }}
+              aria-hidden
+            >
+              {member.name.charAt(0)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-gray-800">{member.name}</p>
+              <p className="truncate text-xs text-gray-400">{member.role ?? member.email ?? "Member"}</p>
+            </div>
+          </li>
+        ))}
+        {team.members.length > shown.length && (
+          <li className="text-xs text-gray-400">+{team.members.length - shown.length} more</li>
+        )}
+      </ul>
+
+      <Button type="button" variant="outline" size="sm" onClick={onInvite} className="w-full border-gray-200">
+        <UserPlus />
+        Invite Member
+      </Button>
+    </div>
+  );
+}
+
+function CreateTeamDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated: () => void;
+}) {
+  const [name, setName] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [color, setColor] = React.useState(TEAM_COLORS[0]);
+  const [memberEmail, setMemberEmail] = React.useState("");
+  const [memberRole, setMemberRole] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (submitting || !name.trim()) return;
+    setSubmitting(true);
+    try {
+      const data = await call<{ team: TeamDTO }>("/api/teams", {
+        method: "POST",
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || null,
+          color,
+          memberEmail: memberEmail.trim() || null,
+          memberRole: memberRole.trim() || null,
+        }),
+      });
+      if (data) {
+        onCreated();
+        onOpenChange(false);
+        reset();
+        toast.success("Team created", data.team.name);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function reset() {
+    setName("");
+    setDescription("");
+    setColor(TEAM_COLORS[0]);
+    setMemberEmail("");
+    setMemberRole("");
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next);
+        if (!next) reset();
+      }}
+    >
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Create a Team
+          </DialogTitle>
+          <DialogDescription>Group collaborators and invite your first member.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="team-name">Team name *</Label>
+            <Input
+              id="team-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Design Team"
+              maxLength={80}
+              required
+              className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="team-description">Description</Label>
+            <Textarea
+              id="team-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What does this team work on?"
+              maxLength={300}
+              className="h-16 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="block">Team color</Label>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Team color">
+              {TEAM_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-label={`Team color ${c}`}
+                  aria-pressed={color === c}
+                  onClick={() => setColor(c)}
+                  className="h-8 w-8 rounded-full border-2"
+                  style={{ backgroundColor: c, borderColor: color === c ? "#111827" : "#E5E7EB" }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="team-member-email">Invite member (optional)</Label>
+              <Input
+                id="team-member-email"
+                type="email"
+                value={memberEmail}
+                onChange={(e) => setMemberEmail(e.target.value)}
+                placeholder="teammate@example.com"
+                className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="team-member-role">Role</Label>
+              <Input
+                id="team-member-role"
+                value={memberRole}
+                onChange={(e) => setMemberRole(e.target.value)}
+                placeholder="Designer"
+                maxLength={80}
+                className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!name.trim() || submitting}>
+              {submitting ? "Creating…" : "Create Team"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function InviteMemberDialog({
+  team,
+  onOpenChange,
+  onInvited,
+}: {
+  team: TeamDTO | null;
+  onOpenChange: (open: boolean) => void;
+  onInvited: () => void;
+}) {
+  const [email, setEmail] = React.useState("");
+  const [role, setRole] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
+
+  // Form reset happens by remounting: the parent keys this dialog on the
+  // team id, so switching teams re-creates it with fresh state (no
+  // set-state-in-effect).
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!team || submitting) return;
+    setSubmitting(true);
+    try {
+      const data = await call<{ member: TeamMemberDTO }>(`/api/teams/${team.id}/members`, {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim(), role: role.trim() || null }),
+      });
+      if (data) {
+        onInvited();
+        onOpenChange(false);
+        toast.success("Invite sent", `${email.trim()} joined ${team.name}.`);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open={team !== null} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>Invite to {team?.name}</DialogTitle>
+          <DialogDescription>Send an invite by email and set their role.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="invite-email">Email *</Label>
+            <Input
+              id="invite-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="teammate@example.com"
+              required
+              className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="invite-role">Role</Label>
+            <Input
+              id="invite-role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              placeholder="Designer"
+              maxLength={80}
+              className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Inviting…" : "Send Invite"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,0 +1,70 @@
+import { type NextRequest } from "next/server";
+import { db } from "@/lib/db";
+import { fail, ok, requireSession } from "@/lib/api";
+import { clampColor, clampText } from "@/lib/validation";
+
+export const dynamic = "force-dynamic";
+
+type Params = { params: Promise<{ id: string }> };
+
+/** GET /api/projects/[id] — project with its elements (sorted). */
+export async function GET(_request: NextRequest, { params }: Params) {
+  const user = await requireSession();
+  if (!user) return fail("UNAUTHENTICATED", "Sign in to view projects", 401);
+
+  const { id } = await params;
+  const project = await db.project.findUnique({
+    where: { id },
+    include: { elements: { orderBy: { sortOrder: "asc" } } },
+  });
+  if (!project) return fail("NOT_FOUND", "Project not found", 404);
+  return ok({ project });
+}
+
+/** PATCH /api/projects/[id] — rename / re-describe / re-color / touch. */
+export async function PATCH(request: NextRequest, { params }: Params) {
+  const user = await requireSession();
+  if (!user) return fail("UNAUTHENTICATED", "Sign in to update projects", 401);
+
+  const { id } = await params;
+  const existing = await db.project.findUnique({ where: { id } });
+  if (!existing) return fail("NOT_FOUND", "Project not found", 404);
+
+  const body = await request.json().catch(() => ({}));
+  const data: Record<string, unknown> = {};
+
+  if (body?.name !== undefined) {
+    const name = clampText(body.name, 120);
+    if (!name) return fail("VALIDATION", "Project name is required", 400);
+    data.name = name;
+  }
+  if (body?.description !== undefined) {
+    data.description = clampText(body.description, 500);
+  }
+  if (body?.backgroundColor !== undefined) {
+    data.backgroundColor = clampColor(String(body.backgroundColor), existing.backgroundColor);
+  }
+  if (body?.lastOpened !== undefined) {
+    data.lastOpenedAt = new Date();
+  }
+
+  const project = await db.project.update({
+    where: { id },
+    data,
+    include: { elements: { orderBy: { sortOrder: "asc" } } },
+  });
+  return ok({ project });
+}
+
+/** DELETE /api/projects/[id] — remove the project (elements cascade). */
+export async function DELETE(_request: NextRequest, { params }: Params) {
+  const user = await requireSession();
+  if (!user) return fail("UNAUTHENTICATED", "Sign in to delete projects", 401);
+
+  const { id } = await params;
+  const existing = await db.project.findUnique({ where: { id } });
+  if (!existing) return fail("NOT_FOUND", "Project not found", 404);
+
+  await db.project.delete({ where: { id } });
+  return ok({ deleted: true });
+}

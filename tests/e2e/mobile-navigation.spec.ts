@@ -1,179 +1,119 @@
 import { expect, test } from "@playwright/test";
 
-// Mobile navigation (390×844 — the reference's mobile chrome, v1.7–v2.4):
-// the full-bleed app bar, the bottom tab bar with the ACTIVE tab's
-// inset-well chip, the MORE bottom sheet, and the 768 middle state's
-// floating pill nav. This is the highest-regression-risk chrome — the
-// active-tab well was added in v2.3 after re-measuring the live app, and
-// v2.4 pinned the chip's FULL-TAB WIDTH (the live's chips stretch across
-// the whole tab; the More button renders 8px wider via its flex basis).
-// Contexts arrive AUTHENTICATED (setup-project storageState).
+// THE mobile navigation regression suite. The reference app ships NO mobile
+// navigation at all (the desktop nav is `hidden md:flex` with no fallback —
+// Tailwind v4 failure class A from the skills' taxonomy). This clone fixes
+// it with a hamburger + Radix Sheet drawer, and this spec pins the fix:
+// the trigger is visible below md, the drawer opens as a dialog, links
+// navigate, the drawer closes on navigation, focus is trapped, and the
+// desktop nav never shows the hamburger. Contexts arrive AUTHENTICATED.
 
-// A touch-enabled 390×844 chromium context (the iPhone geometry without
-// switching browsers — locator.tap needs hasTouch).
-test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+test.describe("mobile navigation (390×844)", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-test.describe("mobile navigation", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
   });
 
-  test("app bar and bottom tab bar render", async ({ page }) => {
-    const bar = page.getByRole("banner");
-    await expect(bar).toBeVisible();
-    await expect(bar).toHaveCSS("height", "62px");
+  test("the hamburger trigger is visible below md with expanded state wiring", async ({ page }) => {
+    const trigger = page.getByRole("button", { name: "Navigation menu" });
+    await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
 
+    // 44px touch target (the accessibility floor).
+    const box = await trigger.boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+  });
+
+  test("the desktop nav links are hidden below md", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
-    await expect(nav).toBeVisible();
-    for (const label of ["Home", "Goals", "My Tasks", "Agent", "More"]) {
-      await expect(nav.getByRole("button", { name: label, exact: true })).toBeVisible();
+    await expect(nav).toBeHidden();
+  });
+
+  test("tapping the hamburger opens the drawer with all links", async ({ page }) => {
+    const trigger = page.getByRole("button", { name: "Navigation menu" });
+    await trigger.tap();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    for (const label of ["Dashboard", "Recent", "Teams"]) {
+      await expect(dialog.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
+    // The trigger reports the open state. Radix marks the rest of the app
+    // aria-hidden while the dialog is open, so role-based locators cannot
+    // see it — assert on the CSS selector instead.
+    const triggerById = page.locator('button[aria-controls="mobile-nav-sheet"]');
+    await expect(triggerById).toHaveAttribute("aria-expanded", "true");
   });
 
-  test("the ACTIVE tab carries the inset-well chip (v2.3/v2.4 parity)", async ({ page }) => {
-    const home = page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: "Home", exact: true });
-    const chip = home.locator("span").first();
+  test("tapping a link navigates AND closes the drawer", async ({ page }) => {
+    const trigger = page.getByRole("button", { name: "Navigation menu" });
+    await trigger.tap();
+    await page.getByRole("dialog").getByRole("link", { name: "Recent", exact: true }).tap();
 
-    // The wrapper chip: well background + the BRIGHT inset pair.
-    await expect(chip).toHaveCSS("background-color", "rgb(235, 231, 226)");
-    await expect(chip).toHaveCSS("border-radius", "14px");
-    const shadow = await chip.evaluate((el) => getComputedStyle(el).boxShadow);
-    expect(shadow).toContain("rgba(255, 252, 248, 0.75)");
-    expect(shadow).toContain("rgba(180, 165, 150, 0.32)");
-    expect(shadow).toContain("inset");
-
-    // v2.4 (measured live): the chip FILLS the tab — the live's tab anchors
-    // carry no padding and the inner chip stretches to the full tab width
-    // (73.2 of 73.2 at 390). A content-width chip (the v2.3 clone bug) is
-    // ~36px — half the tab.
-    const chipBox = await chip.boundingBox();
-    const tabBox = await home.boundingBox();
-    expect(chipBox).not.toBeNull();
-    expect(tabBox).not.toBeNull();
-    expect(Math.abs((chipBox?.width ?? 0) - (tabBox?.width ?? 0))).toBeLessThan(2);
-  });
-
-  test("the MORE tab renders wider than the view tabs (v2.4 flex-basis parity)", async ({ page }) => {
-    const nav = page.getByRole("navigation", { name: "Primary" });
-    const home = nav.getByRole("button", { name: "Home", exact: true });
-    const more = nav.getByRole("button", { name: "More", exact: true });
-    const homeBox = await home.boundingBox();
-    const moreBox = await more.boundingBox();
-    expect(homeBox).not.toBeNull();
-    expect(moreBox).not.toBeNull();
-    // The live's More button carries 8px of horizontal padding that
-    // participates in its flex basis (content-box sizing), rendering it
-    // ~6.4px wider than each view tab (81.2 vs 73.2 at 390).
-    expect((moreBox?.width ?? 0) - (homeBox?.width ?? 0)).toBeGreaterThan(4);
-  });
-
-  test("tab bar icons render at the live's 1.5 stroke (v2.4)", async ({ page }) => {
-    const nav = page.getByRole("navigation", { name: "Primary" });
-    const home = nav.getByRole("button", { name: "Home", exact: true });
-    const icon = home.locator("svg").first();
-    await expect(icon).toBeVisible();
-    await expect(icon).toHaveCSS("stroke-width", "1.5px");
-    // The bar is content-height driven: pad 8/12 + chip 53.5 = 73.5 (the
-    // v2.3 clone's min-h-[54px] forced 74).
-    const bar = nav;
-    await expect(bar).toHaveCSS("padding", "8px 8px 12px");
-  });
-
-  test("INACTIVE tabs render no well", async ({ page }) => {
-    const nav = page.getByRole("navigation", { name: "Primary" });
-    const goalsChip = nav.getByRole("button", { name: "Goals", exact: true }).locator("span").first();
-    await expect(goalsChip).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    const shadow = await goalsChip.evaluate((el) => getComputedStyle(el).boxShadow);
-    expect(shadow).toBe("none");
-  });
-
-  test("tab taps switch views and move the well", async ({ page }) => {
-    const nav = page.getByRole("navigation", { name: "Primary" });
-    await nav.getByRole("button", { name: "Goals", exact: true }).tap();
-    await expect(page).toHaveURL(/\/goals\/?$/);
-    await expect(page.getByRole("heading", { name: "Goals", exact: true }).filter({ visible: true }).first()).toBeVisible();
-
-    const goalsChip = nav.getByRole("button", { name: "Goals", exact: true }).locator("span").first();
-    await expect(goalsChip).toHaveCSS("background-color", "rgb(235, 231, 226)");
-    // Home lost the well.
-    const homeChip = nav.getByRole("button", { name: "Home", exact: true }).locator("span").first();
-    await expect(homeChip).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  });
-
-  test("MORE opens the bottom sheet and navigates; never carries the well", async ({ page }) => {
-    const nav = page.getByRole("navigation", { name: "Primary" });
-    const more = nav.getByRole("button", { name: "More", exact: true });
-
-    // MORE has no well wrapper at all (its active state is color-only).
-    await expect(more.locator("span.orb-nav-active")).toHaveCount(0);
-
-    await more.tap();
-    const sheet = page.getByRole("dialog");
-    await expect(sheet).toBeVisible();
-    // (The brand renders as "Orbital" in the DOM — uppercase is CSS.)
-    await expect(sheet).toContainText("Orbital");
-    await expect(sheet.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
-
-    await sheet.getByRole("button", { name: "Team", exact: true }).tap();
-    await expect(page).toHaveURL(/\/team\/?$/);
-    await expect(page.getByRole("heading", { name: "Team", exact: true }).filter({ visible: true }).first()).toBeVisible();
-    // The sheet closed on navigation.
+    await expect(page).toHaveURL(/\/recent\/?$/);
+    await expect(page.getByRole("heading", { name: "Recent Files", exact: true })).toBeVisible();
     await expect(page.getByRole("dialog")).toBeHidden();
-
-    // MORE stays well-free while Team is active.
-    await expect(more.locator("span.orb-nav-active")).toHaveCount(0);
   });
 
-  test("mobile team header shows the short INVITE label; AI Agents header stays inline", async ({ page }) => {
-    await page.goto("/team");
-    // The header pill (aria-label "Invite Member") is the FIRST match — the
-    // empty-state button carries the same visible text.
-    const invite = page.getByRole("button", { name: "Invite Member" }).first();
-    await expect(invite).toBeVisible();
-    // v2.3: below sm the visible label is just "Invite" (the long text is
-    // the accessible name; the sm:hidden span carries the short one).
-    await expect(invite.getByText("Invite Member")).toBeHidden();
-    await expect(invite.getByText("Invite", { exact: true })).toBeVisible();
+  test("Escape closes the drawer and focus returns", async ({ page }) => {
+    const trigger = page.getByRole("button", { name: "Navigation menu" });
+    await trigger.tap();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
 
-    // v2.3: the NEW AGENT button stays on the AI Agents header row.
-    const agentsHeading = page.getByRole("heading", { name: "AI Agents" });
-    const newAgent = page.getByRole("button", { name: "New Agent" });
-    const headingBox = await agentsHeading.boundingBox();
-    const buttonBox = await newAgent.boundingBox();
-    expect(headingBox).not.toBeNull();
-    expect(buttonBox).not.toBeNull();
-    expect(Math.abs((headingBox?.y ?? 0) - (buttonBox?.y ?? 0))).toBeLessThan(40);
-    expect(buttonBox!.x).toBeGreaterThan(200); // right-aligned on the row
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    // Focus management: the trigger regains focus after close (Radix).
+    await expect(trigger).toBeFocused();
+  });
+
+  test("the drawer traps focus while open", async ({ page }) => {
+    await page.getByRole("button", { name: "Navigation menu" }).tap();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // After several Tabs, focus stays inside the dialog.
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press("Tab");
+    }
+    const focusedInDialog = await page.evaluate(() => {
+      const dialog = document.querySelector("[role='dialog']");
+      return !!dialog?.contains(document.activeElement);
+    });
+    expect(focusedInDialog).toBe(true);
+  });
+
+  test("the drawer body scroll locks while open", async ({ page }) => {
+    await page.getByRole("button", { name: "Navigation menu" }).tap();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    // Radix/react-remove-scroll marks the lock with data-scroll-locked and
+    // disables body pointer events (not overflow:hidden on body).
+    const locked = await page.evaluate(() => document.body.hasAttribute("data-scroll-locked"));
+    expect(locked).toBe(true);
   });
 });
 
-test.describe("middle state (768) navigation", () => {
-  test.use({ viewport: { width: 768, height: 844 } });
+test.describe("desktop navigation (1280)", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("the floating pill nav carries the six desktop tabs with an inset-well active chip", async ({ page }) => {
+  test("the desktop nav shows the links and never the hamburger", async ({ page }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Primary" });
     await expect(nav).toBeVisible();
-    for (const label of ["Home", "Goals", "Tasks", "Activity", "Team", "Settings"]) {
-      await expect(nav.getByRole("button", { name: label, exact: true })).toBeVisible();
+    for (const label of ["Dashboard", "Recent", "Teams"]) {
+      await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
-    const home = nav.getByRole("button", { name: "Home", exact: true });
-    await expect(home).toHaveCSS("background-color", "rgb(235, 231, 226)");
-    const box = await nav.boundingBox();
-    expect(box?.width).toBeGreaterThan(400);
-    expect(box?.width).toBeLessThan(560);
-    expect(box?.x).toBeGreaterThan(100); // centered, not full-width
+    await expect(page.getByRole("button", { name: "Navigation menu" })).toHaveCount(0);
   });
+});
 
-  test("no app bar and no bottom tab bar at md", async ({ page }) => {
+test.describe("tablet navigation (768)", () => {
+  test.use({ viewport: { width: 768, height: 844 } });
+
+  test("the nav links are visible at md — no hamburger needed", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("banner")).toBeHidden();
-    // The mobile bottom bar is the Primary nav that CONTAINS the More
-    // button — it stays in the DOM (display:none) at md, so assert it is
-    // hidden rather than absent.
-    const mobileBar = page
-      .locator('nav[aria-label="Primary"]')
-      .filter({ has: page.getByRole("button", { name: "More", exact: true }) });
-    await expect(mobileBar).toBeHidden();
+    await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Navigation menu" })).toBeHidden();
   });
 });

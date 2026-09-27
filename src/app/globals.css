@@ -1,0 +1,101 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Tailwind CSS v4 — CSS-first configuration. There is NO tailwind.config.js
+   by design: tokens are declared here with @theme, content detection is
+   automatic, and plugin-style animations come from tw-animate-css. (A
+   leftover legacy config file is the #1 cause of the "flat/minimal look"
+   bug documented in the Tailwind v4 skills.) */
+
+@theme {
+  /* shadcn semantic tokens — LITERAL values. var() chains inside a plain
+     @theme are dropped by the current v4 build (the Scandi Haven hard-won
+     lesson), so hex values are kept here and in sync manually. The palette
+     mirrors the reference app: white surfaces, slate text, purple accents. */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #8b5cf6;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3e8ff;
+  --color-secondary-foreground: #5b21b6;
+  --color-muted: #f9fafb;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #f3f4f6;
+  --color-accent-foreground: #111827;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e5e7eb;
+  --color-input: #e5e7eb;
+  --color-ring: #8b5cf6;
+
+  /* The editor's dark chrome (GitHub-dark tones measured from the reference). */
+  --color-editor-bg: #0d1117;
+  --color-editor-panel: #161b22;
+  --color-editor-border: #30363d;
+  --color-editor-text: #e6edf3;
+
+  /* Fonts — next/font injects --font-inter; var() IS legitimate for --font-*. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Accessibility: users who opt out of motion get none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom scrollbar for the editor's dark panels. */
+.editor-scroll::-webkit-scrollbar,
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.editor-scroll::-webkit-scrollbar-track,
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.editor-scroll::-webkit-scrollbar-thumb,
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+}
+.editor-scroll::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+}
+
+/* Mobile safe-area support for bottom-attached chrome. */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
