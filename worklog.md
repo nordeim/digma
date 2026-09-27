@@ -329,3 +329,19 @@ Work Log:
 
 Stage Summary:
 - Auth card now at full three-state reference parity (ADR-013): branded sign-in, minimal signup with Confirm Password + inline validation, minimal forgot; 5 e2e pins; search inputs aligned; gate fully green (44 e2e); 16 screenshots; docs + skill v1.3.0 aligned
+
+---
+Task ID: 26
+Agent: main
+Task: Session 6 — commit + SSH push to git@github.com:nordeim/digma (main)
+
+Work Log:
+- Staged 23 files (+362/-75: login-screen auth-card restructure, recent/dashboard search alignment, 5 new e2e checks, 16 screenshots (13 refreshed + 3 new), PAD v1.4.0 + ADR-013, README, AGENTS, CLAUDE, digma_SKILL v1.3.0, session_6 log, worklog)
+- Secret scan: scrubbed one new live-account email mention from the worklog (Task 23 entry); no .env / *.key / *.db staged
+- Final fast gates re-verified post-staging: lint, typecheck, 62/62 unit (build/smoke/e2e green against the same source earlier in the session)
+- Commit 8bafa40 on main: ":art: feat: auth-card state parity (ADR-013) + search-input alignment"
+- SSH push environment rebuilt (workspace had been reset): pip3 paramiko 5.0.0; Appendix A full-duplex paramiko shim deployed to /home/z/my-project/bin/ssh (outside repo, on PATH); operator key -> /home/z/my-project/.ssh-keys/digma_deploy.key (0600, outside repo); fingerprint SHA256:4rAzu5gC41giPSWmIojTc1isH0FGoGiSgYJkDcMp54g verified
+- Dry-run clean (fast-forward 2951a4f..8bafa40); real push via docs/ssh_git_wrapper_v3.py: remote verified refs/heads/main @ 8bafa40 == local HEAD; refs/remotes/origin/main synced; wrapper shredded its temp key; operator key shredded (random overwrite + remove)
+
+Stage Summary:
+- Session 6 delivered to GitHub main @ 8bafa40; working tree clean; in sync with origin/main
