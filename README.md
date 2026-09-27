@@ -29,7 +29,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | 📅 **Recent** | Sort by Last Opened / Last Modified / Date Created / Name, search, grid/list views, "N files found" |
 | 👥 **Teams** | Create-team dialog (name/description/color + first member invite), member cards with avatar colors, invite-by-email + role, inline delete confirm |
 | 🔐 **Cookie-session auth** | scrypt password hashing + HMAC-signed sessions, per-IP rate limiting (10/15 min → 429 + `Retry-After`), zero external auth dependencies |
-| 🚪 **Reference auth flow** | `/login` renders the auth card (sign-in/sign-up/forgot states, `?from_url=` return handling); Google/Microsoft/Facebook buttons render for parity and degrade to an explanatory toast (no OAuth credentials in a self-hosted clone) |
+| 🚪 **Reference auth flow** | `/login` renders the auth card in three reference-exact states: sign-in (logo + social buttons + "or" divider); **sign-up** (minimal card — "Back to sign in" link + "Create your account" h2, no logo/social, Confirm Password field with inline "Passwords do not match" validation, no name field — the API derives it from the email); **forgot** ("Reset your password" + email-only + "Send reset link"); `?from_url=` return handling; Google/Microsoft/Facebook buttons render for parity and degrade to an explanatory toast (no OAuth credentials in a self-hosted clone) |
 | 📱 **The mobile-navigation fix** | Hamburger (`md:hidden`, 44px target, stable aria-label + `aria-expanded`) opens a Radix Sheet drawer: focus-trapped, Escape + scrim close, scroll lock, links are SheetClose-wrapped so a tap navigates AND dismisses — pinned by 9 E2E checks at 390×844 |
 | 🌗 **Editor chrome** | GitHub-dark palette (`#0d1117`/`#161b22`/`#30363d`) measured from the reference: top bar (back, project name, Saved badge, undo/redo, avatars, Share/Present), zoom pill, "N selected" badge |
 
@@ -42,6 +42,15 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | Recent | Teams | Editor (Untitled fallback) |
 |:---:|:---:|:---:|
 | ![Recent](docs/screenshots/03-recent.png) | ![Teams](docs/screenshots/04-teams.png) | ![Untitled editor](docs/screenshots/06-editor-untitled.png) |
+
+<details>
+<summary>Auth — the reference's per-mode card structure (sign-up + forgot)</summary>
+
+| Sign-up | Sign-up (mismatch) | Forgot password |
+|:---:|:---:|:---:|
+| ![Sign-up](docs/screenshots/14-signup.png) | ![Sign-up validation](docs/screenshots/15-signup-validation.png) | ![Forgot](docs/screenshots/16-forgot.png) |
+
+</details>
 
 <details>
 <summary>Mobile — including the navigation fix</summary>
@@ -84,7 +93,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | Components | shadcn/ui on Radix | vendored | dialog, dropdown-menu, sheet, tabs, toast, button, input, label, textarea |
 | Client state | Zustand | 5 | The editor store (elements, selection, tool, zoom, history) |
 | Unit tests | Vitest | 5 | 62 checks on the pure domain seams |
-| E2E tests | Playwright | 1.63 | 39 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, the panel-toggle/properties suites, and the AI no-crash regression pin |
+| E2E tests | Playwright | 1.63 | 44 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, the panel-toggle/properties suites, the AI no-crash regression pin, and the auth-card state structure suite (sign-up minimal card, Confirm Password validation, forgot state) |
 | ORM | Prisma | 6 | Schema, client, `db push`, seed |
 | Database | SQLite | — | Zero-config local persistence (`db/custom.db`) |
 | Auth | Node `crypto` (scrypt + HMAC) | — | Cookie sessions, no external auth service |
@@ -260,13 +269,13 @@ Status colors: blue `#3B82F6` (default fill/active tool), green `#10B981` (Saved
 
 ```bash
 bun run test              # unit tests — 62 checks on the pure domain seams
-bun run test:e2e          # Playwright — 39 browser checks (needs `bun run build` first)
+bun run test:e2e          # Playwright — 44 browser checks (needs `bun run build` first)
 ./scripts/smoke-test.sh   # curl E2E — 28 checks against the production build
 ```
 
 The unit layer (Vitest) pins the pure seams: the SQLite URL resolution incl. the standalone `chdir` trap (`src/lib/db-path.ts`, pinned by `tests/db-path.test.ts`), the assistant's deterministic parser + LLM-output sanitizer (`ai-assistant.test.ts`), the editor's geometry/default seams (`editor.test.ts`), the fixed-window rate limiter (`rate-limit.test.ts`), invite normalization (`team.test.ts`), and the greeting boundaries (`greeting.test.ts`).
 
-The Playwright layer boots the production standalone server on :3100 with its own scratch database (`db/e2e.db`, schema-pushed + seeded by the global setup); a setup project signs the demo user in ONCE and shares the cookie via storageState (the auth rate limiter makes per-test logins a trap). The suites pin: the login round-trip (wrong password, valid credentials, authed redirect), the workspace surface (dashboard stats/cards, path routes, 404 guard, create-project dialog, editor load with layers), the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), — and — the highest-regression-risk chrome — **the mobile navigation fix**: trigger visibility below `md` with 44px targets, drawer opens with all links, link taps navigate AND close, Escape closes with focus return, focus stays trapped, scroll locks (`data-scroll-locked`), and the hamburger never appears at ≥768. A dedicated `editor-panels` suite pins the reference's panel-toggle chips (independent Layers/Components/Properties visibility, default ON/OFF/ON, chips hidden where their panels can't render — below md, Properties chip below lg), the Layers header Select All/Deselect All flip, the properties panel's five-section layout (Position & Size, Corner Radius, Fill & Stroke, Transform, Opacity; Canvas Properties → Background Color row), and the Transform section's scale contract (slider 0.1–3.0, "1.0x" readout, persisted transform chain). An AI-assistant regression test pins the degrade-not-fail contract — a submitted command must answer, mutate the canvas, and leave the page fully interactive (the reference app itself crashes blank-screen on the same input).
+The Playwright layer boots the production standalone server on :3100 with its own scratch database (`db/e2e.db`, schema-pushed + seeded by the global setup); a setup project signs the demo user in ONCE and shares the cookie via storageState (the auth rate limiter makes per-test logins a trap). The suites pin: the login round-trip (wrong password, valid credentials, authed redirect), **the auth-card state structure** (sign-up swaps to the reference's minimal card — "Back to sign in" + "Create your account" h2, no logo/social buttons, Confirm Password with inline "Passwords do not match" validation, no name field; forgot renders "Reset your password" + email-only + "Send reset link"; the back-link returns to the sign-in card), the workspace surface (dashboard stats/cards, path routes, 404 guard, create-project dialog, editor load with layers), the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), — and — the highest-regression-risk chrome — **the mobile navigation fix**: trigger visibility below `md` with 44px targets, drawer opens with all links, link taps navigate AND close, Escape closes with focus return, focus stays trapped, scroll locks (`data-scroll-locked`), and the hamburger never appears at ≥768. A dedicated `editor-panels` suite pins the reference's panel-toggle chips (independent Layers/Components/Properties visibility, default ON/OFF/ON, chips hidden where their panels can't render — below md, Properties chip below lg), the Layers header Select All/Deselect All flip, the properties panel's five-section layout (Position & Size, Corner Radius, Fill & Stroke, Transform, Opacity; Canvas Properties → Background Color row), and the Transform section's scale contract (slider 0.1–3.0, "1.0x" readout, persisted transform chain). An AI-assistant regression test pins the degrade-not-fail contract — a submitted command must answer, mutate the canvas, and leave the page fully interactive (the reference app itself crashes blank-screen on the same input).
 
 The smoke suite boots the production standalone server and runs 28 checks: health, auth (valid/invalid/unauthenticated), all read endpoints (envelope asserted), project CRUD incl. rename + full-list element PUT + invalid-type rejection, team + member validation, the AI assistant (fallback adds exactly 3 circles; blank message 400), page renders, the 404 guard, logout invalidation, and the login rate limit (429).
 

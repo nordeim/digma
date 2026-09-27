@@ -263,3 +263,69 @@ Work Log:
 
 Stage Summary:
 - Session 4 delivered to GitHub main @ 1c375a9; working tree clean; in sync with origin/main
+
+---
+
+Task ID: 23
+Agent: main
+Task: Session 5 kickoff — refresh, docs review, baseline gates, live parity audit (INTERRUPTED by tool failure)
+
+Work Log:
+- Workspace re-cloned (was reset): https://github.com/nordeim/digma.git at HEAD 2951a4f (clean, in sync with origin/main; last code commit 1c375a9 = session 4 scale/chip/AI-pin remediation; 2951a4f added docs/session_5.md by repo owner)
+- Reviewed: AGENTS.md, CLAUDE.md, README.md, PAD v1.3.0 (12 ADRs, §10 known issues), digma_SKILL.md v1.2.0, docs/session_4.md, docs/session_5.md, worklog.md (Task IDs 1-22), all configs (vitest/playwright/tsconfig/eslint all exclude skills/)
+- Environment set up: bun install (487 pkgs); .env created from .env.example with DATABASE_URL="file:../db/custom.db" + dev AUTH_SECRET; db/ created at repo root; prisma generate + db:push + db:seed OK (db/custom.db, demo user cmujlslqs0000m200ztpaoo71, 2 projects, 6 elements, 1 team, 3 members)
+- Baseline gates GREEN: lint, typecheck, 62/62 unit tests
+- Dev server booted (unset DATABASE_URL): /api/health ok, demo login ok
+- Live parity audit started (agent-browser, session "live" logged in with the reference account, session "clone" logged in demo@digma.app):
+  - Dashboard headers parity-hold (Search... placeholder, Designer/Pro Plan user block identical)
+  - Live mobile nav STILL BROKEN at 390x844 (nav hidden md:flex display:none, no hamburger, only bell visible) — Tailwind v4 class-A failure persists on reference
+  - Clone mobile nav fix VERIFIED: 44x44 hamburger aria-label "Navigation menu", sheet opens with Dashboard/Recent/Teams links, data-scroll-locked=1, Escape closes
+  - Live Untitled editor (/Editor?projectId=) audited: Untitled h1, Saved badge, disabled undo/redo, Share/Present, 9 toolbar tools, Layers "Deselect All" (0-layer quirk), AI Assistant h3, Canvas Properties #0D1117, bottom chips Layers/Components/Properties
+  - AI assistant parity CONFIRMED via source read (src/components/editor/ai-assistant.tsx): greeting text, "Create a blue button, make it bigger, delete selected..." placeholder, "Try: Add 3 colored circles..." suggestions all match live exactly
+  - Live zoom control measured: container absolute top-4 left-4 z-10 flex gap-2; pill is a DIV (bg-[#161b22] border-[#30363d] rounded-lg px-3 py-1 text-sm text-gray-300) showing "100%"; zoom in/out buttons bg-[#161b22] border-[#30363d] rounded-lg p-2 with lucide zoom-in/zoom-out icons — CLONE ZOOM COMPARISON NOT YET DONE (interrupted)
+- SESSION INTERRUPTED: persistent shell/tool failure in main session (all tools returning "tool call failed"; subagent shells healthy). Two agent-browser daemon + chrome process trees killed via subagent (PIDs 1523/1845 + children) but main-session tools did not recover. Dev server (port 3000) still healthy at interruption. NEXT SESSION: resume audit from clone zoom-pill comparison, then Recent/Teams pages, canvas interactions, Present mode; then remediation plan.
+
+Stage Summary:
+- Baseline state: clone at 2951a4f, all gates green, db at repo root, dev server healthy
+- Audit progress: mobile-nav fix verified working; live mobile nav still broken; AI panel + headers parity-hold; zoom pill/button DOM measured on live, clone side pending
+- No code changes made this session yet; worklog-only entry
+
+---
+Task ID: 24
+Agent: main
+Task: Session 6 (resumed after restart) — live parity audit complete + remediation plan
+
+Work Log:
+- Session resumed after tool-infra failure + restart (Task 23 progress held); shell/tools healthy; dev server still up; repo clean at 2951a4f
+- Completed the remaining live audit (agent-browser, logged into reference account):
+  - Zoom pill parity CONFIRMED in source: editor-view.tsx renders div pill + zoom-in/out chips with the exact live classes (absolute left-4 top-4 z-10 flex gap-2; bg-[#161b22] border-[#30363d] rounded-lg px-3 py-1 / p-2)
+  - Recent page parity-hold: headings/subtitle/sort combobox (4 options)/"N files found" all match; live search input wrapper is md:w-80 + shadcn h-9 vs clone lg:w-64 + h-10 rounded-lg (minor cosmetic diff, R2)
+  - Teams: live account has no teams; live "Create Team" + "Create Your First Team" buttons are BOTH NO-OPS (no dialog, no error) — clone's working dialog is the documented superset; empty-state text matches exactly
+  - Editor draw: agent-browser synthetic mouse events do NOT trigger React pointer handlers on EITHER app (CDP limitation); draw flow already pinned by tests/e2e/untitled-editor.spec.ts (Playwright native mouse API passes)
+  - Layer auto-naming matches live ("Rectangle 1", TYPE_LABELS + index+1)
+  - Present/Share on live: no-ops (documented); header search on live: no-op (clone's working search = documented superset)
+  - Quick Stats / Continue Working / All Projects subtitles all parity-hold
+  - Live signup card DECODED: "Back to sign in" back-link (flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors -mb-2 + arrow icon) + h2 "Create your account" (text-xl sm:text-2xl font-bold text-slate-900, NO subtitle) + NO logo + NO social buttons + NO divider + Email + Password (ph "Min. 8 characters") + Confirm Password (ph "Re-enter password", id confirmPassword, required) + "Create account"; inline mismatch error "Passwords do not match" (text-red-700 text-sm alert-style); NO name field; NO bottom toggles
+  - Live forgot card DECODED: back-link + h2 "Reset your password" + sub "Enter your email and we'll send you a link to reset your password" (text-slate-600 text-sm sm:text-base) + Email + "Send reset link"
+  - Live signin state: full parity-hold with clone (h1 Welcome to Digma + Sign in to continue + logo + 3 social + OR + Email/Password + Sign in + Forgot password?/Need an account? Sign up)
+
+Stage Summary:
+- GAPS FOUND (the session's remediation targets): (G-auth-1) clone signup/forgot keep logo+social+h1 instead of live's back-link+h2 minimal card; (G-auth-2) clone lacks Confirm Password field + "Min. 8 characters" placeholder; (G-auth-3) clone lacks "Passwords do not match" inline validation; (G-auth-4) clone has extra Name field (live has none — register API already derives name from email, removal safe); (G-auth-5) clone forgot subtitle "Recover your password" vs live "Enter your email and we'll send you a link to reset your password"; (G-recent-1) search input wrapper/height/radius minor diff
+- Plan: R1 auth-card state parity (login-screen.tsx restructure, TDD e2e red first) / R2 Recent search input alignment (h-9 rounded-md md:w-80) / R3 e2e pins (signup + forgot states) / R4 full gate / R5 screenshots refresh (01-login.png + new signup/forgot shots) / R6 docs (README/PAD v1.4.0/AGENTS/CLAUDE/digma_SKILL/session_6 log) / R7 commit + SSH push
+
+---
+Task ID: 25
+Agent: main
+Task: Session 6 — TDD remediation execution (auth-card parity) + gate + screenshots + docs
+
+Work Log:
+- TDD red: 5 new e2e checks in tests/e2e/auth.spec.ts (minimal signup card, Confirm Password/placeholders/no-Name, inline mismatch validation, back-link round-trip, forgot state) — verified 5 failed / 7 passed against the pre-change build
+- R1 (green): login-screen.tsx restructured — minimal = mode !== "signin": branded block (logo chip + social buttons + or divider + h1 + bottom toggles) renders ONLY in signin; signup/forgot render the "Back to sign in" back-link (arrow-left, measured classes flex items-center gap-2 text-sm text-slate-500 ... -mb-2) + h2 shell ("Create your account" / "Reset your password" + the live sub text); signup adds Confirm Password (id confirmPassword, ph "Re-enter password") with client-side equality guard (mismatch -> role=alert text-red-700 text-sm inline error, submission blocked) + Password ph "Min. 8 characters" in signup; Name field REMOVED (register payload derives name from email local-part — API already had the fallback); bottom "Forgot password?/Need an account? Sign up" toggles render only in signin
+- Spec bugs fixed during red->green: getByLabel("Password") strict-mode violation (2 password fields -> exact: true); forgot toast assertion needed the required email filled first (HTML5 validation blocks empty submit)
+- R2: Recent search input aligned to live (wrapper md:w-80, input h-9 rounded-md pl-9 pr-3 shadow-sm); dashboard search rounded-md/pr-3
+- Full gate GREEN: lint, typecheck, 62/62 unit, build, 28/28 smoke (dev server stopped first), 44/44 e2e (12/12 auth)
+- 16 screenshots captured to docs/screenshots/ (13 refreshed + new 14-signup.png, 15-signup-validation.png, 16-forgot.png)
+- Docs realigned: README (auth feature row + gallery + 44 counts + e2e description), PAD v1.4.0 (revision block, ADR-013 auth-card state parity, test distribution 44, file tree, key files), AGENTS.md (auth-card architecture fact + counts), CLAUDE.md (pyramid + counts), digma_SKILL.md v1.3.0 (project state, e2e row, §9 anti-pattern #21, LoginScreen inventory row), docs/session_6.md written
+
+Stage Summary:
+- Auth card now at full three-state reference parity (ADR-013): branded sign-in, minimal signup with Confirm Password + inline validation, minimal forgot; 5 e2e pins; search inputs aligned; gate fully green (44 e2e); 16 screenshots; docs + skill v1.3.0 aligned

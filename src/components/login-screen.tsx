@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Lock, Mail } from "lucide-react";
+import { ArrowLeft, Lock, Mail } from "lucide-react";
 
 import { LogoMark } from "@/components/logo";
 import { toast } from "@/hooks/use-toast";
@@ -26,7 +26,8 @@ export function LoginScreen() {
   const [mode, setMode] = React.useState<AuthMode>("signin");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [name, setName] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [confirmError, setConfirmError] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
   async function onSubmit(event: React.FormEvent) {
@@ -44,11 +45,21 @@ export function LoginScreen() {
       return;
     }
 
+    // Sign-up carries the reference's inline Confirm Password guard: a
+    // mismatch renders the red inline error and blocks submission (the
+    // live app shows "Passwords do not match" in a text-red-700 alert).
+    if (mode === "signup" && password !== confirmPassword) {
+      setConfirmError("Passwords do not match");
+      return;
+    }
+    setConfirmError("");
+
     setSubmitting(true);
     try {
       const endpoint = mode === "signin" ? "/api/auth/login" : "/api/auth/register";
-      const payload =
-        mode === "signin" ? { email, password } : { email, password, name: name || email.split("@")[0] };
+      // The reference's sign-up form has NO name field — the register API
+      // derives the display name from the email local-part.
+      const payload = mode === "signin" ? { email, password } : { email, password, name: email.split("@")[0] };
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,6 +94,8 @@ export function LoginScreen() {
     });
   }
 
+  const minimal = mode !== "signin";
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <div className="w-full max-w-md">
@@ -90,28 +103,57 @@ export function LoginScreen() {
           <div className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200" />
           <div className="p-8 sm:p-10 md:px-10 md:pb-10 md:pt-12">
             <div className="flex flex-col items-center space-y-6 text-center sm:space-y-8">
-              <div className="group relative">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 opacity-30 blur-xl transition-opacity duration-300 group-hover:opacity-40" />
-                <span className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded-full shadow-lg ring-4 ring-white/50 transition-all duration-300 group-hover:shadow-xl sm:h-24 sm:w-24">
-                  <span className="flex aspect-square h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-                    <LogoMark className="h-10 w-10 sm:h-12 sm:w-12" />
+              {/* Sign-up and forgot switch to the reference's minimal card:
+                  a "Back to sign in" link, an h2, and the bare form — no
+                  logo chip, no social buttons, no "or" divider. Only the
+                  sign-in state carries the full branded card. */}
+              {minimal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("signin");
+                    setConfirmError("");
+                  }}
+                  className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors -mb-2"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden />
+                  Back to sign in
+                </button>
+              )}
+
+              {!minimal && (
+                <div className="group relative">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 opacity-30 blur-xl transition-opacity duration-300 group-hover:opacity-40" />
+                  <span className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded-full shadow-lg ring-4 ring-white/50 transition-all duration-300 group-hover:shadow-xl sm:h-24 sm:w-24">
+                    <span className="flex aspect-square h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
+                      <LogoMark className="h-10 w-10 sm:h-12 sm:w-12" />
+                    </span>
                   </span>
-                </span>
-              </div>
+                </div>
+              )}
 
               <div className="space-y-2 sm:space-y-3">
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                  Welcome to Digma
-                </h1>
-                <p className="text-sm font-medium text-slate-500 sm:text-base">
-                  {mode === "signin" && "Sign in to continue"}
-                  {mode === "signup" && "Create your account to start designing"}
-                  {mode === "forgot" && "Recover your password"}
-                </p>
+                {minimal ? (
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                    {mode === "signup" ? "Create your account" : "Reset your password"}
+                  </h2>
+                ) : (
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                    Welcome to Digma
+                  </h1>
+                )}
+                {!minimal && (
+                  <p className="text-sm font-medium text-slate-500 sm:text-base">Sign in to continue</p>
+                )}
+                {mode === "forgot" && (
+                  <p className="text-sm text-slate-600 sm:text-base">
+                    Enter your email and we&apos;ll send you a link to reset your password
+                  </p>
+                )}
               </div>
 
               <div className="w-full">
-                {mode !== "forgot" && (
+                {mode === "signin" && (
                   <>
                     <div className="space-y-3">
                       <button
@@ -153,24 +195,6 @@ export function LoginScreen() {
 
                 <form onSubmit={onSubmit} className="space-y-4 sm:space-y-5">
                   <div className="space-y-3 sm:space-y-4">
-                    {mode === "signup" && (
-                      <div className="space-y-1.5">
-                        <label htmlFor="name" className="text-sm font-medium text-slate-700">
-                          Name
-                        </label>
-                        <div className="relative">
-                          <input
-                            id="name"
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="Your name"
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-base placeholder:text-slate-600 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:h-12"
-                          />
-                        </div>
-                      </div>
-                    )}
-
                     <div className="space-y-1.5">
                       <label htmlFor="email" className="text-sm font-medium text-slate-700">
                         Email
@@ -203,10 +227,54 @@ export function LoginScreen() {
                             minLength={8}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
+                            placeholder={mode === "signup" ? "Min. 8 characters" : "••••••••"}
                             className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 text-base placeholder:text-slate-600 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:h-12"
                           />
                         </div>
+                      </div>
+                    )}
+
+                    {mode === "signup" && (
+                      <div className="space-y-1.5">
+                        <label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
+                          Confirm Password
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden />
+                          <input
+                            id="confirmPassword"
+                            type="password"
+                            required
+                            minLength={8}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Re-enter password"
+                            aria-invalid={confirmError ? true : undefined}
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 text-base placeholder:text-slate-600 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:h-12"
+                          />
+                        </div>
+                        {confirmError && (
+                          <div
+                            role="alert"
+                            className="flex items-center gap-2 text-sm text-red-700"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4 shrink-0"
+                              aria-hidden
+                            >
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="12" x2="12" y1="8" y2="12" />
+                              <line x1="12" x2="12.01" y1="16" y2="16" />
+                            </svg>
+                            <p>{confirmError}</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -226,8 +294,8 @@ export function LoginScreen() {
                             : "Send reset link"}
                     </button>
 
-                    <div className="flex flex-col items-center justify-between gap-2 sm:flex-row sm:gap-0">
-                      {mode !== "signup" ? (
+                    {mode === "signin" && (
+                      <div className="flex flex-col items-center justify-between gap-2 sm:flex-row sm:gap-0">
                         <button
                           type="button"
                           onClick={() => setMode("forgot")}
@@ -235,20 +303,16 @@ export function LoginScreen() {
                         >
                           Forgot password?
                         </button>
-                      ) : (
-                        <span />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-                        className="text-sm text-slate-500 transition-colors hover:text-slate-700"
-                      >
-                        {mode === "signup" ? "Already have an account? " : "Need an account? "}
-                        <span className="font-medium text-slate-700">
-                          {mode === "signup" ? "Sign in" : "Sign up"}
-                        </span>
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => setMode("signup")}
+                          className="text-sm text-slate-500 transition-colors hover:text-slate-700"
+                        >
+                          Need an account?{" "}
+                          <span className="font-medium text-slate-700">Sign up</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </form>
               </div>

@@ -70,3 +70,81 @@ test.describe("login route", () => {
     expect(body.error.code).toBe("UNAUTHENTICATED");
   });
 });
+
+// The reference app's auth card RESTRUCTURES itself per mode (decoded from
+// the live DOM 2026-09-27): sign-in keeps the logo + social buttons + h1,
+// but sign-up and forgot switch to a minimal card — a "Back to sign in"
+// link at the top, an h2 heading, NO logo, NO social buttons, NO divider.
+// Sign-up adds a Confirm Password field with inline mismatch validation;
+// it has NO name field (the register API derives the name from the email).
+
+test.describe("auth card state structure (reference parity)", () => {
+  test("signup state swaps to the minimal card: back-link + h2, no logo or social", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: /Need an account\? Sign up/ }).click();
+
+    await expect(page.getByRole("heading", { name: "Create your account", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Back to sign in" })).toBeVisible();
+
+    // The logo chip and social buttons are GONE in signup mode.
+    await expect(page.locator("span.rounded-full.ring-4")).toHaveCount(0);
+    for (const label of ["Continue with Google", "Continue with Microsoft", "Continue with Facebook"]) {
+      await expect(page.getByRole("button", { name: label, exact: true })).toHaveCount(0);
+    }
+  });
+
+  test("signup state has Confirm Password, the Min. 8 characters placeholder, and no Name field", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: /Need an account\? Sign up/ }).click();
+
+    await expect(page.getByLabel("Confirm Password")).toBeVisible();
+    await expect(page.getByPlaceholder("Re-enter password")).toBeVisible();
+    await expect(page.getByPlaceholder("Min. 8 characters")).toBeVisible();
+    await expect(page.getByLabel("Name")).toHaveCount(0);
+  });
+
+  test("mismatched passwords show the inline error and do not navigate", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: /Need an account\? Sign up/ }).click();
+
+    await page.getByLabel("Email").fill("parity-check@digma.app");
+    await page.getByLabel("Password", { exact: true }).fill("Password123");
+    await page.getByLabel("Confirm Password").fill("Different999");
+    await page.getByRole("button", { name: "Create account" }).click();
+
+    await expect(page.getByText("Passwords do not match")).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test("the signup back-link returns to the sign-in card", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: /Need an account\? Sign up/ }).click();
+    await page.getByRole("button", { name: "Back to sign in" }).click();
+
+    await expect(page.getByRole("heading", { name: "Welcome to Digma" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+  });
+
+  test("forgot state renders the reference card: back-link + Reset your password + email only", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Forgot password?" }).click();
+
+    await expect(page.getByRole("heading", { name: "Reset your password", exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Enter your email and we'll send you a link to reset your password"),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Back to sign in" })).toBeVisible();
+
+    // Email only — no password fields, no logo, no social buttons.
+    await expect(page.getByLabel("Email")).toBeVisible();
+    await expect(page.getByLabel("Password")).toHaveCount(0);
+    await expect(page.locator("span.rounded-full.ring-4")).toHaveCount(0);
+
+    // The reference's bottom toggles are gone in forgot mode.
+    await expect(page.getByRole("button", { name: "Forgot password?" })).toHaveCount(0);
+
+    await page.getByLabel("Email").fill("reset-me@digma.app");
+    await page.getByRole("button", { name: "Send reset link" }).click();
+    await expect(page.getByText("Reset link sent").first()).toBeVisible();
+  });
+});

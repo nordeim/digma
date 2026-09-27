@@ -247,7 +247,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search projects..."
-                      className="h-9 w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      className="h-9 w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm shadow-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                     />
                   </div>
                   <div

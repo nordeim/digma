@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite chdir trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.2.0
+version: 1.3.0
 last_updated: 2026-09-27
-project_state: "62 unit checks green · 39 Playwright checks green · 28 smoke checks green · build 20 routes"
+project_state: "62 unit checks green · 44 Playwright checks green · 28 smoke checks green · build 20 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -69,7 +69,7 @@ project_state: "62 unit checks green · 39 Playwright checks green · 28 smoke c
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
 | Unit tests | Vitest | ≥5.0.1 | 62 checks; `*.test.ts` only |
-| E2E tests | Playwright | ≥1.63.0 | 39 checks; standalone server on :3100 with its own `db/e2e.db` |
+| E2E tests | Playwright | ≥1.63.0 | 44 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
 
@@ -136,7 +136,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 | ProjectCard (+ Create dialog) | `src/components/project-card.tsx` | Thumbnail art, ellipsis menu (rename/delete) with `stopPropagation`, the measured Create New Design File dialog |
 | RecentView | `src/components/recent-view.tsx` | Sort combobox (Last Opened/Last Modified/Date Created/Name), list/grid toggle, "N files found" |
 | TeamsView | `src/components/teams-view.tsx` | Team cards, member chips, invite dialog, inline confirm deletes |
-| LoginScreen | `src/components/login-screen.tsx` | Social buttons (parity, degrade to toast), email/password, `?from_url=` return |
+| LoginScreen | `src/components/login-screen.tsx` | Three-state auth card (ADR-013): branded sign-in (logo + social); minimal sign-up (back-link, Confirm Password + inline mismatch validation, no Name field); minimal forgot (email-only) |
 | EditorView | `src/components/editor/editor-view.tsx` | Shell + top bar + zoom cluster + autosave hook + Untitled-mode load + Present overlay + the panel-toggle chips (ADR-010) |
 | editor-store | `src/components/editor/editor-store.ts` | THE Zustand store (§6) — incl. `selectAll()` |
 | Canvas | `src/components/editor/canvas.tsx` | `role="application" aria-label="Design canvas"`; pointer draw/move/resize/select; wheel pan + ctrl-zoom |
@@ -216,6 +216,7 @@ client applies operations: add | update (may carry scale) | delete
 18. **Dead controls below responsive breakpoints.** A toggle whose target is `hidden md:flex` must itself be `hidden md:flex` — chips that flip `aria-pressed` with no visible effect lie about state (fixed: the chip bar is `hidden md:flex`; the Properties chip additionally `hidden lg:inline-block` because its panel is `lg:flex`).
 19. **Un-scaled bounds for scaled elements.** A per-element `scale` diverges the model footprint from the visual one — selection rings, marquee containment, fit-to-view, and thumbnails MUST go through one scale-aware seam (`boundsOf()` multiplies width/height by scale). Resize math runs in VISUAL space and divides the delta by scale on write-back (ADR-012).
 20. **Trusting the reference's runtime health.** The live app crashes blank-screen on AI submission (`TypeError` reading `charAt`) and ships `cdn.tailwindcss.com` in production. Audit the reference's BEHAVIOR, not just its DOM — and pin your own robustness with a no-crash e2e.
+21. **One fixed card layout for multi-state forms.** The reference's auth card RESTRUCTURES per mode: only sign-in renders the branded card (logo + social + divider + h1); sign-up/forgot swap to a minimal shell (back-link + h2, no logo/social). Auditing only the default state hides the divergence — walk EVERY state of a stateful component before declaring parity (ADR-013, pinned by 5 e2e checks in `tests/e2e/auth.spec.ts`).
 
 ## §10 Debugging Guide
 

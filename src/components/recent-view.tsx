@@ -82,7 +82,9 @@ export function RecentView({ user }: { user: HeaderUser }) {
               <p className="text-sm text-gray-600">Your recently accessed design files</p>
             </div>
             <div className="flex w-full items-center gap-4 lg:w-auto">
-              <div className="relative flex-1 lg:w-64">
+              {/* Live DOM: relative flex-1 md:w-80 with an h-9 shadcn-style
+                  input (rounded-md, icon at left-3, pl-9). */}
+              <div className="relative flex-1 md:w-80">
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
                   aria-hidden
@@ -96,7 +98,7 @@ export function RecentView({ user }: { user: HeaderUser }) {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search files..."
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="h-9 w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm shadow-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
               </div>
               <div

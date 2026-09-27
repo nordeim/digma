@@ -89,7 +89,7 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 | `bun run build` | Production build (+ copies static/public into standalone) |
 | `bun run start` | Production standalone server (`.next/standalone/server.js`) |
 | `bun run test` | Unit tests (62 checks, Vitest) |
-| `bun run test:e2e` | Browser E2E (39 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db`) |
+| `bun run test:e2e` | Browser E2E (44 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db`) |
 | `bun run lint` | ESLint 9 + next config |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bunx prisma generate` | Prisma client after schema change |
@@ -104,7 +104,7 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 
 - **Unit Tests** (Vitest, 62 checks): pure domain seams in `src/lib/*.test.ts` + `tests/db-path.test.ts` — editor geometry/clamps (incl. the scale-aware visual bounds + transform chain), AI assistant parsing/sanitization, greeting time buckets, rate limiter, team stats, db-path resolution contract (incl. the `DIGMA_REPO_ROOT` anchor).
 - **Smoke Tests** (28 checks, `scripts/smoke-test.sh`): HTTP-level — every route, auth gating, login/logout, CRUD, health, stats. Run it with the dev server STOPPED (the script only kills standalone/`next start` processes; a lingering `next dev` steals :3000).
-- **E2E Tests** (Playwright, 39 checks): critical user journeys — login/logout/validation, dashboard→editor→draw→autosave→AI assistant (incl. the no-crash pin: the reference app itself blanks out on AI submission — this clone must answer, mutate the canvas, and stay interactive), project create/rename/delete, teams, the mobile-navigation regression suite pinned at 390×844, the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), and the editor-panels suite (chip toggles incl. their responsive visibility — hidden below md, Properties chip below lg — Select All flip, the five properties sections, and the Transform scale contract: slider 0.1–3.0, "1.0x" readout, persisted transform chain).
+- **E2E Tests** (Playwright, 44 checks): critical user journeys — login/logout/validation, the auth-card state structure suite (sign-up swaps to the reference's minimal card: "Back to sign in" + h2, no logo/social; Confirm Password with inline mismatch validation; forgot renders "Reset your password" + email-only), dashboard→editor→draw→autosave→AI assistant (incl. the no-crash pin: the reference app itself blanks out on AI submission — this clone must answer, mutate the canvas, and stay interactive), project create/rename/delete, teams, the mobile-navigation regression suite pinned at 390×844, the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), and the editor-panels suite (chip toggles incl. their responsive visibility — hidden below md, Properties chip below lg — Select All flip, the five properties sections, and the Transform scale contract: slider 0.1–3.0, "1.0x" readout, persisted transform chain).
 
 ### Test Commands
 
