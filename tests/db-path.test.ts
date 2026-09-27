@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync, existsSync } from "node:
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { resolveDatabaseUrl, standaloneRepoRoot } from "@/lib/db-path";
+import { candidateRoots, resolveDatabaseUrl, standaloneRepoRoot } from "@/lib/db-path";
 
 // The db-path contract (docs/parity-remediation-v2.3.md WS-1):
 // a RELATIVE `file:` URL resolves against the first "anchor" directory that
@@ -137,6 +137,78 @@ describe("standaloneRepoRoot (the Next standalone chdir trap)", () => {
     // with this order it must land in <repo>/db.
     const out = resolveDatabaseUrl("file:../db/custom.db", [repo, standalone]);
     expect(toPosix(out)).toBe(`file:${toPosix(path.join(repo, "db", "custom.db"))}`);
+  });
+});
+
+describe("DIGMA_REPO_ROOT override anchor", () => {
+  // The PAD documents DIGMA_REPO_ROOT as the explicit escape hatch for
+  // deployments where neither the CWD nor the module path can find the repo
+  // (e.g. a container that copied the standalone output + prisma/ to /app).
+  // Contract: when set, the env value participates as the FIRST candidate
+  // anchor; when the anchor carries a schema it wins resolution outright.
+  // Unset/blank values change nothing. (TDD: these tests came first; the
+  // implementation in candidateRoots() follows.)
+  let repo: string;
+  let other: string;
+  const previous = process.env.DIGMA_REPO_ROOT;
+
+  beforeAll(() => {
+    repo = mkdtempSync(path.join(tmpdir(), "dbpath-env-repo-"));
+    mkdirSync(path.join(repo, "prisma"));
+    writeFileSync(path.join(repo, "prisma", "schema.prisma"), "datasource db { provider = \"sqlite\" }");
+    mkdirSync(path.join(repo, "db"));
+    other = mkdtempSync(path.join(tmpdir(), "dbpath-env-other-"));
+  });
+
+  afterAll(() => {
+    if (previous === undefined) delete process.env.DIGMA_REPO_ROOT;
+    else process.env.DIGMA_REPO_ROOT = previous;
+    rmSync(repo, { recursive: true, force: true });
+    rmSync(other, { recursive: true, force: true });
+  });
+
+  it("candidateRoots() lists DIGMA_REPO_ROOT first when set", () => {
+    process.env.DIGMA_REPO_ROOT = repo;
+    try {
+      const roots = candidateRoots();
+      expect(roots[0]).toBe(repo);
+      expect(roots).toContain(process.cwd());
+    } finally {
+      if (previous === undefined) delete process.env.DIGMA_REPO_ROOT;
+      else process.env.DIGMA_REPO_ROOT = previous;
+    }
+  });
+
+  it("the env anchor wins resolution when it carries a schema", () => {
+    process.env.DIGMA_REPO_ROOT = repo;
+    try {
+      const roots = candidateRoots();
+      const out = resolveDatabaseUrl("file:../db/custom.db", roots);
+      expect(toPosix(out)).toBe(`file:${toPosix(path.join(repo, "db", "custom.db"))}`);
+    } finally {
+      if (previous === undefined) delete process.env.DIGMA_REPO_ROOT;
+      else process.env.DIGMA_REPO_ROOT = previous;
+    }
+  });
+
+  it("a blank DIGMA_REPO_ROOT adds no anchor", () => {
+    process.env.DIGMA_REPO_ROOT = "   ";
+    try {
+      const roots = candidateRoots();
+      expect(roots[0]).not.toBe("   ");
+      expect(roots).not.toContain("");
+    } finally {
+      if (previous === undefined) delete process.env.DIGMA_REPO_ROOT;
+      else process.env.DIGMA_REPO_ROOT = previous;
+    }
+  });
+
+  it("unset DIGMA_REPO_ROOT leaves the anchors unchanged", () => {
+    delete process.env.DIGMA_REPO_ROOT;
+    const roots = candidateRoots();
+    expect(roots.every((r) => typeof r === "string" && r.length > 0)).toBe(true);
+    // The CWD anchor is always present.
+    expect(roots).toContain(process.cwd());
   });
 });
 

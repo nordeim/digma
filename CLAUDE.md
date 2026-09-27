@@ -6,7 +6,7 @@ IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 
 ## Core Identity & Purpose
 
-Digma is a collaborative design workspace — a production-ready clone of the reference app at `https://digma-371dfd0d.base44.app/`. It is a single Next.js App Router application with five page routes (`/`, `/login`, `/recent`, `/teams`, `/editor?projectId=`), a DOM-element canvas editor with an AI assistant, Prisma/SQLite persistence, and cookie-session auth. It is maintained as a single-developer repo (`main` only) pushed to `git@github.com:nordeim/digma`.
+Digma is a collaborative design workspace — a production-ready clone of the reference app at `https://digma-371dfd0d.base44.app/`. It is a single Next.js App Router application with five page routes (`/`, `/Dashboard`, `/login`, `/Recent`, `/Teams`, `/Editor?projectId=` — capitalized for reference parity, with root `/` and lowercase `/login`; legacy lowercase URLs 307-redirect via `src/middleware.ts`), a DOM-element canvas editor with an AI assistant, Prisma/SQLite persistence, and cookie-session auth. It is maintained as a single-developer repo (`main` only) pushed to `git@github.com:nordeim/digma`.
 
 The key technical decisions that shape everything else: Tailwind 4 CSS-first theming (no `tailwind.config.js`), one Zustand store as the single source of truth for editor state, a full-list element replace contract for persistence, and a degrade-not-fail AI assistant. Details: `Project_Architecture_Document.md` (the definitive blueprint), `AGENTS.md` (operator quick-reference), `README.md` (user-facing).
 
@@ -88,8 +88,8 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 | `bun run dev` | Start development server (:3000, logs to `dev.log`) |
 | `bun run build` | Production build (+ copies static/public into standalone) |
 | `bun run start` | Production standalone server (`.next/standalone/server.js`) |
-| `bun run test` | Unit tests (54 checks, Vitest) |
-| `bun run test:e2e` | Browser E2E (23 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db`) |
+| `bun run test` | Unit tests (58 checks, Vitest) |
+| `bun run test:e2e` | Browser E2E (26 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db`) |
 | `bun run lint` | ESLint 9 + next config |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bunx prisma generate` | Prisma client after schema change |
@@ -102,9 +102,9 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 
 ### Test Pyramid
 
-- **Unit Tests** (Vitest, 54 checks): pure domain seams in `src/lib/*.test.ts` + `tests/db-path.test.ts` — editor geometry/clamps, AI assistant parsing/sanitization, greeting time buckets, rate limiter, team stats, db-path resolution contract.
+- **Unit Tests** (Vitest, 58 checks): pure domain seams in `src/lib/*.test.ts` + `tests/db-path.test.ts` — editor geometry/clamps, AI assistant parsing/sanitization, greeting time buckets, rate limiter, team stats, db-path resolution contract (incl. the `DIGMA_REPO_ROOT` anchor).
 - **Smoke Tests** (28 checks, `scripts/smoke-test.sh`): HTTP-level — every route, auth gating, login/logout, CRUD, health, stats.
-- **E2E Tests** (Playwright, 23 checks): critical user journeys — login/logout/validation, dashboard→editor→draw→autosave→AI assistant, project create/rename/delete, teams, and the mobile-navigation regression suite pinned at 390×844.
+- **E2E Tests** (Playwright, 26 checks): critical user journeys — login/logout/validation, dashboard→editor→draw→autosave→AI assistant, project create/rename/delete, teams, the mobile-navigation regression suite pinned at 390×844, and the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption).
 
 ### Test Commands
 
@@ -161,15 +161,16 @@ ESLint 9 with `eslint-config-next`; `skills/` and build output dirs are ignored 
 ### Architecture
 
 - **Session-gated pages.** Every `page.tsx` calls `getSessionUser()` and `redirect("/login?from_url=…")`; client views never gate themselves. All API reads/mutations call `requireSession()` first (401 envelope otherwise). Only `/api/health` and `/api/auth/*` are public.
-- **Editor state lives in ONE Zustand store** (`src/components/editor/editor-store.ts`) — elements, selection, tool, zoom/pan, save flag, undo/redo snapshots. Views and panels read the store and call actions; nothing else owns canvas state.
+- **Editor state lives in ONE Zustand store** (`src/components/editor/editor-store.ts`) — elements, selection, tool, zoom/pan, save flag, undo/redo snapshots. Views and panels read the store and call actions; nothing else owns canvas state. **Unknown/missing `?projectId` opens the "Untitled" editor** (`UNTITLED_PROJECT` in `editor-view.tsx`): the first autosave `POST`s `/api/projects`, binds the id (`attachProject`), and adopts the URL via `history.replaceState` (ADR-009; pinned by `tests/e2e/untitled-editor.spec.ts`).
 - **Elements are client-sovereign rows.** Local ids (`local-…`) are created optimistically; the server transactionally deletes + recreates the full list on every save (order = array order). Don't add per-element PATCH autosave — the replace contract is what makes undo/redo and AI batch operations safe.
 - **Toast store is `globalThis`-backed** (`src/hooks/use-toast.ts`): state AND listener set live on `globalThis.__digmaToastInfra` (Turbopack chunk-splitting can hand two copies of a module-level singleton to different client chunks). Consumption uses `useSyncExternalStore`. The Toaster renders plain divs — a Radix Toast controlled-`open` list never mounted reliably.
 - **Mobile navigation is a deliberate FIX, not parity.** The reference app ships no mobile nav (desktop nav `hidden md:flex`, no fallback — Tailwind v4 failure class A). This clone adds the hamburger + Sheet drawer (`MobileNav` in `app-header.tsx`): `md:hidden` trigger with stable `aria-label="Navigation menu"`, 44px targets, Radix focus trap/Escape/scroll-lock, links wrapped in `SheetClose`. `tests/e2e/mobile-navigation.spec.ts` pins all of it.
+- **Routes are CAPITALIZED** (`/Dashboard`, `/Recent`, `/Teams`, `/Editor?projectId=`; root `/` and `/login` lowercase) — reference parity (ADR-008). Legacy lowercase URLs 307 via `src/middleware.ts`. Never express those redirects in `next.config.ts redirects()` — Next 16 matches redirect sources case-insensitively (per-rule `caseSensitive` is ignored; observed self-loop).
 
 ### API Design
 
 - All routes return the `ok()/fail()` envelope. Rate-limited auth routes: 10 attempts/IP/15 min → `429 RATE_LIMITED` + `Retry-After` (per-process only).
-- Auth is hand-rolled (`src/lib/auth.ts`): scrypt hashes + HMAC-SHA256 stateless tokens in an httpOnly `digma_session` cookie (7-day TTL).
+- Auth is hand-rolled (`src/lib/auth.ts`): scrypt hashes + HMAC-SHA256 stateless tokens in an httpOnly `digma_session` cookie (7-day TTL; signing key from the `AUTH_SECRET` env).
 
 ### Database / Data Layer
 
@@ -182,7 +183,8 @@ ESLint 9 with `eslint-config-next`; `skills/` and build output dirs are ignored 
 | Variable | Purpose | Example |
 |----------|---------|---------|
 | `DATABASE_URL` | SQLite file URL (relative `file:` resolved by `db-path.ts`) | `file:../db/custom.db` |
-| `SESSION_SECRET` | HMAC key for session tokens (fallback default in dev) | any 32+ char string |
+| `AUTH_SECRET` | HMAC key for session tokens (`src/lib/auth.ts`; insecure dev-only fallback when unset) | any 32+ char string |
+| `DIGMA_REPO_ROOT` | Optional explicit repo-root anchor for db-path resolution (escape hatch for containers) | absolute path |
 | `NODE_ENV` | Set by scripts (`production` for `bun run start`) | `production` |
 
 ## Success Metrics

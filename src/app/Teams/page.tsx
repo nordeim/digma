@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TeamsPage() {
   const user = await getSessionUser();
-  if (!user) redirect("/login?from_url=/teams");
+  if (!user) redirect("/login?from_url=/Teams");
 
   return <TeamsView user={user} />;
 }

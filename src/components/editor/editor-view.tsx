@@ -15,27 +15,76 @@ import { toast } from "@/hooks/use-toast";
 import type { HeaderUser } from "@/components/app-header";
 import { ProjectDTO } from "@/lib/editor";
 
+// The Untitled editor state (ADR-009): loaded when the ?projectId is unknown
+// or missing — the reference app renders a fully working "Untitled" canvas
+// in that case instead of an error page. id stays EMPTY until the first
+// autosave creates the backing project (useAutosave.ensureProject).
+const UNTITLED_PROJECT: ProjectDTO = {
+  id: "",
+  name: "Untitled",
+  description: null,
+  template: "blank",
+  backgroundColor: "#0D1117",
+  lastOpenedAt: new Date(0).toISOString(),
+  createdAt: new Date(0).toISOString(),
+  updatedAt: new Date(0).toISOString(),
+  elements: [],
+};
+
 // ---------------------------------------------------------------------------
 // Autosave: PUT the full element list (plus project meta) whenever the store
 // goes unsaved; debounced 800ms. On success the server's fresh ids replace
 // the local ones (selection remapped by index-stable order).
+//
+// Untitled mode (ADR-009): the store may hold NO projectId yet (unknown or
+// missing ?projectId — reference parity: the live app opens a working
+// "Untitled" editor). The FIRST flush creates the project via
+// POST /api/projects, binds the new id (store.attachProject), and adopts it
+// in the address bar via history.replaceState — the reference app instead
+// saves the canvas SILENTLY into the most-recent project (a data bug this
+// clone deliberately does not copy).
 
-function useAutosave(projectId: string) {
+function useAutosave() {
   React.useEffect(() => {
-    if (!projectId) return;
-
     let timer: ReturnType<typeof setTimeout> | null = null;
     let disposed = false;
 
+    async function ensureProject(): Promise<string | null> {
+      const store = useEditorStore.getState();
+      if (store.projectId) return store.projectId;
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: store.projectName || "Untitled",
+          template: "blank",
+          backgroundColor: store.backgroundColor,
+        }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.ok) return null;
+      const id = body.data.project.id as string;
+      useEditorStore.getState().attachProject(id);
+      // Adopt the new id in the URL without a navigation entry (a reload
+      // now opens the real project; the back button still leaves the page).
+      window.history.replaceState(null, "", `/Editor?projectId=${id}`);
+      return id;
+    }
+
     async function flush() {
       const store = useEditorStore.getState();
-      if (store.saveState !== "unsaved" || !store.projectId) return;
+      if (store.saveState !== "unsaved") return;
       store.setSaving();
       try {
-        const response = await fetch(`/api/projects/${store.projectId}/elements`, {
+        const projectId = await ensureProject();
+        if (!projectId) {
+          toast.error("Autosave failed", "The design file could not be created.");
+          return;
+        }
+        const response = await fetch(`/api/projects/${projectId}/elements`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ elements: store.elements }),
+          body: JSON.stringify({ elements: useEditorStore.getState().elements }),
         });
         const body = await response.json().catch(() => null);
         if (!response.ok || !body?.ok) {
@@ -43,7 +92,7 @@ function useAutosave(projectId: string) {
           return;
         }
         const elements = body.data.elements as ProjectDTO["elements"];
-        const oldIds = store.elements.map((el) => el.id);
+        const oldIds = useEditorStore.getState().elements.map((el) => el.id);
         const remap = new Map<string, string>();
         elements?.forEach((el, i) => {
           const old = oldIds[i];
@@ -67,7 +116,7 @@ function useAutosave(projectId: string) {
       unsubscribe();
       if (timer) clearTimeout(timer);
     };
-  }, [projectId]);
+  }, []);
 }
 
 // ---------------------------------------------------------------------------
@@ -247,7 +296,6 @@ export function EditorView({ user }: { user: HeaderUser }) {
   const projectId = params.get("projectId") ?? "";
 
   const [loading, setLoading] = React.useState(true);
-  const [notFound, setNotFound] = React.useState(false);
   const [presenting, setPresenting] = React.useState(false);
 
   const projectName = useEditorStore((s) => s.projectName);
@@ -257,33 +305,32 @@ export function EditorView({ user }: { user: HeaderUser }) {
   const future = useEditorStore((s) => s.future);
 
   useEditorShortcuts();
-  useAutosave(projectId);
+  useAutosave();
 
   // Load the project once — setState lands in the async continuation only.
+  // Unknown or missing projectId NEVER dead-ends: the editor opens in
+  // "Untitled" mode (reference parity, ADR-009) and the first autosave
+  // creates the backing project.
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!projectId) {
-        await Promise.resolve();
-        if (!cancelled) {
-          setNotFound(true);
-          setLoading(false);
+      if (projectId) {
+        try {
+          const response = await fetch(`/api/projects/${projectId}`);
+          const body = await response.json().catch(() => null);
+          if (!cancelled && response.ok && body?.ok) {
+            useEditorStore.getState().loadProject(body.data.project as ProjectDTO);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // fall through to the Untitled fallback below
         }
-        return;
       }
-      try {
-        const response = await fetch(`/api/projects/${projectId}`);
-        const body = await response.json().catch(() => null);
-        if (cancelled) return;
-        if (!response.ok || !body?.ok) {
-          setNotFound(true);
-        } else {
-          useEditorStore.getState().loadProject(body.data.project as ProjectDTO);
-        }
-      } catch {
-        if (!cancelled) setNotFound(true);
-      } finally {
-        if (!cancelled) setLoading(false);
+      await Promise.resolve();
+      if (!cancelled) {
+        useEditorStore.getState().loadProject(UNTITLED_PROJECT);
+        setLoading(false);
       }
     })();
     return () => {
@@ -300,34 +347,19 @@ export function EditorView({ user }: { user: HeaderUser }) {
   }
 
   function exit() {
-    // Flush pending edits before leaving.
+    // Flush pending edits before leaving. The store's projectId is
+    // authoritative (in Untitled mode it may be empty — nothing to flush;
+    // the 800ms autosave will have created the project by then in the
+    // common case).
     const store = useEditorStore.getState();
-    if (store.saveState === "unsaved") {
-      fetch(`/api/projects/${projectId}/elements`, {
+    if (store.saveState === "unsaved" && store.projectId) {
+      fetch(`/api/projects/${store.projectId}/elements`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ elements: store.elements }),
       }).catch(() => null);
     }
-    router.push("/");
-  }
-
-  if (notFound) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0d1117] text-white">
-        <div className="text-center">
-          <h1 className="mb-2 text-xl font-semibold">Project not found</h1>
-          <p className="mb-6 text-sm text-gray-400">The design file may have been deleted.</p>
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </main>
-    );
+    router.push("/Dashboard");
   }
 
   return (
@@ -387,12 +419,16 @@ export function EditorView({ user }: { user: HeaderUser }) {
               >
                 {user.name.charAt(0)}
               </div>
+              {/* Second collaborator chip — measured from the reference DOM:
+                  "S" on #10B981 (green). Presentation-only (the schema has no
+                  project-collaborator relation yet); it mirrors the live app's
+                  two-avatar cluster. */}
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-medium text-white"
-                title="AI Assistant"
-                style={{ backgroundColor: "#8B5CF6" }}
+                title="Collaborator"
+                style={{ backgroundColor: "#10B981" }}
               >
-                AI
+                S
               </div>
             </div>
             <div className="hidden items-center gap-1 text-sm text-gray-400 sm:flex">
@@ -456,34 +492,29 @@ export function EditorView({ user }: { user: HeaderUser }) {
             ) : (
               <Canvas />
             )}
-            {/* Zoom controls — measured: top-left, 100% + minus/plus. */}
-            <div className="absolute left-4 top-4 flex items-center gap-1 rounded-lg border border-[#30363d] bg-[#161b22] p-1">
-              <button
-                type="button"
-                onClick={() => useEditorStore.getState().zoomOut()}
-                aria-label="Zoom out"
-                className="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition-colors hover:text-white"
-              >
-                <Minus className="h-3 w-3" aria-hidden />
-              </button>
-              <span className="min-w-[44px] text-center text-xs text-gray-300" aria-live="polite">
+            {/* Zoom controls — measured from the reference DOM: a separate
+                100% chip followed by zoom-in and zoom-out icon chips
+                (top-left, gap-2, one border/bg pair per chip — no merged
+                cluster, no Fit button; reset stays on Ctrl/Cmd+0). */}
+            <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
+              <div className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-1 text-sm text-gray-300" aria-live="polite">
                 {Math.round(zoom * 100)}%
-              </span>
+              </div>
               <button
                 type="button"
                 onClick={() => useEditorStore.getState().zoomIn()}
                 aria-label="Zoom in"
-                className="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition-colors hover:text-white"
+                className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
               >
-                <Plus className="h-3 w-3" aria-hidden />
+                <Plus className="h-4 w-4" aria-hidden />
               </button>
               <button
                 type="button"
-                onClick={() => useEditorStore.getState().resetView()}
-                aria-label="Reset zoom"
-                className="rounded px-2 text-[10px] text-gray-400 transition-colors hover:text-white"
+                onClick={() => useEditorStore.getState().zoomOut()}
+                aria-label="Zoom out"
+                className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
               >
-                Fit
+                <Minus className="h-4 w-4" aria-hidden />
               </button>
             </div>
           </div>

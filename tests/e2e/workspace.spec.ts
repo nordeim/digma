@@ -19,8 +19,8 @@ test.describe("workspace shell (desktop)", () => {
   });
 
   for (const [path, heading] of [
-    ["/recent", "Recent Files"],
-    ["/teams", "Teams"],
+    ["/Recent", "Recent Files"],
+    ["/Teams", "Teams"],
   ] as const) {
     test(`path route ${path} serves the ${heading} view`, async ({ page }) => {
       await page.goto(path);
@@ -49,7 +49,7 @@ test.describe("workspace shell (desktop)", () => {
 
     await dialog.getByLabel("Project Name *").fill("E2E spec project");
     await submit.click();
-    await expect(page).toHaveURL(/\/editor\?projectId=/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/Editor\?projectId=/, { timeout: 15_000 });
     await expect(page.getByRole("heading", { name: "E2E spec project" })).toBeVisible();
   });
 
@@ -57,7 +57,7 @@ test.describe("workspace shell (desktop)", () => {
     // Navigate through the dashboard (the real user path).
     await page.goto("/");
     await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
-    await expect(page).toHaveURL(/\/editor\?projectId=/);
+    await expect(page).toHaveURL(/\/Editor\?projectId=/);
     await expect(page.getByRole("heading", { name: "Marketing Hero Banner" })).toBeVisible();
     await expect(page.getByRole("toolbar", { name: "Editor tools" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Layers" })).toBeVisible();
@@ -66,7 +66,7 @@ test.describe("workspace shell (desktop)", () => {
   });
 
   test("the teams view renders the seeded team", async ({ page }) => {
-    await page.goto("/teams");
+    await page.goto("/Teams");
     await expect(page.getByRole("heading", { name: "Design Team" })).toBeVisible();
     await expect(page.getByText("Alex Design")).toBeVisible();
   });

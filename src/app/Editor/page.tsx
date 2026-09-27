@@ -2,18 +2,18 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { getSessionUser } from "@/lib/auth";
-import { RecentView } from "@/components/recent-view";
+import { EditorView } from "@/components/editor/editor-view";
 
-export const metadata = { title: "Recent" };
+export const metadata = { title: "Editor" };
 export const dynamic = "force-dynamic";
 
-export default async function RecentPage() {
+export default async function EditorPage() {
   const user = await getSessionUser();
-  if (!user) redirect("/login?from_url=/recent");
+  if (!user) redirect("/login?from_url=/Editor");
 
   return (
     <Suspense>
-      <RecentView user={user} />
+      <EditorView user={user} />
     </Suspense>
   );
 }

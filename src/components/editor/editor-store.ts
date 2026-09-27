@@ -43,6 +43,11 @@ type EditorStore = {
 
   // lifecycle
   loadProject: (project: ProjectDTO) => void;
+  // Untitled mode (ADR-009): the editor can start with NO backing project
+  // (unknown/missing projectId — reference parity). The first save creates
+  // one; attachProject binds the freshly created id to the store WITHOUT
+  // touching elements/selection so the in-flight save can continue.
+  attachProject: (id: string) => void;
   setName: (name: string) => void;
   setSaving: () => void;
   markSaved: (elements: DesignElementDTO[], remap: Map<string, string>) => void;
@@ -117,6 +122,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       future: [],
       saveState: "saved",
     }),
+
+  attachProject: (id) => set({ projectId: id }),
 
   setName: (name) => set({ projectName: name, saveState: "unsaved" }),
 

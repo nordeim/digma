@@ -18,10 +18,18 @@ export type HeaderUser = {
 };
 
 const NAV_LINKS = [
-  { href: "/", label: "Dashboard", icon: House },
-  { href: "/recent", label: "Recent", icon: FileText },
-  { href: "/teams", label: "Teams", icon: Users },
+  { href: "/Dashboard", label: "Dashboard", icon: House },
+  { href: "/Recent", label: "Recent", icon: FileText },
+  { href: "/Teams", label: "Teams", icon: Users },
 ] as const;
+
+// The dashboard is served at BOTH "/" and "/Dashboard" (reference parity:
+// its links point at /Dashboard while the root also renders it) — the
+// active-state check must treat them as one destination.
+function isNavActive(pathname: string, href: string): boolean {
+  if (href === "/Dashboard") return pathname === "/Dashboard" || pathname === "/";
+  return pathname === href;
+}
 
 /**
  * THE mobile navigation fix (the reference app's Tailwind v4 failure class A:
@@ -64,7 +72,7 @@ function MobileNav() {
         </SheetHeader>
         <nav aria-label="Mobile" className="flex flex-col gap-1 p-3">
           {NAV_LINKS.map((link) => {
-            const active = pathname === link.href;
+            const active = isNavActive(pathname, link.href);
             return (
               <SheetClose asChild key={link.href}>
                 <Link
@@ -119,7 +127,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
   function onSearch(event: React.FormEvent) {
     event.preventDefault();
     const q = query.trim();
-    router.push(q ? `/recent?search=${encodeURIComponent(q)}` : "/recent");
+    router.push(q ? `/Recent?search=${encodeURIComponent(q)}` : "/Recent");
   }
 
   return (
@@ -128,7 +136,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-4 md:gap-8">
             <MobileNav />
-            <Link href="/" className="flex items-center gap-3" aria-label="Digma home">
+            <Link href="/Dashboard" className="flex items-center gap-3" aria-label="Digma home">
               <LogoMark className="h-8 w-8" />
               <h1 className="text-xl font-bold text-gray-900">Digma</h1>
             </Link>
@@ -137,10 +145,10 @@ export function AppHeader({ user }: { user: HeaderUser }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  aria-current={pathname === link.href ? "page" : undefined}
+                  aria-current={isNavActive(pathname, link.href) ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    pathname === link.href
+                    isNavActive(pathname, link.href)
                       ? "bg-purple-50 text-purple-700"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                   )}

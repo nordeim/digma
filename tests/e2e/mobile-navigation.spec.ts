@@ -51,7 +51,7 @@ test.describe("mobile navigation (390×844)", () => {
     await trigger.tap();
     await page.getByRole("dialog").getByRole("link", { name: "Recent", exact: true }).tap();
 
-    await expect(page).toHaveURL(/\/recent\/?$/);
+    await expect(page).toHaveURL(/\/Recent\/?$/);
     await expect(page.getByRole("heading", { name: "Recent Files", exact: true })).toBeVisible();
     await expect(page.getByRole("dialog")).toBeHidden();
   });

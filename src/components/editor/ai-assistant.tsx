@@ -163,7 +163,7 @@ export function AiAssistant() {
         {sending && (
           <div className="flex justify-start">
             <div className="rounded-xl rounded-bl-sm bg-[#21262d] px-3 py-2 text-xs text-gray-400">
-              Thinking…
+              Working on it...
             </div>
           </div>
         )}

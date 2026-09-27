@@ -86,7 +86,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
   }, [projects, search]);
 
   function openEditor(projectId: string) {
-    router.push(`/editor?projectId=${projectId}`);
+    router.push(`/Editor?projectId=${projectId}`);
   }
 
   return (
@@ -174,7 +174,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                   <p className="text-sm text-gray-600">Pick up where you left off</p>
                 </div>
                 <a
-                  href="/recent"
+                  href="/Recent"
                   className="flex items-center gap-2 text-sm font-medium text-purple-600 hover:text-purple-700"
                 >
                   View all

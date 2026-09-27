@@ -30,7 +30,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | 👥 **Teams** | Create-team dialog (name/description/color + first member invite), member cards with avatar colors, invite-by-email + role, inline delete confirm |
 | 🔐 **Cookie-session auth** | scrypt password hashing + HMAC-signed sessions, per-IP rate limiting (10/15 min → 429 + `Retry-After`), zero external auth dependencies |
 | 🚪 **Reference auth flow** | `/login` renders the auth card (sign-in/sign-up/forgot states, `?from_url=` return handling); Google/Microsoft/Facebook buttons render for parity and degrade to an explanatory toast (no OAuth credentials in a self-hosted clone) |
-| 📱 **The mobile-navigation fix** | Hamburger (`md:hidden`, 44px target, stable aria-label + `aria-expanded`) opens a Radix Sheet drawer: focus-trapped, Escape + scrim close, scroll lock, links are SheetClose-wrapped so a tap navigates AND dismisses — pinned by 7 E2E checks at 390×844 |
+| 📱 **The mobile-navigation fix** | Hamburger (`md:hidden`, 44px target, stable aria-label + `aria-expanded`) opens a Radix Sheet drawer: focus-trapped, Escape + scrim close, scroll lock, links are SheetClose-wrapped so a tap navigates AND dismisses — pinned by 9 E2E checks at 390×844 |
 | 🌗 **Editor chrome** | GitHub-dark palette (`#0d1117`/`#161b22`/`#30363d`) measured from the reference: top bar (back, project name, Saved badge, undo/redo, avatars, Share/Present), zoom pill, "N selected" badge |
 
 ## Screenshots
@@ -39,23 +39,23 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 |:---:|:---:|:---:|
 | ![Login](docs/screenshots/01-login.png) | ![Dashboard](docs/screenshots/02-dashboard.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-| Recent | Teams |
-|:---:|:---:|
-| ![Recent](docs/screenshots/03-recent.png) | ![Teams](docs/screenshots/04-teams.png) |
+| Recent | Teams | Editor (Untitled fallback) |
+|:---:|:---:|:---:|
+| ![Recent](docs/screenshots/03-recent.png) | ![Teams](docs/screenshots/04-teams.png) | ![Untitled editor](docs/screenshots/06-editor-untitled.png) |
 
 <details>
 <summary>Mobile — including the navigation fix</summary>
 
-| Dashboard | Navigation menu (the fix) | Editor |
-|:---:|:---:|:---:|
-| ![Mobile dashboard](docs/screenshots/06-mobile-dashboard.png) | ![Mobile menu](docs/screenshots/07-mobile-menu.png) | ![Mobile editor](docs/screenshots/09-mobile-editor.png) |
+| Dashboard | Navigation menu (the fix) | Teams | Editor |
+|:---:|:---:|:---:|:---:|
+| ![Mobile dashboard](docs/screenshots/07-mobile-dashboard.png) | ![Mobile menu](docs/screenshots/08-mobile-menu.png) | ![Mobile teams](docs/screenshots/09-mobile-teams.png) | ![Mobile editor](docs/screenshots/10-mobile-editor.png) |
 
 </details>
 
 <details>
 <summary>Tablet (768)</summary>
 
-![Tablet dashboard](docs/screenshots/10-tablet-dashboard.png)
+![Tablet dashboard](docs/screenshots/11-tablet-dashboard.png)
 
 </details>
 
@@ -69,8 +69,8 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | Styling | Tailwind CSS | 4 | CSS-first `@theme` tokens in `globals.css` — **no `tailwind.config.js`** |
 | Components | shadcn/ui on Radix | vendored | dialog, dropdown-menu, sheet, tabs, toast, button, input, label, textarea |
 | Client state | Zustand | 5 | The editor store (elements, selection, tool, zoom, history) |
-| Unit tests | Vitest | 5 | 54 checks on the pure domain seams |
-| E2E tests | Playwright | 1.63 | 23 browser checks incl. the mobile-navigation regression suite |
+| Unit tests | Vitest | 5 | 58 checks on the pure domain seams |
+| E2E tests | Playwright | 1.63 | 26 browser checks incl. the mobile-navigation regression suite and the Untitled-editor contract |
 | ORM | Prisma | 6 | Schema, client, `db push`, seed |
 | Database | SQLite | — | Zero-config local persistence (`db/custom.db`) |
 | Auth | Node `crypto` (scrypt + HMAC) | — | Cookie sessions, no external auth service |
@@ -82,7 +82,8 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 
 ```mermaid
 flowchart LR
-    B[Browser] -->|GET / · /recent · /teams · /editor| P["Next.js pages (server components)<br/>session gate — redirect to /login"]
+    B[Browser] -->|GET / · /Dashboard · /Recent · /Teams · /Editor| P["Next.js pages (server components)<br/>session gate — redirect to /login"]
+    M[legacy /recent · /teams · …] -->|307 redirect| P
     P --> B
     B -->|GET /login| L[Login route<br/>auth card]
     B -->|fetch JSON| A["API route handlers<br/>/api/* (16 routes)"]
@@ -240,8 +241,8 @@ Status colors: blue `#3B82F6` (default fill/active tool), green `#10B981` (Saved
 ## Testing
 
 ```bash
-bun run test              # unit tests — 54 checks on the pure domain seams
-bun run test:e2e          # Playwright — 23 browser checks (needs `bun run build` first)
+bun run test              # unit tests — 58 checks on the pure domain seams
+bun run test:e2e          # Playwright — 26 browser checks (needs `bun run build` first)
 ./scripts/smoke-test.sh   # curl E2E — 28 checks against the production build
 ```
 

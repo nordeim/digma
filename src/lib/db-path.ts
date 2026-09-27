@@ -59,6 +59,10 @@ export function resolveDatabaseUrl(envValue: string | undefined, anchors: string
 /**
  * The anchor candidates for the running process, in priority order:
  *
+ * 0. DIGMA_REPO_ROOT — an explicit env override (the PAD-documented escape
+ *    hatch for containers/copies where no other anchor can find the repo).
+ *    Blank values add nothing. Like every anchor below it participates via
+ *    the side-effect push: the production minifier cannot drop it.
  * 1. The standalone-detector root — when the process CWD is
  *    <repo>/.next/standalone (Next chdirs there), the real repo is two
  *    levels up. The detection is INLINE (push side effects, not return
@@ -73,6 +77,11 @@ export function resolveDatabaseUrl(envValue: string | undefined, anchors: string
 export function candidateRoots(): string[] {
   const roots: string[] = [];
   const cwd = process.cwd();
+
+  const envRoot = process.env.DIGMA_REPO_ROOT?.trim();
+  if (envRoot) {
+    roots.push(envRoot); // side effect — cannot be optimized away
+  }
 
   if (
     cwd.endsWith(path.join(".next", "standalone")) &&

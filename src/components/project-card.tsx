@@ -151,7 +151,7 @@ export function ProjectCard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lastOpened: true }),
     }).catch(() => null);
-    router.push(`/editor?projectId=${project.id}`);
+    router.push(`/Editor?projectId=${project.id}`);
   }
 
   async function saveRename() {

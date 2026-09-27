@@ -182,7 +182,7 @@ export function RecentView({ user }: { user: HeaderUser }) {
                   {visible.map((project, index) => (
                     <a
                       key={project.id}
-                      href={`/editor?projectId=${project.id}`}
+                      href={`/Editor?projectId=${project.id}`}
                       className={cn(
                         "flex items-center gap-4 px-4 py-3 transition-colors hover:bg-gray-50",
                         index > 0 && "border-t border-gray-100",

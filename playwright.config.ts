@@ -1,11 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// E2E layer (v2.3): boots the PRODUCTION standalone server on an isolated
-// port with its own scratch database (db/e2e.db, schema-pushed + seeded by
-// the global setup), then drives the real UI in Chromium.
+// E2E layer: boots the PRODUCTION standalone server on an isolated port
+// with its own scratch database (db/e2e.db, schema-pushed + seeded by the
+// global setup), then drives the real UI in Chromium.
 //
 // Prerequisites: `bun run build` (the standalone server must exist).
 // Run with: `bun run test:e2e`.
+//
+// Routes are CAPITALIZED (/Dashboard, /Recent, /Teams, /Editor) with a
+// lowercase /login — reference-app parity (see PAD ADR-008); legacy
+// lowercase URLs 307-redirect to the canonical ones.
 //
 // Auth strategy: the "setup" project signs the demo user in ONCE and saves
 // the session cookie to tests/e2e/.auth/user.json; every spec in the main
@@ -16,7 +20,7 @@ import { defineConfig, devices } from "@playwright/test";
 //
 // The unit layer stays in Vitest (see vitest.config.ts — it matches
 // *.test.ts only, so these *.spec.ts / *.setup.ts files are never picked
-// up twice).
+// up twice). The skills/ folder is not app code and never enters any gate.
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const BASE_URL = `http://localhost:${PORT}`;

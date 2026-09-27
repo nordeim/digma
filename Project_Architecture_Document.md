@@ -1,13 +1,24 @@
-# Digma — Master Project Architecture Document (PAD) v1.0.0
+# Digma — Master Project Architecture Document (PAD) v1.1.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-09-27
+**Last Updated:** 2026-09-27 (v1.1.0 — parity remediation)
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
+
+#### Revision Block — v1.1.0 (Tracked Changes)
+
+Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+- `[SR]` Route-casing parity (ADR-008): routes renamed to the reference app's capitalized spellings (/Dashboard, /Recent, /Teams, /Editor?projectId=; root / and /login stay lowercase); legacy lowercase URLs 307 via src/middleware.ts after discovering Next 16 redirect-source matching is case-insensitive (per-rule caseSensitive is not honored — observed self-loop).
+- `[SR]` Untitled editor (ADR-009): unknown/missing projectId now opens a working "Untitled" editor whose first save creates the project (POST /api/projects + attachProject + history.replaceState). Audited the live app: its own unknown-id editor silently saves into the most-recent project — a data bug deliberately NOT cloned.
+- `[SR]` db-path DIGMA_REPO_ROOT anchor implemented (TDD: 4 new unit tests first) — the v1.0.0 PAD documented the env override before it existed; the doc now matches the code.
+- `[AUTH]` Env-var drift fixed across the doc set: the code reads AUTH_SECRET (src/lib/auth.ts); earlier docs said SESSION_SECRET. .env.example now matches the codebase exactly (unused NEXT_PUBLIC_SITE_URL removed).
+- `[SR]` Editor visual parity: zoom cluster re-measured from the live DOM ([100%][zoom-in][zoom-out] as separate chips, no Fit button); second top-bar avatar "S" on #10B981; AI status "Working on it...".
+- `[SR]` Test-count refresh: 58 unit checks (db-path now 20), 26 Playwright checks (new tests/e2e/untitled-editor.spec.ts, 3 checks).
 
 #### Revision Block — v1.0.0 (Tracked Changes)
 
@@ -94,7 +105,7 @@ How to use this document:
 **ADR-003: Hand-rolled scrypt + HMAC-SHA256 stateless cookie sessions**
 
 - **Context:** Reference repos use Better-Auth (Scandi Haven) or Base44's platform auth. The clone needs email/password login with a demo account, no OAuth providers, and no external service.
-- **Decision:** `src/lib/auth.ts` — scrypt password hashes (N=16384) and HMAC-SHA256-signed `userId.expiry.signature` tokens in an httpOnly `digma_session` cookie (7-day TTL, `SESSION_SECRET` env with dev fallback). `getSessionUser()` verifies signature + expiry + user existence on every request.
+- **Decision:** `src/lib/auth.ts` — scrypt password hashes (N=16384) and HMAC-SHA256-signed `userId.expiry.signature` tokens in an httpOnly `digma_session` cookie (7-day TTL, `AUTH_SECRET` env with dev fallback). `getSessionUser()` verifies signature + expiry + user existence on every request.
 - **Rationale:** ~100 lines, zero dependencies, fully testable, and enough for a demo-scale single-role app; matches the scaffold's auth.ts contract that existing tests already pin.
 - **Consequences:** Positive — no provider lock-in; sessions survive restarts (stateless). Negative — no revocation list (logout only clears the client cookie); token payload is visible (contains only id + expiry, HMAC-signed).
 - **Alternatives Rejected:** NextAuth/Auth.js — provider abstraction overhead for a single email/password flow; Better-Auth — brings a database session table the schema doesn't need.
@@ -131,6 +142,22 @@ How to use this document:
 - **Consequences:** Positive — cross-chunk toasts work; no controlled-open Radix list. Negative — a global symbol name to keep unique (`__digmaToastInfra`).
 - **Alternatives Rejected:** Module-level singleton — the observed bug; context provider — the Toaster lives in the root layout while fire-sites live in page chunks, and context doesn't cross bundle splits any better.
 
+**ADR-008: Capitalized route spellings with middleware-based legacy redirects**
+
+- **Context:** The reference app's own links point at `/Dashboard`, `/Recent`, `/Teams`, `/Editor?projectId=…` (React Router, capitalized), with the root `/` and a lowercase `/login` also live. The v1.0.0 clone used all-lowercase Next.js-conventional routes — a user-visible URL difference on every navigation.
+- **Decision:** Rename the route folders to the reference spellings (`src/app/{Dashboard,Recent,Teams,Editor}`), keep `/` and `/login` as they are, and 307-redirect the four legacy lowercase paths in `src/middleware.ts` (exact-match `Record` lookup; `matcher` restricted to those four paths; query preserved so `/editor?projectId=x` → `/Editor?projectId=x`).
+- **Rationale:** URL parity is user-visible parity. The middleware is required because Next 16's `redirects()` source matching is case-INSENSITIVE and the per-rule `caseSensitive` flag is not honored — expressing lowercase→Capital there produces a `/Recent → /Recent` self-loop (`ERR_TOO_MANY_REDIRECTS`, observed and reverted). Page-route matching itself IS case-sensitive (lowercase `/teams` 404s), so the middleware carries the compat burden alone.
+- **Consequences:** Positive — address-bar parity with the reference; old bookmarks keep working. Negative — a middleware edge on four paths; two route folders that must not collide on case-insensitive filesystems (only one spelling exists per route, so no conflict).
+- **Alternatives Rejected:** `next.config redirects()` — the observed loop; duplicate lowercase route folders calling `redirect()` — folder-name collision risk on macOS/Windows; staying lowercase — leaves a visible parity gap.
+
+**ADR-009: Untitled editor for unknown/missing projectId (create-on-first-save)**
+
+- **Context:** The reference app renders a fully working "Untitled" editor when `/Editor` is opened with a bogus or absent `projectId` (verified live: drawing works, the toolbar/panels/zoom all function). Auditing its persistence revealed a data bug: the unknown-id canvas saves SILENTLY into the most-recently-accessed project (a rectangle drawn at `projectId=test` landed in "Test Project One"). The v1.0.0 clone instead dead-ended at a "Project not found" error page.
+- **Decision:** `/Editor?projectId=<unknown>` and `/Editor` (no param) open a working Untitled editor (`UNTITLED_PROJECT` with `id: ""`). The store runs with an empty `projectId`; the FIRST autosave flush `POST`s `/api/projects` (name "Untitled", template blank), binds the returned id via the new `attachProject` store action, adopts it in the address bar with `history.replaceState`, then continues into the normal full-list element `PUT`. `exit()` flushes only when a real `store.projectId` exists. Pinned by `tests/e2e/untitled-editor.spec.ts` (bogus id renders Untitled, no-param renders Untitled, drawing creates the project and survives reload).
+- **Rationale:** Visual/functional parity for the 99% case (a working canvas instead of an error page) without cloning the 1% data-corruption bug (saves landing in the wrong project). `history.replaceState` (not `router.replace`) avoids a Next navigation churn/re-render while the save is in flight.
+- **Consequences:** Positive — no dead ends; no silent cross-project writes; reload lands on the real project. Negative — an empty-`projectId` store state that every future editor feature must respect (the autosave `ensureProject` seam is the single choke point).
+- **Alternatives Rejected:** Cloning the live behavior exactly (save into most-recent project) — silent data corruption; keeping the error page — visible parity gap; creating the project eagerly on mount — empty "Untitled" projects litter the dashboard for every casual visit (the lazy create only materializes what the user actually drew).
+
 ---
 
 ## 2. High-Level System Topology
@@ -146,8 +173,9 @@ How to use this document:
 ┌───────────────┴───────────────────────────────────▼──────────────────┐
 │ Next.js 16 App Router — single Node process (Bun runtime)            │
 │                                                                      │
-│  [Server pages]  /, /login, /recent, /teams, /editor                │
+│  [Server pages]  /, /Dashboard, /login, /Recent, /Teams, /Editor   │
 │    → getSessionUser() gate → redirect /login?from_url=…              │
+│    (legacy lowercase /recent… 307 → canonical via src/middleware.ts) │
 │                                                                      │
 │  [Route handlers]  /api/auth/*  /api/projects/**  /api/teams/**      │
 │    /api/stats  /api/health  /api/ai-assistant                        │
@@ -213,16 +241,20 @@ Layer 4: Client views — src/components/**
 digma/
 ├── prisma/
 │   ├── schema.prisma              # User, Project, DesignElement, Team, TeamMember
-│   └── seed.ts                    # demo user + 4 projects w/ elements + 3 teams
+│   └── seed.ts                    # demo user + 2 projects (6 elements on p1) + 1 team + 3 members
 ├── src/
 │   ├── app/
 │   │   ├── globals.css            # Tailwind 4 CSS-first: @theme tokens (single source)
 │   │   ├── layout.tsx             # Inter font, Toaster mount, metadata
 │   │   ├── page.tsx               # / — session-gated dashboard
 │   │   ├── login/page.tsx         # /login (public; honors ?from_url)
-│   │   ├── recent/page.tsx        # /recent — sorted project history
-│   │   ├── teams/page.tsx         # /teams — team management
-│   │   ├── editor/page.tsx        # /editor?projectId= — the canvas editor
+│   │   ├── Dashboard/page.tsx     # /Dashboard — the capitalized route the
+│   │   │                          # reference app's links point at (root /
+│   │   │                          # renders the same view)
+│   │   ├── Recent/page.tsx        # /Recent — sorted project history
+│   │   ├── Teams/page.tsx         # /Teams — team management
+│   │   ├── Editor/page.tsx        # /Editor?projectId= — the canvas editor
+│   │   │                          # (unknown/missing id → Untitled mode)
 │   │   └── api/
 │   │       ├── health/route.ts        # GET liveness (public)
 │   │       ├── auth/{login,logout,register,me}/route.ts
@@ -235,6 +267,7 @@ digma/
 │   │       ├── teams/[id]/members/route.ts      # POST invite
 │   │       ├── stats/route.ts         # GET dashboard Quick Stats
 │   │       └── ai-assistant/route.ts  # POST natural-language → operations
+│   ├── middleware.ts              # legacy lowercase → canonical 307s (ADR-008)
 │   ├── components/
 │   │   ├── app-header.tsx         # desktop nav + MobileNav (Sheet drawer) ← the fix
 │   │   ├── dashboard-view.tsx     # hero, Quick Stats, Continue Working, grid
@@ -531,7 +564,7 @@ shadcn/ui (Radix) primitives in `src/components/ui/`: button (cva variants), inp
 |---|------|-------------|
 | S1 | Every page and every data route requires a session; only `/api/health` and `/api/auth/*` are public | `getSessionUser()` + `redirect()` in pages; `requireSession()` first line in route handlers (returns 401 envelope); pinned by smoke + e2e suites |
 | S2 | Passwords are never stored or logged in plaintext | scrypt hash in `src/lib/auth.ts`; compare is constant-time |
-| S3 | Session tokens are unforgeable and time-bounded | HMAC-SHA256 over `userId.expiry` with `SESSION_SECRET`; verified on every request; 7-day TTL |
+| S3 | Session tokens are unforgeable and time-bounded | HMAC-SHA256 over `userId.expiry` with `AUTH_SECRET`; verified on every request; 7-day TTL |
 | S4 | Session cookie is httpOnly, same-site, path-scoped | cookie options in `auth.ts` (`digma_session`) |
 | S5 | Auth routes are rate-limited | `rate-limit.ts`: 10 attempts/IP/15 min → `429 RATE_LIMITED` + `Retry-After` (per-process) |
 | S6 | All client input is length-capped and shape-checked server-side | `validation.ts` + per-route clamps (trim, max lengths, enum membership, hex color regex, numeric clamps) |
@@ -572,12 +605,13 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — editor domain | `src/lib/editor.test.ts` | 10 | src/lib | Vitest |
 | Unit — AI assistant | `src/lib/ai-assistant.test.ts` | 13 | src/lib | Vitest |
 | Unit — rate limiter | `src/lib/rate-limit.test.ts` | 7 | src/lib | Vitest |
-| Unit — db-path contract | `tests/db-path.test.ts` | 16 | tests | Vitest |
+| Unit — db-path contract | `tests/db-path.test.ts` | 20 | tests | Vitest |
 | Unit — greeting | `src/lib/greeting.test.ts` | 4 | src/lib | Vitest |
 | Unit — team stats | `src/lib/team.test.ts` | 5 | src/lib | Vitest |
 | E2E — auth journeys | `tests/e2e/auth.spec.ts` | 6 | tests/e2e | Playwright |
 | E2E — workspace/editor | `tests/e2e/workspace.spec.ts` | 8 | tests/e2e | Playwright |
 | E2E — mobile navigation | `tests/e2e/mobile-navigation.spec.ts` | 9 | tests/e2e | Playwright |
+| E2E — untitled editor | `tests/e2e/untitled-editor.spec.ts` | 3 | tests/e2e | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 28 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns
@@ -595,10 +629,10 @@ No numeric coverage tooling is configured (deliberate: the check counts are the 
 
 - [ ] `bun run lint` clean (React 19 hook rules are errors, not warnings)
 - [ ] `bun run typecheck` clean (build has `ignoreBuildErrors` — this is the type gate)
-- [ ] `bun run test` → 54/54
+- [ ] `bun run test` → 58/58
 - [ ] `bun run build` succeeds; standalone assets copied
 - [ ] `./scripts/smoke-test.sh` → 28/28
-- [ ] `bun run test:e2e` → 23/23 (fresh e2e DB; :3100)
+- [ ] `bun run test:e2e` → 26/26 (fresh e2e DB; :3100)
 - [ ] Mobile navigation verified at 390×844 (the mobile suite IS this check)
 - [ ] No new `.env`, key files, or `db/*.db` staged
 
@@ -621,7 +655,7 @@ Output: standalone server (self-contained `server.js` + minimal `node_modules`).
 | Name | Required | Description | Default / Example |
 |------|----------|-------------|--------------------|
 | `DATABASE_URL` | yes (set by `.env`) | SQLite file URL, relative `file:` resolved by `db-path.ts` | `file:../db/custom.db` (from `prisma/`) |
-| `SESSION_SECRET` | no (dev fallback) | HMAC key for session tokens | any 32+ char string; set in production |
+| `AUTH_SECRET` | no (dev fallback) | HMAC key for session tokens (`src/lib/auth.ts` reads AUTH_SECRET; a v1.0.0 doc drift said SESSION_SECRET) | any 32+ char string; set in production |
 | `NODE_ENV` | set by scripts | `production` for `bun run start` | — |
 | `DIGMA_REPO_ROOT` | no | explicit repo-root override for db-path resolution (escape hatch) | absolute path |
 
@@ -659,7 +693,7 @@ Demo login: `demo@digma.app` / `Digma1234!`. Ensure no exported `DATABASE_URL` a
 | `bun run dev` | repo root | dev server :3000, logs tee'd to `dev.log` |
 | `bun run build` / `bun run start` | repo root | production standalone |
 | `bun run lint` / `bun run typecheck` | repo root | quality gates |
-| `bun run test` / `bun run test:watch` | repo root | unit tests (54) |
+| `bun run test` / `bun run test:watch` | repo root | unit tests (58) |
 | `bun run test:e2e` | repo root | Playwright suite (:3100, own DB) |
 | `./scripts/smoke-test.sh` | scripts/ | 28 HTTP checks (needs build) |
 | `bunx prisma generate` | repo root | regenerate client after schema edits |
@@ -682,9 +716,11 @@ Enforced by ESLint 9 (`eslint-config-next`): React 19 hook rules including `set-
 
 | Priority | Issue | Impact | Status |
 |----------|-------|--------|--------|
+| MEDIUM | Next 16 `redirects()` matches sources case-insensitively; the per-rule `caseSensitive` flag is not honored | Lowercase→Capital redirects CANNOT live in `next.config.ts` (self-loop); `src/middleware.ts` carries them instead | Mitigated (ADR-008; middleware is the sanctioned location) |
 | MEDIUM | Rate limiter is in-process (fixed window per process) | Counter resets on restart; N-instance deployments would each track separately | Open (accepted for demo scale; documented in S5/6.4) |
 | MEDIUM | `next.config.ts` sets `ignoreBuildErrors` | Type errors don't fail the build — `bun run typecheck` is a manual, mandatory gate | Open (intentional scaffold default; compensated by the gate order) |
 | LOW | `image` and `path` element types are vocabulary-only (tools select; creation routes through the store but the editors are minimal) | Feature-completeness vs. the reference's full Figma-like tooling | Open (documented scope cut) |
+| LOW | The live app's Share/Present/Explore-Templates buttons are no-ops; this clone implements working versions (clipboard share, presentation overlay, template-gallery toast) | Deviation is a deliberate superset — documented, not a bug | Accepted (kept) |
 | LOW | `package-lock.json` and `bun.lock` both tracked | Dual lockfiles can drift between npm/bun installs | Open (bun is canonical; npm lock retained from scaffold) |
 | LOW | No session revocation list | Logout only clears the client cookie; a stolen token lives to expiry | Open (accepted; stateless trade-off, ADR-003) |
 | LOW | No hosted CI | Quality depends on the local gate discipline | Open (deliberate, ADR-001) |
@@ -718,7 +754,9 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `prisma/schema.prisma` | 103 | User/Project/DesignElement/Team/TeamMember |
 | `prisma/seed.ts` | 144 | Demo workspace seed |
 | `tests/e2e/mobile-navigation.spec.ts` | 119 | Mobile nav regression suite @390×844 |
-| `tests/db-path.test.ts` | 156 | db-path resolution contract (16 checks) |
+| `tests/db-path.test.ts` | 156 | db-path resolution contract (20 checks, incl. DIGMA_REPO_ROOT) |
+| `src/middleware.ts` | 41 | Legacy lowercase → canonical 307 redirects (ADR-008) |
+| `tests/e2e/untitled-editor.spec.ts` | 58 | Untitled-editor contract: bogus/missing id, create-on-first-save (ADR-009) |
 | `scripts/smoke-test.sh` | 172 | 28 HTTP checks against the standalone build |
 | `src/lib/rate-limit.ts` | 53 | Fixed-window in-process limiter |
 | `src/lib/validation.ts` | 65 | Caps, enums, hex checks, clamps |
@@ -731,6 +769,7 @@ None of the above are release blockers for the deliverable; all are consciously 
 - **Project** — a named design file (canvas + background + template); the card unit on the dashboard.
 - **Canvas space** — coordinates at 100% zoom; the view transforms them by zoom/pan into viewport space.
 - **Local id** — optimistic client id (`local-…`) assigned by the store before the server round-trip; remapped to the server cuid after each save.
+- **Untitled mode** — the editor state for an unknown/missing `?projectId` (ADR-009): the canvas works with an empty store `projectId`; the first autosave creates the backing project and adopts its id in the URL.
 - **Replace contract** — persistence pattern: PUT the full element list; server deletes + recreates transactionally; order = array order = draw order.
 - **Envelope** — the API response shape `{ ok, data } | { ok, error: { code, message } }` from `src/lib/api.ts`.
 - **Degrade-not-fail** — the AI assistant's availability contract: SDK failure → deterministic fallback, same response schema.
