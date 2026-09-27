@@ -100,3 +100,60 @@ Work Log:
 
 Stage Summary:
 - Push complete and verified: git@github.com:nordeim/digma main @ 13e3bda; working tree clean; no key residue
+
+---
+Task ID: 14
+Agent: main
+Task: Session 2 kickoff — refresh, docs review, parity audit vs live app
+
+Work Log:
+- git pull (brought docs/session_1.md, worklog.md, docs/prompt-to-review.md — session logs only)
+- Re-read AGENTS/CLAUDE/README/PAD + session_1.md + worklog.md; verified skills/ excluded from lint (eslint ignores), compile (tsconfig exclude), vitest include (src+tests only), playwright testDir (tests/e2e) — all correct
+- Verified .env DATABASE_URL="file:../db/custom.db" + db/ at repo root (already the case); re-seeded dev DB after last session's testing wiped elements (replace contract)
+- Logged into live app fresh; deep parity audit: dashboard/Recent/Teams/editor/login/create-dialog/zoom/avatars/AI panel
+- Confirmed live mobile nav still missing (hidden md:flex, no hamburger) — clone's fix stands
+- Confirmed docs drift: code uses AUTH_SECRET (docs said SESSION_SECRET); PAD documents DIGMA_REPO_ROOT which does not exist in code; .env.example has unused NEXT_PUBLIC_SITE_URL
+- Live dead buttons (no-op on live): Explore Templates, Share, Present; live /Editor with unknown or missing projectId renders working "Untitled" editor whose saves silently land on the most-recent project (a live data bug — not to be cloned)
+
+Parity gaps validated against code (remediation plan):
+- R1 HIGH: live routes /Dashboard /Recent /Teams /Editor?projectId (capitalized) + / + /login (lowercase); clone all-lowercase. Touch: src/app folders (mv), app-header NAV_LINKS L21-23 + search L122, dashboard-view L89/L177, project-card L154, editor-view exit L312, page from_url redirects, e2e specs, smoke, docs
+- R2 HIGH: unknown/missing projectId → clone dead-ends ("Project not found"); live opens Untitled editor. Fix: untitled mode + create-on-first-save (POST /api/projects), history.replaceState; e2e spec first
+- R3 MEDIUM: zoom cluster → [100%][+][-] separate chips (no Fit); second avatar "S" green #10B981 (replaces "AI" purple); AI status "Working on it..."
+- R4 MEDIUM: db-path DIGMA_REPO_ROOT env anchor (TDD: unit tests first) — makes PAD truth
+- R5 HIGH: .env.example drop NEXT_PUBLIC_SITE_URL; docs SESSION_SECRET→AUTH_SECRET; refresh vitest/playwright stale ORBITAL comments
+- R6: create digma_SKILL.md (distill-codebase-skill + to-distill-project-into-skill)
+- R7: full gate + screenshots + commit + SSH push (main only)
+
+Stage Summary:
+- Parity audit complete; remediation plan R1-R7 validated file-by-file against the codebase
+
+---
+Task ID: 15
+Agent: main
+Task: Execute remediation R1-R7 (TDD) — route parity, Untitled editor, visual details, db-path env anchor, docs, skill, screenshots
+
+Work Log:
+- R4 (TDD, red→green): 4 new tests in tests/db-path.test.ts (DIGMA_REPO_ROOT first anchor, wins resolution, blank ignored, unset unchanged) → failed 2/4 → implemented env anchor in candidateRoots() (side-effect push) → 58/58 unit green
+- R2 (TDD): wrote tests/e2e/untitled-editor.spec.ts FIRST (bogus/missing projectId → Untitled editor; draw → creates project, URL adopts id, reload persists)
+- R1: git mv route folders → src/app/{Dashboard,Recent,Teams,Editor}; created /Dashboard alias page; updated all links (app-header NAV_LINKS + logo + search, dashboard-view openEditor + View all, project-card, recent-view card href, editor-view exit → /Dashboard); isNavActive() treats / and /Dashboard as one destination
+- R1 trap found & fixed: next.config redirects() with caseSensitive:true STILL self-looped (Next 16 matches redirect sources case-insensitively; per-rule flag not honored — ERR_TOO_MANY_REDIRECTS on /Recent). Isolated empirically (curl, no-redirects build). Fix: src/middleware.ts with exact-match Record lookup + matcher on the 4 legacy lowercase paths; query preserved; curl-verified (canonical 200, legacy 307)
+- R2 implementation: UNTITLED_PROJECT const; load-effect falls back to Untitled mode on unknown/missing/failing fetch (removed notFound dead-end); useAutosave ensureProject() seam (POST /api/projects → attachProject → history.replaceState); store.attachProject action; exit() flushes only with a real projectId
+- R3: zoom cluster → separate chips [100%][+][−] (removed Fit; reset stays Ctrl/Cmd+0); second avatar "S" green #10B981 (was "AI" purple); AI status "Working on it..." (was "Thinking…")
+- R5: .env.example rewritten to match code (DATABASE_URL, DIGMA_REPO_ROOT, AUTH_SECRET; removed unused NEXT_PUBLIC_SITE_URL); .env refreshed from example; vitest.config.ts + playwright.config.ts comments updated to Digma reality; README/AGENTS/CLAUDE/PAD updated (routes, counts 58/26, AUTH_SECRET, ADR-008 + ADR-009, revision block v1.1.0, known issues + glossary + key files + env table + tree)
+- R6: digma_SKILL.md created (475 lines, 20 sections + 2 appendices per to-distill-project-into-skill; validated: paths exist, counts match, no placeholders)
+- R7: gate green after last code change (lint, typecheck, 58 unit, build 20 routes incl. /Dashboard /Editor /Recent /Teams, 28 smoke, 26 e2e); browser-verified (login, nav active states, Untitled editor + draw-to-create + reload persistence, mobile drawer navigate-and-close, zoom/avatars); 11 screenshots captured to docs/screenshots/ (login, dashboard, recent, teams, editor, editor-untitled, mobile dashboard/menu/teams/editor, tablet); deleted test-created Untitled project and re-shot dashboard/recent clean
+
+Stage Summary:
+- All 7 remediation items done; full gate green; docs + skill aligned; screenshots fresh
+- New traps documented: Next 16 case-insensitive redirect sources (middleware is the sanctioned fix), title-attr vs aria-label locator semantics
+
+---
+Task ID: 16
+Agent: main
+Task: Commit + SSH push to git@github.com:nordeim/digma (main)
+
+Work Log:
+- git add -A; secret scan clean; commit with detailed message; push via docs/ssh_git_wrapper_v3.py (paramiko shim on PATH, key outside repo); remote ref verified == local HEAD; key shredded
+
+Stage Summary:
+- Remediation session 2 delivered to GitHub main
