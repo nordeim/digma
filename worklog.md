@@ -248,3 +248,18 @@ Work Log:
 
 Stage Summary:
 - Transform section now at full reference parity (Rotation number input + persisted Scale with the exact transform chain); chip chrome has no dead controls; AI robustness pinned against the reference's own crash; gate fully green; docs+skill+session log aligned
+
+---
+Task ID: 22
+Agent: main
+Task: Session 4 commit + SSH push
+
+Work Log:
+- Staged 27 files (+404/-79: scale domain+UI+schema, chip guard, 6 e2e checks, 4 unit checks, 13 screenshots, PAD v1.3.0 + ADR-012, README/AGENTS/CLAUDE/digma_SKILL v1.2.0, session_4 log, worklog); secret scan clean (scrubbed one new account-email mention; no .env/db/keys staged)
+- Final fast gates re-verified post-staging: lint, typecheck, 62/62 unit (build/smoke/e2e green against the same source earlier in the session)
+- Commit 1c375a9 on main: ":art: feat: per-element scale parity + responsive chip guard + AI no-crash pin"
+- SSH push: key -> /home/z/my-project/.ssh-keys/digma_deploy.key (0600, outside repo); fingerprint SHA256:4rAzu5gC41giPSWmIojTc1isH0FGoGiSgYJkDcMp54g verified; session-3 full-duplex paramiko shim reused from /home/z/my-project/bin; dry-run clean (fast-forward 682ebb5..1c375a9)
+- Real push via docs/ssh_git_wrapper_v3.py: remote verified refs/heads/main @ 1c375a9 == local HEAD; refs/remotes/origin/main synced; wrapper shredded its temp key; operator key shredded (random overwrite + remove)
+
+Stage Summary:
+- Session 4 delivered to GitHub main @ 1c375a9; working tree clean; in sync with origin/main
