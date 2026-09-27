@@ -157,3 +157,55 @@ Work Log:
 
 Stage Summary:
 - Remediation session 2 delivered to GitHub main
+
+---
+Task ID: 17
+Agent: main
+Task: Session 3 kickoff — refresh, docs review, fresh live parity audit
+
+Work Log:
+- git pull (brought docs/session_2.md + worklog updates; HEAD 012ad0c); re-read AGENTS/CLAUME/README/PAD/digma_SKILL.md/session_2.md; validated codebase alignment (capitalized routes, middleware, skills/ excluded from all gates, .env + .env.example match, vitest/playwright configs current)
+- Baseline fast gates green: lint, typecheck, 58/58 unit; dev server booted clean (unset DATABASE_URL); login + stats + projects API verified against seeded dev DB
+- Fresh agent-browser audit of live app (logged in sepnetflix2023@outlook.com): dashboard hero/stats structure identical; live mobile nav STILL missing (nav display:none at 390x844, only bell button visible, name/plan hidden md:block) — clone's mobile fix stands; mobile header parity exact
+- Editor deep-diff decoded live bottom-left chips: they are INDEPENDENT PANEL VISIBILITY TOGGLES (Layers w-60, Components second w-60, Properties right w-72), bar absolute bottom-4 left-4, chips px-3 py-1 rounded text-xs, ON bg-blue-600 text-white / OFF bg-[#161b22] text-gray-400; default Layers ON, Components OFF, Properties ON; Components panel = header + small blue + button + "No components yet"/"Create reusable design components"
+- Live layers header button TOGGLES: selected===layers ? 'Deselect All' : 'Select All' (verified 3 states incl. 0/0 quirk); counter 'N layer(s)' + '• N selected' when selection
+- Live properties panel measured: header block p-4 border-b + h3 text-sm font-medium text-white (Properties / Canvas Properties); body flex-1 overflow-y-auto p-4 space-y-6; sections h4 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3 with icons (move3d/corner-up-left/palette/layers; Transform iconless): Position & Size (X/Y/W/H grid-cols-2 gap-3, labels text-xs text-gray-300, h-8 inputs), Corner Radius (All Corners slider 0-75 + 4 per-corner inputs placeholder 0), Fill & Stroke (Solid/Gradient/Image pills + Fill Color swatch+hex + Stroke swatch+hex ph transparent + Stroke Width), Transform (Rotation slider -180..180), Opacity (slider 0-100); Canvas Properties = Background Color label + swatch + hex input (NO presets); live has NO delete button in panel
+- Clone gaps validated: G1 decorative bottom tabs (no toggle behavior), G2 hardcoded Deselect All, G3 properties/canvas headings + section layout diverge, G4 presets not on live, G5 dead tailwindcss-animate dep, G6 README drift (lowercase tree, NEXT_PUBLIC_SITE_URL row), G7 dual lockfiles
+- NEXT_PUBLIC_SITE_URL confirmed unused in src/; globals.css @theme clean (var() only in --font-sans)
+
+Stage Summary:
+- Audit complete; remediation plan R1 (panel toggles + ComponentsPanel + selectAll) / R2 (properties restructure) / R3 (Select All toggle) / R4 (deps cleanup) / R5 (docs) / R6 (gate + screenshots + push); TDD: e2e spec first
+
+---
+Task ID: 18
+Agent: main
+Task: Session 3 — TDD execution of R1-R6 (editor panel-chrome parity)
+
+Work Log:
+- TDD red: wrote tests/e2e/editor-panels.spec.ts FIRST (7 checks: chip defaults, Components/Properties/Layers toggles, Select All flip, Canvas Properties Background Color row, five properties sections) → 7 failed / 1 passed
+- R1 (green): panel-toggle chips implemented in editor-view.tsx — {layers, components, properties} visibility state (default ON/OFF/ON), floating chip bar absolute bottom-4 left-4 (ON bg-blue-600, OFF panel-dark, aria-pressed + "Toggle X panel" labels), conditional columns (Components = second w-60); new components-panel.tsx (header + blue + button + Package icon empty state, live-measured classes); editor root made relative
+- R3 (green): layers-panel Select All/Deselect All toggle (selectedIds.length === elements.length, faithful 0/0 quirk) + store selectAll() action (visible elements only)
+- R2 (green): properties-panel.tsx rewritten to the live five-section layout — fixed header block (h3 text-sm font-medium text-white), p-4 space-y-6 scrollable body, iconed h4 sections (Move3d/CornerUpLeft/Palette/Layers icons; Transform iconless): Position & Size (grid-cols-2 gap-3, stacked labels), Corner Radius (All Corners slider 0-75 + 4 linked per-corner inputs with placeholder 0), Fill & Stroke (Solid/Gradient/Image pills, only Solid functional; HexColorRow swatch+hex rows), Transform (rotation slider -180..180), Opacity (0-100 slider); Canvas Properties = single Background Color row (presets removed — not on the live panel); no Delete button (live parity); native range sliders (no new dependency)
+- Spec bugs found during red→green: hardcoded DEV-DB projectId (e2e DB has own ids → navigate via dashboard card click); AI panel example text contains "selected" (assert with /• N selected/); duplicate "Background Color" label (made HexColorRow label optional)
+- R4: removed dead tailwindcss-animate dependency (unused since Tailwind 4 CSS-first uses tw-animate-css); deleted package-lock.json (bun.lock canonical — closes PAD §10 dual-lockfile issue); bun install refreshed lock
+- Full gate GREEN: lint, typecheck, 58/58 unit, build (20 routes), 28/28 smoke, 33/33 e2e (26 + 7 new editor-panels; total includes setup project)
+- Browser verification: chips default state + toggle behavior + components panel + five sections verified against the live DOM; live mobile nav still missing (clone fix stands); mobile header parity exact (bell only, name/plan + search hidden)
+- 12 screenshots captured to docs/screenshots/ (11 refreshed + new 12-editor-components.png)
+- Docs realigned: README (route tree casing + middleware + components-panel, NEXT_PUBLIC_SITE_URL row dropped, e2e 33, panel-toggle feature row, gallery + 12th shot), PAD v1.2.0 (new revision block, ADR-010 panel toggles, ADR-011 properties five-section layout, tree, test distribution + checklist 33, §10 dual-lockfile row removed + scope cuts updated, key files), AGENTS.md (gate line 33 + bun.lock note + 3 new architecture facts), CLAUDE.md (counts + panel-toggle/properties facts), digma_SKILL.md v1.1.0 (counts, component inventory, §9 anti-patterns 16-17, Appendix B rows, breakpoint table)
+
+Stage Summary:
+- Editor panel chrome now at reference parity: functional panel toggles, Components panel, Select All flip, five-section properties panel, Background Color row; gate fully green; docs + skill aligned
+
+---
+Task ID: 19
+Agent: main
+Task: Commit + SSH push (session 3)
+
+Work Log:
+- Staged 25 files (+622/-9,693: code + 12 screenshots + 5 docs + spec; secret scan clean, no .env/db/keys tracked)
+- Commit 0e40ba2 on main: ":art: feat: editor panel-chrome parity — panel toggle chips, Components panel, five-section properties"
+- SSH push: key -> /home/z/my-project/.ssh-keys/digma_deploy.key (0600, outside repo); first dry-run attempt TIMED OUT — root cause: my from-memory shim reconstruction lacked stdin bridging (git pack protocol deadlocks). Replaced with the runbook's verbatim Appendix A full-duplex select()-based shim -> dry-run clean (fast-forward 012ad0c..0e40ba2)
+- Real push via docs/ssh_git_wrapper_v3.py: remote verified refs/heads/main @ 0e40ba2 == local HEAD; refs/remotes/origin/main synced; wrapper shredded its temp key + sidecar; operator key shredded (random overwrite + remove); key dir empty
+
+Stage Summary:
+- Session 3 delivered to GitHub main @ 0e40ba2; working tree clean; in sync with origin/main
