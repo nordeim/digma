@@ -1,14 +1,49 @@
 "use client";
 
 import * as React from "react";
+import { CornerUpLeft, Layers, Move3d, Palette, Type } from "lucide-react";
 
 import { useEditorStore } from "./editor-store";
-import { CANVAS_BACKGROUND_PRESETS } from "@/lib/editor";
+import { toast } from "@/hooks/use-toast";
 
-// The Properties panel (right edge, ~w-72): Position & Size (X/Y/W/H),
-// corner radius, fill/stroke, opacity, rotation, text properties for text
-// elements, and Canvas Properties (background color) when nothing is
-// selected — mirroring the reference's Properties + Canvas Properties cards.
+// The Properties panel (right edge, w-72) — restructured to the reference
+// DOM (session-3 audit): a fixed header block (border-b) carrying the panel
+// title, a scrollable body (p-4 space-y-6), and the reference's section
+// layout with iconed h4 headings — Position & Size, Corner Radius,
+// Fill & Stroke (Solid/Gradient/Image pills), Transform, Opacity — plus the
+// Text section for text elements. Nothing selected renders "Canvas
+// Properties" with a single Background Color row (swatch + hex input); the
+// reference has no preset grid there. The panel carries no Delete button —
+// the reference deletes via the canvas (Delete key) only.
+
+type SectionHeadingProps = {
+  icon?: "position" | "radius" | "fill" | "opacity" | "text";
+  children: React.ReactNode;
+};
+
+const SECTION_ICONS = {
+  position: Move3d,
+  radius: CornerUpLeft,
+  fill: Palette,
+  opacity: Layers,
+  text: Type,
+} as const;
+
+function SectionHeading({ icon, children }: SectionHeadingProps) {
+  const Icon = icon ? SECTION_ICONS[icon] : null;
+  return (
+    <h4
+      className={
+        Icon
+          ? "mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-400"
+          : "mb-3 text-xs font-medium uppercase tracking-wider text-gray-400"
+      }
+    >
+      {Icon ? <Icon className="h-3 w-3" aria-hidden /> : null}
+      {children}
+    </h4>
+  );
+}
 
 function NumberField({
   label,
@@ -17,7 +52,8 @@ function NumberField({
   min,
   max,
   step = 1,
-  suffix,
+  hideZero = false,
+  width,
 }: {
   label: string;
   value: number;
@@ -25,76 +61,143 @@ function NumberField({
   min?: number;
   max?: number;
   step?: number;
-  suffix?: string;
+  /** Render 0 as an empty input with a "0" placeholder (reference style). */
+  hideZero?: boolean;
+  /** Tailwind width class for compact inputs (e.g. "w-16"). */
+  width?: string;
 }) {
-  const rounded = String(Math.round(value * 100) / 100);
-  const [draft, setDraft] = React.useState(rounded);
+  const display = hideZero && value === 0 ? "" : String(Math.round(value * 100) / 100);
+  const [draft, setDraft] = React.useState(display);
   const [prevValue, setPrevValue] = React.useState(value);
 
   // The sanctioned "adjust state during render" pattern: when the external
   // value changes (move/resize), the draft follows — no effect, no cascade.
   if (prevValue !== value) {
     setPrevValue(value);
-    setDraft(rounded);
+    setDraft(display);
   }
 
   return (
-    <label className="flex items-center gap-2">
-      <span className="w-4 text-[10px] font-medium uppercase text-gray-500">{label}</span>
-      <span className="relative flex-1">
-        <input
-          type="number"
-          value={draft}
-          min={min}
-          max={max}
-          step={step}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            const parsed = Number(event.target.value);
-            if (Number.isFinite(parsed)) onChange(parsed);
-          }}
-          className="h-7 w-full rounded-md border border-[#30363d] bg-[#0d1117] px-2 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
-        />
-        {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600">{suffix}</span>}
-      </span>
-    </label>
+    <div>
+      <span className="text-xs font-medium text-gray-300">{label}</span>
+      <input
+        type="number"
+        aria-label={label}
+        value={draft}
+        placeholder={hideZero ? "0" : undefined}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          const parsed = Number(event.target.value);
+          if (Number.isFinite(parsed)) onChange(parsed);
+        }}
+        className={`mt-1 h-8 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none ${
+          width ?? "w-full"
+        }`}
+      />
+    </div>
   );
 }
 
-function ColorField({
+/**
+ * The reference's color row: label above, then a swatch input + hex text
+ * input side by side (Fill Color, Stroke, Background Color). An empty text
+ * field clears a nullable value (stroke → none); partial hexes are kept as
+ * drafts and only commit on a full #rrggbb match.
+ */
+function HexColorRow({
   label,
   value,
   onChange,
 }: {
-  label: string;
+  /** Omitted when the section heading already carries the label (Canvas
+      Properties' single Background Color row — reference layout). */
+  label?: string;
   value: string | null;
   onChange: (value: string | null) => void;
 }) {
+  const [draft, setDraft] = React.useState(value ?? "");
+  const [prevValue, setPrevValue] = React.useState(value);
+
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setDraft(value ?? "");
+  }
+
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-[10px] font-medium uppercase text-gray-500">{label}</span>
-      <div className="flex items-center gap-2">
-        {value && (
-          <span className="font-mono text-[10px] text-gray-500">{value.toUpperCase()}</span>
-        )}
-        <label className="relative h-6 w-6 cursor-pointer" aria-label={`${label} color`}>
-          <input
-            type="color"
-            value={value ?? "#000000"}
-            onChange={(event) => onChange(event.target.value)}
-            className="h-6 w-6 cursor-pointer rounded border border-[#30363d] bg-transparent p-0.5"
-          />
-        </label>
-        {value && (
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="text-[10px] text-gray-500 transition-colors hover:text-gray-300"
-            aria-label={`Clear ${label}`}
-          >
-            clear
-          </button>
-        )}
+    <div>
+      {label ? <span className="text-xs font-medium text-gray-300">{label}</span> : null}
+      <div className="mt-1 flex items-center gap-2">
+        <input
+          type="color"
+          aria-label={`${label ?? "Color"} swatch`}
+          value={value ?? "#000000"}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-8 w-8 rounded border border-[#30363d] bg-transparent"
+        />
+        <input
+          type="text"
+          aria-label={`${label} hex`}
+          value={draft}
+          placeholder="transparent"
+          spellCheck={false}
+          onChange={(event) => {
+            const next = event.target.value;
+            setDraft(next);
+            if (next === "") {
+              onChange(null);
+            } else if (/^#[0-9a-fA-F]{6}$/.test(next)) {
+              onChange(next);
+            }
+          }}
+          className="h-8 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Native-range slider row (the reference uses a Radix slider — visually the
+ * blue accent track/thumb; the native input is the zero-dependency
+ * equivalent and is keyboard/screen-reader accessible out of the box).
+ */
+function SliderRow({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+  format,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (value: number) => void;
+  format?: (value: number) => string;
+}) {
+  return (
+    <div>
+      <span className="text-xs font-medium text-gray-300">{label}</span>
+      <div className="mt-2 flex items-center gap-3">
+        <input
+          type="range"
+          aria-label={label}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+          className="h-1.5 flex-1 accent-blue-600"
+        />
+        <span className="w-8 text-right text-xs text-gray-300" aria-live="polite">
+          {format ? format(value) : Math.round(value)}
+        </span>
       </div>
     </div>
   );
@@ -112,198 +215,182 @@ export function PropertiesPanel() {
   const update = (patch: Parameters<ReturnType<typeof useEditorStore.getState>["updateElements"]>[1]) =>
     useEditorStore.getState().updateElements(selectedIds, patch);
 
+  const fillModeRef = React.useRef<HTMLDivElement>(null);
+
   return (
-    <div className="editor-scroll flex h-full w-full flex-col overflow-y-auto bg-[#161b22]">
-      {single ? (
-        <div className="space-y-5 p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Properties</h3>
+    <div className="flex h-full flex-col">
+      <div className="border-b border-[#30363d] p-4">
+        <h3 className="text-sm font-medium text-white">
+          {single ? "Properties" : selected.length > 1 ? `${selected.length} elements selected` : "Canvas Properties"}
+        </h3>
+      </div>
 
-          <section aria-label="Position and size" className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Position & Size</p>
-            <div className="grid grid-cols-2 gap-2">
-              <NumberField label="X" value={single.x} onChange={(x) => update({ x })} step={1} />
-              <NumberField label="Y" value={single.y} onChange={(y) => update({ y })} step={1} />
-              <NumberField label="W" value={single.width} onChange={(width) => update({ width: Math.max(width, 1) })} min={1} step={1} />
-              <NumberField
-                label="H"
-                value={single.height}
-                onChange={(height) => update({ height: single.type === "line" ? Math.max(height, 0) : Math.max(height, 1) })}
-                min={0}
-                step={1}
-              />
-            </div>
-          </section>
-
-          {single.type !== "line" && (
-            <section aria-label="Appearance" className="space-y-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Appearance</p>
-              <NumberField
-                label="R"
-                value={single.radius}
-                onChange={(radius) => update({ radius: Math.max(radius, 0) })}
-                min={0}
-              />
-              <NumberField
-                label="∠"
-                value={single.rotation}
-                onChange={(rotation) => update({ rotation })}
-                suffix="°"
-              />
-              <div className="flex items-center gap-2">
-                <span className="w-8 text-[10px] font-medium uppercase text-gray-500">Opacity</span>
-                <input
-                  type="range"
+      <div className="editor-scroll flex-1 space-y-6 overflow-y-auto p-4">
+        {single ? (
+          <>
+            <section aria-label="Position and size">
+              <SectionHeading icon="position">Position &amp; Size</SectionHeading>
+              <div className="grid grid-cols-2 gap-3">
+                <NumberField label="X" value={single.x} onChange={(x) => update({ x })} />
+                <NumberField label="Y" value={single.y} onChange={(y) => update({ y })} />
+                <NumberField label="W" value={single.width} onChange={(width) => update({ width: Math.max(width, 1) })} min={1} />
+                <NumberField
+                  label="H"
+                  value={single.height}
+                  onChange={(height) => update({ height: single.type === "line" ? Math.max(height, 0) : Math.max(height, 1) })}
                   min={0}
-                  max={1}
-                  step={0.01}
-                  value={single.opacity}
-                  onChange={(event) => update({ opacity: Number(event.target.value) })}
-                  className="flex-1 accent-blue-500"
-                  aria-label="Opacity"
                 />
-                <span className="w-8 text-right text-[10px] text-gray-500">{Math.round(single.opacity * 100)}%</span>
               </div>
             </section>
-          )}
 
-          <section aria-label="Fill and stroke" className="space-y-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Fill & Stroke</p>
-            <ColorField label="Fill" value={single.fill} onChange={(fill) => update({ fill })} />
-            <ColorField label="Stroke" value={single.stroke} onChange={(stroke) => update({ stroke })} />
-            {single.stroke && (
-              <NumberField
-                label="W"
-                value={single.strokeWidth}
-                onChange={(strokeWidth) => update({ strokeWidth: Math.max(strokeWidth, 0) })}
+            <section aria-label="Corner radius">
+              <SectionHeading icon="radius">Corner Radius</SectionHeading>
+              <SliderRow
+                label="All Corners"
+                value={single.radius}
                 min={0}
-                suffix="px"
+                max={75}
+                onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), 75) })}
               />
-            )}
-          </section>
-
-          {single.type === "text" && (
-            <section aria-label="Text" className="space-y-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Text</p>
-              <textarea
-                value={single.text ?? ""}
-                onChange={(event) => update({ text: event.target.value })}
-                rows={3}
-                className="w-full rounded-md border border-[#30363d] bg-[#0d1117] p-2 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
-                aria-label="Text content"
-              />
-              <NumberField
-                label="S"
-                value={single.fontSize ?? 16}
-                onChange={(fontSize) => update({ fontSize: Math.max(fontSize, 1) })}
-                min={1}
-                suffix="px"
-              />
-              <label className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-medium uppercase text-gray-500">Weight</span>
-                <select
-                  value={single.fontWeight ?? "500"}
-                  onChange={(event) => update({ fontWeight: event.target.value })}
-                  className="h-7 rounded-md border border-[#30363d] bg-[#0d1117] px-2 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
-                >
-                  {["300", "400", "500", "600", "700", "800"].map((weight) => (
-                    <option key={weight} value={weight}>
-                      {weight}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-medium uppercase text-gray-500">Align</span>
-                <select
-                  value={single.textAlign ?? "left"}
-                  onChange={(event) => update({ textAlign: event.target.value })}
-                  className="h-7 rounded-md border border-[#30363d] bg-[#0d1117] px-2 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
-                >
-                  {["left", "center", "right"].map((align) => (
-                    <option key={align} value={align}>
-                      {align}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/* Per-corner inputs — linked corners: the element model keeps a
+                  single radius, so each input edits the shared value (the
+                  Figma "linked corners" behavior; per-corner splits are a
+                  documented scope cut, PAD §10). */}
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <NumberField label="Top Left" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
+                <NumberField label="Top Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
+                <NumberField label="Bottom Left" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
+                <NumberField label="Bottom Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
+              </div>
             </section>
-          )}
 
-          <button
-            type="button"
-            onClick={() => useEditorStore.getState().deleteElements(selectedIds)}
-            className="w-full rounded-md border border-[#30363d] py-1.5 text-xs text-red-400 transition-colors hover:border-red-500/40 hover:bg-red-500/10"
-          >
-            Delete {selected.length > 1 ? `${selected.length} elements` : "element"}
-          </button>
-        </div>
-      ) : selected.length > 1 ? (
-        <div className="space-y-4 p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-            {selected.length} elements selected
-          </h3>
-          <div className="space-y-2">
-            <ColorField
-              label="Fill"
-              value={null}
+            <section aria-label="Fill and stroke">
+              <SectionHeading icon="fill">Fill &amp; Stroke</SectionHeading>
+              <div className="mb-3 flex gap-1" ref={fillModeRef}>
+                {(["Solid", "Gradient", "Image"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={mode === "Solid"}
+                    onClick={() => {
+                      if (mode !== "Solid") {
+                        toast.show({
+                          title: "Not available yet",
+                          description: "Gradient and image fills are a documented scope cut — solid fills only.",
+                        });
+                      }
+                    }}
+                    className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                      mode === "Solid" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-3">
+                <HexColorRow label="Fill Color" value={single.fill} onChange={(fill) => fill && update({ fill })} />
+                <HexColorRow label="Stroke" value={single.stroke} onChange={(stroke) => update({ stroke })} />
+                {single.stroke && (
+                  <NumberField
+                    label="Stroke Width"
+                    value={single.strokeWidth}
+                    onChange={(strokeWidth) => update({ strokeWidth: Math.max(strokeWidth, 0) })}
+                    min={0}
+                  />
+                )}
+              </div>
+            </section>
+
+            <section aria-label="Transform">
+              <SectionHeading>Transform</SectionHeading>
+              <SliderRow
+                label="Rotation"
+                value={single.rotation}
+                min={-180}
+                max={180}
+                onChange={(rotation) => update({ rotation })}
+                format={(v) => `${Math.round(v)}°`}
+              />
+            </section>
+
+            <section aria-label="Opacity">
+              <SectionHeading icon="opacity">Opacity</SectionHeading>
+              <SliderRow
+                label="Opacity"
+                value={Math.round(single.opacity * 100)}
+                min={0}
+                max={100}
+                onChange={(pct) => update({ opacity: Math.min(Math.max(pct, 0), 100) / 100 })}
+                format={(v) => `${Math.round(v)}%`}
+              />
+            </section>
+
+            {single.type === "text" && (
+              <section aria-label="Text" className="space-y-3">
+                <SectionHeading icon="text">Text</SectionHeading>
+                <textarea
+                  value={single.text ?? ""}
+                  onChange={(event) => update({ text: event.target.value })}
+                  rows={3}
+                  aria-label="Text content"
+                  className="w-full rounded-md border border-[#30363d] bg-[#0d1117] p-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                />
+                <NumberField
+                  label="Font Size"
+                  value={single.fontSize ?? 16}
+                  onChange={(fontSize) => update({ fontSize: Math.max(fontSize, 1) })}
+                  min={1}
+                />
+                <label className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-gray-300">Weight</span>
+                  <select
+                    value={single.fontWeight ?? "500"}
+                    onChange={(event) => update({ fontWeight: event.target.value })}
+                    aria-label="Font weight"
+                    className="h-8 rounded-md border border-[#30363d] bg-[#0d1117] px-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                  >
+                    {["300", "400", "500", "600", "700", "800"].map((weight) => (
+                      <option key={weight} value={weight}>
+                        {weight}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-gray-300">Align</span>
+                  <select
+                    value={single.textAlign ?? "left"}
+                    onChange={(event) => update({ textAlign: event.target.value })}
+                    aria-label="Text alignment"
+                    className="h-8 rounded-md border border-[#30363d] bg-[#0d1117] px-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                  >
+                    {["left", "center", "right"].map((align) => (
+                      <option key={align} value={align}>
+                        {align}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </section>
+            )}
+          </>
+        ) : selected.length > 1 ? (
+          <section aria-label="Multiple selection" className="space-y-3">
+            <HexColorRow
+              label="Fill Color"
+              value={selected[0]?.fill ?? null}
               onChange={(fill) => fill && update({ fill })}
             />
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => useEditorStore.getState().deleteElements(selectedIds)}
-              className="flex-1 rounded-md border border-[#30363d] py-1.5 text-xs text-red-400 transition-colors hover:border-red-500/40 hover:bg-red-500/10"
-            >
-              Delete selection
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-5 p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Canvas Properties</h3>
-          <section aria-label="Background color" className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Background Color</p>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Canvas background presets">
-              {CANVAS_BACKGROUND_PRESETS.map((preset) => (
-                <button
-                  key={preset.title}
-                  type="button"
-                  title={preset.title}
-                  aria-label={`Canvas background ${preset.title}`}
-                  aria-pressed={backgroundColor.toLowerCase() === preset.value.toLowerCase()}
-                  onClick={() => setBackgroundColor(preset.value)}
-                  className="h-7 w-7 rounded-full border-2"
-                  style={{
-                    backgroundColor: preset.value,
-                    borderColor:
-                      backgroundColor.toLowerCase() === preset.value.toLowerCase() ? "#3B82F6" : "#30363d",
-                  }}
-                />
-              ))}
-              <label
-                className="flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-[#30363d]"
-                title="Custom canvas color"
-                aria-label="Custom canvas color"
-              >
-                <input
-                  type="color"
-                  value={backgroundColor}
-                  onChange={(event) => setBackgroundColor(event.target.value)}
-                  className="h-full w-full cursor-pointer border-0 bg-transparent p-0.5"
-                />
-              </label>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] text-gray-500">{backgroundColor.toUpperCase()}</span>
-            </div>
+            <HexColorRow label="Stroke" value={selected[0]?.stroke ?? null} onChange={(stroke) => update({ stroke })} />
           </section>
-          <p className="text-[10px] leading-relaxed text-gray-600">
-            Select an element to edit its properties. Draw with the toolbar (R rectangle, O ellipse, L
-            line, T text, F frame), pan with Space or the Hand tool, zoom with Ctrl+wheel.
-          </p>
-        </div>
-      )}
+        ) : (
+          <section aria-label="Background color">
+            <h4 className="mb-3 text-xs font-medium uppercase tracking-wider text-gray-400">Background Color</h4>
+            <HexColorRow value={backgroundColor} onChange={(color) => color && setBackgroundColor(color)} />
+          </section>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite chdir trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.0.0
+version: 1.1.0
 last_updated: 2026-09-27
-project_state: "58 unit checks green · 26 Playwright checks green · 28 smoke checks green · build 20 routes"
+project_state: "58 unit checks green · 33 Playwright checks green · 28 smoke checks green · build 20 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -69,7 +69,7 @@ project_state: "58 unit checks green · 26 Playwright checks green · 28 smoke c
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
 | Unit tests | Vitest | ≥5.0.1 | 58 checks; `*.test.ts` only |
-| E2E tests | Playwright | ≥1.63.0 | 26 checks; standalone server on :3100 with its own `db/e2e.db` |
+| E2E tests | Playwright | ≥1.63.0 | 33 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
 
@@ -123,7 +123,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 
 ## §5 Component Architecture & Patterns
 
-**Counts:** 22 component files under `src/components/` (18 marked `"use client"`; the pages stay server components). 5-layer model (details in PAD §3.1): Persistence → pure domain (`src/lib`) → API routes → server pages → client views. Dependencies point downward only.
+**Counts:** 23 component files under `src/components/` (19 marked `"use client"`; the pages stay server components). 5-layer model (details in PAD §3.1): Persistence → pure domain (`src/lib`) → API routes → server pages → client views. Dependencies point downward only.
 
 **Route map (v1.1.0, ADR-008):** `/` and `/Dashboard` (same view — the reference's links point at the capitalized one), `/login` (lowercase, like the reference), `/Recent`, `/Teams`, `/Editor?projectId=` (unknown/missing id → Untitled mode, ADR-009). Legacy lowercase `/recent|/teams|/editor|/dashboard` 307 via `src/middleware.ts`.
 
@@ -137,11 +137,13 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 | RecentView | `src/components/recent-view.tsx` | Sort combobox (Last Opened/Last Modified/Date Created/Name), list/grid toggle, "N files found" |
 | TeamsView | `src/components/teams-view.tsx` | Team cards, member chips, invite dialog, inline confirm deletes |
 | LoginScreen | `src/components/login-screen.tsx` | Social buttons (parity, degrade to toast), email/password, `?from_url=` return |
-| EditorView | `src/components/editor/editor-view.tsx` | Shell + top bar + zoom cluster + autosave hook + Untitled-mode load + Present overlay |
-| editor-store | `src/components/editor/editor-store.ts` | THE Zustand store (§6) |
+| EditorView | `src/components/editor/editor-view.tsx` | Shell + top bar + zoom cluster + autosave hook + Untitled-mode load + Present overlay + the panel-toggle chips (ADR-010) |
+| editor-store | `src/components/editor/editor-store.ts` | THE Zustand store (§6) — incl. `selectAll()` |
 | Canvas | `src/components/editor/canvas.tsx` | `role="application" aria-label="Design canvas"`; pointer draw/move/resize/select; wheel pan + ctrl-zoom |
 | Toolbar | `src/components/editor/toolbar.tsx` | 8 tools; buttons carry `title="{Tool} ({shortcut})"` |
-| LayersPanel / PropertiesPanel | `src/components/editor/*.tsx` | Visibility/lock/reorder/rename; geometry/fill/stroke/text props |
+| LayersPanel | `src/components/editor/layers-panel.tsx` | Visibility/lock/reorder/rename; Select All ↔ Deselect All header toggle (`selected === layers ? Deselect : Select`, incl. the 0/0 quirk) |
+| ComponentsPanel | `src/components/editor/components-panel.tsx` | The reference's second w-60 column (ADR-010): header + blue "+" + "No components yet" empty state; presentational (scope cut) |
+| PropertiesPanel | `src/components/editor/properties-panel.tsx` | The reference's five-section layout (ADR-011): Position & Size, Corner Radius (slider + linked per-corner), Fill & Stroke (Solid/Gradient/Image pills + swatch/hex), Transform, Opacity; Canvas Properties → Background Color row when nothing selected |
 | AiAssistant | `src/components/editor/ai-assistant.tsx` | Chat UI; "Working on it..." while sending; applies `{reply, operations[]}` |
 
 **React 19 rules that bit us (all fixed with sanctioned patterns):**
@@ -209,6 +211,8 @@ client applies operations: add | update (may carry scale) | delete
 13. **`AlertDialog` global confirms.** Deletes confirm inline (team cards swap to "Yes, Delete / Cancel"; projects use the ellipsis menu's confirm step).
 14. **Justified list items / sentence-splitting line breaks.** Lists are left-aligned; one item per line.
 15. **Testing `skills/`.** The skills catalog is excluded from lint, compile, and every test config — keep it that way.
+16. **Modeling the reference's panel chips as exclusive tabs.** The bottom-left `Layers | Components | Properties` chips are INDEPENDENT visibility toggles (Components ADDS a second w-60 column beside Layers; Properties removes the right w-72 panel; default ON/OFF/ON) — verified by replaying clicks against the live DOM. Exclusive Radix Tabs are the wrong semantics (ADR-010). Chip state: `bg-blue-600 text-white` = on.
+17. **Inventing reference UI that isn't there.** The properties panel's background preset grid was never on the reference (presets live in the Create-Project dialog only) — the reference's Canvas Properties is a single Background Color swatch + hex row. Measure before you build; re-measure before you "fix".
 
 ## §10 Debugging Guide
 
@@ -234,7 +238,7 @@ bun run typecheck     # clean — the build will NOT catch types
 bun run test          # 58/58
 bun run build         # 20 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 28/28 (health, auth gate, CRUD, AI, rate limit, logout)
-bun run test:e2e      # 26/26 (auth 6, workspace 8, mobile-nav 9, untitled 3)
+bun run test:e2e      # 33/33 (auth 6, workspace 8, mobile-nav 9, untitled 3, editor-panels 7)
 git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 ```
 
@@ -381,7 +385,7 @@ The app has exactly TWO behavioral breakpoints plus the drawer-specific mobile r
 
 | Breakpoint | What changes |
 |---|---|
-| `< md` (768px) | Hamburger appears (`md:hidden`); desktop nav `hidden`; editor panels collapse (toolbar stays); hero stacks |
+| `< md` (768px) | Hamburger appears (`md:hidden`); desktop nav `hidden`; editor layers/components panels hidden and the right properties panel hidden below `lg` — the canvas keeps full width (the reference squeezes all columns instead — a bug not cloned); the panel chips stay visible; hero stacks |
 | `≥ md` | Desktop nav; no hamburger EVER (e2e-pinned: "the desktop nav shows the links and never the hamburger") |
 | `768px` exactly | Tablet check: nav links visible, no hamburger needed (e2e-pinned) |
 | `390×844` | The pinned mobile-nav e2e viewport (drawer, focus trap, scroll lock, 44px targets) |
@@ -468,6 +472,8 @@ Prisma models (5): `User` (email unique, scrypt passwordHash, avatarColor), `Pro
 | AI pipeline | `src/app/api/ai-assistant/route.ts` + `src/lib/ai-assistant.ts` |
 | Mobile-nav fix | `src/components/app-header.tsx` (MobileNav) + `tests/e2e/mobile-navigation.spec.ts` |
 | Untitled contract | `tests/e2e/untitled-editor.spec.ts` |
+| Panel-toggle chips (ADR-010) | `src/components/editor/editor-view.tsx` (chips bar) + `src/components/editor/components-panel.tsx` + `tests/e2e/editor-panels.spec.ts` |
+| Properties five-section layout (ADR-011) | `src/components/editor/properties-panel.tsx` |
 | Smoke suite | `scripts/smoke-test.sh` (28 checks) |
 | Design tokens | `src/app/globals.css` `@theme` |
 | Push procedure | `docs/ssh_git_wrapper_v3.py` + `docs/how-to-git-push-using-ssh-wrapper_SKILL.md` |

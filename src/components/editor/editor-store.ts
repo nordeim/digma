@@ -62,6 +62,7 @@ type EditorStore = {
 
   // selection
   select: (ids: string[], additive?: boolean) => void;
+  selectAll: () => void;
   deselectAll: () => void;
 
   // element mutations
@@ -155,6 +156,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     })),
 
   deselectAll: () => set({ selectedIds: [] }),
+  selectAll: () => set({ selectedIds: get().elements.filter((el) => el.visible).map((el) => el.id) }),
 
   addElement: (partial) => get().addElements([partial])[0]!,
 

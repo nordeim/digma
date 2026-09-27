@@ -20,7 +20,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | 🎨 **Canvas design editor** | DOM-element canvas over a 20px grid: draw rectangles/ellipses/lines/text/frames, marquee + click + shift-click selection, drag-move, 8-handle resize, rotate, opacity, fill/stroke/radius — all inline-styled like the reference |
 | 🧰 **Tool rail + shortcuts** | Select/Hand/Frame/Rectangle/Ellipse/Line/Pen/Text/Image with `V H F R O L T` shortcuts, Space-to-pan, Ctrl+wheel zoom, `Delete`, `Ctrl+Z`/`Ctrl+Shift+Z`, `Ctrl+0` reset |
 | 🗂 **Layers panel** | Reverse-ordered layer list with drag-reorder, per-layer visibility (eye) and lock, double-click rename, live "N layers • N selected" counter |
-| ⚙️ **Properties panel** | X/Y/W/H, radius, rotation, opacity, fill/stroke color pickers, text content/size/weight/align; Canvas Properties (background presets + custom) when nothing is selected |
+| ⚙️ **Properties panel** | The reference's five sections — Position & Size (X/Y/W/H), Corner Radius (slider + per-corner), Fill & Stroke (Solid/Gradient/Image pills, swatch + hex rows), Transform (rotation slider), Opacity — plus Text properties; "Canvas Properties" with a Background Color swatch + hex row when nothing is selected. Panel-toggle chips (bottom-left) independently show/hide the Layers, Components, and Properties panels |
 | 🤖 **AI design assistant** | Chat panel below the canvas — LLM (`z-ai-web-dev-sdk`, server-side) parses instructions into element operations with a deterministic fallback parser ("Add 3 red circles", "Create a login form") — degrade-not-fail, never hard-fails |
 | 🕐 **Autosave + history** | 800ms-debounced full-list `PUT` with id remapping, "Saved / Saving… / Unsaved" badge, undo/redo history (60 snapshots) |
 | 🖥 **Present mode** | Fullscreen, fit-to-viewport presentation of the canvas (Escape to exit); Share copies a deep link |
@@ -59,6 +59,13 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 
 </details>
 
+<details>
+<summary>Editor — panel toggles + Components panel (the chip bar)</summary>
+
+![Editor with components panel](docs/screenshots/12-editor-components.png)
+
+</details>
+
 ## Tech Stack
 
 | Layer | Technology | Version | Purpose |
@@ -70,7 +77,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | Components | shadcn/ui on Radix | vendored | dialog, dropdown-menu, sheet, tabs, toast, button, input, label, textarea |
 | Client state | Zustand | 5 | The editor store (elements, selection, tool, zoom, history) |
 | Unit tests | Vitest | 5 | 58 checks on the pure domain seams |
-| E2E tests | Playwright | 1.63 | 26 browser checks incl. the mobile-navigation regression suite and the Untitled-editor contract |
+| E2E tests | Playwright | 1.63 | 33 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, and the panel-toggle/properties suites |
 | ORM | Prisma | 6 | Schema, client, `db push`, seed |
 | Database | SQLite | — | Zero-config local persistence (`db/custom.db`) |
 | Auth | Node `crypto` (scrypt + HMAC) | — | Cookie sessions, no external auth service |
@@ -108,15 +115,17 @@ Every page resolves the session server-side and redirects unauthenticated visito
   📂 app/
     📄 page.tsx             # Dashboard (session gate → DashboardView)
     📄 login/page.tsx       # Auth card route (3 states, from_url handling)
-    📄 recent/page.tsx      # Recent files view
-    📄 teams/page.tsx       # Teams view
-    📄 editor/page.tsx      # The canvas editor (projectId query param)
+    📂 Dashboard/           # /Dashboard (canonical) — also served at /
+    📂 Recent/              # /Recent files view
+    📂 Teams/               # /Teams view
+    📂 Editor/              # /Editor?projectId= — the canvas editor
     📄 layout.tsx           # Inter via next/font, Toaster, globals
     📄 globals.css          # Tailwind 4 @theme tokens (shadcn + editor palettes)
     📂 api/                 # 16 route handlers (auth, projects, elements, teams, stats, ai-assistant, health)
   📂 components/
-    📂 editor/              # editor-view (shell/shortcuts/autosave/present), canvas, toolbar,
-    │                       # layers-panel, properties-panel, ai-assistant, editor-store
+    📂 editor/              # editor-view (shell/shortcuts/autosave/present/panel chips), canvas,
+    │                       # toolbar, layers-panel, components-panel, properties-panel,
+    │                       # ai-assistant, editor-store
     📄 app-header.tsx       # Shared chrome + THE MobileNav fix (hamburger + Sheet)
     📄 login-screen.tsx     # LoginCard (3 states, social degrade)
     📄 dashboard-view.tsx   # Hero, Quick Stats, Continue Working, All Projects
@@ -125,6 +134,7 @@ Every page resolves the session server-side and redirects unauthenticated visito
     📄 project-card.tsx     # Card + thumbnail + Create Project dialog
     📄 logo.tsx             # Inline SVG brand mark
     📂 ui/                  # shadcn primitives (button, dialog, dropdown-menu, sheet, tabs, toaster…)
+  📄 middleware.ts          # Legacy lowercase routes → canonical 307 redirects
   📂 hooks/
     📄 use-toast.ts         # globalThis-backed toast store (useSyncExternalStore-safe)
   📂 lib/
@@ -141,7 +151,8 @@ Every page resolves the session server-side and redirects unauthenticated visito
     📄 validation.ts        # Manual guards (enums, clamps, length caps)
     📄 utils.ts             # cn() class merge
 📂 tests/
-  📂 e2e/                   # Playwright: auth, mobile-navigation (the fix), workspace
+  📂 e2e/                   # Playwright: auth, mobile-navigation (the fix), workspace,
+  │                         # untitled-editor, editor-panels (chip toggles + properties)
   📄 db-path.test.ts        # The SQLite URL contract
 📄 docs/
   📂 screenshots/           # App screenshots used by this README
@@ -195,7 +206,7 @@ bun run start              # serves .next/standalone/server.js on :3000
 |----------|----------|-------------|---------|
 | `DATABASE_URL` | Yes | SQLite connection string. Relative `file:` paths resolve against `prisma/schema.prisma` (the CLI rule) — `src/lib/db-path.ts` implements the same rule at runtime and handles the standalone server's `chdir` into `.next/standalone`. | `file:../db/custom.db` |
 | `AUTH_SECRET` | Production | HMAC secret for session cookies. Generate with `openssl rand -hex 32`. Falls back to an insecure dev constant when unset. | — |
-| `NEXT_PUBLIC_SITE_URL` | Recommended | Canonical public origin for metadata URLs. | `http://localhost:3000` |
+| `DIGMA_REPO_ROOT` | Optional | Explicit repo-root anchor for SQLite path resolution (container escape hatch). | — |
 
 ## API Reference
 
@@ -242,13 +253,13 @@ Status colors: blue `#3B82F6` (default fill/active tool), green `#10B981` (Saved
 
 ```bash
 bun run test              # unit tests — 58 checks on the pure domain seams
-bun run test:e2e          # Playwright — 26 browser checks (needs `bun run build` first)
+bun run test:e2e          # Playwright — 33 browser checks (needs `bun run build` first)
 ./scripts/smoke-test.sh   # curl E2E — 28 checks against the production build
 ```
 
 The unit layer (Vitest) pins the pure seams: the SQLite URL resolution incl. the standalone `chdir` trap (`src/lib/db-path.ts`, pinned by `tests/db-path.test.ts`), the assistant's deterministic parser + LLM-output sanitizer (`ai-assistant.test.ts`), the editor's geometry/default seams (`editor.test.ts`), the fixed-window rate limiter (`rate-limit.test.ts`), invite normalization (`team.test.ts`), and the greeting boundaries (`greeting.test.ts`).
 
-The Playwright layer boots the production standalone server on :3100 with its own scratch database (`db/e2e.db`, schema-pushed + seeded by the global setup); a setup project signs the demo user in ONCE and shares the cookie via storageState (the auth rate limiter makes per-test logins a trap). The suites pin: the login round-trip (wrong password, valid credentials, authed redirect), the workspace surface (dashboard stats/cards, path routes, 404 guard, create-project dialog, editor load with layers), and — the highest-regression-risk chrome — **the mobile navigation fix**: trigger visibility below `md` with 44px targets, drawer opens with all links, link taps navigate AND close, Escape closes with focus return, focus stays trapped, scroll locks (`data-scroll-locked`), and the hamburger never appears at ≥768.
+The Playwright layer boots the production standalone server on :3100 with its own scratch database (`db/e2e.db`, schema-pushed + seeded by the global setup); a setup project signs the demo user in ONCE and shares the cookie via storageState (the auth rate limiter makes per-test logins a trap). The suites pin: the login round-trip (wrong password, valid credentials, authed redirect), the workspace surface (dashboard stats/cards, path routes, 404 guard, create-project dialog, editor load with layers), the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), — and — the highest-regression-risk chrome — **the mobile navigation fix**: trigger visibility below `md` with 44px targets, drawer opens with all links, link taps navigate AND close, Escape closes with focus return, focus stays trapped, scroll locks (`data-scroll-locked`), and the hamburger never appears at ≥768. A dedicated `editor-panels` suite pins the reference's panel-toggle chips (independent Layers/Components/Properties visibility, default ON/OFF/ON), the Layers header Select All/Deselect All flip, and the properties panel's five-section layout (Position & Size, Corner Radius, Fill & Stroke, Transform, Opacity; Canvas Properties → Background Color row).
 
 The smoke suite boots the production standalone server and runs 28 checks: health, auth (valid/invalid/unauthenticated), all read endpoints (envelope asserted), project CRUD incl. rename + full-list element PUT + invalid-type rejection, team + member validation, the AI assistant (fallback adds exactly 3 circles; blank message 400), page renders, the 404 guard, logout invalidation, and the login rate limit (429).
 

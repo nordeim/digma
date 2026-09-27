@@ -1,7 +1,7 @@
 {
   "name": "digma",
   "version": "1.0.0",
-  "description": "Digma — collaborative design workspace (Next.js 16 + React 19 + Prisma/SQLite)",
+  "description": "Digma \u2014 collaborative design workspace (Next.js 16 + React 19 + Prisma/SQLite)",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -43,7 +43,6 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwind-merge": "^3.7.0",
-    "tailwindcss-animate": "^1.0.7",
     "z-ai-web-dev-sdk": "^0.0.18",
     "zustand": "^5.0.15"
   },

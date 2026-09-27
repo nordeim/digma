@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Toolbar } from "./toolbar";
 import { Canvas } from "./canvas";
 import { LayersPanel } from "./layers-panel";
+import { ComponentsPanel } from "./components-panel";
 import { PropertiesPanel } from "./properties-panel";
 import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
@@ -298,6 +299,12 @@ export function EditorView({ user }: { user: HeaderUser }) {
   const [loading, setLoading] = React.useState(true);
   const [presenting, setPresenting] = React.useState(false);
 
+  // Panel visibility — INDEPENDENT toggles driven by the bottom-left chips
+  // (measured from the reference: Layers and Components are separate w-60
+  // columns that can both be open; Properties toggles the right panel).
+  // Defaults mirror the reference: Layers on, Components off, Properties on.
+  const [panels, setPanels] = React.useState({ layers: true, components: false, properties: true });
+
   const projectName = useEditorStore((s) => s.projectName);
   const saveState = useEditorStore((s) => s.saveState);
   const zoom = useEditorStore((s) => s.zoom);
@@ -363,7 +370,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#0d1117]">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-[#0d1117]">
       {/* Top bar — measured: h-12, back, name, Saved badge, undo/redo, avatars, Share/Present. */}
       <header className="flex h-12 flex-shrink-0 items-center justify-between border-b border-[#30363d] bg-[#161b22] px-4">
         <div className="flex items-center gap-4">
@@ -455,32 +462,27 @@ export function EditorView({ user }: { user: HeaderUser }) {
         </div>
       </header>
 
-      {/* Main row: toolbar | layers | canvas+assistant | properties. */}
+      {/* Main row: toolbar | layers | components | canvas+assistant | properties. */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <Toolbar />
 
-        {/* Left panel: layers (bottom tabs switch content). */}
-        <div className="hidden w-60 flex-shrink-0 flex-col border-r border-[#30363d] bg-[#161b22] md:flex">
-          <div className="min-h-0 flex-1">
-            <LayersPanel />
+        {/* Left panels — each column is an INDEPENDENT chip toggle (the
+            reference renders Layers and Components side by side). Both stay
+            hidden below md: the mobile editor keeps a full-width canvas —
+            a deliberate improvement over the reference, which squeezes all
+            columns to unreadable widths at 390px. */}
+        {panels.layers && (
+          <div className="hidden w-60 flex-shrink-0 flex-col border-r border-[#30363d] bg-[#161b22] md:flex">
+            <div className="min-h-0 flex-1">
+              <LayersPanel />
+            </div>
           </div>
-          <div className="flex flex-shrink-0 gap-1 border-t border-[#30363d] p-2" role="tablist" aria-label="Panel mode">
-            {["Layers", "Components", "Properties"].map((tab, index) => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={index === 0}
-                className={cn(
-                  "rounded px-3 py-1 text-xs transition-colors",
-                  index === 0 ? "bg-[#0d1117] text-white" : "bg-[#161b22] text-gray-400 hover:text-white",
-                )}
-              >
-                {tab}
-              </button>
-            ))}
+        )}
+        {panels.components && (
+          <div className="hidden w-60 flex-shrink-0 flex-col border-r border-[#30363d] bg-[#161b22] md:flex">
+            <ComponentsPanel />
           </div>
-        </div>
+        )}
 
         {/* Center: canvas + AI assistant. */}
         <div className="relative flex min-w-0 flex-1 flex-col bg-[#0d1117]">
@@ -525,10 +527,39 @@ export function EditorView({ user }: { user: HeaderUser }) {
           </div>
         </div>
 
-        {/* Right: properties. */}
-        <div className="hidden w-72 flex-shrink-0 border-l border-[#30363d] lg:flex">
-          <PropertiesPanel />
-        </div>
+        {/* Right: properties (chip-toggled). */}
+        {panels.properties && (
+          <div className="hidden w-72 flex-shrink-0 border-l border-[#30363d] bg-[#161b22] lg:flex">
+            <PropertiesPanel />
+          </div>
+        )}
+      </div>
+
+      {/* Panel-toggle chips — measured from the reference DOM: a floating
+          chip bar (absolute bottom-4 left-4) where each chip is an
+          independent panel visibility toggle, NOT an exclusive tab switch:
+          ON = bg-blue-600 text-white, OFF = panel-dark. They float over the
+          toolbar/layers column bottom, exactly like the reference. */}
+      <div className="absolute bottom-4 left-4 z-10 flex gap-2">
+        {([
+          { key: "layers", label: "Layers" },
+          { key: "components", label: "Components" },
+          { key: "properties", label: "Properties" },
+        ] as const).map((chip) => (
+          <button
+            key={chip.key}
+            type="button"
+            aria-pressed={panels[chip.key]}
+            aria-label={`Toggle ${chip.label} panel`}
+            onClick={() => setPanels((p) => ({ ...p, [chip.key]: !p[chip.key] }))}
+            className={cn(
+              "rounded px-3 py-1 text-xs transition-colors",
+              panels[chip.key] ? "bg-blue-600 text-white" : "bg-[#161b22] text-gray-400 hover:text-white",
+            )}
+          >
+            {chip.label}
+          </button>
+        ))}
       </div>
 
       {presenting && <PresentOverlay onExit={() => setPresenting(false)} />}

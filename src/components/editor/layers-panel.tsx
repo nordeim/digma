@@ -47,12 +47,24 @@ export function LayersPanel() {
       <div className="border-b border-[#30363d] p-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-sm font-medium text-white">Layers</h3>
+          {/* Reference semantics, measured from the live DOM: the label (and
+              action) flip when the selection covers the layer list —
+              selected.length === layers.length ? Deselect : Select. Note the
+              faithfully-kept live quirk: an EMPTY canvas (0/0) renders
+              "Deselect All" exactly like the reference app. */}
           <button
             type="button"
-            onClick={() => useEditorStore.getState().deselectAll()}
+            onClick={() => {
+              const store = useEditorStore.getState();
+              if (selectedIds.length === elements.length) {
+                store.deselectAll();
+              } else {
+                store.selectAll();
+              }
+            }}
             className="text-xs text-gray-400 transition-colors hover:text-white"
           >
-            Deselect All
+            {selectedIds.length === elements.length ? "Deselect All" : "Select All"}
           </button>
         </div>
         <div className="text-xs text-gray-400">

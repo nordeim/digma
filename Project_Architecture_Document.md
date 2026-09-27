@@ -1,13 +1,23 @@
-# Digma — Master Project Architecture Document (PAD) v1.1.0
+# Digma — Master Project Architecture Document (PAD) v1.2.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-09-27 (v1.1.0 — parity remediation)
+**Last Updated:** 2026-09-27 (v1.2.0 — editor panel-chrome parity remediation)
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
+
+#### Revision Block — v1.2.0 (Tracked Changes)
+
+Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+- `[SR]` Panel-toggle chips (ADR-010): the bottom-left editor chips are now INDEPENDENT panel visibility toggles (Layers / a second Components w-60 column / the right Properties panel; default ON/OFF/ON), measured and decoded from the reference DOM — the v1.1.0 decorative tab bar was a misread of the reference's behavior. New `components-panel.tsx`; `tests/e2e/editor-panels.spec.ts` (7 checks) pins it.
+- `[SR]` Properties panel restructured to the reference layout: fixed header block (h3 `text-sm font-medium text-white`), scrollable `p-4 space-y-6` body, iconed h4 sections — Position & Size, Corner Radius (slider 0–75 + linked per-corner inputs), Fill & Stroke (Solid/Gradient/Image pills + swatch/hex rows), Transform (rotation slider), Opacity (0–100 slider) — and Canvas Properties reduced to the reference's single Background Color row (the preset grid was not on the reference's properties panel; presets live on the Create-Project dialog only). No Delete button in the panel (reference parity).
+- `[SR]` Layers header button now toggles Select All / Deselect All with the reference's exact semantics (`selectedIds.length === elements.length`, incl. the 0/0 quirk); new `selectAll()` store action.
+- `[SR]` Dependency hygiene: dead legacy `tailwindcss-animate` removed (unused — Tailwind 4 CSS-first imports `tw-animate-css` in CSS); `package-lock.json` deleted (bun.lock is canonical; closes the dual-lockfile known issue).
+- `[SR]` Test-count refresh: 33 Playwright checks (editor-panels +7); docs realigned (README route tree casing, NEXT_PUBLIC_SITE_URL row removed).
 
 #### Revision Block — v1.1.0 (Tracked Changes)
 
@@ -158,6 +168,22 @@ How to use this document:
 - **Consequences:** Positive — no dead ends; no silent cross-project writes; reload lands on the real project. Negative — an empty-`projectId` store state that every future editor feature must respect (the autosave `ensureProject` seam is the single choke point).
 - **Alternatives Rejected:** Cloning the live behavior exactly (save into most-recent project) — silent data corruption; keeping the error page — visible parity gap; creating the project eagerly on mount — empty "Untitled" projects litter the dashboard for every casual visit (the lazy create only materializes what the user actually drew).
 
+**ADR-010: Bottom-left panel chips are independent visibility toggles (Layers / Components / Properties)**
+
+- **Context:** A fresh DOM audit of the reference editor decoded the bottom-left `Layers | Components | Properties` chip bar: each chip flips ITS OWN panel's visibility — clicking Components ADDS a second `w-60` column beside Layers (both visible at once); clicking Properties removes the right `w-72` panel; clicking Layers removes the layers column. The v1.1.0 clone had modeled them as exclusive switch-tabs (decorative, no interactivity) — a misread.
+- **Decision:** `editor-view.tsx` keeps a `{ layers, components, properties }` visibility state (default ON/OFF/ON, matching the reference) and conditionally renders the three panel columns; a new `ComponentsPanel` (header + small blue "+" affordance + the reference's empty state: "No components yet / Create reusable design components") fills the Components column. The chips float at `absolute bottom-4 left-4` with `aria-pressed` + `aria-label="Toggle … panel"` (the reference ships unnamed buttons; the labels are this clone's a11y superset). Panels stay hidden below `md`/`lg` — the mobile editor keeps a full-width canvas (the reference squeezes all five columns to unreadable widths at 390px, a bug not cloned).
+- **Rationale:** Panel toggling is real, user-visible reference behavior; the independent (non-exclusive) semantics were verified by replaying each click against the live DOM and observing which columns appear/disappear.
+- **Consequences:** Positive — parity chrome + a new e2e suite. Negative — panel visibility is view-local state (resets per editor mount — the reference behaves the same); the Components panel is presentational only (component authoring isn't implemented on the reference either — its "+" is a no-op there; documented scope cut).
+- **Alternatives Rejected:** Radix Tabs (exclusive selection — wrong semantics); lifting visibility into the Zustand store (it's ephemeral view chrome, not canvas state — the store contract stays canvas-only).
+
+**ADR-011: Properties panel = the reference's five-section layout with linked corners**
+
+- **Context:** The reference's properties panel carries a fixed header block (`p-4 border-b` + h3 `text-sm font-medium text-white`), a scrollable body, and iconed sections: Position & Size (X/Y/W/H), Corner Radius (an "All Corners" slider 0–75 + four per-corner inputs), Fill & Stroke (Solid/Gradient/Image pills + Fill Color swatch/hex + Stroke swatch/hex + Stroke Width), Transform (rotation slider −180…180), Opacity (slider 0–100). With nothing selected it shows "Canvas Properties" with a single Background Color row. The v1.1.0 clone used compact inline-labeled fields, a single Appearance section, and a background preset grid that the reference's properties panel doesn't have.
+- **Decision:** Restructure to the reference layout section-for-section. Corner approximation: the element model keeps ONE `radius`, so the four per-corner inputs all read and write the shared value (Figma's "linked corners" behavior); per-corner splits are a documented scope cut. Fill modes: only Solid is functional — Gradient/Image render and toast a scope-cut notice (the reference's own gradient editor was not audited in depth). Sliders are native `<input type="range" class="accent-blue-600">` (the reference uses Radix Slider; the native input is the zero-dependency equivalent).
+- **Rationale:** The properties panel is a permanently visible editor surface — section-level fidelity is visible in every screenshot comparison. Linked corners keep the visual spec without a schema migration.
+- **Consequences:** Positive — layout parity, e2e-pinned sections. Negative — per-corner values cannot diverge (documented); gradient/image fills unavailable (documented).
+- **Alternatives Rejected:** Per-corner radius columns (schema migration + renderer changes for marginal value); vendoring a Radix Slider (new dependency for a visual detail the native range covers).
+
 ---
 
 ## 2. High-Level System Topology
@@ -280,20 +306,23 @@ digma/
 │   │   │   ├── editor-store.ts    # THE Zustand store (elements, selection, undo…)
 │   │   │   ├── canvas.tsx         # pointer events: draw/move/resize/select
 │   │   │   ├── toolbar.tsx        # tools + shortcuts (title="… (V)" etc.)
-│   │   │   ├── layers-panel.tsx   # visibility/lock toggles, reorder, rename
-│   │   │   ├── properties-panel.tsx # geometry, fill/stroke, text props
+│   │   │   ├── layers-panel.tsx   # visibility/lock, reorder, rename,
+│   │   │   │                      # Select All/Deselect All toggle
+│   │   │   ├── components-panel.tsx # reference's Components column (ADR-010)
+│   │   │   ├── properties-panel.tsx # five-section layout + Canvas Properties (ADR-011)
 │   │   │   ├── ai-assistant.tsx   # chat UI, applies operations to store
-│   │   │   └── editor-view.tsx    # layout + autosave effect (800ms debounce)
+│   │   │   └── editor-view.tsx    # layout + autosave + panel-toggle chips
 │   │   └── ui/                    # shadcn primitives: button, input, textarea,
 │   │                              # label, dialog, dropdown-menu, sheet, tabs, toaster
 │   ├── hooks/use-toast.ts         # globalThis-backed toast store (useSyncExternalStore)
 │   └── lib/                       # Layer 1 pure domain + tests (see 3.3)
 ├── tests/
 │   ├── db-path.test.ts            # pins the db-path resolution contract
-│   └── e2e/                       # Playwright: auth, workspace, mobile-navigation
+│   └── e2e/                       # Playwright: auth, workspace, mobile-navigation,
+│                                  # untitled-editor, editor-panels
 ├── scripts/smoke-test.sh          # 28 HTTP checks against the standalone build
 ├── docs/
-│   ├── screenshots/               # 10 captured PNGs (desktop/mobile/tablet)
+│   ├── screenshots/               # 12 captured PNGs (desktop/mobile/tablet/panels)
 │   ├── Tailwind-V4-Validation-Report.md
 │   ├── ssh_git_wrapper_v3.py      # SSH push wrapper (runbook in docs/)
 │   └── how-to-git-push-using-ssh-wrapper_SKILL.md
@@ -612,6 +641,7 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | E2E — workspace/editor | `tests/e2e/workspace.spec.ts` | 8 | tests/e2e | Playwright |
 | E2E — mobile navigation | `tests/e2e/mobile-navigation.spec.ts` | 9 | tests/e2e | Playwright |
 | E2E — untitled editor | `tests/e2e/untitled-editor.spec.ts` | 3 | tests/e2e | Playwright |
+| E2E — editor panels | `tests/e2e/editor-panels.spec.ts` | 7 | tests/e2e | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 28 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns
@@ -632,7 +662,7 @@ No numeric coverage tooling is configured (deliberate: the check counts are the 
 - [ ] `bun run test` → 58/58
 - [ ] `bun run build` succeeds; standalone assets copied
 - [ ] `./scripts/smoke-test.sh` → 28/28
-- [ ] `bun run test:e2e` → 26/26 (fresh e2e DB; :3100)
+- [ ] `bun run test:e2e` → 33/33 (fresh e2e DB; :3100)
 - [ ] Mobile navigation verified at 390×844 (the mobile suite IS this check)
 - [ ] No new `.env`, key files, or `db/*.db` staged
 
@@ -719,9 +749,8 @@ Enforced by ESLint 9 (`eslint-config-next`): React 19 hook rules including `set-
 | MEDIUM | Next 16 `redirects()` matches sources case-insensitively; the per-rule `caseSensitive` flag is not honored | Lowercase→Capital redirects CANNOT live in `next.config.ts` (self-loop); `src/middleware.ts` carries them instead | Mitigated (ADR-008; middleware is the sanctioned location) |
 | MEDIUM | Rate limiter is in-process (fixed window per process) | Counter resets on restart; N-instance deployments would each track separately | Open (accepted for demo scale; documented in S5/6.4) |
 | MEDIUM | `next.config.ts` sets `ignoreBuildErrors` | Type errors don't fail the build — `bun run typecheck` is a manual, mandatory gate | Open (intentional scaffold default; compensated by the gate order) |
-| LOW | `image` and `path` element types are vocabulary-only (tools select; creation routes through the store but the editors are minimal) | Feature-completeness vs. the reference's full Figma-like tooling | Open (documented scope cut) |
+| LOW | `image` and `path` element types are vocabulary-only (tools select; creation routes through the store but the editors are minimal); Fill's Gradient/Image modes render but are non-functional (scope cut); corner radius is a single linked value (no per-corner splits) | Feature-completeness vs. the reference's full Figma-like tooling | Open (documented scope cuts, ADR-011) |
 | LOW | The live app's Share/Present/Explore-Templates buttons are no-ops; this clone implements working versions (clipboard share, presentation overlay, template-gallery toast) | Deviation is a deliberate superset — documented, not a bug | Accepted (kept) |
-| LOW | `package-lock.json` and `bun.lock` both tracked | Dual lockfiles can drift between npm/bun installs | Open (bun is canonical; npm lock retained from scaffold) |
 | LOW | No session revocation list | Logout only clears the client cookie; a stolen token lives to expiry | Open (accepted; stateless trade-off, ADR-003) |
 | LOW | No hosted CI | Quality depends on the local gate discipline | Open (deliberate, ADR-001) |
 
@@ -736,7 +765,8 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `src/components/editor/editor-store.ts` | 306 | THE Zustand store: elements, selection, tool, zoom/pan, undo/redo, saveState |
 | `src/components/editor/editor-view.tsx` | 506 | Editor layout + 800ms-debounced autosave PUT + id remap |
 | `src/components/editor/canvas.tsx` | 479 | Pointer events: draw/move/resize/select; zoom/pan transforms |
-| `src/components/editor/properties-panel.tsx` | 309 | Geometry/fill/stroke/text property editing (render-time state adjust) |
+| `src/components/editor/properties-panel.tsx` | 396 | Reference five-section layout + Canvas Properties (ADR-011) |
+| `src/components/editor/components-panel.tsx` | 42 | Reference Components column + empty state (ADR-010) |
 | `src/components/project-card.tsx` | 549 | Card + thumbnail art + ellipsis menu (rename/delete, stopPropagation) |
 | `src/components/app-header.tsx` | 215 | Desktop nav + MobileNav Sheet drawer (the Tailwind v4 class-A fix) |
 | `src/components/teams-view.tsx` | 473 | Team cards, member chips, invite dialog, inline confirm deletes |
@@ -754,6 +784,7 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `prisma/schema.prisma` | 103 | User/Project/DesignElement/Team/TeamMember |
 | `prisma/seed.ts` | 144 | Demo workspace seed |
 | `tests/e2e/mobile-navigation.spec.ts` | 119 | Mobile nav regression suite @390×844 |
+| `tests/e2e/editor-panels.spec.ts` | 107 | Panel-toggle chips + Select All flip + properties sections (ADR-010/011) |
 | `tests/db-path.test.ts` | 156 | db-path resolution contract (20 checks, incl. DIGMA_REPO_ROOT) |
 | `src/middleware.ts` | 41 | Legacy lowercase → canonical 307 redirects (ADR-008) |
 | `tests/e2e/untitled-editor.spec.ts` | 58 | Untitled-editor contract: bogus/missing id, create-on-first-save (ADR-009) |
