@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Send, Sparkles } from "lucide-react";
+import { Bot, Send, WandSparkles } from "lucide-react";
 
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
@@ -13,12 +13,6 @@ type ChatMessage = {
   text: string;
   time: string;
 };
-
-const SUGGESTIONS = [
-  "Add 3 colored circles",
-  "Make selected elements red",
-  "Create a login form",
-];
 
 function nowLabel(): string {
   return new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
@@ -137,66 +131,82 @@ export function AiAssistant() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col border-t border-[#30363d] bg-[#161b22]">
-      <div className="flex items-center gap-2 px-4 py-2.5">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
-          <Sparkles className="h-3.5 w-3.5 text-white" aria-hidden />
-        </span>
+    <div className="flex h-full min-h-0 flex-col bg-[#161b22]">
+      {/* Header — measured live: a blue Bot glyph leads, a purple WandSparkles
+          trails, on a border-b p-3 row (no gradient circle). */}
+      <div className="flex items-center gap-2 border-b border-[#30363d] p-3">
+        <Bot className="h-4 w-4 text-blue-400" aria-hidden />
         <h3 className="text-sm font-medium text-white">AI Assistant</h3>
+        <WandSparkles className="h-3 w-3 text-purple-400" aria-hidden />
       </div>
 
-      <div className="editor-scroll min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-2">
-        {messages.map((message) => (
-          <div key={message.id} className={message.role === "user" ? "flex justify-end" : "flex justify-start"}>
-            <div
-              className={
-                message.role === "user"
-                  ? "max-w-[85%] rounded-xl rounded-br-sm bg-blue-600 px-3 py-2 text-xs text-white"
-                  : "max-w-[85%] rounded-xl rounded-bl-sm bg-[#21262d] px-3 py-2 text-xs text-gray-200"
-              }
-            >
-              <p className="whitespace-pre-wrap">{message.text}</p>
-              <p className="mt-1 text-right text-[9px] text-gray-400/70">{message.time}</p>
+      <div className="editor-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+        {messages.map((message) =>
+          message.role === "user" ? (
+            /* User rows: right-aligned bubble, timestamp below (the reference
+               itself crashes on send — its user bubble is unmeasurable, so the
+               clone adopts the assistant bubble's measured geometry). */
+            <div key={message.id} className="flex justify-end">
+              <div className="max-w-[80%]">
+                <div className="rounded-lg bg-blue-600 p-2 text-xs text-white">
+                  <p className="whitespace-pre-wrap">{message.text}</p>
+                </div>
+                <div className="mt-1 text-right text-xs text-gray-500">{message.time}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          ) : (
+            /* Assistant rows — measured live: a blue→purple gradient bot
+               avatar chip, an 80%-width p-2 rounded-lg bubble, and the
+               timestamp BELOW the bubble (a sibling, text-left). */
+            <div key={message.id} className="flex justify-start gap-2">
+              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600">
+                <Bot className="h-3 w-3 text-white" aria-hidden />
+              </div>
+              <div className="max-w-[80%]">
+                <div className="rounded-lg bg-[#21262d] p-2 text-xs text-gray-300">
+                  <p className="whitespace-pre-wrap">{message.text}</p>
+                </div>
+                <div className="mt-1 text-left text-xs text-gray-500">{message.time}</div>
+              </div>
+            </div>
+          ),
+        )}
         {sending && (
-          <div className="flex justify-start">
-            <div className="rounded-xl rounded-bl-sm bg-[#21262d] px-3 py-2 text-xs text-gray-400">
-              Working on it...
+          <div className="flex justify-start gap-2">
+            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600">
+              <Bot className="h-3 w-3 text-white" aria-hidden />
             </div>
+            <div className="rounded-lg bg-[#21262d] p-2 text-xs text-gray-400">Working on it...</div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input — measured live: p-3 border-t row, a flex gap-2 form with an
+          h-8 flex-1 input and a SEPARATE blue-600 send button (no inline
+          icon, no suggestions line). */}
       <form
         onSubmit={(event) => {
           event.preventDefault();
           send(input);
         }}
-        className="border-t border-[#30363d] p-3"
+        className="flex gap-2 border-t border-[#30363d] p-3"
       >
-        <div className="relative">
-          <input
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Create a blue button, make it bigger, delete selected..."
-            aria-label="Message the AI design assistant"
-            className="h-9 w-full rounded-lg border border-[#30363d] bg-[#0d1117] pr-10 pl-3 text-xs text-gray-200 placeholder:text-gray-600 focus:border-blue-500 focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || sending}
-            aria-label="Send message"
-            className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 transition-colors hover:text-blue-400 disabled:opacity-40"
-          >
-            <Send className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-        <p className="mt-2 truncate text-[10px] text-gray-600">
-          Try: {SUGGESTIONS.map((s) => `"${s}"`).join(", ")}
-        </p>
+        <input
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder="Create a blue button, make it bigger, delete selected..."
+          aria-label="Message the AI design assistant"
+          className="h-8 w-full flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-xs text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <button
+          type="submit"
+          disabled={!input.trim() || sending}
+          aria-label="Send message"
+          className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-blue-600 px-2 text-xs font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+        >
+          <Send className="h-3 w-3" aria-hidden />
+        </button>
       </form>
     </div>
   );

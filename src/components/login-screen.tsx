@@ -320,13 +320,8 @@ export function LoginScreen() {
           </div>
         </div>
 
-        <p className="mt-8 hidden text-center text-xs text-slate-400 sm:block">
-          New here? The seed ships a demo account —{" "}
-          <code className="rounded bg-slate-100 px-1.5 py-0.5">demo@digma.app / Digma1234!</code>
-        </p>
-        <p className="mt-8 text-center text-xs text-slate-400 sm:hidden" aria-hidden>
-          &nbsp;
-        </p>
+        {/* Reference parity: the card's footer carries ONLY the workspace
+            link — no demo-account hint (that lives in README/AGENTS). */}
 
         <div className="mt-4 text-center">
           <Link href="/login" className="text-xs text-slate-400 hover:text-slate-600">

@@ -78,8 +78,8 @@ export function RecentView({ user }: { user: HeaderUser }) {
           {/* Header — measured: h1 + subtitle, search, calendar sort, view toggles. */}
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div>
-              <h1 className="mb-1 text-3xl font-bold text-gray-900">Recent Files</h1>
-              <p className="text-sm text-gray-600">Your recently accessed design files</p>
+              <h1 className="text-3xl font-bold text-gray-900">Recent Files</h1>
+              <p className="mt-1 text-gray-500">Your recently accessed design files</p>
             </div>
             <div className="flex w-full items-center gap-4 lg:w-auto">
               {/* Live DOM: relative flex-1 md:w-80 with an h-9 shadcn-style
@@ -101,16 +101,19 @@ export function RecentView({ user }: { user: HeaderUser }) {
                   className="h-9 w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm shadow-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
               </div>
-              <div
-                className="flex items-center gap-1 rounded-lg bg-gray-100 p-1"
-                role="group"
-                aria-label="View mode"
-              >
+              {/* Reference parity (measured live on /Recent): a BARE
+                  flex gap-2 row — no gray container (that is the Dashboard's
+                  pattern) — w-10 h-10 buttons, active = the reference's
+                  --primary (#171717) with shadow, inactive = outline. */}
+              <div className="flex items-center gap-2" role="group" aria-label="View mode">
                 <Button
                   type="button"
-                  variant={view === "grid" ? "default" : "ghost"}
-                  size="iconLg"
-                  className="w-10"
+                  variant={view === "grid" ? "default" : "outline"}
+                  className={cn(
+                    "h-10 w-10 rounded-md p-0 text-xs",
+                    view === "grid" &&
+                      "bg-neutral-900 text-white shadow-sm hover:bg-neutral-900/90",
+                  )}
                   onClick={() => setView("grid")}
                   aria-label="Grid view"
                   aria-pressed={view === "grid"}
@@ -119,9 +122,12 @@ export function RecentView({ user }: { user: HeaderUser }) {
                 </Button>
                 <Button
                   type="button"
-                  variant={view === "list" ? "default" : "ghost"}
-                  size="iconLg"
-                  className="w-10"
+                  variant={view === "list" ? "default" : "outline"}
+                  className={cn(
+                    "h-10 w-10 rounded-md p-0 text-xs",
+                    view === "list" &&
+                      "bg-neutral-900 text-white shadow-sm hover:bg-neutral-900/90",
+                  )}
                   onClick={() => setView("list")}
                   aria-label="List view"
                   aria-pressed={view === "list"}

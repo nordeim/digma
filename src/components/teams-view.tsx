@@ -86,18 +86,20 @@ export function TeamsView({ user }: { user: HeaderUser }) {
   return (
     <>
       <AppHeader user={user} />
-      <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-white to-purple-50">
+      <main className="min-h-[calc(100vh-4rem)]">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          {/* Header — measured: h1 + subtitle + Create Team (purple) on the row. */}
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          {/* Header — measured live: h1 + subtitle (text-gray-500 mt-1) + a
+              solid blue-600 Create Team button on an md: row. The Teams page
+              carries NO background wash (unlike /Recent). */}
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
-              <h1 className="mb-1 text-3xl font-bold text-gray-900">Teams</h1>
-              <p className="text-sm text-gray-600">Collaborate with your team members</p>
+              <h1 className="text-3xl font-bold text-gray-900">Teams</h1>
+              <p className="mt-1 text-gray-500">Collaborate with your team members</p>
             </div>
             <Button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 font-semibold text-white hover:from-purple-700 hover:to-pink-700"
+              className="h-9 rounded-xl bg-blue-600 px-6 py-3 font-medium text-white shadow hover:bg-blue-700"
             >
               <Plus />
               Create Team
@@ -124,16 +126,17 @@ export function TeamsView({ user }: { user: HeaderUser }) {
                 ))}
               </div>
             ) : (
-              <div className="py-20 text-center">
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
-                  <Users className="h-8 w-8 text-white" aria-hidden />
-                </div>
-                <h3 className="mb-2 text-xl font-bold text-gray-900">No teams yet</h3>
-                <p className="mb-6 text-sm text-gray-600">Create a team to collaborate with others</p>
+              /* Reference empty state (measured live): a plain gray-300 Users
+                 glyph — no gradient circle — with semibold copy at the default
+                 size, on a py-16 centered block. */
+              <div className="py-16 text-center">
+                <Users className="mx-auto mb-4 h-16 w-16 text-gray-300" aria-hidden />
+                <h3 className="mb-2 text-xl font-semibold text-gray-900">No teams yet</h3>
+                <p className="mb-6 text-gray-500">Create a team to collaborate with others</p>
                 <Button
                   type="button"
                   onClick={() => setCreateOpen(true)}
-                  className="h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-6 font-semibold text-white hover:from-purple-700 hover:to-pink-700"
+                  className="h-9 bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700"
                 >
                   <Plus />
                   Create Your First Team

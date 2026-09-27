@@ -59,7 +59,8 @@ Follow this six-phase workflow for all implementation tasks:
 **Tailwind 4 (CSS-first)**
 
 - There is NO `tailwind.config.js` and there never will be. Tokens are literal hex in a plain `@theme` block in `src/app/globals.css`; animations come from `tw-animate-css` (imported in CSS, not a JS plugin).
-- Never use `var()` chains inside a plain `@theme` block — the current v4 build drops them (literal hex only; only `--font-*` may use `var()`). This is the #1 "flat/minimal look" bug.
+- Never use `var()` chains inside a plain `@theme` block — the current v4 build drops them for color/space tokens (literal values only), **and the `--font-*` exception was a trap**: `--font-sans: var(--font-inter), …` survives the build but next/font scopes `--font-inter` to a class on `<body>`, so at `:root` the chain computes to guaranteed-invalid and the ENTIRE app silently inherited the UA serif default ("Times New Roman") for six sessions. Fonts are literal names: `"Inter", "Inter Fallback", ui-sans-serif, …` (`tests/theme.test.ts` pins it).
+- The default v4 oklch palette renders visibly different from the reference's v3 palette (blue-600 `#155DFC` vs `#2563EB`); every consumed scale is pinned to the v3 hex in the `@theme` reference-palette block.
 - Editor chrome uses the `editor-*` utilities (`--color-editor-bg/panel/border/text`), not raw hex.
 - No safelists (unsupported in v4); `@source inline()` if ever needed.
 
@@ -88,8 +89,8 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 | `bun run dev` | Start development server (:3000, logs to `dev.log`) |
 | `bun run build` | Production build (+ copies static/public into standalone) |
 | `bun run start` | Production standalone server (`.next/standalone/server.js`) |
-| `bun run test` | Unit tests (62 checks, Vitest) |
-| `bun run test:e2e` | Browser E2E (44 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db`) |
+| `bun run test` | Unit tests (66 checks, Vitest) |
+| `bun run test:e2e` | Browser E2E (51 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db`) |
 | `bun run lint` | ESLint 9 + next config |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bunx prisma generate` | Prisma client after schema change |
@@ -102,9 +103,9 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 
 ### Test Pyramid
 
-- **Unit Tests** (Vitest, 62 checks): pure domain seams in `src/lib/*.test.ts` + `tests/db-path.test.ts` — editor geometry/clamps (incl. the scale-aware visual bounds + transform chain), AI assistant parsing/sanitization, greeting time buckets, rate limiter, team stats, db-path resolution contract (incl. the `DIGMA_REPO_ROOT` anchor).
+- **Unit Tests** (Vitest, 66 checks): pure domain seams in `src/lib/*.test.ts` + `tests/db-path.test.ts` + `tests/theme.test.ts` (the `@theme` contract: literal font names, no var() chains, no legacy config) — editor geometry/clamps (incl. the scale-aware visual bounds + transform chain), AI assistant parsing/sanitization, greeting time buckets, rate limiter, team stats, db-path resolution contract (incl. the `DIGMA_REPO_ROOT` anchor).
 - **Smoke Tests** (28 checks, `scripts/smoke-test.sh`): HTTP-level — every route, auth gating, login/logout, CRUD, health, stats. Run it with the dev server STOPPED (the script only kills standalone/`next start` processes; a lingering `next dev` steals :3000).
-- **E2E Tests** (Playwright, 44 checks): critical user journeys — login/logout/validation, the auth-card state structure suite (sign-up swaps to the reference's minimal card: "Back to sign in" + h2, no logo/social; Confirm Password with inline mismatch validation; forgot renders "Reset your password" + email-only), dashboard→editor→draw→autosave→AI assistant (incl. the no-crash pin: the reference app itself blanks out on AI submission — this clone must answer, mutate the canvas, and stay interactive), project create/rename/delete, teams, the mobile-navigation regression suite pinned at 390×844, the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), and the editor-panels suite (chip toggles incl. their responsive visibility — hidden below md, Properties chip below lg — Select All flip, the five properties sections, and the Transform scale contract: slider 0.1–3.0, "1.0x" readout, persisted transform chain).
+- **E2E Tests** (Playwright, 51 checks): critical user journeys — login/logout/validation, the auth-card state structure suite (sign-up swaps to the reference's minimal card: "Back to sign in" + h2, no logo/social; Confirm Password with inline mismatch validation; forgot renders "Reset your password" + email-only), dashboard→editor→draw→autosave→AI assistant (incl. the no-crash pin: the reference app itself blanks out on AI submission — this clone must answer, mutate the canvas, and stay interactive), project create/rename/delete, teams, the mobile-navigation regression suite pinned at 390×844, the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), the editor-panels suite (chip toggles incl. their responsive visibility — hidden below md, Properties chip below lg — Select All flip, the five properties sections, and the Transform scale contract: slider 0.1–3.0, "1.0x" readout, persisted transform chain), and the session-8 parity suite (font-not-serif pin, no nav active pill, near-black view toggles, flat Teams page + blue Create Team, magnifier zoom icons, the AI panel chrome, no demo hint on /login).
 
 ### Test Commands
 

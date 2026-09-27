@@ -1,16 +1,16 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite chdir trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.3.0
-last_updated: 2026-09-27
-project_state: "62 unit checks green · 44 Playwright checks green · 28 smoke checks green · build 20 routes"
+version: 1.4.0
+last_updated: 2026-09-28
+project_state: "66 unit checks green · 51 Playwright checks green · 28 smoke checks green · build 20 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
 
 > **How to use this document:** This is the single-source engineering reference for extending, debugging, onboarding onto, or replicating the Digma codebase. Every claim is verifiable against a file path or a runnable command. When code and this document disagree, the code wins — update the doc in the same commit.
 >
-> Companion documents: `Project_Architecture_Document.md` (the formal blueprint with ADR-001…009), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions), `README.md` (user-facing).
+> Companion documents: `Project_Architecture_Document.md` (the formal blueprint with ADR-001…013 + ADR-004a), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions), `README.md` (user-facing).
 
 ## Table of Contents
 
@@ -51,7 +51,7 @@ project_state: "62 unit checks green · 44 Playwright checks green · 28 smoke c
 - The mobile navigation is a FIX, not parity: the reference has NO nav below `md` (`hidden md:flex`, no fallback). This clone's hamburger + Sheet drawer is the canonical example of the fix pattern (§15).
 - Light workspace chrome on white; dark GitHub-style editor chrome (`#0d1117` family); purple `#8b5cf6` brand accent. No other accent hues.
 
-**Anti-generic mandate.** No Bootstrap-style components, no default shadcn theming without the measured token overrides, no legacy `tailwind.config.js` (the #1 "flat/minimal look" bug in Tailwind v4), no `var()` chains inside a plain `@theme` block (dropped by the current v4 build — literal hex only).
+**Anti-generic mandate.** No Bootstrap-style components, no default shadcn theming without the measured token overrides, no legacy `tailwind.config.js` (the #1 "flat/minimal look" bug in Tailwind v4), no `var()` chains inside a plain `@theme` block (dropped by the current v4 build for colors — and the `--font-*` var() exception was a TRAP: `--font-sans: var(--font-inter), …` computed to guaranteed-invalid at `:root` because next/font scopes `--font-inter` to `<body>`, silently rendering the whole app in the UA serif default for six sessions; literal values everywhere — `tests/theme.test.ts` pins it). The v4 default palette is oklch-tuned and visibly off from the reference's v3 palette — every consumed scale is pinned to the v3 hex in the `@theme` reference-palette block.
 
 **CTA hierarchy.** Purple gradient hero ("Create New Design" white-on-purple) → per-section primary buttons → ellipsis-menu destructive actions (never global `AlertDialog` confirms).
 
@@ -68,7 +68,7 @@ project_state: "62 unit checks green · 44 Playwright checks green · 28 smoke c
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.1 | 62 checks; `*.test.ts` only |
+| Unit tests | Vitest | ≥5.0.1 | 66 checks; `*.test.ts` only |
 | E2E tests | Playwright | ≥1.63.0 | 44 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
@@ -109,7 +109,7 @@ bun run build && ./scripts/smoke-test.sh && bun run test:e2e   # full gates
 
 ## §4 The Design System (Code-First, Tailwind v4)
 
-All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL hex values (the v4 build drops `var()` chains in a plain `@theme`; only `--font-sans` may use `var(--font-inter)`).
+All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL values: hex for colors (the v4 build drops `var()` chains in a plain `@theme`) and font-family NAMES for fonts (`"Inter", "Inter Fallback", ui-sans-serif, …` — never `var(--font-inter)`, which breaks at runtime via custom-property computed-value semantics; ADR-004a). The reference ships the v3 palette, so every consumed default-palette scale is pinned to its v3 hex (v4 blue-600 `#155DFC` ≠ reference `#2563EB`).
 
 **Workspace palette (light):** background `#ffffff`, foreground `#0f172a` (slate-900), primary `#8b5cf6` (brand purple), secondary `#f3e8ff`/`#5b21b6`, muted `#f9fafb`/`#6b7280`, accent `#f3f4f6`, destructive `#ef4444`, border/input `#e5e7eb`, ring `#8b5cf6`.
 
@@ -197,7 +197,7 @@ client applies operations: add | update (may carry scale) | delete
 ## §9 Anti-Patterns & Common Bugs
 
 1. **Tailwind v4 legacy config.** ANY `tailwind.config.js` reintroduction = the "flat/minimal look" bug. Tokens are literal hex in the plain `@theme` in `globals.css`.
-2. **`var()` chains inside a plain `@theme`.** Dropped by the current v4 build. Literal hex only; only `--font-*` may use `var()`.
+2. **`var()` chains inside a plain `@theme`.** Dropped by the current v4 build for colors — and broken at RUNTIME for fonts (next/font scopes `--font-inter` to `<body>`, so `var()` chains compute to guaranteed-invalid at `:root` and the app silently renders serif). Literal hex and literal font names only (ADR-004a; `tests/theme.test.ts` pins it).
 3. **Module-level singletons for client state (Turbopack).** Code-splitting hands two copies to different chunks — the Toaster never sees page-fired toasts. Fix: `globalThis.__digmaToastInfra` (state AND listener set) + `useSyncExternalStore` (§15 Pattern 2).
 4. **Radix Toast controlled-`open` list.** Never mounted reliably in this setup. The Toaster renders plain divs.
 5. **Minifier-safe db-path anchors.** Helper functions with unused returns get inlined-and-dropped by the production minifier — the standalone detector silently died in the shipped bundle. Anchors MUST be collected via side-effect `roots.push(...)` (§15 Pattern 1).
@@ -239,14 +239,14 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 62/62
+bun run test          # 66/66
 bun run build         # 20 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 28/28 (health, auth gate, CRUD, AI, rate limit, logout)
-bun run test:e2e      # 39/39 (auth 6, workspace 9, mobile-nav 9, untitled 3, editor-panels 12)
+bun run test:e2e      # 51/51 (setup 1, auth 11, workspace 8, mobile-nav 9, untitled 3, editor-panels 12, parity 7)
 git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 ```
 
-**Visual parity spot-checks (browser):** dashboard hero + Quick Stats + Continue Working + All Projects; Recent sort/view toggle; Teams cards; editor top bar (Untitled fallback at `/Editor` with no param), zoom cluster `[100%][+][−]`, avatars D+S+2; login card; **mobile at 390×844: hamburger → drawer → tap navigates AND closes.**
+**Visual parity spot-checks (browser):** dashboard hero + Quick Stats + Continue Working + All Projects; Recent sort/view toggle (bare gap-2 row, near-black active); Teams cards (flat page, blue Create Team); editor top bar (Untitled fallback at `/Editor` with no param), zoom cluster `[100%][zoom-in][zoom-out]`, AI panel (bot avatars, timestamp-below bubbles), avatars D+S+2; login card (no demo hint); **mobile at 390×844: hamburger → drawer → tap navigates AND closes.**
 
 ## §12 Lessons Learnt & How to Avoid Them
 
@@ -483,4 +483,4 @@ Prisma models (5): `User` (email unique, scrypt passwordHash, avatarColor), `Pro
 | Design tokens | `src/app/globals.css` `@theme` |
 | Push procedure | `docs/ssh_git_wrapper_v3.py` + `docs/how-to-git-push-using-ssh-wrapper_SKILL.md` |
 | Demo login | `demo@digma.app` / `Digma1234!` |
-| Reference app | `https://digma-371dfd0d.base44.app/` (`sepnetflix2023@outlook.com` / `$Abcd1234`) |
+| Reference app | `https://digma-371dfd0d.base44.app/` (operator-supplied credentials — ask the repo owner; never commit them) |

@@ -255,11 +255,17 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                     role="group"
                     aria-label="View mode"
                   >
+                    {/* Reference parity: the active toggle is the reference's
+                        --primary (#171717, near-black) with shadow — NOT the
+                        clone's purple token. Measured live on /Dashboard. */}
                     <Button
                       type="button"
-                      variant={view === "grid" ? "default" : "ghost"}
-                      size="iconSm"
-                      className="w-9"
+                      variant="ghost"
+                      className={cn(
+                        "h-8 w-9 rounded-md p-0 text-xs",
+                        view === "grid" &&
+                          "bg-neutral-900 text-white shadow-sm hover:bg-neutral-900/90 hover:text-white",
+                      )}
                       onClick={() => setView("grid")}
                       aria-label="Grid view"
                       aria-pressed={view === "grid"}
@@ -268,9 +274,12 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                     </Button>
                     <Button
                       type="button"
-                      variant={view === "list" ? "default" : "ghost"}
-                      size="iconSm"
-                      className="w-9"
+                      variant="ghost"
+                      className={cn(
+                        "h-8 w-9 rounded-md p-0 text-xs",
+                        view === "list" &&
+                          "bg-neutral-900 text-white shadow-sm hover:bg-neutral-900/90 hover:text-white",
+                      )}
                       onClick={() => setView("list")}
                       aria-label="List view"
                       aria-pressed={view === "list"}

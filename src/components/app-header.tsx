@@ -142,16 +142,15 @@ export function AppHeader({ user }: { user: HeaderUser }) {
             </Link>
             <nav aria-label="Primary" className="hidden items-center space-x-8 md:flex">
               {NAV_LINKS.map((link) => (
+                /* Reference parity: every nav link is text-gray-600 with the
+                 * same hover — the reference ships NO per-route active pill
+                 * (measured live: all three links carry identical classes on
+                 * /Dashboard). aria-current stays for a11y. */
                 <Link
                   key={link.href}
                   href={link.href}
                   aria-current={isNavActive(pathname, link.href) ? "page" : undefined}
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isNavActive(pathname, link.href)
-                      ? "bg-purple-50 text-purple-700"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
                 >
                   <link.icon className="h-4 w-4" aria-hidden />
                   {link.label}

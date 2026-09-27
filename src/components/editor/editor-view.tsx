@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Minus, Play, Plus, Redo2, Share2, Undo2, Users } from "lucide-react";
+import { ArrowLeft, Play, Redo2, Share2, Undo2, Users, ZoomIn, ZoomOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Toolbar } from "./toolbar";
@@ -496,9 +496,10 @@ export function EditorView({ user }: { user: HeaderUser }) {
               <Canvas />
             )}
             {/* Zoom controls — measured from the reference DOM: a separate
-                100% chip followed by zoom-in and zoom-out icon chips
-                (top-left, gap-2, one border/bg pair per chip — no merged
-                cluster, no Fit button; reset stays on Ctrl/Cmd+0). */}
+                100% chip followed by lucide zoom-in and zoom-out MAGNIFIER
+                icon chips (in that order) — top-left, gap-2, one border/bg
+                pair per chip (no merged cluster, no Fit button; reset stays on
+                Ctrl/Cmd+0). */}
             <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
               <div className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-1 text-sm text-gray-300" aria-live="polite">
                 {Math.round(zoom * 100)}%
@@ -509,7 +510,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 aria-label="Zoom in"
                 className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
               >
-                <Plus className="h-4 w-4" aria-hidden />
+                <ZoomIn className="h-4 w-4" aria-hidden />
               </button>
               <button
                 type="button"
@@ -517,13 +518,14 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 aria-label="Zoom out"
                 className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
               >
-                <Minus className="h-4 w-4" aria-hidden />
+                <ZoomOut className="h-4 w-4" aria-hidden />
               </button>
             </div>
           </div>
 
-          {/* AI assistant — bottom of the canvas column. */}
-          <div className="h-56 flex-shrink-0">
+          {/* AI assistant — bottom of the canvas column. The reference wraps
+              it in an h-80 (320px) border-t column. */}
+          <div className="h-80 flex-shrink-0 border-t border-[#30363d] bg-[#161b22]">
             <AiAssistant />
           </div>
         </div>

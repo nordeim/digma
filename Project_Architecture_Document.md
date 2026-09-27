@@ -1,13 +1,23 @@
-# Digma — Master Project Architecture Document (PAD) v1.4.0
+# Digma — Master Project Architecture Document (PAD) v1.5.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-09-27 (v1.4.0 — auth-card state parity + search-input alignment)
+**Last Updated:** 2026-09-28 (v1.5.0 — the font-bug fix + reference-palette pins + session-8 parity pass)
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
+
+#### Revision Block — v1.5.0 (Tracked Changes)
+
+Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+- `[SR]` **The font bug (ADR-004a)**: `--font-sans: var(--font-inter), …` inside the plain `@theme` SURVIVED the Tailwind v4 build (it landed in `:root`) but broke at runtime — next/font scopes `--font-inter` to a class on `<body>`, and CSS custom properties resolve `var()` references at computed-value time PER ELEMENT, so at `:root` the chain computed to *guaranteed-invalid*; `html { font-family: var(--font-sans) }` fell back to the UA serif default and every descendant inherited the broken value. The ENTIRE app (dev AND the shipped production build) rendered "Times New Roman" and Inter never loaded — since session 1, unnoticed across six sessions of screenshot reviews. Fixed with literal font names (`"Inter", "Inter Fallback", ui-sans-serif, …` — @font-face families are document-global); `tests/theme.test.ts` pins the rule (literal `Inter`, no `var(` anywhere in `--font-sans`, no var() in color tokens, no legacy config).
+- `[SR]` **Reference-palette pins (ADR-004a)**: the reference app ships the Tailwind v3 palette via CDN; Tailwind v4's default palette is oklch-tuned and renders visibly different (v4 blue-600 = `#155DFC` vs the reference's `#2563EB`; v4 purple-600 = `#8200DB` vs `#9333EA`; grays shift cooler). Every palette scale the app consumes (blue/green/purple/pink/red/amber/yellow/orange/gray/slate) is now pinned to the v3 hex in the `@theme` "reference-palette pins" block. Consequence for tests: computed styles return `lab()`/`oklch()` function strings in v4 — color assertions must read PAINTED PIXELS (canvas `getImageData`), which the parity suite does.
+- `[SR]` Session-8 parity pass (measured live on the reference, all fixed + pinned by `tests/e2e/parity.spec.ts`): the desktop nav has NO active-state pill (the clone's purple `bg-purple-50 text-purple-700` was removed; `aria-current` stays for a11y); the active Dashboard view toggle is the reference's near-black `#171717` (not purple) — and /Recent's toggle group is a BARE `flex gap-2` row of `w-10 h-10` default/outline buttons (no gray container); the Teams page main carries NO gradient wash and its Create Team buttons are solid `bg-blue-600` (measured `#2563EB`); the Teams/Recent subtitles are `text-gray-500 mt-1` at the default size; the Teams empty state is a plain `text-gray-300` Users glyph (no gradient circle) on `py-16`; the editor zoom controls are lucide `ZoomIn`/`ZoomOut` magnifier icons (in-first order); the AI assistant panel follows the reference chrome (h-80 column with border-t on the wrapper, blue `Bot` header glyph + purple `WandSparkles` trailer on a border-b p-3 row, per-message gradient bot-avatar chips, `max-w-[80%]` `p-2 rounded-lg` bubbles with the timestamp BELOW as a sibling, an h-8 input + separate blue send button in a `flex gap-2` form, no suggestions line); the login card no longer carries the demo-account hint (creds stay in README/AGENTS).
+- `[SR]` Mobile-nav re-verification: the reference STILL ships no mobile nav (nav `display:none` at 390×844, no hamburger — failure class A); the clone's hamburger + Sheet drawer verified end-to-end (44×44 trigger, drawer opens, link taps navigate AND dismiss).
+- `[SR]` Test-count refresh: 66 unit checks (+4: the `@theme` contract), 51 Playwright checks (+7: the parity suite), 28 smoke, 20 build routes. The full gate (`lint → typecheck → 66 unit → build → 28 smoke → 51 e2e`) is green at v1.5.0.
 
 #### Revision Block — v1.4.0 (Tracked Changes)
 
@@ -145,6 +155,14 @@ How to use this document:
 - **Rationale:** The reference app's exact Tailwind classes were extracted from its live DOM during exploration; reproducing them requires the same utility surface, which CSS-first v4 provides.
 - **Consequences:** Positive — single source of truth in CSS; negative — token values are duplicated rather than derived (kept manually in sync; each is a measured constant from the reference app).
 - **Alternatives Rejected:** Legacy config bridge (`@config`) — reintroduces the documented failure class; `var()`-chained theme — dropped by the v4 build.
+
+**ADR-004a: Literal font tokens + reference-palette pins (the v1.5.0 amendment)**
+
+- **Context:** ADR-004 originally allowed `var()` for `--font-*` ("only `--font-*` may use var()"). That exception shipped a silent bug for six sessions: `--font-sans: var(--font-inter), …` compiles into `:root`, but next/font defines `--font-inter` on `<body>`, and CSS custom-property computed-value semantics resolve the reference per element — at `:root` it is undefined, so `--font-sans` computed to *guaranteed-invalid* and the entire tree inherited the UA serif default ("Times New Roman", in dev and in the shipped standalone build). Separately, the reference app ships Tailwind v3 via CDN; v4's oklch-tuned default palette renders visibly different colors (blue-600 `#155DFC` vs `#2563EB`).
+- **Decision:** `@theme` tokens are LITERAL values, full stop — hex for colors, font-family names for fonts (`"Inter", "Inter Fallback", ui-sans-serif, system-ui, …`). Every default-palette scale the app consumes is pinned to its v3 hex in the `@theme` "reference-palette pins" block. Color assertions in tests read painted pixels (canvas `getImageData`), never `getComputedStyle` strings (v4 emits `lab()`/`oklch()`).
+- **Rationale:** The runtime CSS semantics (not the build) broke the var() chain — a rule that survives compilation can still be broken at computed-value time; only literals are safe at `:root`. The palette pins exist because the clone must look like the reference, and the reference is v3.
+- **Consequences:** Positive — Inter actually loads (verified: `document.fonts.check('16px Inter')`); every audited color matches the reference to the pixel. Negative — the pin block must be extended when a new palette hue is introduced (mechanical, documented in AGENTS.md).
+- **Alternatives Rejected:** `@theme inline` for fonts — fixes the utilities but not the `html { font-family: var(--font-sans) }` base rule; accepting the v4 palette — visibly off-parity.
 
 **ADR-005: One Zustand editor store + full-list element replace persistence**
 
@@ -353,10 +371,10 @@ digma/
 ├── tests/
 │   ├── db-path.test.ts            # pins the db-path resolution contract
 │   └── e2e/                       # Playwright: auth, workspace, mobile-navigation,
-│                                  # untitled-editor, editor-panels
+│                                  # untitled-editor, editor-panels, parity
 ├── scripts/smoke-test.sh          # 28 HTTP checks against the standalone build
 ├── docs/
-│   ├── screenshots/               # 12 captured PNGs (desktop/mobile/tablet/panels)
+│   ├── screenshots/               # 16 captured PNGs (desktop/mobile/tablet/panels/auth states)
 │   ├── Tailwind-V4-Validation-Report.md
 │   ├── ssh_git_wrapper_v3.py      # SSH push wrapper (runbook in docs/)
 │   └── how-to-git-push-using-ssh-wrapper_SKILL.md
@@ -668,14 +686,17 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — editor domain | `src/lib/editor.test.ts` | 14 | src/lib | Vitest |
 | Unit — AI assistant | `src/lib/ai-assistant.test.ts` | 13 | src/lib | Vitest |
 | Unit — rate limiter | `src/lib/rate-limit.test.ts` | 7 | src/lib | Vitest |
-| Unit — db-path contract | `tests/db-path.test.ts` | 20 | tests | Vitest |
+| Unit — db-path contract | `tests/db-path.test.ts` | 19 | tests | Vitest |
+| Unit — @theme contract | `tests/theme.test.ts` | 4 | tests | Vitest |
 | Unit — greeting | `src/lib/greeting.test.ts` | 4 | src/lib | Vitest |
 | Unit — team stats | `src/lib/team.test.ts` | 5 | src/lib | Vitest |
 | E2E — auth journeys + card states | `tests/e2e/auth.spec.ts` | 11 | tests/e2e | Playwright |
-| E2E — workspace/editor | `tests/e2e/workspace.spec.ts` | 9 | tests/e2e | Playwright |
+| E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |
+| E2E — workspace/editor | `tests/e2e/workspace.spec.ts` | 8 | tests/e2e | Playwright |
 | E2E — mobile navigation | `tests/e2e/mobile-navigation.spec.ts` | 9 | tests/e2e | Playwright |
 | E2E — untitled editor | `tests/e2e/untitled-editor.spec.ts` | 3 | tests/e2e | Playwright |
 | E2E — editor panels | `tests/e2e/editor-panels.spec.ts` | 12 | tests/e2e | Playwright |
+| E2E — visual parity pins | `tests/e2e/parity.spec.ts` | 7 | tests/e2e | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 28 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns
@@ -693,10 +714,10 @@ No numeric coverage tooling is configured (deliberate: the check counts are the 
 
 - [ ] `bun run lint` clean (React 19 hook rules are errors, not warnings)
 - [ ] `bun run typecheck` clean (build has `ignoreBuildErrors` — this is the type gate)
-- [ ] `bun run test` → 62/62
+- [ ] `bun run test` → 66/66
 - [ ] `bun run build` succeeds; standalone assets copied
 - [ ] `./scripts/smoke-test.sh` → 28/28 (dev server STOPPED — the script's own standalone boot must own :3000)
-- [ ] `bun run test:e2e` → 39/39 (fresh e2e DB; :3100)
+- [ ] `bun run test:e2e` → 51/51 (fresh e2e DB; :3100)
 - [ ] Mobile navigation verified at 390×844 (the mobile suite IS this check)
 - [ ] No new `.env`, key files, or `db/*.db` staged
 
@@ -807,8 +828,8 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `src/components/app-header.tsx` | 215 | Desktop nav + MobileNav Sheet drawer (the Tailwind v4 class-A fix) |
 | `src/components/teams-view.tsx` | 473 | Team cards, member chips, invite dialog, inline confirm deletes |
 | `src/components/dashboard-view.tsx` | 343 | Gradient hero, Quick Stats, Continue Working, project grid, create dialog |
-| `src/components/login-screen.tsx` | 369 | Three-state auth card (ADR-013): branded sign-in; minimal sign-up with Confirm Password + inline mismatch validation; minimal forgot |
-| `src/components/editor/ai-assistant.tsx` | 203 | Chat UI; applies `{reply, operations[]}` to the store |
+| `src/components/login-screen.tsx` | 364 | Three-state auth card (ADR-013): branded sign-in; minimal sign-up with Confirm Password + inline mismatch validation; minimal forgot |
+| `src/components/editor/ai-assistant.tsx` | 213 | Chat UI (reference chrome: bot avatars, timestamp-below bubbles, blue send); applies `{reply, operations[]}` to the store |
 | `src/components/editor/layers-panel.tsx` | 209 | Layer list: visibility/lock, reorder, rename |
 | `src/lib/editor.ts` | 268 | Pure element domain: types, geometry, clamps, scale-aware bounds |
 | `src/lib/ai-assistant.ts` | 271 | LLM sanitizer + deterministic fallback parser |
@@ -816,13 +837,15 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `src/lib/db-path.ts` | 99 | Minifier-safe SQLite URL anchoring (ADR-002/002a) |
 | `src/app/api/projects/[id]/elements/route.ts` | 151 | Full-list transactional replace (Pattern 3) |
 | `src/hooks/use-toast.ts` | 90 | globalThis toast infra + `useSyncExternalStore` (ADR-007) |
-| `src/app/globals.css` | 101 | Tailwind 4 `@theme` tokens — the entire design system source |
+| `src/app/globals.css` | 160 | Tailwind 4 `@theme` tokens — the entire design system source (ADR-004/004a: literal fonts + reference-palette pins) |
 | `prisma/schema.prisma` | 104 | User/Project/DesignElement (incl. scale)/Team/TeamMember |
 | `prisma/seed.ts` | 144 | Demo workspace seed |
 | `tests/e2e/mobile-navigation.spec.ts` | 119 | Mobile nav regression suite @390×844 |
+| `tests/e2e/parity.spec.ts` | 181 | Session-8 visual-parity pins: font, nav pill, toggles, Teams, zoom icons, AI chrome, login hint (pixel-read colors) |
+| `tests/theme.test.ts` | 90 | The `@theme` contract: literal fonts, no var() chains, no legacy config (ADR-004a) |
 | `tests/e2e/auth.spec.ts` | 150 | Auth journeys + the three-state card structure suite (ADR-013) |
 | `tests/e2e/editor-panels.spec.ts` | 184 | Panel chips (+ responsive) + Select All + properties + scale contract (ADR-010/011/012) |
-| `tests/db-path.test.ts` | 156 | db-path resolution contract (20 checks, incl. DIGMA_REPO_ROOT) |
+| `tests/db-path.test.ts` | 156 | db-path resolution contract (19 checks, incl. DIGMA_REPO_ROOT) |
 | `src/middleware.ts` | 41 | Legacy lowercase → canonical 307 redirects (ADR-008) |
 | `tests/e2e/untitled-editor.spec.ts` | 58 | Untitled-editor contract: bogus/missing id, create-on-first-save (ADR-009) |
 | `scripts/smoke-test.sh` | 172 | 28 HTTP checks against the standalone build |

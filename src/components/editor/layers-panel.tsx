@@ -129,7 +129,7 @@ export function LayersPanel() {
                   onClick={(event) => onRowClick(el.id, event)}
                   className={cn(
                     "group flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-all duration-200",
-                    isSelected ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-[#21262d]",
+                    isSelected ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-[#30363d]",
                   )}
                   role="button"
                   aria-pressed={isSelected}
