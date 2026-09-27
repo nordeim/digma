@@ -20,7 +20,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | 🎨 **Canvas design editor** | DOM-element canvas over a 20px grid: draw rectangles/ellipses/lines/text/frames, marquee + click + shift-click selection, drag-move, 8-handle resize, rotate, opacity, fill/stroke/radius — all inline-styled like the reference |
 | 🧰 **Tool rail + shortcuts** | Select/Hand/Frame/Rectangle/Ellipse/Line/Pen/Text/Image with `V H F R O L T` shortcuts, Space-to-pan, Ctrl+wheel zoom, `Delete`, `Ctrl+Z`/`Ctrl+Shift+Z`, `Ctrl+0` reset |
 | 🗂 **Layers panel** | Reverse-ordered layer list with drag-reorder, per-layer visibility (eye) and lock, double-click rename, live "N layers • N selected" counter |
-| ⚙️ **Properties panel** | The reference's five sections — Position & Size (X/Y/W/H), Corner Radius (slider + per-corner), Fill & Stroke (Solid/Gradient/Image pills, swatch + hex rows), Transform (rotation slider), Opacity — plus Text properties; "Canvas Properties" with a Background Color swatch + hex row when nothing is selected. Panel-toggle chips (bottom-left) independently show/hide the Layers, Components, and Properties panels |
+| ⚙️ **Properties panel** | The reference's five sections — Position & Size (X/Y/W/H), Corner Radius (slider + per-corner), Fill & Stroke (Solid/Gradient/Image pills, swatch + hex rows), Transform (rotation slider + number input, **per-element Scale 0.1–3.0x** — persisted, rendered as `translate(x,y) scale(s) rotate(r)`), Opacity — plus Text properties; "Canvas Properties" with a Background Color swatch + hex row when nothing is selected. Panel-toggle chips (bottom-left) independently show/hide the Layers, Components, and Properties panels — and render only where those panels can (hidden below md; the Properties chip waits for lg) |
 | 🤖 **AI design assistant** | Chat panel below the canvas — LLM (`z-ai-web-dev-sdk`, server-side) parses instructions into element operations with a deterministic fallback parser ("Add 3 red circles", "Create a login form") — degrade-not-fail, never hard-fails |
 | 🕐 **Autosave + history** | 800ms-debounced full-list `PUT` with id remapping, "Saved / Saving… / Unsaved" badge, undo/redo history (60 snapshots) |
 | 🖥 **Present mode** | Fullscreen, fit-to-viewport presentation of the canvas (Escape to exit); Share copies a deep link |
@@ -66,6 +66,13 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 
 </details>
 
+<details>
+<summary>Editor — Transform section (rotation number input + the Scale slider, element at 2.0x + 15°)</summary>
+
+![Editor transform scale](docs/screenshots/13-editor-transform-scale.png)
+
+</details>
+
 ## Tech Stack
 
 | Layer | Technology | Version | Purpose |
@@ -76,8 +83,8 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | Styling | Tailwind CSS | 4 | CSS-first `@theme` tokens in `globals.css` — **no `tailwind.config.js`** |
 | Components | shadcn/ui on Radix | vendored | dialog, dropdown-menu, sheet, tabs, toast, button, input, label, textarea |
 | Client state | Zustand | 5 | The editor store (elements, selection, tool, zoom, history) |
-| Unit tests | Vitest | 5 | 58 checks on the pure domain seams |
-| E2E tests | Playwright | 1.63 | 33 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, and the panel-toggle/properties suites |
+| Unit tests | Vitest | 5 | 62 checks on the pure domain seams |
+| E2E tests | Playwright | 1.63 | 39 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, the panel-toggle/properties suites, and the AI no-crash regression pin |
 | ORM | Prisma | 6 | Schema, client, `db push`, seed |
 | Database | SQLite | — | Zero-config local persistence (`db/custom.db`) |
 | Auth | Node `crypto` (scrypt + HMAC) | — | Cookie sessions, no external auth service |
@@ -252,14 +259,14 @@ Status colors: blue `#3B82F6` (default fill/active tool), green `#10B981` (Saved
 ## Testing
 
 ```bash
-bun run test              # unit tests — 58 checks on the pure domain seams
-bun run test:e2e          # Playwright — 33 browser checks (needs `bun run build` first)
+bun run test              # unit tests — 62 checks on the pure domain seams
+bun run test:e2e          # Playwright — 39 browser checks (needs `bun run build` first)
 ./scripts/smoke-test.sh   # curl E2E — 28 checks against the production build
 ```
 
 The unit layer (Vitest) pins the pure seams: the SQLite URL resolution incl. the standalone `chdir` trap (`src/lib/db-path.ts`, pinned by `tests/db-path.test.ts`), the assistant's deterministic parser + LLM-output sanitizer (`ai-assistant.test.ts`), the editor's geometry/default seams (`editor.test.ts`), the fixed-window rate limiter (`rate-limit.test.ts`), invite normalization (`team.test.ts`), and the greeting boundaries (`greeting.test.ts`).
 
-The Playwright layer boots the production standalone server on :3100 with its own scratch database (`db/e2e.db`, schema-pushed + seeded by the global setup); a setup project signs the demo user in ONCE and shares the cookie via storageState (the auth rate limiter makes per-test logins a trap). The suites pin: the login round-trip (wrong password, valid credentials, authed redirect), the workspace surface (dashboard stats/cards, path routes, 404 guard, create-project dialog, editor load with layers), the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), — and — the highest-regression-risk chrome — **the mobile navigation fix**: trigger visibility below `md` with 44px targets, drawer opens with all links, link taps navigate AND close, Escape closes with focus return, focus stays trapped, scroll locks (`data-scroll-locked`), and the hamburger never appears at ≥768. A dedicated `editor-panels` suite pins the reference's panel-toggle chips (independent Layers/Components/Properties visibility, default ON/OFF/ON), the Layers header Select All/Deselect All flip, and the properties panel's five-section layout (Position & Size, Corner Radius, Fill & Stroke, Transform, Opacity; Canvas Properties → Background Color row).
+The Playwright layer boots the production standalone server on :3100 with its own scratch database (`db/e2e.db`, schema-pushed + seeded by the global setup); a setup project signs the demo user in ONCE and shares the cookie via storageState (the auth rate limiter makes per-test logins a trap). The suites pin: the login round-trip (wrong password, valid credentials, authed redirect), the workspace surface (dashboard stats/cards, path routes, 404 guard, create-project dialog, editor load with layers), the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), — and — the highest-regression-risk chrome — **the mobile navigation fix**: trigger visibility below `md` with 44px targets, drawer opens with all links, link taps navigate AND close, Escape closes with focus return, focus stays trapped, scroll locks (`data-scroll-locked`), and the hamburger never appears at ≥768. A dedicated `editor-panels` suite pins the reference's panel-toggle chips (independent Layers/Components/Properties visibility, default ON/OFF/ON, chips hidden where their panels can't render — below md, Properties chip below lg), the Layers header Select All/Deselect All flip, the properties panel's five-section layout (Position & Size, Corner Radius, Fill & Stroke, Transform, Opacity; Canvas Properties → Background Color row), and the Transform section's scale contract (slider 0.1–3.0, "1.0x" readout, persisted transform chain). An AI-assistant regression test pins the degrade-not-fail contract — a submitted command must answer, mutate the canvas, and leave the page fully interactive (the reference app itself crashes blank-screen on the same input).
 
 The smoke suite boots the production standalone server and runs 28 checks: health, auth (valid/invalid/unauthenticated), all read endpoints (envelope asserted), project CRUD incl. rename + full-list element PUT + invalid-type rejection, team + member validation, the AI assistant (fallback adds exactly 3 circles; blank message 400), page renders, the 404 guard, logout invalidation, and the login rate limit (429).
 

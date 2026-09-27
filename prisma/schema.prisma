@@ -51,6 +51,7 @@ model DesignElement {
   width       Float    @default(100)
   height      Float    @default(100)
   rotation    Float    @default(0)
+  scale       Float    @default(1) // per-element visual scale (reference slider 0.1–3.0)
   opacity     Float    @default(1)
   fill        String? // hex/rgba
   stroke      String?

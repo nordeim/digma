@@ -88,8 +88,8 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 | `bun run dev` | Start development server (:3000, logs to `dev.log`) |
 | `bun run build` | Production build (+ copies static/public into standalone) |
 | `bun run start` | Production standalone server (`.next/standalone/server.js`) |
-| `bun run test` | Unit tests (58 checks, Vitest) |
-| `bun run test:e2e` | Browser E2E (33 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db`) |
+| `bun run test` | Unit tests (62 checks, Vitest) |
+| `bun run test:e2e` | Browser E2E (39 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db`) |
 | `bun run lint` | ESLint 9 + next config |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bunx prisma generate` | Prisma client after schema change |
@@ -102,9 +102,9 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 
 ### Test Pyramid
 
-- **Unit Tests** (Vitest, 58 checks): pure domain seams in `src/lib/*.test.ts` + `tests/db-path.test.ts` — editor geometry/clamps, AI assistant parsing/sanitization, greeting time buckets, rate limiter, team stats, db-path resolution contract (incl. the `DIGMA_REPO_ROOT` anchor).
-- **Smoke Tests** (28 checks, `scripts/smoke-test.sh`): HTTP-level — every route, auth gating, login/logout, CRUD, health, stats.
-- **E2E Tests** (Playwright, 33 checks): critical user journeys — login/logout/validation, dashboard→editor→draw→autosave→AI assistant, project create/rename/delete, teams, the mobile-navigation regression suite pinned at 390×844, the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), and the editor-panels suite (chip toggles, Select All flip, the five properties sections).
+- **Unit Tests** (Vitest, 62 checks): pure domain seams in `src/lib/*.test.ts` + `tests/db-path.test.ts` — editor geometry/clamps (incl. the scale-aware visual bounds + transform chain), AI assistant parsing/sanitization, greeting time buckets, rate limiter, team stats, db-path resolution contract (incl. the `DIGMA_REPO_ROOT` anchor).
+- **Smoke Tests** (28 checks, `scripts/smoke-test.sh`): HTTP-level — every route, auth gating, login/logout, CRUD, health, stats. Run it with the dev server STOPPED (the script only kills standalone/`next start` processes; a lingering `next dev` steals :3000).
+- **E2E Tests** (Playwright, 39 checks): critical user journeys — login/logout/validation, dashboard→editor→draw→autosave→AI assistant (incl. the no-crash pin: the reference app itself blanks out on AI submission — this clone must answer, mutate the canvas, and stay interactive), project create/rename/delete, teams, the mobile-navigation regression suite pinned at 390×844, the Untitled-editor contract (unknown/missing projectId → working editor, create-on-first-save, URL adoption), and the editor-panels suite (chip toggles incl. their responsive visibility — hidden below md, Properties chip below lg — Select All flip, the five properties sections, and the Transform scale contract: slider 0.1–3.0, "1.0x" readout, persisted transform chain).
 
 ### Test Commands
 
@@ -162,7 +162,7 @@ ESLint 9 with `eslint-config-next`; `skills/` and build output dirs are ignored 
 
 - **Session-gated pages.** Every `page.tsx` calls `getSessionUser()` and `redirect("/login?from_url=…")`; client views never gate themselves. All API reads/mutations call `requireSession()` first (401 envelope otherwise). Only `/api/health` and `/api/auth/*` are public.
 - **Editor state lives in ONE Zustand store** (`src/components/editor/editor-store.ts`) — elements, selection, tool, zoom/pan, save flag, undo/redo snapshots. Views and panels read the store and call actions; nothing else owns canvas state. **Unknown/missing `?projectId` opens the "Untitled" editor** (`UNTITLED_PROJECT` in `editor-view.tsx`): the first autosave `POST`s `/api/projects`, binds the id (`attachProject`), and adopts the URL via `history.replaceState` (ADR-009; pinned by `tests/e2e/untitled-editor.spec.ts`).
-- **The bottom-left editor chips are independent panel toggles** (ADR-010): Layers / Components / Properties each flip their own panel's visibility (Components renders a second `w-60` column); default ON/OFF/ON; pinned by `tests/e2e/editor-panels.spec.ts`. The properties panel follows the reference's five-section layout (Position & Size, Corner Radius with linked per-corner inputs, Fill & Stroke with Solid/Gradient/Image pills, Transform, Opacity) plus a fixed header block and a Background Color swatch + hex row when nothing is selected.
+- **The bottom-left editor chips are independent panel toggles** (ADR-010): Layers / Components / Properties each flip their own panel's visibility (Components renders a second `w-60` column); default ON/OFF/ON; the chips render only where their panels can — bar `hidden md:flex`, Properties chip `hidden lg:inline-block` (dead controls that lie via `aria-pressed` are a bug); pinned by `tests/e2e/editor-panels.spec.ts`. The properties panel follows the reference's five-section layout (Position & Size, Corner Radius with linked per-corner inputs, Fill & Stroke with Solid/Gradient/Image pills, Transform with rotation slider + number input and the persisted per-element Scale 0.1–3.0 rendered as `translate(x,y) scale(s) rotate(r)`, Opacity) plus a fixed header block and a Background Color swatch + hex row when nothing is selected.
 - **Elements are client-sovereign rows.** Local ids (`local-…`) are created optimistically; the server transactionally deletes + recreates the full list on every save (order = array order). Don't add per-element PATCH autosave — the replace contract is what makes undo/redo and AI batch operations safe.
 - **Toast store is `globalThis`-backed** (`src/hooks/use-toast.ts`): state AND listener set live on `globalThis.__digmaToastInfra` (Turbopack chunk-splitting can hand two copies of a module-level singleton to different client chunks). Consumption uses `useSyncExternalStore`. The Toaster renders plain divs — a Radix Toast controlled-`open` list never mounted reliably.
 - **Mobile navigation is a deliberate FIX, not parity.** The reference app ships no mobile nav (desktop nav `hidden md:flex`, no fallback — Tailwind v4 failure class A). This clone adds the hamburger + Sheet drawer (`MobileNav` in `app-header.tsx`): `md:hidden` trigger with stable `aria-label="Navigation menu"`, 44px targets, Radix focus trap/Escape/scroll-lock, links wrapped in `SheetClose`. `tests/e2e/mobile-navigation.spec.ts` pins all of it.

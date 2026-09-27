@@ -105,3 +105,78 @@ test.describe("properties panel section layout", () => {
     await expect(page.getByRole("heading", { name: "Properties", exact: true })).toBeVisible();
   });
 });
+
+test.describe("transform section: scale + rotation inputs (reference parity)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+    await page.getByRole("button", { name: "Layer Headline" }).click();
+    await expect(page.getByRole("heading", { level: 4, name: "Transform" })).toBeVisible();
+  });
+
+  test("Rotation pairs its slider with an editable number input", async ({ page }) => {
+    const numberInput = page.getByRole("spinbutton", { name: "Rotation value" });
+    await expect(numberInput).toBeVisible();
+    await expect(numberInput).toHaveValue("0");
+
+    await numberInput.fill("45");
+    await expect(numberInput).toHaveValue("45");
+    // The slider follows the typed value.
+    const slider = page.getByRole("slider", { name: "Rotation" });
+    await expect(slider).toHaveValue("45");
+  });
+
+  test("Scale shows the 1.0x default readout and the 0.1–3.0 slider", async ({ page }) => {
+    const slider = page.getByRole("slider", { name: "Scale" });
+    await expect(slider).toBeVisible();
+    await expect(slider).toHaveAttribute("min", "0.1");
+    await expect(slider).toHaveAttribute("max", "3");
+    await expect(page.getByTestId("scale-value")).toHaveText("1.0x");
+  });
+
+  test("scaling an element grows its visual footprint and persists", async ({ page }) => {
+    const slider = page.getByRole("slider", { name: "Scale" });
+    // Keyboard-driven slider steps (0.1 per step) reach 2.0 deterministically.
+    await slider.focus();
+    for (let i = 0; i < 10; i++) await page.keyboard.press("ArrowRight");
+    await expect(page.getByTestId("scale-value")).toHaveText("2.0x");
+
+    // The element's rendered transform chain carries scale (canvas space).
+    const transform = await page.locator('[data-element-id][aria-label="Headline"]').getAttribute("style");
+    expect(transform).toContain("scale(2)");
+
+    // Autosave persists the scale; a reload re-renders the scaled element.
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await page.reload();
+    await expect(page.getByTestId("scale-value")).toBeHidden(); // nothing selected after reload
+    await page.getByRole("button", { name: "Layer Headline" }).click();
+    await expect(page.getByTestId("scale-value")).toHaveText("2.0x");
+  });
+});
+
+test.describe("panel chips render only where their panels can (responsive fix)", () => {
+  test("chips are hidden on the mobile editor (no dead controls)", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+
+    await expect(page.getByRole("button", { name: "Toggle Layers panel" })).toBeHidden();
+    await expect(page.getByRole("button", { name: "Toggle Components panel" })).toBeHidden();
+    await expect(page.getByRole("button", { name: "Toggle Properties panel" })).toBeHidden();
+    // The canvas and the AI assistant still work — the editor is not gutted.
+    await expect(page.getByRole("heading", { name: "AI Assistant" })).toBeVisible();
+  });
+
+  test("the Properties chip waits for lg (its panel is lg:flex)", async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 900 }); // md..lg zone
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+
+    await expect(page.getByRole("button", { name: "Toggle Layers panel" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Toggle Properties panel" })).toBeHidden();
+
+    // Desktop (>= lg): all three chips are back.
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await expect(page.getByRole("button", { name: "Toggle Properties panel" })).toBeVisible();
+  });
+});

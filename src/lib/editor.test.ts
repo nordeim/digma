@@ -3,6 +3,7 @@ import {
   boundsOf,
   clampZoom,
   defaultElementFor,
+  elementToStyle,
   fitToBounds,
   normalizeRect,
   type DesignElementDTO,
@@ -22,6 +23,7 @@ function el(partial: Partial<DesignElementDTO>): DesignElementDTO {
     width: 100,
     height: 100,
     rotation: 0,
+    scale: 1,
     opacity: 1,
     fill: null,
     stroke: null,
@@ -63,6 +65,13 @@ describe("defaultElementFor", () => {
     expect(line.fill).toBeNull();
     expect(line.height).toBe(0);
   });
+
+  it("defaults scale to 1 (the reference's per-element scale unit)", () => {
+    for (const type of ["rectangle", "ellipse", "text", "frame", "line"] as const) {
+      const out = defaultElementFor(type, 0, 0, 10, 10, 0);
+      expect(out.scale).toBe(1);
+    }
+  });
 });
 
 describe("normalizeRect", () => {
@@ -80,6 +89,14 @@ describe("boundsOf", () => {
   it("computes the content bounding box", () => {
     const bounds = boundsOf([el({ x: 100, y: 200, width: 50, height: 25 }), el({ x: 10, y: 500, width: 5, height: 5 })]);
     expect(bounds).toEqual({ minX: 10, minY: 200, maxX: 150, maxY: 505 });
+  });
+
+  it("measures VISUAL bounds: element scale grows the box", () => {
+    // A 100x50 element at scale 2 visually occupies 200x100 (the reference
+    // renders translate(x,y) scale(s) rotate(r) — scale grows right/down
+    // from the unshifted origin, so x/y stay put).
+    const bounds = boundsOf([el({ x: 10, y: 20, width: 100, height: 50, scale: 2 })]);
+    expect(bounds).toEqual({ minX: 10, minY: 20, maxX: 210, maxY: 120 });
   });
 });
 
@@ -103,6 +120,18 @@ describe("fitToBounds", () => {
   it("shrinks oversized content", () => {
     const { scale } = fitToBounds({ minX: 0, minY: 0, maxX: 3000, maxY: 1800 }, 320, 200, 10);
     expect(scale).toBeCloseTo(0.1, 1);
+  });
+});
+
+describe("elementToStyle", () => {
+  it("chains translate, scale, then rotate — the reference transform order", () => {
+    const style = elementToStyle(el({ x: 12, y: 34, rotation: 45, scale: 1.5 }));
+    expect(style.transform).toBe("translate(12px, 34px) scale(1.5) rotate(45deg)");
+  });
+
+  it("keeps the identity chain legible at defaults", () => {
+    const style = elementToStyle(el({}));
+    expect(style.transform).toBe("translate(0px, 0px) scale(1) rotate(0deg)");
   });
 });
 

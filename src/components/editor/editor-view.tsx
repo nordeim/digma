@@ -261,7 +261,8 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                 top: el.y,
                 width: el.width,
                 height: el.height,
-                transform: `rotate(${el.rotation}deg)`,
+                transform: `rotate(${el.rotation}deg) scale(${el.scale ?? 1})`,
+                transformOrigin: "0px 0px",
                 opacity: el.opacity,
                 backgroundColor: el.fill ?? undefined,
                 borderRadius: el.type === "ellipse" ? "50%" : el.radius || undefined,
@@ -539,12 +540,17 @@ export function EditorView({ user }: { user: HeaderUser }) {
           chip bar (absolute bottom-4 left-4) where each chip is an
           independent panel visibility toggle, NOT an exclusive tab switch:
           ON = bg-blue-600 text-white, OFF = panel-dark. They float over the
-          toolbar/layers column bottom, exactly like the reference. */}
-      <div className="absolute bottom-4 left-4 z-10 flex gap-2">
+          toolbar/layers column bottom, exactly like the reference.
+          Responsive guard (a clone fix): the chips only render where their
+          panels CAN render — the bar is hidden below md (the panels are
+          md:flex/lg:flex), and the Properties chip additionally hides below
+          lg. Without this, the chips flip aria-pressed with no visible
+          effect — dead controls that lie about state. */}
+      <div className="absolute bottom-4 left-4 z-10 hidden gap-2 md:flex">
         {([
           { key: "layers", label: "Layers" },
           { key: "components", label: "Components" },
-          { key: "properties", label: "Properties" },
+          { key: "properties", label: "Properties", hideBelow: "lg" },
         ] as const).map((chip) => (
           <button
             key={chip.key}
@@ -554,6 +560,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
             onClick={() => setPanels((p) => ({ ...p, [chip.key]: !p[chip.key] }))}
             className={cn(
               "rounded px-3 py-1 text-xs transition-colors",
+              "hideBelow" in chip && chip.hideBelow === "lg" && "hidden lg:inline-block",
               panels[chip.key] ? "bg-blue-600 text-white" : "bg-[#161b22] text-gray-400 hover:text-white",
             )}
           >

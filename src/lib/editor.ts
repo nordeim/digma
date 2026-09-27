@@ -40,6 +40,9 @@ export type DesignElementDTO = {
   width: number;
   height: number;
   rotation: number;
+  /** Per-element visual scale (reference parity: slider 0.1–3.0, default 1;
+   * rendered in the transform chain between translate and rotate). */
+  scale: number;
   opacity: number;
   fill: string | null;
   stroke: string | null;
@@ -118,6 +121,7 @@ export function defaultElementFor(
     width,
     height,
     rotation: 0,
+    scale: 1,
     opacity: 1,
     fill: DEFAULT_FILL,
     stroke: null,
@@ -185,10 +189,12 @@ export function normalizeRect(
 
 export type ElementStyle = Record<string, string>;
 
-/** The inline style the canvas renders an element with (mirrors the reference). */
+/** The inline style the canvas renders an element with (mirrors the
+ * reference: translate(x,y) scale(s) rotate(r) — scale sits between the
+ * translate and the rotate, exactly the chain the reference DOM ships). */
 export function elementToStyle(el: DesignElementDTO): ElementStyle {
   const style: ElementStyle = {
-    transform: `translate(${el.x}px, ${el.y}px) rotate(${el.rotation}deg)`,
+    transform: `translate(${el.x}px, ${el.y}px) scale(${el.scale}) rotate(${el.rotation}deg)`,
     transformOrigin: "0px 0px",
     opacity: String(el.opacity),
     mixBlendMode: "normal",
@@ -218,7 +224,10 @@ export function elementToStyle(el: DesignElementDTO): ElementStyle {
 
 export type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
 
-/** Content bounding box of a set of elements (used by thumbnails + zoom-to-fit). */
+/** Content bounding box of a set of elements (used by thumbnails + zoom-to-fit).
+ * VISUAL bounds: a scaled element occupies width*scale x height*scale —
+ * the selection outline, marquee containment, and thumbnails all need the
+ * on-screen footprint, not the model footprint. */
 export function boundsOf(elements: DesignElementDTO[]): Bounds | null {
   if (elements.length === 0) return null;
   let minX = Infinity;
@@ -226,10 +235,11 @@ export function boundsOf(elements: DesignElementDTO[]): Bounds | null {
   let maxX = -Infinity;
   let maxY = -Infinity;
   for (const el of elements) {
+    const s = el.scale ?? 1;
     minX = Math.min(minX, el.x);
     minY = Math.min(minY, el.y);
-    maxX = Math.max(maxX, el.x + el.width);
-    maxY = Math.max(maxY, el.y + el.height);
+    maxX = Math.max(maxX, el.x + el.width * s);
+    maxY = Math.max(maxY, el.y + el.height * s);
   }
   return { minX, minY, maxX, maxY };
 }

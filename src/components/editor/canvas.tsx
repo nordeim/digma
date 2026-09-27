@@ -186,22 +186,34 @@ export function Canvas() {
 
     if (drag.kind === "resize") {
       const { el, startBounds, handle } = drag;
+      // Pointer coordinates live in VISUAL space; a scaled element occupies
+      // w*scale x h*scale on screen. Run the whole drag in visual space,
+      // then divide by the scale on write-back so the model stays the
+      // source of truth (scale stays untouched — resizing never rescales).
+      const s = el.scale ?? 1;
+      const vw = startBounds.w * s;
+      const vh = startBounds.h * s;
+      const minV = (n: number) => (el.type === "line" ? 0 : 1) * s;
       let x = startBounds.x;
       let y = startBounds.y;
-      let w = startBounds.w;
-      let h = startBounds.h;
+      let w = vw;
+      let h = vh;
 
-      if (handle.includes("e")) w = Math.max(point.x - x, 1);
+      if (handle.includes("e")) w = Math.max(point.x - x, minV(1));
       if (handle.includes("w")) {
-        w = Math.max(x + startBounds.w - point.x, 1);
-        x = x + startBounds.w - w;
+        w = Math.max(x + vw - point.x, minV(1));
+        x = x + vw - w;
       }
-      if (handle.includes("s")) h = Math.max(point.y - y, el.type === "line" ? 0 : 1);
+      if (handle.includes("s")) h = Math.max(point.y - y, minV(1));
       if (handle.includes("n")) {
-        h = Math.max(y + startBounds.h - point.y, el.type === "line" ? 0 : 1);
-        y = y + startBounds.h - h;
+        h = Math.max(y + vh - point.y, minV(1));
+        y = y + vh - h;
       }
-      store.updateElements([el.id], { x, y, width: w, height: h }, false);
+      store.updateElements(
+        [el.id],
+        { x, y, width: Math.max(w / s, 1), height: Math.max(h / s, el.type === "line" ? 0 : 1) },
+        false,
+      );
     }
   }
 
@@ -221,14 +233,19 @@ export function Canvas() {
       }
     } else if (drag.kind === "marquee") {
       if (drag.w > 2 && drag.h > 2) {
+        // Containment against VISUAL footprints (scale-aware).
         const inside = elements.filter(
-          (el) =>
-            el.visible &&
-            !el.locked &&
-            el.x >= drag.x &&
-            el.x + el.width <= drag.x + drag.w &&
-            el.y >= drag.y &&
-            el.y + el.height <= drag.y + drag.h,
+          (el) => {
+            const s = el.scale ?? 1;
+            return (
+              el.visible &&
+              !el.locked &&
+              el.x >= drag.x &&
+              el.x + el.width * s <= drag.x + drag.w &&
+              el.y >= drag.y &&
+              el.y + el.height * s <= drag.y + drag.h
+            );
+          },
         );
         if (inside.length > 0) store.select(inside.map((el) => el.id));
       }
@@ -410,7 +427,8 @@ function CanvasElement({ element, selected }: { element: DesignElementDTO; selec
   const tool = useEditorStore((s) => s.tool);
 
   const style: React.CSSProperties = {
-    transform: `translate(${element.x}px, ${element.y}px) rotate(${element.rotation}deg)`,
+    // The reference's transform chain: translate, scale, then rotate.
+    transform: `translate(${element.x}px, ${element.y}px) scale(${element.scale ?? 1}) rotate(${element.rotation}deg)`,
     transformOrigin: "0px 0px",
     opacity: element.opacity,
     width: element.width,

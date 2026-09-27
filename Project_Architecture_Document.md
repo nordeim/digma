@@ -1,13 +1,22 @@
-# Digma — Master Project Architecture Document (PAD) v1.2.0
+# Digma — Master Project Architecture Document (PAD) v1.3.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-09-27 (v1.2.0 — editor panel-chrome parity remediation)
+**Last Updated:** 2026-09-27 (v1.3.0 — per-element scale + chip responsive-guard remediation)
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
+
+#### Revision Block — v1.3.0 (Tracked Changes)
+
+Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+- `[SR]` Per-element Scale (ADR-012): a fresh live DOM audit decoded the reference's Transform section — Rotation pairs its slider with a `w-16` number input, and a second **Scale** slider (0.1–3.0, step 0.1, "1.0x" readout) persists per element and renders in the transform chain `translate(x,y) scale(s) rotate(r)` (verified surviving reload on the reference). Implemented across the whole stack: `DesignElement.scale` (schema column, DTO, defaults), API clamps (0.05–20), canvas/present/thumbnail render chains, scale-aware `boundsOf()` visual bounds (selection outline, marquee, fit-to-view, thumbnails in one seam), and visual-space resize math (pointer deltas divided by scale on write-back).
+- `[SR]` Panel chips now render only where their panels can: the chip bar is `hidden md:flex` and the Properties chip `hidden lg:inline-block` (its panel is `lg:flex`). Before, the chips flipped `aria-pressed` below md with no visible effect — dead controls that lie about state.
+- `[SR]` AI no-crash regression pin: the reference app itself CRASHES on AI submission (reproduced live 2026-09-27: `TypeError: Cannot read properties of undefined (reading 'charAt')`, React root unmounts, blank page — plus a `cdn.tailwindcss.com` production warning). `tests/e2e/workspace.spec.ts` now pins that a submitted command must answer, mutate the canvas, and leave the clone's page fully interactive.
+- `[SR]` Test-count refresh: 62 unit checks (editor +4: scale default, transform chain, scale-aware bounds), 39 Playwright checks (+6: rotation number input, scale slider contract, scale persistence, chips hidden at 390, Properties chip waits for lg, AI no-crash).
 
 #### Revision Block — v1.2.0 (Tracked Changes)
 
@@ -183,6 +192,14 @@ How to use this document:
 - **Rationale:** The properties panel is a permanently visible editor surface — section-level fidelity is visible in every screenshot comparison. Linked corners keep the visual spec without a schema migration.
 - **Consequences:** Positive — layout parity, e2e-pinned sections. Negative — per-corner values cannot diverge (documented); gradient/image fills unavailable (documented).
 - **Alternatives Rejected:** Per-corner radius columns (schema migration + renderer changes for marginal value); vendoring a Radix Slider (new dependency for a visual detail the native range covers).
+
+**ADR-012: Per-element scale rendered in the transform chain (translate → scale → rotate)**
+
+- **Context:** A live DOM audit of the reference's Transform section found a second control the v1.2.0 clone lacked: a **Scale** slider (Radix, `aria-valuemin=0.1 aria-valuemax=3`, step 0.1) with a "1.0x" text readout, persisted per element (verified surviving a reload on the reference: the element renders `translate(212px, 202px) scale(1.2) rotate(2deg)`). The reference's Rotation row also pairs its slider with an editable `w-16` number input, not a plain text readout. Distinct from the AI `update.scale` operation (a one-shot width/height multiplier), the reference's scale is a STORED element property applied at render time.
+- **Decision:** Add `scale: Float @default(1)` to `DesignElement` (schema + DTO + defaults; API clamp 0.05–20 with fallback 1). Render it in the element transform chain `translate(x,y) scale(s) rotate(r)` (canvas, present overlay, card thumbnails — all with `transformOrigin: "0px 0px"`). The Transform section gets the Scale slider (0.1–3.0, step 0.1, "N.Nx" readout) and the Rotation number input. `boundsOf()` computes VISUAL bounds (`width*scale`), which fixes the selection outline, marquee containment, fit-to-view, and thumbnails in one seam. Resize drags run in visual space and divide the delta by scale on write-back (resized model w/h stay scale-independent; resizing never rescales).
+- **Rationale:** The Transform section is a permanently visible surface — a missing control is visible in every screenshot comparison; and the visual-bounds seam prevents the classic scaled-element bug (selection ring / marquee / thumbnail that doesn't wrap the element).
+- **Consequences:** Positive — full transform parity incl. persistence; one bounds seam keeps every consumer consistent. Negative — the model w/h and the visual footprint diverge for scaled elements (all consumers must go through `boundsOf`/`el.scale`); rotation-aware bounds remain out of scope (the reference behaves the same — its ring is the same-transform sibling, not an AABB).
+- **Alternatives Rejected:** Folding scale into width/height on save (loses the reference's round-trip semantics — the reference keeps w/h and scale separate); an AABB with rotation (the reference doesn't do it either); Radix Slider (native range is the zero-dependency equivalent already used by every other slider).
 
 ---
 
@@ -631,17 +648,17 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 
 | Category | Files | Checks | Location | Framework |
 |----------|-------|--------|----------|-----------|
-| Unit — editor domain | `src/lib/editor.test.ts` | 10 | src/lib | Vitest |
+| Unit — editor domain | `src/lib/editor.test.ts` | 14 | src/lib | Vitest |
 | Unit — AI assistant | `src/lib/ai-assistant.test.ts` | 13 | src/lib | Vitest |
 | Unit — rate limiter | `src/lib/rate-limit.test.ts` | 7 | src/lib | Vitest |
 | Unit — db-path contract | `tests/db-path.test.ts` | 20 | tests | Vitest |
 | Unit — greeting | `src/lib/greeting.test.ts` | 4 | src/lib | Vitest |
 | Unit — team stats | `src/lib/team.test.ts` | 5 | src/lib | Vitest |
 | E2E — auth journeys | `tests/e2e/auth.spec.ts` | 6 | tests/e2e | Playwright |
-| E2E — workspace/editor | `tests/e2e/workspace.spec.ts` | 8 | tests/e2e | Playwright |
+| E2E — workspace/editor | `tests/e2e/workspace.spec.ts` | 9 | tests/e2e | Playwright |
 | E2E — mobile navigation | `tests/e2e/mobile-navigation.spec.ts` | 9 | tests/e2e | Playwright |
 | E2E — untitled editor | `tests/e2e/untitled-editor.spec.ts` | 3 | tests/e2e | Playwright |
-| E2E — editor panels | `tests/e2e/editor-panels.spec.ts` | 7 | tests/e2e | Playwright |
+| E2E — editor panels | `tests/e2e/editor-panels.spec.ts` | 12 | tests/e2e | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 28 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns
@@ -659,10 +676,10 @@ No numeric coverage tooling is configured (deliberate: the check counts are the 
 
 - [ ] `bun run lint` clean (React 19 hook rules are errors, not warnings)
 - [ ] `bun run typecheck` clean (build has `ignoreBuildErrors` — this is the type gate)
-- [ ] `bun run test` → 58/58
+- [ ] `bun run test` → 62/62
 - [ ] `bun run build` succeeds; standalone assets copied
-- [ ] `./scripts/smoke-test.sh` → 28/28
-- [ ] `bun run test:e2e` → 33/33 (fresh e2e DB; :3100)
+- [ ] `./scripts/smoke-test.sh` → 28/28 (dev server STOPPED — the script's own standalone boot must own :3000)
+- [ ] `bun run test:e2e` → 39/39 (fresh e2e DB; :3100)
 - [ ] Mobile navigation verified at 390×844 (the mobile suite IS this check)
 - [ ] No new `.env`, key files, or `db/*.db` staged
 
@@ -723,7 +740,7 @@ Demo login: `demo@digma.app` / `Digma1234!`. Ensure no exported `DATABASE_URL` a
 | `bun run dev` | repo root | dev server :3000, logs tee'd to `dev.log` |
 | `bun run build` / `bun run start` | repo root | production standalone |
 | `bun run lint` / `bun run typecheck` | repo root | quality gates |
-| `bun run test` / `bun run test:watch` | repo root | unit tests (58) |
+| `bun run test` / `bun run test:watch` | repo root | unit tests (62) |
 | `bun run test:e2e` | repo root | Playwright suite (:3100, own DB) |
 | `./scripts/smoke-test.sh` | scripts/ | 28 HTTP checks (needs build) |
 | `bunx prisma generate` | repo root | regenerate client after schema edits |
@@ -749,8 +766,10 @@ Enforced by ESLint 9 (`eslint-config-next`): React 19 hook rules including `set-
 | MEDIUM | Next 16 `redirects()` matches sources case-insensitively; the per-rule `caseSensitive` flag is not honored | Lowercase→Capital redirects CANNOT live in `next.config.ts` (self-loop); `src/middleware.ts` carries them instead | Mitigated (ADR-008; middleware is the sanctioned location) |
 | MEDIUM | Rate limiter is in-process (fixed window per process) | Counter resets on restart; N-instance deployments would each track separately | Open (accepted for demo scale; documented in S5/6.4) |
 | MEDIUM | `next.config.ts` sets `ignoreBuildErrors` | Type errors don't fail the build — `bun run typecheck` is a manual, mandatory gate | Open (intentional scaffold default; compensated by the gate order) |
-| LOW | `image` and `path` element types are vocabulary-only (tools select; creation routes through the store but the editors are minimal); Fill's Gradient/Image modes render but are non-functional (scope cut); corner radius is a single linked value (no per-corner splits) | Feature-completeness vs. the reference's full Figma-like tooling | Open (documented scope cuts, ADR-011) |
+| MEDIUM | The smoke suite boots its own standalone server on :3000 but only kills `standalone/server.js`/`next start` — a lingering `next dev` steals the port | Smoke checks silently hit the dev server (whose rate-limit buckets never reset) → cascading FAILs | Mitigated (documented in AGENTS/CLAUDE + the §7.4 checklist: stop dev before smoke) |
+| LOW | `image` and `path` element types are vocabulary-only (tools select; creation routes through the store but the editors are minimal); Fill's Gradient/Image pills are non-functional (verified: the reference's own pills are ALSO no-ops — exact parity); corner radius is a single linked value (no per-corner splits); rotation-aware bounds are out of scope (the reference's ring is a same-transform sibling, not an AABB) | Feature-completeness vs. the reference's full Figma-like tooling | Open (documented scope cuts, ADR-011/012) |
 | LOW | The live app's Share/Present/Explore-Templates buttons are no-ops; this clone implements working versions (clipboard share, presentation overlay, template-gallery toast) | Deviation is a deliberate superset — documented, not a bug | Accepted (kept) |
+| LOW | The reference app CRASHES on AI submission (blank page, `TypeError` reading `charAt`, reproduced 2026-09-27); the reference also ships `cdn.tailwindcss.com` in production | The clone's degrade-not-fail assistant is the robust superset (pinned by e2e) | Accepted (kept — the reference's bug is deliberately not cloned) |
 | LOW | No session revocation list | Logout only clears the client cookie; a stolen token lives to expiry | Open (accepted; stateless trade-off, ADR-003) |
 | LOW | No hosted CI | Quality depends on the local gate discipline | Open (deliberate, ADR-001) |
 
@@ -762,29 +781,29 @@ None of the above are release blockers for the deliverable; all are consciously 
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `src/components/editor/editor-store.ts` | 306 | THE Zustand store: elements, selection, tool, zoom/pan, undo/redo, saveState |
-| `src/components/editor/editor-view.tsx` | 506 | Editor layout + 800ms-debounced autosave PUT + id remap |
-| `src/components/editor/canvas.tsx` | 479 | Pointer events: draw/move/resize/select; zoom/pan transforms |
-| `src/components/editor/properties-panel.tsx` | 396 | Reference five-section layout + Canvas Properties (ADR-011) |
+| `src/components/editor/editor-store.ts` | 315 | THE Zustand store: elements, selection, tool, zoom/pan, undo/redo, saveState |
+| `src/components/editor/editor-view.tsx` | 575 | Editor layout + 800ms-debounced autosave PUT + id remap + chip responsive guard |
+| `src/components/editor/canvas.tsx` | 497 | Pointer events: draw/move/resize/select; zoom/pan; scale-aware transforms + visual-space resize |
+| `src/components/editor/properties-panel.tsx` | 439 | Reference five-section layout + Transform scale (ADR-011/012) |
 | `src/components/editor/components-panel.tsx` | 42 | Reference Components column + empty state (ADR-010) |
-| `src/components/project-card.tsx` | 549 | Card + thumbnail art + ellipsis menu (rename/delete, stopPropagation) |
+| `src/components/project-card.tsx` | 550 | Card + thumbnail art + ellipsis menu (rename/delete, stopPropagation) |
 | `src/components/app-header.tsx` | 215 | Desktop nav + MobileNav Sheet drawer (the Tailwind v4 class-A fix) |
 | `src/components/teams-view.tsx` | 473 | Team cards, member chips, invite dialog, inline confirm deletes |
 | `src/components/dashboard-view.tsx` | 343 | Gradient hero, Quick Stats, Continue Working, project grid, create dialog |
 | `src/components/login-screen.tsx` | 305 | Welcome card, social buttons, email/password form, validation UX |
 | `src/components/editor/ai-assistant.tsx` | 203 | Chat UI; applies `{reply, operations[]}` to the store |
 | `src/components/editor/layers-panel.tsx` | 209 | Layer list: visibility/lock, reorder, rename |
-| `src/lib/editor.ts` | 258 | Pure element domain: types, geometry, clamps |
+| `src/lib/editor.ts` | 268 | Pure element domain: types, geometry, clamps, scale-aware bounds |
 | `src/lib/ai-assistant.ts` | 271 | LLM sanitizer + deterministic fallback parser |
 | `src/lib/auth.ts` | 101 | scrypt + HMAC sessions, cookie helpers |
 | `src/lib/db-path.ts` | 99 | Minifier-safe SQLite URL anchoring (ADR-002/002a) |
-| `src/app/api/projects/[id]/elements/route.ts` | 148 | Full-list transactional replace (Pattern 3) |
+| `src/app/api/projects/[id]/elements/route.ts` | 151 | Full-list transactional replace (Pattern 3) |
 | `src/hooks/use-toast.ts` | 90 | globalThis toast infra + `useSyncExternalStore` (ADR-007) |
 | `src/app/globals.css` | 101 | Tailwind 4 `@theme` tokens — the entire design system source |
-| `prisma/schema.prisma` | 103 | User/Project/DesignElement/Team/TeamMember |
+| `prisma/schema.prisma` | 104 | User/Project/DesignElement (incl. scale)/Team/TeamMember |
 | `prisma/seed.ts` | 144 | Demo workspace seed |
 | `tests/e2e/mobile-navigation.spec.ts` | 119 | Mobile nav regression suite @390×844 |
-| `tests/e2e/editor-panels.spec.ts` | 107 | Panel-toggle chips + Select All flip + properties sections (ADR-010/011) |
+| `tests/e2e/editor-panels.spec.ts` | 184 | Panel chips (+ responsive) + Select All + properties + scale contract (ADR-010/011/012) |
 | `tests/db-path.test.ts` | 156 | db-path resolution contract (20 checks, incl. DIGMA_REPO_ROOT) |
 | `src/middleware.ts` | 41 | Legacy lowercase → canonical 307 redirects (ADR-008) |
 | `tests/e2e/untitled-editor.spec.ts` | 58 | Untitled-editor contract: bogus/missing id, create-on-first-save (ADR-009) |

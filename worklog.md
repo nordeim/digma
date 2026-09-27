@@ -209,3 +209,42 @@ Work Log:
 
 Stage Summary:
 - Session 3 delivered to GitHub main @ 0e40ba2; working tree clean; in sync with origin/main
+
+---
+Task ID: 20
+Agent: main
+Task: Session 4 kickoff — refresh, docs review, fresh live parity audit
+
+Work Log:
+- git pull (brought docs/prompt-to-review-2.md; HEAD 682ebb5); re-read AGENTS.md, CLAUDE.md, README.md, PAD v1.2.0, digma_SKILL.md, docs/session_3.md, worklog.md — validated against codebase: capitalized routes, middleware, .env DATABASE_URL=file:../db/custom.db + db/ at repo root, .env.example matches, vitest/playwright configs exclude skills/, bun.lock sole lockfile
+- Baseline fast gates GREEN: lint, typecheck, 58/58 unit; dev server booted clean (unset DATABASE_URL), health + login verified
+- Fresh live audit (logged in with the reference account): mobile nav STILL broken on live (nav hidden md:flex display:none at 390x844; only 36x36 bell visible) — clone fix stands; dashboard hero/glass stats/create dialog (4 templates)/card ellipsis menu (Rename|Delete only)/toolbar (9 tools w-8 h-8 rounded-lg, active bg-blue-600)/zoom chips all parity-hold
+- LIVE BUG FOUND: live editor CRASHES on AI submission (typed char-by-char + clicked real send button) — TypeError: Cannot read properties of undefined (reading 'charAt') in index-CFEZghM7.js, React root unmounts, page blank; reproducible. Clone handles same command gracefully (fallback reply + 2 squares added, page intact) — superset robustness
+- Live also uses cdn.tailwindcss.com in production (console warning) and Base44 whole-entity Project PUTs (their persistence model — our dedicated elements route is the documented divergence)
+- NEW PARITY GAP (G1): live Transform section = Rotation (slider -180..180 + number input w-16) + SCALE (slider 0.1..3 step 0.1 + "1.0x" display w-12); scale PERSISTS per element (verified survive reload); render transform chain measured: translate(x,y) scale(s) rotate(r); live selection ring = same-transform sibling. Our clone: no scale field anywhere, Rotation shows text span not number input
+- NEW BUG (G3): our chip bar renders at ALL widths but panels are hidden md:flex/lg:flex — chips flip aria-pressed with no visible effect below md, and Properties chip is dead between md-lg. Live chips visible at mobile (they squeeze panels instead)
+- Live Gradient/Image fill pills confirmed NO-OPS on live too (click = nothing) — clone's toast notice is the documented superset
+- Canvas internals mapped for the scale implementation: CanvasElement transform (canvas.tsx:413), resize math uses model bounds via startBounds, selectionBounds = boundsOf(selected) (scale-aware boundsOf fixes outline+marquee+thumbnails in one seam), elementToStyle + thumbnail + present-overlay transform chains all need scale
+- Elements API (POST/PUT) field map confirmed — scale slot to add via clampNumber(0.05,20,1)
+
+Stage Summary:
+- Audit complete; remediation plan: R1 scale domain (schema+editor.ts+API, TDD red first) / R2 scale UI (canvas transform+resize math, properties Transform restructure: Rotation slider+number input + Scale slider 0.1-3 + 1.0x display, present+thumbnail chains) / R3 chip-bar responsive visibility fix (hidden md:flex bar; Properties chip hidden lg:inline-flex) / R4 e2e pins (scale slider contract, rotation input, chips responsive, AI no-crash) / R5 docs+skill+logs / R6 gate+screenshots+commit+push
+
+---
+Task ID: 21
+Agent: main
+Task: Session 4 — TDD execution of the scale/chip/AI-pin remediation
+
+Work Log:
+- TDD red: 4 new unit tests in src/lib/editor.test.ts (scale default across types, transform chain translate→scale→rotate, scale-aware visual bounds) — 4 failed as expected
+- R1 (green): DesignElementDTO.scale + defaultElementFor scale:1 + elementToStyle chain + boundsOf visual bounds (width*scale) → 62/62 unit; prisma schema scale Float @default(1) + db push + client regenerate; elements POST/PUT clamp scale 0.05–20
+- R2: canvas.tsx transform chain + visual-space resize math (deltas /scale on write-back, scale untouched) + scale-aware marquee; properties-panel Transform section restructured — Rotation slider + w-16 number input (live parity) + Scale slider 0.1–3.0 step 0.1 with "N.Nx" readout (data-testid=scale-value); present overlay + project-card thumbnail render scale with transformOrigin 0px 0px
+- R3: chip bar hidden md:flex + Properties chip hidden lg:inline-block (dead controls fixed)
+- R4 (red→green): 6 new e2e checks — rotation number input round-trip, scale slider contract, scale persistence (transform chain + reload), chips hidden at 390, Properties chip waits for lg, AI no-crash regression (reply + canvas growth + page alive)
+- Full gate GREEN: lint, typecheck, 62/62 unit, build 20 routes, 28/28 smoke, 39/39 e2e
+- Smoke-suite trap found+documented: lingering `next dev` steals :3000 from the smoke script's standalone boot (rate-limiter cascade) — run smoke with dev stopped; added to AGENTS/CLAUDE/PAD §7.4
+- Browser verification: Headline scaled to 2.0x + rotated 15deg; SE-handle drag on scaled element (+50px visual → +25px model); persistence across reload verified; 13 screenshots captured (12 refreshed + new 13-editor-transform-scale.png)
+- Docs realigned: README (feature row, gallery +13th shot, 62/39 counts, e2e description), PAD v1.3.0 (revision block, ADR-012 per-element scale, test distribution 62/39, §10 +2 rows incl. reference AI crash + smoke-port trap, key files), AGENTS.md (scale fact, chip guard, smoke note), CLAUDE.md (pyramid + architecture facts), digma_SKILL.md v1.2.0 (counts, §9 anti-patterns 18-20, quick-reference rows), docs/session_4.md written
+
+Stage Summary:
+- Transform section now at full reference parity (Rotation number input + persisted Scale with the exact transform chain); chip chrome has no dead controls; AI robustness pinned against the reference's own crash; gate fully green; docs+skill+session log aligned

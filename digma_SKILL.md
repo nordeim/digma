@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite chdir trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.1.0
+version: 1.2.0
 last_updated: 2026-09-27
-project_state: "58 unit checks green · 33 Playwright checks green · 28 smoke checks green · build 20 routes"
+project_state: "62 unit checks green · 39 Playwright checks green · 28 smoke checks green · build 20 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -68,8 +68,8 @@ project_state: "58 unit checks green · 33 Playwright checks green · 28 smoke c
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.1 | 58 checks; `*.test.ts` only |
-| E2E tests | Playwright | ≥1.63.0 | 33 checks; standalone server on :3100 with its own `db/e2e.db` |
+| Unit tests | Vitest | ≥5.0.1 | 62 checks; `*.test.ts` only |
+| E2E tests | Playwright | ≥1.63.0 | 39 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
 
@@ -143,7 +143,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 | Toolbar | `src/components/editor/toolbar.tsx` | 8 tools; buttons carry `title="{Tool} ({shortcut})"` |
 | LayersPanel | `src/components/editor/layers-panel.tsx` | Visibility/lock/reorder/rename; Select All ↔ Deselect All header toggle (`selected === layers ? Deselect : Select`, incl. the 0/0 quirk) |
 | ComponentsPanel | `src/components/editor/components-panel.tsx` | The reference's second w-60 column (ADR-010): header + blue "+" + "No components yet" empty state; presentational (scope cut) |
-| PropertiesPanel | `src/components/editor/properties-panel.tsx` | The reference's five-section layout (ADR-011): Position & Size, Corner Radius (slider + linked per-corner), Fill & Stroke (Solid/Gradient/Image pills + swatch/hex), Transform, Opacity; Canvas Properties → Background Color row when nothing selected |
+| PropertiesPanel | `src/components/editor/properties-panel.tsx` | The reference's five-section layout (ADR-011): Position & Size, Corner Radius (slider + linked per-corner), Fill & Stroke (Solid/Gradient/Image pills + swatch/hex), Transform (rotation slider + number input, per-element Scale 0.1–3.0x persisted — ADR-012), Opacity; Canvas Properties → Background Color row when nothing selected |
 | AiAssistant | `src/components/editor/ai-assistant.tsx` | Chat UI; "Working on it..." while sending; applies `{reply, operations[]}` |
 
 **React 19 rules that bit us (all fixed with sanctioned patterns):**
@@ -213,6 +213,9 @@ client applies operations: add | update (may carry scale) | delete
 15. **Testing `skills/`.** The skills catalog is excluded from lint, compile, and every test config — keep it that way.
 16. **Modeling the reference's panel chips as exclusive tabs.** The bottom-left `Layers | Components | Properties` chips are INDEPENDENT visibility toggles (Components ADDS a second w-60 column beside Layers; Properties removes the right w-72 panel; default ON/OFF/ON) — verified by replaying clicks against the live DOM. Exclusive Radix Tabs are the wrong semantics (ADR-010). Chip state: `bg-blue-600 text-white` = on.
 17. **Inventing reference UI that isn't there.** The properties panel's background preset grid was never on the reference (presets live in the Create-Project dialog only) — the reference's Canvas Properties is a single Background Color swatch + hex row. Measure before you build; re-measure before you "fix".
+18. **Dead controls below responsive breakpoints.** A toggle whose target is `hidden md:flex` must itself be `hidden md:flex` — chips that flip `aria-pressed` with no visible effect lie about state (fixed: the chip bar is `hidden md:flex`; the Properties chip additionally `hidden lg:inline-block` because its panel is `lg:flex`).
+19. **Un-scaled bounds for scaled elements.** A per-element `scale` diverges the model footprint from the visual one — selection rings, marquee containment, fit-to-view, and thumbnails MUST go through one scale-aware seam (`boundsOf()` multiplies width/height by scale). Resize math runs in VISUAL space and divides the delta by scale on write-back (ADR-012).
+20. **Trusting the reference's runtime health.** The live app crashes blank-screen on AI submission (`TypeError` reading `charAt`) and ships `cdn.tailwindcss.com` in production. Audit the reference's BEHAVIOR, not just its DOM — and pin your own robustness with a no-crash e2e.
 
 ## §10 Debugging Guide
 
@@ -235,10 +238,10 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 58/58
+bun run test          # 62/62
 bun run build         # 20 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 28/28 (health, auth gate, CRUD, AI, rate limit, logout)
-bun run test:e2e      # 33/33 (auth 6, workspace 8, mobile-nav 9, untitled 3, editor-panels 7)
+bun run test:e2e      # 39/39 (auth 6, workspace 9, mobile-nav 9, untitled 3, editor-panels 12)
 git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 ```
 
@@ -474,6 +477,7 @@ Prisma models (5): `User` (email unique, scrypt passwordHash, avatarColor), `Pro
 | Untitled contract | `tests/e2e/untitled-editor.spec.ts` |
 | Panel-toggle chips (ADR-010) | `src/components/editor/editor-view.tsx` (chips bar) + `src/components/editor/components-panel.tsx` + `tests/e2e/editor-panels.spec.ts` |
 | Properties five-section layout (ADR-011) | `src/components/editor/properties-panel.tsx` |
+| Per-element Scale + transform chain `translate scale rotate` (ADR-012) | `src/lib/editor.ts` (model + bounds), `canvas.tsx` (render + visual-space resize) |
 | Smoke suite | `scripts/smoke-test.sh` (28 checks) |
 | Design tokens | `src/app/globals.css` `@theme` |
 | Push procedure | `docs/ssh_git_wrapper_v3.py` + `docs/how-to-git-push-using-ssh-wrapper_SKILL.md` |

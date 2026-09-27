@@ -70,4 +70,26 @@ test.describe("workspace shell (desktop)", () => {
     await expect(page.getByRole("heading", { name: "Design Team" })).toBeVisible();
     await expect(page.getByText("Alex Design")).toBeVisible();
   });
+
+  test("the AI assistant never takes the page down (live-app crash regression)", async ({ page }) => {
+    // The REFERENCE app crashes on AI submission (TypeError reading 'charAt',
+    // React root unmounts — reproduced live 2026-09-27). This clone's
+    // degrade-not-fail contract must keep the page alive, answer, and mutate
+    // the canvas even when the LLM layer is unavailable.
+    await page.goto("/");
+    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await expect(page).toHaveURL(/\/Editor\?projectId=/);
+
+    const before = await page.getByRole("button", { name: /^Layer / }).count();
+    await page.getByRole("textbox", { name: "Message the AI design assistant" }).fill("Add 2 blue squares");
+    await page.getByRole("button", { name: "Send message" }).click();
+
+    // A reply arrives (deterministic fallback when the SDK is down)…
+    await expect(page.getByText("Added 2 blue squares")).toBeVisible({ timeout: 15_000 });
+    // …the canvas grew…
+    await expect.poll(() => page.getByRole("button", { name: /^Layer / }).count()).toBeGreaterThan(before);
+    // …and the page is still fully interactive (no blank-screen crash).
+    await expect(page.getByRole("heading", { name: "Marketing Hero Banner" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Layers" })).toBeVisible();
+  });
 });

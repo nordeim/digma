@@ -304,14 +304,57 @@ export function PropertiesPanel() {
 
             <section aria-label="Transform">
               <SectionHeading>Transform</SectionHeading>
-              <SliderRow
-                label="Rotation"
-                value={single.rotation}
-                min={-180}
-                max={180}
-                onChange={(rotation) => update({ rotation })}
-                format={(v) => `${Math.round(v)}°`}
-              />
+              {/* Rotation: slider + editable number input (the reference pairs
+                  its Radix slider with a w-16 number box; the native input is
+                  the zero-dependency equivalent). */}
+              <div>
+                <span className="text-xs font-medium text-gray-300">Rotation</span>
+                <div className="mt-2 flex items-center gap-3">
+                  <input
+                    type="range"
+                    aria-label="Rotation"
+                    min={-180}
+                    max={180}
+                    step={1}
+                    value={single.rotation}
+                    onChange={(event) => update({ rotation: Number(event.target.value) })}
+                    className="h-1.5 flex-1 accent-blue-600"
+                  />
+                  <input
+                    type="number"
+                    aria-label="Rotation value"
+                    min={-180}
+                    max={180}
+                    step={1}
+                    value={Math.round(single.rotation)}
+                    onChange={(event) => update({ rotation: Math.min(Math.max(Number(event.target.value) || 0, -180), 180) })}
+                    className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              {/* Scale: slider 0.1–3.0 with the reference's "1.0x" readout. */}
+              <div>
+                <span className="text-xs font-medium text-gray-300">Scale</span>
+                <div className="mt-2 flex items-center gap-3">
+                  <input
+                    type="range"
+                    aria-label="Scale"
+                    min={0.1}
+                    max={3}
+                    step={0.1}
+                    value={single.scale ?? 1}
+                    onChange={(event) => update({ scale: Number(event.target.value) })}
+                    className="h-1.5 flex-1 accent-blue-600"
+                  />
+                  <span
+                    className="w-12 text-right text-xs text-gray-300"
+                    aria-live="polite"
+                    data-testid="scale-value"
+                  >
+                    {(single.scale ?? 1).toFixed(1)}x
+                  </span>
+                </div>
+              </div>
             </section>
 
             <section aria-label="Opacity">
