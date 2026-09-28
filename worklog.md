@@ -386,3 +386,24 @@ Work Log:
 
 Stage Summary:
 - Session 10 delivered: parity restored on three surfaces (nav active pill, brand mark, login footer) with the session-8 R2 measurement error root-caused (pre-hydration SPA read) and the lesson pinned; gate green at 72 unit / 28 smoke / 53 e2e; PAD v1.6.0
+
+---
+Task ID: 29
+Agent: main
+Task: Session 12 — nav-pill route-scope fix (exact pathname match, no pill at /), middleware→proxy migration (characterization pin first), docs numeric realignment (TDD), screenshots, docs v1.7.0, push to main
+
+Work Log:
+- Workspace refreshed via git pull (01cea0d..87733e3 — docs/session_11.md fetched); docs re-read (AGENTS, CLAUDE, README, PAD v1.6.0, digma_SKILL v1.5.0, session_10, remediation-plan-session10, worklog Tasks 1-28, session_11 transcript); codebase validated (routes/middleware, session gates, store, mobile-nav Sheet, configs excluding skills/, @theme literal fonts + palette pins)
+- DB placement verified: .env DATABASE_URL="file:../db/custom.db"; db/ at repo root; login round-trip + [db] startup line confirm the anchor. Exported-shell-var trap re-handled (env -u DATABASE_URL discipline)
+- Baseline gates ALL GREEN pre-change: lint, typecheck, 72/72 unit, build 20 routes, 28/28 smoke (dev stopped), 53/53 e2e
+- Live parity re-audit (operator-supplied reference account; settled 4-10s DOM + VLM cross-checks + painted-pixel reads, 1440x900 + 768x1024 + 390x844): HEADLINE — session 10's pill restoration was correct but OVER-SCOPED to "/": the reference's nav active logic is an EXACT pathname match (at / all three links plain, no aria-current, settled 10s; pill only on /Dashboard, /Recent, /Teams). Also: the reference RE-HOSTED its logo (old Supabase URL 404s, new .jpeg URL) — downloaded + pixel-verified identical to the session-10 decode (clone's SVG recreation stays correct). Middleware->proxy deprecation identified as this session's modernization item (PAD §10 had deferred it pending a pin; NO test pinned the legacy redirects — verified across tests/ + scripts/)
+- Verified parity-hold: brand mark (pixel-identical re-host), editor tool rail (9 lucide icons incl. lucide-image — VLM "grid icon" flag disproven by SVG extraction), zoom magnifiers, auth 3 states (ADR-013), dashboard/recent/teams chrome, login footer spacing 12px both (VLM false alarm), mobile nav (reference STILL failure class A at 390x844 — no hamburger, the one header button is a notifications bell; clone's fix verified end-to-end: 44x44 trigger, drawer, scroll lock, tap Recent -> navigate + dismiss; tablet 768 + desktop 1280 clean), Tailwind v4 health (theme tests green, no legacy config)
+- Remediation plan written + validated line-by-line (docs/remediation-plan-session12.md) — every stale doc number re-measured against the tree (parity suite 9 not 7; brand-mark row missing from PAD §7.1; workspace 8; seed 2 projects/1 team not 4/3; SKILL 44->53 e2e; db-path 19 not 20; §17 chip claim; line-count drift on ~18 files; next.config ADR-007 mis-attribution)
+- TDD: RED (parity.spec.ts nav test rewritten as a THREE-state pin: no pill at /, pill at /Dashboard, pill at /Teams -> failed exactly at the root assertion) + characterization pin (workspace.spec.ts legacy-redirect test: 4 paths 307 + query survival -> passed against the OLD middleware) -> GREEN (app-header.tsx isNavActive -> exact match; git mv src/middleware.ts src/proxy.ts + export middleware -> proxy; next.config.ts ADR attribution fix)
+- En-route validation: build registers the Proxy row, NO deprecation warning; curl /recent -> 307 -> /Recent; live browser: plain nav at /, pill at /Dashboard
+- Full gate GREEN: lint, typecheck, 72/72 unit, build 20 routes, 28/28 smoke (dev stopped), 54/54 e2e (53 + 1 net-new legacy-redirect pin)
+- Screenshots re-captured from the remediated dev server -> docs/screenshots/; audit provenance -> docs/screenshots/ref-audit-s12/ (ref + clone pairs incl. the re-hosted logo download); .env.example re-verified against code (unchanged, committed)
+- Docs aligned: PAD v1.7.0 (revision block; ADR-008 proxy wording; §10 middleware row -> Fixed; §7.1 rows + brand-mark row + counts; §9.2 72; §4.3/§9.1 seed 2/1; §11 line counts; checklist 54), AGENTS.md + CLAUDE.md (nav-pill exact-match fact, proxy references, counts), README (proxy tree entry, 54), digma_SKILL v1.6.0 (counts, §17 chip claim fix, §6/§19 line refs, Appendix B 19, Pattern 5 proxy, lessons F13 route-scope pinning + F14 characterization-pin-first migration + F15 re-verify hosted assets), docs/session_12.md written
+
+Stage Summary:
+- Session 12 delivered: nav-pill route scope corrected to the reference's exact pathname match (no pill at /), middleware->proxy migration with the redirect contract proven through it (characterization pin first), and the docs numerically realigned at PAD v1.7.0 / SKILL v1.6.0; gate green at 72 unit / 28 smoke / 54 e2e

@@ -36,6 +36,32 @@ test.describe("workspace shell (desktop)", () => {
     expect(res?.status()).toBe(404);
   });
 
+  test("legacy lowercase routes 307-redirect to the canonical capitalized routes", async ({ page }) => {
+    // ADR-008: the canonical routes are CAPITALIZED for reference parity;
+    // legacy lowercase bookmarks are redirected by src/proxy.ts (the Next 16
+    // `proxy` convention — migrated from middleware.ts in session 12; this
+    // characterization pin was written BEFORE the migration and must stay
+    // green through it). next.config redirects() cannot express this (its
+    // source matching is case-insensitive in Next 16 — observed self-loop).
+    for (const [legacy, canonical, heading] of [
+      ["/dashboard", "/Dashboard", "Quick Stats"],
+      ["/recent", "/Recent", "Recent Files"],
+      ["/teams", "/Teams", "Teams"],
+    ] as const) {
+      const res = await page.goto(legacy);
+      // 307 through to the canonical route…
+      expect(res?.request().redirectedFrom()?.url()).toContain(legacy);
+      await expect(page).toHaveURL(new RegExp(`${canonical.replace("/", "\\/")}/?$`));
+      // …and the canonical view actually renders.
+      await expect(
+        page.getByRole("heading", { name: heading, exact: true }).filter({ visible: true }).first(),
+      ).toBeVisible();
+    }
+    // The editor's query survives the redirect (?projectId=… is load-bearing).
+    await page.goto("/editor?projectId=seed-1");
+    await expect(page).toHaveURL(/\/Editor\/?\?projectId=seed-1$/);
+  });
+
   test("the create-project dialog validates and creates", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Create New Design" }).click();

@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite chdir trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.5.0
+version: 1.6.0
 last_updated: 2026-09-28
-project_state: "72 unit checks green · 53 Playwright checks green · 28 smoke checks green · build 20 routes"
+project_state: "72 unit checks green · 54 Playwright checks green · 28 smoke checks green · build 20 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -69,7 +69,7 @@ project_state: "72 unit checks green · 53 Playwright checks green · 28 smoke c
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
 | Unit tests | Vitest | ≥5.0.1 | 72 checks; `*.test.ts` only |
-| E2E tests | Playwright | ≥1.63.0 | 44 checks; standalone server on :3100 with its own `db/e2e.db` |
+| E2E tests | Playwright | ≥1.63.0 | 54 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
 
@@ -101,7 +101,7 @@ bun run build && ./scripts/smoke-test.sh && bun run test:e2e   # full gates
 | `eslint.config.mjs` | next/core-web-vitals + next/typescript; **ignores `skills/`** (the operator's skill catalog is not app code) |
 | `vitest.config.ts` | includes `src/**/*.test.ts` + `tests/**/*.test.ts` only — skills/ never tested |
 | `playwright.config.ts` | testDir `./tests/e2e`; :3100; own DB; setup project saves the session cookie once (rate-limiter friendly) |
-| `src/middleware.ts` | Legacy lowercase → Capital 307 redirects (ADR-008) — see §9 #6 for why this lives in middleware and NOT next.config |
+| `src/proxy.ts` | Legacy lowercase → Capital 307 redirects (ADR-008; the Next 16.3 `proxy` convention — migrated from middleware.ts in session 12) — see §9 #6 for why this lives in the proxy and NOT next.config |
 
 **First-run flow:** `bun install` → `cp .env.example .env` → `bun run db:push` (creates `db/custom.db`) → `bun run db:seed` (demo user, 2 projects — 6 elements on the Marketing Hero Banner — 1 team, 3 members) → `bun run dev` (:3000). Login `demo@digma.app` / `Digma1234!`.
 
@@ -125,7 +125,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 
 **Counts:** 23 component files under `src/components/` (19 marked `"use client"`; the pages stay server components). 5-layer model (details in PAD §3.1): Persistence → pure domain (`src/lib`) → API routes → server pages → client views. Dependencies point downward only.
 
-**Route map (v1.1.0, ADR-008):** `/` and `/Dashboard` (same view — the reference's links point at the capitalized one), `/login` (lowercase, like the reference), `/Recent`, `/Teams`, `/Editor?projectId=` (unknown/missing id → Untitled mode, ADR-009). Legacy lowercase `/recent|/teams|/editor|/dashboard` 307 via `src/middleware.ts`.
+**Route map (v1.1.0, ADR-008):** `/` and `/Dashboard` (same view — the reference's links point at the capitalized one), `/login` (lowercase, like the reference), `/Recent`, `/Teams`, `/Editor?projectId=` (unknown/missing id → Untitled mode, ADR-009). Legacy lowercase `/recent|/teams|/editor|/dashboard` 307 via `src/proxy.ts`.
 
 **Component inventory (the ones you will actually touch):**
 
@@ -153,7 +153,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 
 ## §6 State Management Deep Dive (the ONE Zustand store)
 
-`src/components/editor/editor-store.ts` (306 lines) owns ALL editor state: `projectId`, `projectName`, `backgroundColor`, `elements[]`, `selectedIds[]`, `tool`, `zoom/panX/panY`, `saveState`, `past[]/future[]` undo snapshots. Views and panels READ the store and CALL actions; nothing else owns canvas state.
+`src/components/editor/editor-store.ts` (315 lines) owns ALL editor state: `projectId`, `projectName`, `backgroundColor`, `elements[]`, `selectedIds[]`, `tool`, `zoom/panX/panY`, `saveState`, `past[]/future[]` undo snapshots. Views and panels READ the store and CALL actions; nothing else owns canvas state.
 
 **The replace contract (ADR-005).** Elements are client-sovereign rows: local ids (`local-…`) are created optimistically by `addElements`; the autosave debounces 800ms and `PUT`s the FULL element list to `/api/projects/[id]/elements`; the handler transactionally `deleteMany` + `createMany` (array order = `sortOrder` = z-draw order) and returns fresh server ids; the store remaps ids by index so selection survives. NEVER add per-element PATCH autosave — partial-failure complexity for zero user-visible gain, and it breaks undo/redo and AI batch operations.
 
@@ -201,7 +201,7 @@ client applies operations: add | update (may carry scale) | delete
 3. **Module-level singletons for client state (Turbopack).** Code-splitting hands two copies to different chunks — the Toaster never sees page-fired toasts. Fix: `globalThis.__digmaToastInfra` (state AND listener set) + `useSyncExternalStore` (§15 Pattern 2).
 4. **Radix Toast controlled-`open` list.** Never mounted reliably in this setup. The Toaster renders plain divs.
 5. **Minifier-safe db-path anchors.** Helper functions with unused returns get inlined-and-dropped by the production minifier — the standalone detector silently died in the shipped bundle. Anchors MUST be collected via side-effect `roots.push(...)` (§15 Pattern 1).
-6. **next.config `redirects()` for casing changes.** Next 16 matches redirect SOURCES case-insensitively; the per-rule `caseSensitive` flag is NOT honored. A lowercase→Capital rule becomes a self-loop (`ERR_TOO_MANY_REDIRECTS` — observed on /Recent). Casing redirects live in `src/middleware.ts` with an exact-match lookup.
+6. **next.config `redirects()` for casing changes.** Next 16 matches redirect SOURCES case-insensitively; the per-rule `caseSensitive` flag is NOT honored. A lowercase→Capital rule becomes a self-loop (`ERR_TOO_MANY_REDIRECTS` — observed on /Recent). Casing redirects live in `src/proxy.ts` with an exact-match lookup.
 7. **`set-state-in-effect` (React 19).** Effect-body `setState` is a lint ERROR. Sanctioned: render-time adjust or async-in-effect.
 8. **`window.location` auth redirects.** Breaks the server-component header swap. Use `router.push` + `router.refresh()`.
 9. **Card menu clicks opening the project.** Menu buttons need `stopPropagation` — the card's onClick opens the editor.
@@ -224,7 +224,7 @@ client applies operations: add | update (may carry scale) | delete
 |---|---|---|
 | `Error code 14: Unable to open the database file` | The `[db] DATABASE_URL -> …` startup line | Env shadowing (§3 trap): `unset DATABASE_URL`, remove parent `.env`, restart |
 | SQLite opens the WRONG file in production | db-path debug line: which anchor won | Standalone `chdir` trap; verify `candidateRoots()` pushes (§15 Pattern 1); `DIGMA_REPO_ROOT` overrides |
-| `ERR_TOO_MANY_REDIRECTS` on a page | Any `redirects()` touching that path's casing | Next 16 case-insensitive source matching (§9 #6) — move to middleware |
+| `ERR_TOO_MANY_REDIRECTS` on a page | Any `redirects()` touching that path's casing | Next 16 case-insensitive source matching (§9 #6) — move to the proxy |
 | Toast fires but never renders | Two module instances? | Turbopack chunk split (§9 #3) — globalThis infra |
 | E2E can't find the mobile-nav trigger | `page.locator('button[aria-controls="mobile-nav-sheet"]')` | Radix marks the app `aria-hidden` while the dialog is open — role locators go blind |
 | E2e uses stale build | `pkill -f "standalone/server.js"` then re-run | `reuseExistingServer: true` reuses the old server after a rebuild |
@@ -232,7 +232,7 @@ client applies operations: add | update (may carry scale) | delete
 | Rate limiter blocks legit e2e logins | The setup project signs in ONCE, saves storageState | Per-test logins trip 10/IP/15min; never login per-test |
 | Seeded elements vanish after manual editor testing | Expected | The replace contract: a save with an empty list wipes rows — re-seed (`bun run db:push && bun run db:seed`) |
 | Toast appears then "fails" the check | It auto-dismissed (5s) | Assert immediately after the action |
-| `page.goto` returns 307 chains | Legacy middleware redirect | Intentional: lowercase → Capital; assert the FINAL URL |
+| `page.goto` returns 307 chains | Legacy proxy redirect | Intentional: lowercase → Capital; assert the FINAL URL |
 
 ## §11 Pre-Ship Checklist
 
@@ -242,7 +242,7 @@ bun run typecheck     # clean — the build will NOT catch types
 bun run test          # 72/72
 bun run build         # 20 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 28/28 (health, auth gate, CRUD, AI, rate limit, logout)
-bun run test:e2e      # 53/53 (setup 1, auth 11, workspace 8, mobile-nav 9, untitled 3, editor-panels 12, parity 9)
+bun run test:e2e      # 54/54 (setup 1, auth 11, workspace 9, mobile-nav 9, untitled 3, editor-panels 12, parity 9)
 git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 ```
 
@@ -253,7 +253,7 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 1. **F1 — Measure the live DOM, don't guess.** Every chrome detail (zoom chip order, avatar colors `#3B82F6`/`#10B981`, the `absolute top-4 left-4 gap-2` cluster) came from `document.querySelector(...).className` evals on the live app. Extract classes, then replicate.
 2. **F2 — The live app is the spec, including its bugs — audit before cloning.** The unknown-projectId editor looked like a feature until persistence testing showed saves landing in the WRONG project. Clone the visible behavior, fix the data bug, document the deviation.
 3. **F3 — Dead buttons on the reference are scope decisions.** Share/Present/Explore-Templates are no-ops live. Implement working versions (superset) and record it — or you'll "fix" them back to dead in a later pass.
-4. **F4 — Route casing is user-visible parity.** `/Editor` vs `/editor` in the address bar is a real difference; Next makes fixing it non-trivial (F-lesson: the middleware discovery in §9 #6).
+4. **F4 — Route casing is user-visible parity.** `/Editor` vs `/editor` in the address bar is a real difference; Next makes fixing it non-trivial (F-lesson: the redirect-source discovery in §9 #6).
 5. **F5 — TDD the seams.** db-path (unit), Untitled editor (e2e), create dialog — tests-first found the minifier trap and the redirect loop before they shipped.
 6. **F6 — Dev data drifts.** Manual editor testing wipes seeded elements (replace contract). Re-seed before screenshots/demos.
 7. **F7 — Docs drift the moment code lands.** SESSION_SECRET→AUTH_SECRET, DIGMA_REPO_ROOT documented-before-implemented. The PAD's rule: code wins, doc updated in the same commit.
@@ -262,6 +262,9 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 10. **F10 — Paramiko shim when ssh is absent.** `docs/how-to-git-push-using-ssh-wrapper_SKILL.md` Appendix A; wrapper verifies the remote ref equals local HEAD after every push.
 11. **F11 — Measure SPAs POST-HYDRATION.** Session 8 read the reference's nav before client hydration landed (its SSR shell ships bare `<a>` tags) and recorded "no active pill" — the settled reference renders `bg-purple-50 text-purple-700` on the current route. Screenshots taken immediately after navigation can silently record a pre-hydration UI; wait for hydration (or assert via auto-retrying locators) before measuring parity. Session 10 reversed the finding and re-pinned it on two routes.
 12. **F12 — A hosted image is still decodable geometry.** The reference's brand mark (a hosted JPEG) looked un-copyable until pixel forensics decoded it: three rows of split-pill D-shapes + a cyan circle on `#0d1017`. Redraw the decoded geometry as inline SVG (no asset file copied), validate by rendering the SVG to canvas and pixel-comparing against the source, and pin the hexes with a source-contract unit test.
+13. **F13 — When pinning a parity fact, pin its ROUTE SCOPE too.** Session 10 restored the nav pill (correct) but over-scoped it to `/` — the reference's active check is an EXACT pathname match, so the root renders NO pill. Session 12 measured four settled routes and corrected the scope. A pin that asserts the right styling on the wrong route set is still a wrong pin.
+14. **F14 — Characterization pin BEFORE convention migrations.** The middleware→proxy rename (Next 16.3) had been deferred because nothing pinned the redirect contract. Writing the legacy-redirect e2e FIRST (passing against the old middleware), then renaming, keeps the behavior proven through the migration — the migration becomes a no-op for the test suite instead of a leap of faith.
+15. **F15 — Re-verify hosted reference assets when URLs change.** The reference re-hosted its logo (old Supabase URL 404s, new `.jpeg` URL, same 651×470 art). Download and pixel-compare the new asset against the recorded decode before assuming the clone's recreation still matches — and before trusting a VLM's small-thumbnail description (it misread the 96×96 chip as "a letter D"; the pixel decode is the ground truth).
 
 ## §13 Pitfalls to Avoid
 
@@ -357,12 +360,12 @@ async function ensureProject(): Promise<string | null> {
 </Sheet>
 ```
 
-**Pattern 5 — Casing redirects in middleware (`src/middleware.ts`):**
+**Pattern 5 — Casing redirects in the proxy (`src/proxy.ts` — the Next 16.3 `proxy` convention; migrated from `middleware.ts` in session 12, characterization pin first):**
 
 ```typescript
 const LEGACY: Record<string, string> = { "/dashboard": "/Dashboard", "/recent": "/Recent",
                                          "/teams": "/Teams", "/editor": "/Editor" };
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const dest = LEGACY[req.nextUrl.pathname];              // EXACT lookup = case-sensitive
   if (dest) { const url = new URL(dest, req.url);
     req.nextUrl.searchParams.forEach((v, k) => url.searchParams.set(k, v));
@@ -391,7 +394,7 @@ The app has exactly TWO behavioral breakpoints plus the drawer-specific mobile r
 
 | Breakpoint | What changes |
 |---|---|
-| `< md` (768px) | Hamburger appears (`md:hidden`); desktop nav `hidden`; editor layers/components panels hidden and the right properties panel hidden below `lg` — the canvas keeps full width (the reference squeezes all columns instead — a bug not cloned); the panel chips stay visible; hero stacks |
+| `< md` (768px) | Hamburger appears (`md:hidden`); desktop nav `hidden`; editor layers/components panels hidden and the right properties panel hidden below `lg` — the canvas keeps full width (the reference squeezes all columns instead — a bug not cloned); the panel-chip BAR itself is `hidden md:flex` (chips render only where their panels can); hero stacks |
 | `≥ md` | Desktop nav; no hamburger EVER (e2e-pinned: "the desktop nav shows the links and never the hamburger") |
 | `768px` exactly | Tablet check: nav links visible, no hamburger needed (e2e-pinned) |
 | `390×844` | The pinned mobile-nav e2e viewport (drawer, focus trap, scroll lock, 44px targets) |
@@ -411,7 +414,7 @@ Rule: portal layers stack Radix-default (`z-50`); the Toaster outranks dialogs s
 
 ## §19 Color & Token Reference (Complete)
 
-The single source is the `@theme` block in `src/app/globals.css` (101 lines). Full table in PAD §5.2. Editor accent colors used on canvas elements (fill defaults): `DEFAULT_FILL` and named colors in `src/lib/editor.ts` — clamped/verified through `src/lib/validation.ts` (hex regex) and `sanitizeLlmOperations` for AI-originated values.
+The single source is the `@theme` block in `src/app/globals.css` (162 lines). Full table in PAD §5.2. Editor accent colors used on canvas elements (fill defaults): `DEFAULT_FILL` and named colors in `src/lib/editor.ts` — clamped/verified through `src/lib/validation.ts` (hex regex) and `sanitizeLlmOperations` for AI-originated values.
 
 Contrast (measured): foreground `#0f172a` on white ≈ 15.9:1 (AAA); muted-foreground `#6b7280` ≈ 5.9:1 (AA); editor text `#e6edf3` on `#0d1117` ≈ 13.4:1 (AAA). Top-bar avatars: `#3B82F6` (user) + `#10B981` ("S") on white text.
 
@@ -469,10 +472,10 @@ Prisma models (5): `User` (email unique, scrypt passwordHash, avatarColor), `Pro
 | Thing | Where |
 |---|---|
 | Route folders (capitalized) | `src/app/{Dashboard,Recent,Teams,Editor}/page.tsx` + root `page.tsx` + `login/` |
-| Legacy redirects | `src/middleware.ts` |
+| Legacy redirects | `src/proxy.ts` |
 | THE editor store | `src/components/editor/editor-store.ts` |
 | Autosave + Untitled seam | `src/components/editor/editor-view.tsx` (`useAutosave`, `ensureProject`, `UNTITLED_PROJECT`) |
-| db-path (chdir trap) | `src/lib/db-path.ts` + `tests/db-path.test.ts` (20 checks) |
+| db-path (chdir trap) | `src/lib/db-path.ts` + `tests/db-path.test.ts` (19 checks) |
 | Toast infra | `src/hooks/use-toast.ts` + `src/components/ui/toaster.tsx` |
 | Auth | `src/lib/auth.ts` (AUTH_SECRET, `digma_session`) |
 | AI pipeline | `src/app/api/ai-assistant/route.ts` + `src/lib/ai-assistant.ts` |

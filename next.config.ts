@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
-// ADR-007 (inherited): standalone output with the file-tracing root pinned to
-// the repo — guarantees the canonical .next/standalone/server.js layout no
-// matter where the repo is cloned (a parent workspace lockfile would otherwise
+// Standalone output with the file-tracing root pinned to the repo —
+// guarantees the canonical .next/standalone/server.js layout no matter
+// where the repo is cloned (a parent workspace lockfile would otherwise
 // nest the server under .next/standalone/<nested-path>/server.js).
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   // Route-casing parity (ADR-008): the reference app's own links point at
   // /Dashboard, /Recent, /Teams, /Editor (capitalized) while the root "/" and
   // lowercase "/login" stay as they are. Legacy lowercase bookmarks are
-  // redirected by src/middleware.ts — next.config redirects() cannot
+  // redirected by src/proxy.ts — next.config redirects() cannot
   // express this (source matching is case-insensitive; the per-rule
   // caseSensitive flag is not honored — observed self-loop).
   // The reference app renders template thumbnails from unsplash URLs with

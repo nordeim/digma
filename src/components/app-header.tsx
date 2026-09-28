@@ -24,10 +24,11 @@ const NAV_LINKS = [
 ] as const;
 
 // The dashboard is served at BOTH "/" and "/Dashboard" (reference parity:
-// its links point at /Dashboard while the root also renders it) — the
-// active-state check must treat them as one destination.
+// its links point at /Dashboard while the root also renders it) — but the
+// reference's active-state check is an EXACT pathname match (session 12,
+// measured settled on four routes): at "/" NO nav link is highlighted;
+// the pill appears only on /Dashboard, /Recent and /Teams themselves.
 function isNavActive(pathname: string, href: string): boolean {
-  if (href === "/Dashboard") return pathname === "/Dashboard" || pathname === "/";
   return pathname === href;
 }
 

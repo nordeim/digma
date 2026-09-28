@@ -17,13 +17,16 @@ test.describe("workspace parity pins (session 8)", () => {
     expect(font).toMatch(/Inter|sans-serif/i);
   });
 
-  test("the desktop nav highlights the CURRENT route (reference parity, session-10 fix)", async ({ page }) => {
+  test("the desktop nav highlights the CURRENT route — exact pathname match, no pill at / (session-12 scope fix)", async ({ page }) => {
     // Session 8 recorded "no active pill" from a PRE-HYDRATION read of the
     // reference (its SSR shell ships bare <a> tags; client hydration applies
-    // the classes). The hydrated reference renders bg-purple-50
-    // text-purple-700 on the current route's link — re-measured live on
-    // /Dashboard, /Recent and /Teams (session 10). This pin asserts the
-    // corrected contract on TWO routes so a static-class bug can't pass.
+    // the classes). Session 10 restored the pill — but over-scoped it to the
+    // root "/". Session 12 re-measured the reference on FOUR routes with
+    // long settles: the reference's active logic is an EXACT pathname match —
+    // at "/" NO link is active (all three plain, no aria-current); at
+    // /Dashboard, /Recent and /Teams the current route's link renders
+    // bg-purple-50 text-purple-700. This pin asserts all three states so a
+    // static-class bug AND an over-scoped active check can't pass.
     const readPainted = (link: Locator) =>
       link.evaluate((node) => {
         const ctx = document.createElement("canvas").getContext("2d")!;
@@ -33,20 +36,31 @@ test.describe("workspace parity pins (session 8)", () => {
         return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
       });
 
+    // 1) At the root "/", the reference renders the dashboard view with a
+    //    completely UN-highlighted nav — the Dashboard link's href is
+    //    /Dashboard and "/" matches nothing.
     await page.goto("/");
     let links = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
     await expect(links).toHaveCount(3);
-    // Dashboard (the "/" route) is the active one: purple-50 pill + purple-700 text.
+    for (let i = 0; i < 3; i++) {
+      await expect(readPainted(links.nth(i))).resolves.toBe("000000");
+      await expect(links.nth(i)).not.toHaveAttribute("aria-current");
+    }
+
+    // 2) On the canonical /Dashboard route, the Dashboard link carries the
+    //    purple-50 pill + purple-700 text; the others stay transparent.
+    await page.goto("/Dashboard");
+    links = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
     await expect(readPainted(links.nth(0))).resolves.toBe("faf5ff");
     const activeColor = await links.nth(0).evaluate((el) => getComputedStyle(el).color);
     expect(activeColor).toBe("rgb(126, 34, 206)"); // purple-700 #7e22ce
-    // The other two stay transparent.
     await expect(readPainted(links.nth(1))).resolves.toBe("000000");
     await expect(readPainted(links.nth(2))).resolves.toBe("000000");
-    // a11y is preserved: the current route still carries aria-current.
-    await expect(links.first()).toHaveAttribute("aria-current", "page");
+    // a11y is preserved on the canonical route (the reference itself ships
+    // no aria-current — the clone's superset, tied to the same active flag).
+    await expect(links.nth(0)).toHaveAttribute("aria-current", "page");
 
-    // Same contract on /Teams — the TEAMS link is the highlighted one.
+    // 3) Same contract on /Teams — the TEAMS link is the highlighted one.
     await page.goto("/Teams");
     links = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
     await expect(readPainted(links.nth(2))).resolves.toBe("faf5ff");

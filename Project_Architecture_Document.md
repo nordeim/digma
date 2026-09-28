@@ -1,13 +1,23 @@
-# Digma — Master Project Architecture Document (PAD) v1.6.0
+# Digma — Master Project Architecture Document (PAD) v1.7.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-09-28 (v1.6.0 — the session-8 R2 reversal: nav active pill restored; brand-mark recreation; login footer parity)
+**Last Updated:** 2026-09-28 (v1.7.0 — nav active pill route-scope fix: exact pathname match, no pill at "/"; middleware → proxy migration; docs numeric realignment)
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
+
+#### Revision Block — v1.7.0 (Tracked Changes)
+
+Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+- `[SR]` **Session-10 pill pin SCOPE-CORRECTED — the reference's nav active-state is an EXACT pathname match.** Session 10 restored the pill (correct) but over-scoped it to the root `/` (wrong): the reference's Dashboard link href is `/Dashboard`, and at `/` NO link is highlighted. Re-measured settled (5–10 s) on FOUR reference routes: at `/` all three links render `text-gray-600 hover:…` with no `aria-current`; at `/Dashboard`, `/Recent`, `/Teams` the current route's link carries `bg-purple-50 text-purple-700`. The clone's `isNavActive()` root special case (`|| pathname === "/"`) was removed — exact match now; pinned by `tests/e2e/parity.spec.ts` as a THREE-state pin (no pill at `/`, pill on `/Dashboard`, pill on `/Teams`). **Lesson recorded: when pinning a parity fact, pin its ROUTE SCOPE too — the session-10 pill was correct but over-scoped to `/`.**
+- `[SR]` **middleware → proxy migration (Next 16.3 convention):** `src/middleware.ts` → `src/proxy.ts`, export `middleware` → `proxy` (same API, same `config.matcher` contract); the dev server no longer prints the deprecation notice. The ADR-008 redirects (legacy lowercase → canonical 307s, query preserved) are unchanged. Method: a NEW characterization pin (`tests/e2e/workspace.spec.ts` "legacy lowercase routes 307-redirect to the canonical capitalized routes" — all four paths + query survival) was written and passed against the OLD middleware FIRST, closing the pinning gap that had deferred this migration in §10, then the rename landed and the pin stayed green.
+- `[SR]` Test-count refresh: 72 unit checks (unchanged), 54 Playwright checks (+1: the legacy-redirect characterization pin), 28 smoke, 20 build routes. The full gate (`lint → typecheck → 72 unit → build → 28 smoke → 54 e2e`) is green at v1.7.0.
+- `[SR]` Docs numeric realignment (all verified against the tree): §7.1 parity row 7 → 9 and the missing brand-mark row (6 checks) added; workspace row 8 → 9; §9.2 "unit tests (62)" → 72; §4.3/§9.1 seed counts corrected to the actual `prisma/seed.ts` (2 projects, 1 team with 3 members — §3.2 was already right); §11 line counts refreshed; `next.config.ts`'s "ADR-007 (inherited)" mis-attribution for `outputFileTracingRoot` corrected (ADR-007 is the toast-store ADR).
+- `[SR]` **Reference brand asset re-host verified:** the reference moved its logo to a new Supabase URL (the old one 404s; new `…082348336_782025-1820.jpeg`, same 651×470 art). Downloaded and pixel-verified: all six shape hexes + the `#0d1017` field + the purple–cyan gap match the session-10 decode exactly — the clone's recreated inline-SVG mark remains pixel-correct; no change.
 
 #### Revision Block — v1.6.0 (Tracked Changes)
 
@@ -198,12 +208,12 @@ How to use this document:
 - **Consequences:** Positive — cross-chunk toasts work; no controlled-open Radix list. Negative — a global symbol name to keep unique (`__digmaToastInfra`).
 - **Alternatives Rejected:** Module-level singleton — the observed bug; context provider — the Toaster lives in the root layout while fire-sites live in page chunks, and context doesn't cross bundle splits any better.
 
-**ADR-008: Capitalized route spellings with middleware-based legacy redirects**
+**ADR-008: Capitalized route spellings with proxy-based legacy redirects**
 
 - **Context:** The reference app's own links point at `/Dashboard`, `/Recent`, `/Teams`, `/Editor?projectId=…` (React Router, capitalized), with the root `/` and a lowercase `/login` also live. The v1.0.0 clone used all-lowercase Next.js-conventional routes — a user-visible URL difference on every navigation.
-- **Decision:** Rename the route folders to the reference spellings (`src/app/{Dashboard,Recent,Teams,Editor}`), keep `/` and `/login` as they are, and 307-redirect the four legacy lowercase paths in `src/middleware.ts` (exact-match `Record` lookup; `matcher` restricted to those four paths; query preserved so `/editor?projectId=x` → `/Editor?projectId=x`).
-- **Rationale:** URL parity is user-visible parity. The middleware is required because Next 16's `redirects()` source matching is case-INSENSITIVE and the per-rule `caseSensitive` flag is not honored — expressing lowercase→Capital there produces a `/Recent → /Recent` self-loop (`ERR_TOO_MANY_REDIRECTS`, observed and reverted). Page-route matching itself IS case-sensitive (lowercase `/teams` 404s), so the middleware carries the compat burden alone.
-- **Consequences:** Positive — address-bar parity with the reference; old bookmarks keep working. Negative — a middleware edge on four paths; two route folders that must not collide on case-insensitive filesystems (only one spelling exists per route, so no conflict).
+- **Decision:** Rename the route folders to the reference spellings (`src/app/{Dashboard,Recent,Teams,Editor}`), keep `/` and `/login` as they are, and 307-redirect the four legacy lowercase paths in `src/proxy.ts` (exact-match `Record` lookup; `matcher` restricted to those four paths; query preserved so `/editor?projectId=x` → `/Editor?projectId=x`). The file is the Next 16.3 `proxy` convention (renamed from `middleware.ts` in session 12 — same API, only the file and export names changed).
+- **Rationale:** URL parity is user-visible parity. The proxy is required because Next 16's `redirects()` source matching is case-INSENSITIVE and the per-rule `caseSensitive` flag is not honored — expressing lowercase→Capital there produces a `/Recent → /Recent` self-loop (`ERR_TOO_MANY_REDIRECTS`, observed and reverted). Page-route matching itself IS case-sensitive (lowercase `/teams` 404s), so the proxy carries the compat burden alone.
+- **Consequences:** Positive — address-bar parity with the reference; old bookmarks keep working. Negative — a proxy edge on four paths; two route folders that must not collide on case-insensitive filesystems (only one spelling exists per route, so no conflict).
 - **Alternatives Rejected:** `next.config redirects()` — the observed loop; duplicate lowercase route folders calling `redirect()` — folder-name collision risk on macOS/Windows; staying lowercase — leaves a visible parity gap.
 
 **ADR-009: Untitled editor for unknown/missing projectId (create-on-first-save)**
@@ -263,7 +273,7 @@ How to use this document:
 │                                                                      │
 │  [Server pages]  /, /Dashboard, /login, /Recent, /Teams, /Editor   │
 │    → getSessionUser() gate → redirect /login?from_url=…              │
-│    (legacy lowercase /recent… 307 → canonical via src/middleware.ts) │
+│    (legacy lowercase /recent… 307 → canonical via src/proxy.ts) │
 │                                                                      │
 │  [Route handlers]  /api/auth/*  /api/projects/**  /api/teams/**      │
 │    /api/stats  /api/health  /api/ai-assistant                        │
@@ -355,7 +365,7 @@ digma/
 │   │       ├── teams/[id]/members/route.ts      # POST invite
 │   │       ├── stats/route.ts         # GET dashboard Quick Stats
 │   │       └── ai-assistant/route.ts  # POST natural-language → operations
-│   ├── middleware.ts              # legacy lowercase → canonical 307s (ADR-008)
+│   ├── proxy.ts                   # legacy lowercase → canonical 307s (ADR-008; Next 16 `proxy` convention)
 │   ├── components/
 │   │   ├── app-header.tsx         # desktop nav + MobileNav (Sheet drawer) ← the fix
 │   │   ├── dashboard-view.tsx     # hero, Quick Stats, Continue Working, grid
@@ -597,7 +607,7 @@ The runtime element shape (`src/lib/editor.ts` — `CanvasElement`) is the autho
 
 - **Connection handling:** `src/lib/db.ts` keeps a single PrismaClient per process (global in dev to survive Turbopack HMR); SQLite is single-writer anyway.
 - **Write pattern:** full-list transactional replace (Pattern 3) — no incremental migration state, no per-element locks.
-- **Migrations:** schema-first via `bun run db:push` (dev/demo tool; `--accept-data-loss` is deliberate for a demo schema), `prisma migrate` scripts remain available for a future hosted deployment. Seed: `prisma/seed.ts` creates the demo user, 4 projects (with a rich seeded element composition), and 3 teams.
+- **Migrations:** schema-first via `bun run db:push` (dev/demo tool; `--accept-data-loss` is deliberate for a demo schema), `prisma migrate` scripts remain available for a future hosted deployment. Seed: `prisma/seed.ts` creates the demo user, 2 projects (with a rich seeded element composition), and 1 team with 3 members.
 - **Databases in the repo lifecycle:** `db/custom.db` (dev, gitignored), `db/e2e.db` (created by the Playwright global setup on :3100, gitignored). Both are disposable; the seed is the recovery path.
 
 ---
@@ -700,13 +710,14 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — @theme contract | `tests/theme.test.ts` | 4 | tests | Vitest |
 | Unit — greeting | `src/lib/greeting.test.ts` | 4 | src/lib | Vitest |
 | Unit — team stats | `src/lib/team.test.ts` | 5 | src/lib | Vitest |
+| Unit — brand-mark contract | `tests/brand-mark.test.ts` | 6 | tests | Vitest |
 | E2E — auth journeys + card states | `tests/e2e/auth.spec.ts` | 11 | tests/e2e | Playwright |
 | E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |
-| E2E — workspace/editor | `tests/e2e/workspace.spec.ts` | 8 | tests/e2e | Playwright |
+| E2E — workspace/editor | `tests/e2e/workspace.spec.ts` | 9 | tests/e2e | Playwright |
 | E2E — mobile navigation | `tests/e2e/mobile-navigation.spec.ts` | 9 | tests/e2e | Playwright |
 | E2E — untitled editor | `tests/e2e/untitled-editor.spec.ts` | 3 | tests/e2e | Playwright |
 | E2E — editor panels | `tests/e2e/editor-panels.spec.ts` | 12 | tests/e2e | Playwright |
-| E2E — visual parity pins | `tests/e2e/parity.spec.ts` | 7 | tests/e2e | Playwright |
+| E2E — visual parity pins | `tests/e2e/parity.spec.ts` | 9 | tests/e2e | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 28 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns
@@ -727,7 +738,7 @@ No numeric coverage tooling is configured (deliberate: the check counts are the 
 - [ ] `bun run test` → 72/72
 - [ ] `bun run build` succeeds; standalone assets copied
 - [ ] `./scripts/smoke-test.sh` → 28/28 (dev server STOPPED — the script's own standalone boot must own :3000)
-- [ ] `bun run test:e2e` → 53/53 (fresh e2e DB; :3100)
+- [ ] `bun run test:e2e` → 54/54 (fresh e2e DB; :3100)
 - [ ] Mobile navigation verified at 390×844 (the mobile suite IS this check)
 - [ ] No new `.env`, key files, or `db/*.db` staged
 
@@ -775,7 +786,7 @@ git clone https://github.com/nordeim/digma.git && cd digma
 bun install
 cp .env.example .env
 bun run db:push        # create db/custom.db from the schema
-bun run db:seed        # demo user, 4 projects, 3 teams
+bun run db:seed        # demo user, 2 projects, 1 team (3 members)
 bun run dev            # http://localhost:3000
 ```
 
@@ -788,7 +799,7 @@ Demo login: `demo@digma.app` / `Digma1234!`. Ensure no exported `DATABASE_URL` a
 | `bun run dev` | repo root | dev server :3000, logs tee'd to `dev.log` |
 | `bun run build` / `bun run start` | repo root | production standalone |
 | `bun run lint` / `bun run typecheck` | repo root | quality gates |
-| `bun run test` / `bun run test:watch` | repo root | unit tests (62) |
+| `bun run test` / `bun run test:watch` | repo root | unit tests (72) |
 | `bun run test:e2e` | repo root | Playwright suite (:3100, own DB) |
 | `./scripts/smoke-test.sh` | scripts/ | 28 HTTP checks (needs build) |
 | `bunx prisma generate` | repo root | regenerate client after schema edits |
@@ -811,8 +822,8 @@ Enforced by ESLint 9 (`eslint-config-next`): React 19 hook rules including `set-
 
 | Priority | Issue | Impact | Status |
 |----------|-------|--------|--------|
-| MEDIUM | Next 16 `redirects()` matches sources case-insensitively; the per-rule `caseSensitive` flag is not honored | Lowercase→Capital redirects CANNOT live in `next.config.ts` (self-loop); `src/middleware.ts` carries them instead | Mitigated (ADR-008; middleware is the sanctioned location) |
-| MEDIUM | Next 16.3.6 deprecation: the `middleware` file convention is deprecated in favor of `proxy` (dev-server warning; still fully functional) | Modernization debt only — no functional impact | Open (deferred: `src/middleware.ts` carries the ADR-008 redirects; migrate in a dedicated session with the smoke suite as the pin) |
+| MEDIUM | Next 16 `redirects()` matches sources case-insensitively; the per-rule `caseSensitive` flag is not honored | Lowercase→Capital redirects CANNOT live in `next.config.ts` (self-loop); `src/proxy.ts` carries them instead | Mitigated (ADR-008; the proxy is the sanctioned location) |
+| MEDIUM | Next 16.3.6 deprecation: the `middleware` file convention is deprecated in favor of `proxy` | Migrated in session 12: `src/middleware.ts` → `src/proxy.ts` (export `middleware` → `proxy`), deprecation notice gone; a characterization pin (legacy-redirect e2e) was written and passed against the OLD middleware BEFORE the rename, so the redirect contract stayed proven through the migration | Fixed (v1.7.0) |
 | LOW | Session-8's R2 "no nav active pill" finding was a pre-hydration measurement error (reversed in v1.6.0) | Process lesson: parity measurements on SPAs must wait for hydration | Fixed (pill restored + two-route pin; lesson recorded in the v1.6.0 revision block) |
 | MEDIUM | Rate limiter is in-process (fixed window per process) | Counter resets on restart; N-instance deployments would each track separately | Open (accepted for demo scale; documented in S5/6.4) |
 | MEDIUM | `next.config.ts` sets `ignoreBuildErrors` | Type errors don't fail the build — `bun run typecheck` is a manual, mandatory gate | Open (intentional scaffold default; compensated by the gate order) |
@@ -832,36 +843,36 @@ None of the above are release blockers for the deliverable; all are consciously 
 | File | Lines | Purpose |
 |------|-------|---------|
 | `src/components/editor/editor-store.ts` | 315 | THE Zustand store: elements, selection, tool, zoom/pan, undo/redo, saveState |
-| `src/components/editor/editor-view.tsx` | 575 | Editor layout + 800ms-debounced autosave PUT + id remap + chip responsive guard |
+| `src/components/editor/editor-view.tsx` | 577 | Editor layout + 800ms-debounced autosave PUT + id remap + chip responsive guard |
 | `src/components/editor/canvas.tsx` | 497 | Pointer events: draw/move/resize/select; zoom/pan; scale-aware transforms + visual-space resize |
 | `src/components/editor/properties-panel.tsx` | 439 | Reference five-section layout + Transform scale (ADR-011/012) |
 | `src/components/editor/components-panel.tsx` | 42 | Reference Components column + empty state (ADR-010) |
 | `src/components/project-card.tsx` | 550 | Card + thumbnail art + ellipsis menu (rename/delete, stopPropagation) |
-| `src/components/app-header.tsx` | 215 | Desktop nav + MobileNav Sheet drawer (the Tailwind v4 class-A fix) |
-| `src/components/teams-view.tsx` | 473 | Team cards, member chips, invite dialog, inline confirm deletes |
-| `src/components/dashboard-view.tsx` | 343 | Gradient hero, Quick Stats, Continue Working, project grid, create dialog |
-| `src/components/login-screen.tsx` | 364 | Three-state auth card (ADR-013): branded sign-in; minimal sign-up with Confirm Password + inline mismatch validation; minimal forgot |
+| `src/components/app-header.tsx` | 238 | Desktop nav (exact-match active pill) + MobileNav Sheet drawer (the Tailwind v4 class-A fix) |
+| `src/components/teams-view.tsx` | 476 | Team cards, member chips, invite dialog, inline confirm deletes |
+| `src/components/dashboard-view.tsx` | 352 | Gradient hero, Quick Stats, Continue Working, project grid, create dialog |
+| `src/components/login-screen.tsx` | 359 | Three-state auth card (ADR-013): branded sign-in; minimal sign-up with Confirm Password + inline mismatch validation; minimal forgot |
 | `src/components/editor/ai-assistant.tsx` | 213 | Chat UI (reference chrome: bot avatars, timestamp-below bubbles, blue send); applies `{reply, operations[]}` to the store |
-| `src/components/editor/layers-panel.tsx` | 209 | Layer list: visibility/lock, reorder, rename |
+| `src/components/editor/layers-panel.tsx` | 221 | Layer list: visibility/lock, reorder, rename |
 | `src/lib/editor.ts` | 268 | Pure element domain: types, geometry, clamps, scale-aware bounds |
 | `src/lib/ai-assistant.ts` | 271 | LLM sanitizer + deterministic fallback parser |
 | `src/lib/auth.ts` | 101 | scrypt + HMAC sessions, cookie helpers |
-| `src/lib/db-path.ts` | 99 | Minifier-safe SQLite URL anchoring (ADR-002/002a) |
-| `src/app/api/projects/[id]/elements/route.ts` | 151 | Full-list transactional replace (Pattern 3) |
+| `src/lib/db-path.ts` | 108 | Minifier-safe SQLite URL anchoring (ADR-002/002a) |
+| `src/app/api/projects/[id]/elements/route.ts` | 150 | Full-list transactional replace (Pattern 3) |
 | `src/hooks/use-toast.ts` | 90 | globalThis toast infra + `useSyncExternalStore` (ADR-007) |
-| `src/components/logo.tsx` | 72 | The recreated brand mark: split-pill rows + cyan circle on #0d1017, square-crop + stretch modes (session 10) |
-| `src/app/globals.css` | 160 | Tailwind 4 `@theme` tokens — the entire design system source (ADR-004/004a: literal fonts + reference-palette pins) |
+| `src/components/logo.tsx` | 71 | The recreated brand mark: split-pill rows + cyan circle on #0d1017, square-crop + stretch modes (session 10) |
+| `src/app/globals.css` | 162 | Tailwind 4 `@theme` tokens — the entire design system source (ADR-004/004a: literal fonts + reference-palette pins) |
 | `prisma/schema.prisma` | 104 | User/Project/DesignElement (incl. scale)/Team/TeamMember |
 | `prisma/seed.ts` | 144 | Demo workspace seed |
 | `tests/e2e/mobile-navigation.spec.ts` | 119 | Mobile nav regression suite @390×844 |
-| `tests/e2e/parity.spec.ts` | 258 | Visual-parity pins: font, nav active pill (ON, two routes — the session-10 reversal), toggles, Teams, zoom icons, AI chrome, login hint, nothing-below-card, chip brand mark (pixel-read colors) |
+| `tests/e2e/parity.spec.ts` | 272 | Visual-parity pins: font, nav active pill (exact pathname match — no pill at "/", pill on canonical routes — the session-12 scope fix), toggles, Teams, zoom icons, AI chrome, login hint, nothing-below-card, chip brand mark (pixel-read colors) |
 | `tests/theme.test.ts` | 90 | The `@theme` contract: literal fonts, no var() chains, no legacy config (ADR-004a) |
-| `tests/brand-mark.test.ts` | 96 | The brand-mark source contract: six measured hexes, cyan circle, dual render modes, no gradient chip (session 10) |
+| `tests/brand-mark.test.ts` | 86 | The brand-mark source contract: six measured hexes, cyan circle, dual render modes, no gradient chip (session 10) |
 | `tests/e2e/auth.spec.ts` | 150 | Auth journeys + the three-state card structure suite (ADR-013) |
-| `tests/e2e/editor-panels.spec.ts` | 184 | Panel chips (+ responsive) + Select All + properties + scale contract (ADR-010/011/012) |
-| `tests/db-path.test.ts` | 156 | db-path resolution contract (19 checks, incl. DIGMA_REPO_ROOT) |
-| `src/middleware.ts` | 41 | Legacy lowercase → canonical 307 redirects (ADR-008) |
-| `tests/e2e/untitled-editor.spec.ts` | 58 | Untitled-editor contract: bogus/missing id, create-on-first-save (ADR-009) |
+| `tests/e2e/editor-panels.spec.ts` | 182 | Panel chips (+ responsive) + Select All + properties + scale contract (ADR-010/011/012) |
+| `tests/db-path.test.ts` | 228 | db-path resolution contract (19 checks, incl. DIGMA_REPO_ROOT) |
+| `src/proxy.ts` | 43 | Legacy lowercase → canonical 307 redirects (ADR-008; Next 16 `proxy` convention) |
+| `tests/e2e/untitled-editor.spec.ts` | 55 | Untitled-editor contract: bogus/missing id, create-on-first-save (ADR-009) |
 | `scripts/smoke-test.sh` | 172 | 28 HTTP checks against the standalone build |
 | `src/lib/rate-limit.ts` | 53 | Fixed-window in-process limiter |
 | `src/lib/validation.ts` | 65 | Caps, enums, hex checks, clamps |

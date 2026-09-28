@@ -93,7 +93,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | Components | shadcn/ui on Radix | vendored | dialog, dropdown-menu, sheet, tabs, toast, button, input, label, textarea |
 | Client state | Zustand | 5 | The editor store (elements, selection, tool, zoom, history) |
 | Unit tests | Vitest | 5 | 72 checks on the pure domain seams + the `@theme` and brand-mark contracts |
-| E2E tests | Playwright | 1.63 | 53 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, the panel-toggle/properties suites, the AI no-crash regression pin, the auth-card state structure suite (sign-up minimal card, Confirm Password validation, forgot state), and the session-8 visual-parity suite (font, nav, toggles, Teams, zoom icons, AI panel) |
+| E2E tests | Playwright | 1.63 | 54 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, the panel-toggle/properties suites, the AI no-crash regression pin, the auth-card state structure suite (sign-up minimal card, Confirm Password validation, forgot state), the legacy-lowercase→canonical redirect pin (ADR-008, proven through the middleware→proxy migration), and the visual-parity suite (font, nav pill exact-match, toggles, Teams, zoom icons, AI panel) |
 | ORM | Prisma | 6 | Schema, client, `db push`, seed |
 | Database | SQLite | — | Zero-config local persistence (`db/custom.db`) |
 | Auth | Node `crypto` (scrypt + HMAC) | — | Cookie sessions, no external auth service |
@@ -150,7 +150,7 @@ Every page resolves the session server-side and redirects unauthenticated visito
     📄 project-card.tsx     # Card + thumbnail + Create Project dialog
     📄 logo.tsx             # Inline SVG brand mark
     📂 ui/                  # shadcn primitives (button, dialog, dropdown-menu, sheet, tabs, toaster…)
-  📄 middleware.ts          # Legacy lowercase routes → canonical 307 redirects
+  📄 proxy.ts              # Legacy lowercase routes → canonical 307 redirects (Next 16 `proxy` convention)
   📂 hooks/
     📄 use-toast.ts         # globalThis-backed toast store (useSyncExternalStore-safe)
   📂 lib/
@@ -269,7 +269,7 @@ Status colors: blue `#3B82F6` (default fill/active tool), green `#10B981` (Saved
 
 ```bash
 bun run test              # unit tests — 72 checks on the pure domain seams
-bun run test:e2e          # Playwright — 53 browser checks (needs `bun run build` first)
+bun run test:e2e          # Playwright — 54 browser checks (needs `bun run build` first)
 ./scripts/smoke-test.sh   # curl E2E — 28 checks against the production build
 ```
 
