@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Lock, Mail } from "lucide-react";
 
@@ -125,9 +124,10 @@ export function LoginScreen() {
                 <div className="group relative">
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 opacity-30 blur-xl transition-opacity duration-300 group-hover:opacity-40" />
                   <span className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded-full shadow-lg ring-4 ring-white/50 transition-all duration-300 group-hover:shadow-xl sm:h-24 sm:w-24">
-                    <span className="flex aspect-square h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-                      <LogoMark className="h-10 w-10 sm:h-12 sm:w-12" />
-                    </span>
+                    {/* The reference's chip: the brand mark itself fills the
+                     * circle (object-fit: cover on its hosted image) — the
+                     * black field is the mark's own, no gradient backing. */}
+                    <LogoMark className="h-full w-full" />
                   </span>
                 </div>
               )}
@@ -320,14 +320,9 @@ export function LoginScreen() {
           </div>
         </div>
 
-        {/* Reference parity: the card's footer carries ONLY the workspace
-            link — no demo-account hint (that lives in README/AGENTS). */}
-
-        <div className="mt-4 text-center">
-          <Link href="/login" className="text-xs text-slate-400 hover:text-slate-600">
-            Digma — design workspace
-          </Link>
-        </div>
+        {/* Reference parity (measured session 10): NOTHING renders below
+            the auth card — no workspace footer, no demo-account hint (the
+            demo credentials live in README/AGENTS). */}
       </div>
     </main>
   );

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 
 // Visual-parity pins from the session-8 live audit of the reference app
 // (https://digma-371dfd0d.base44.app/). Every assertion here was measured in
@@ -17,18 +17,42 @@ test.describe("workspace parity pins (session 8)", () => {
     expect(font).toMatch(/Inter|sans-serif/i);
   });
 
-  test("the desktop nav has NO active-state pill (reference parity)", async ({ page }) => {
+  test("the desktop nav highlights the CURRENT route (reference parity, session-10 fix)", async ({ page }) => {
+    // Session 8 recorded "no active pill" from a PRE-HYDRATION read of the
+    // reference (its SSR shell ships bare <a> tags; client hydration applies
+    // the classes). The hydrated reference renders bg-purple-50
+    // text-purple-700 on the current route's link — re-measured live on
+    // /Dashboard, /Recent and /Teams (session 10). This pin asserts the
+    // corrected contract on TWO routes so a static-class bug can't pass.
+    const readPainted = (link: Locator) =>
+      link.evaluate((node) => {
+        const ctx = document.createElement("canvas").getContext("2d")!;
+        ctx.fillStyle = getComputedStyle(node).backgroundColor;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+      });
+
     await page.goto("/");
-    const links = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
+    let links = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
     await expect(links).toHaveCount(3);
-    for (const link of await links.all()) {
-      // The reference styles every link text-gray-600 with a transparent
-      // background — no per-route highlight.
-      const bg = await link.evaluate((el) => getComputedStyle(el).backgroundColor);
-      expect(bg).toBe("rgba(0, 0, 0, 0)");
-    }
+    // Dashboard (the "/" route) is the active one: purple-50 pill + purple-700 text.
+    await expect(readPainted(links.nth(0))).resolves.toBe("faf5ff");
+    const activeColor = await links.nth(0).evaluate((el) => getComputedStyle(el).color);
+    expect(activeColor).toBe("rgb(126, 34, 206)"); // purple-700 #7e22ce
+    // The other two stay transparent.
+    await expect(readPainted(links.nth(1))).resolves.toBe("000000");
+    await expect(readPainted(links.nth(2))).resolves.toBe("000000");
     // a11y is preserved: the current route still carries aria-current.
     await expect(links.first()).toHaveAttribute("aria-current", "page");
+
+    // Same contract on /Teams — the TEAMS link is the highlighted one.
+    await page.goto("/Teams");
+    links = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
+    await expect(readPainted(links.nth(2))).resolves.toBe("faf5ff");
+    const teamsColor = await links.nth(2).evaluate((el) => getComputedStyle(el).color);
+    expect(teamsColor).toBe("rgb(126, 34, 206)");
+    await expect(readPainted(links.nth(0))).resolves.toBe("000000");
   });
 
   test("the active view toggle is near-black, not purple (reference --primary #171717)", async ({ page }) => {
@@ -169,7 +193,7 @@ test.describe("editor parity pins (session 8)", () => {
   });
 });
 
-test.describe("logged-out parity pins (session 8)", () => {
+test.describe("logged-out parity pins (session 8 + session 10)", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("the login card carries no demo-account hint (reference parity)", async ({ page }) => {
@@ -177,5 +201,58 @@ test.describe("logged-out parity pins (session 8)", () => {
     await expect(page.getByRole("heading", { name: "Welcome to Digma" })).toBeVisible();
     await expect(page.getByText(/seed ships a demo account/i)).toHaveCount(0);
     await expect(page.getByText(/demo@digma\.app/i)).toHaveCount(0);
+  });
+
+  test("nothing renders below the login card (session-10 fix)", async ({ page }) => {
+    // The clone used to ship a "Digma — design workspace" link below the
+    // auth card; the reference renders NOTHING under the card (measured:
+    // zero text nodes below the card rect).
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { name: "Welcome to Digma" })).toBeVisible();
+    await expect(page.getByText(/design workspace/i)).toHaveCount(0);
+    const below = await page.evaluate(() => {
+      const card = document.querySelector("main .max-w-md > div") as HTMLElement | null;
+      if (!card) return "no-card";
+      const cardRect = card.getBoundingClientRect();
+      const stray = Array.from(document.querySelectorAll("main a, main p, main span, main div"))
+        .filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.top >= cardRect.bottom - 4 && r.height > 0 && el.children.length === 0;
+        })
+        .map((el) => (el.textContent || "").trim())
+        .filter(Boolean);
+      return JSON.stringify(stray);
+    });
+    expect(below).toBe("[]");
+  });
+
+  test("the login chip carries the brand mark on black, not a gradient (session-10 fix)", async ({ page }) => {
+    // The reference's logo chip: a rounded-full container (shadow ring,
+    // already parity) whose inner surface is the brand mark itself — a
+    // colorful abstract mark on a black field. The clone used to back the
+    // chip with a blue→purple gradient around the old substitute mark.
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { name: "Welcome to Digma" })).toBeVisible();
+    const chip = page.locator("span.rounded-full.ring-4").first();
+    await expect(chip).toBeVisible();
+    // The mark svg fills the chip.
+    await expect(chip.locator("svg")).toHaveCount(1);
+    // No gradient anywhere inside the chip (the old backing is gone).
+    const gradients = await chip.evaluate((el) =>
+      Array.from(el.querySelectorAll("*")).filter(
+        (child) => getComputedStyle(child).backgroundImage !== "none",
+      ).length,
+    );
+    expect(gradients).toBe(0);
+    // The mark's own field is the reference's near-black (#0d1017).
+    const field = await chip.locator("svg > rect").first().getAttribute("fill");
+    expect(field?.toLowerCase()).toBe("#0d1017");
+    // The mark carries all six measured brand shapes (5 pills + the circle).
+    const fills = await chip.locator("svg > path, svg > circle").evaluateAll((els) =>
+      els.map((el) => (el.getAttribute("fill") || "").toLowerCase()),
+    );
+    expect(fills.sort()).toEqual(
+      ["#20bc72", "#325ddd", "#4cb6f2", "#b03af2", "#f33559", "#f4a24c"].sort(),
+    );
   });
 });

@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite chdir trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.4.0
+version: 1.5.0
 last_updated: 2026-09-28
-project_state: "66 unit checks green · 51 Playwright checks green · 28 smoke checks green · build 20 routes"
+project_state: "72 unit checks green · 53 Playwright checks green · 28 smoke checks green · build 20 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -68,7 +68,7 @@ project_state: "66 unit checks green · 51 Playwright checks green · 28 smoke c
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.1 | 66 checks; `*.test.ts` only |
+| Unit tests | Vitest | ≥5.0.1 | 72 checks; `*.test.ts` only |
 | E2E tests | Playwright | ≥1.63.0 | 44 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
@@ -239,10 +239,10 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 66/66
+bun run test          # 72/72
 bun run build         # 20 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 28/28 (health, auth gate, CRUD, AI, rate limit, logout)
-bun run test:e2e      # 51/51 (setup 1, auth 11, workspace 8, mobile-nav 9, untitled 3, editor-panels 12, parity 7)
+bun run test:e2e      # 53/53 (setup 1, auth 11, workspace 8, mobile-nav 9, untitled 3, editor-panels 12, parity 9)
 git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 ```
 
@@ -260,6 +260,8 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 8. **F8 — The local gate is the only gate.** No hosted CI — the §11 sequence is the whole quality story; never skip typecheck (the build won't catch types).
 9. **F9 — Session harvesting beats per-test logins.** Rate-limited auth + e2e = the setup-project + storageState pattern.
 10. **F10 — Paramiko shim when ssh is absent.** `docs/how-to-git-push-using-ssh-wrapper_SKILL.md` Appendix A; wrapper verifies the remote ref equals local HEAD after every push.
+11. **F11 — Measure SPAs POST-HYDRATION.** Session 8 read the reference's nav before client hydration landed (its SSR shell ships bare `<a>` tags) and recorded "no active pill" — the settled reference renders `bg-purple-50 text-purple-700` on the current route. Screenshots taken immediately after navigation can silently record a pre-hydration UI; wait for hydration (or assert via auto-retrying locators) before measuring parity. Session 10 reversed the finding and re-pinned it on two routes.
+12. **F12 — A hosted image is still decodable geometry.** The reference's brand mark (a hosted JPEG) looked un-copyable until pixel forensics decoded it: three rows of split-pill D-shapes + a cyan circle on `#0d1017`. Redraw the decoded geometry as inline SVG (no asset file copied), validate by rendering the SVG to canvas and pixel-comparing against the source, and pin the hexes with a source-contract unit test.
 
 ## §13 Pitfalls to Avoid
 

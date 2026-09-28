@@ -366,3 +366,23 @@ Work Log:
 
 Stage Summary:
 - Font bug (ADR-004a) fixed app-wide (Inter loads, verified via document.fonts.check); reference-palette pins make every audited color pixel-exact; 10 parity gaps closed with 11 new checks (4 unit + 7 e2e); gate 66 unit / 28 smoke / 51 e2e / 20 routes green; docs at PAD v1.5.0 + SKILL v1.4.0; 16 screenshots; ready for commit + SSH-wrapper push to main
+
+---
+Task ID: 28
+Agent: main
+Task: Session 10 — session-8 R2 reversal (desktop nav active pill), brand-mark recreation (header + login chip + favicon), login footer parity (TDD), screenshots, docs v1.6.0, push to main
+
+Work Log:
+- Workspace reset -> git clone digma + scandihaven; docs re-read (AGENTS, CLAUDE, README, PAD v1.5.0, digma_SKILL v1.4.0, session_8, remediation-plan-session8, worklog Tasks 1-27, session_9 transcript); codebase validated (routes/middleware, session gates, store, mobile-nav Sheet, configs excluding skills/, @theme literal fonts + palette pins)
+- DB placement: .env -> DATABASE_URL="file:../db/custom.db"; db/ at repo root; prisma generate + db:push + db:seed; [db] startup line confirms <repo>/db/custom.db. TRAP re-handled: sandbox exports absolute DATABASE_URL -> env -u discipline + parent .env neutralized
+- Baseline fast gates green: lint, typecheck, 66/66 unit; dev server healthy
+- Live parity re-audit (operator-supplied reference account; post-hydration DOM + VLM cross-checks + painted-pixel reads, 1440x900 + 390x844): HEADLINE — session 8's R2 "no nav active pill" was a PRE-HYDRATION misread (the reference is a Base44 SPA whose SSR shell ships bare <a> tags; hydration applies the classes). Verified post-hydration on /Dashboard, /Recent, /Teams: current route's link = bg-purple-50 text-purple-700. Pixel forensics: settled screenshot has 181 purple-700 text + 3910 lavender pill pixels; immediate post-load capture has zero. Also found: login page carries a "Digma — design workspace" footer the reference doesn't have (zero text below card rect); brand mark differs everywhere (reference = abstract mark on black: 3 rows of split-pill D-shapes red/orange/purple/cyan-circle/green/blue on #0d1017 — pixel-decoded; header renders it 32x32 object-fit fill, login chip 96x96 object-cover)
+- Verified parity-hold: dashboard (hero, stats, buttons, near-black toggles), Recent, Teams (flat, blue buttons, empty state), Editor (9-tool rail incl. lucide-image, zoom magnifiers, AI h-80 chrome), login 3 states (ADR-013), mobile nav (reference STILL failure class A at 390x844; clone's 44px hamburger + Sheet drawer verified end-to-end: tap Recent -> navigates AND dismisses), fonts (Inter loads), palette pins, all lucide icons. VLM false alarms investigated + dismissed via DOM (toolbar icon, login links, ref pill timing)
+- Remediation plan written + validated line-by-line (docs/remediation-plan-session10.md), then TDD: RED (tests/brand-mark.test.ts 6 checks -> 6 fail; parity.spec.ts nav test REVERSED to pin pill ON two routes + 2 new login checks -> 3 fail as designed, 16 others green) -> GREEN (app-header.tsx desktop nav active branch restored; login-screen.tsx footer + dead Link import removed; logo.tsx rewritten with the decoded mark (square-crop + stretch modes); login chip gradient replaced by the mark; public/logo.svg regenerated)
+- SVG validation en route: mark rendered via canvas + pixel-verified against the reference before landing (all six shape centers + gap + field match)
+- Full gate GREEN: lint, typecheck, 72/72 unit (66+6 brand-mark), build 20 routes, 28/28 smoke (dev stopped), 53/53 e2e (51+2 net-new parity)
+- 16 screenshots re-captured from remediated dev server -> docs/screenshots/; session-10 audit provenance -> docs/screenshots/ref-audit-s10/ (ref + clone pairs incl. settled-vs-immediate pill forensics); .env.example re-verified against code (unchanged, committed)
+- Docs aligned: PAD v1.6.0 (revision block; §10 middleware->proxy deprecation row + R2-reversal row; checklist 72/53), AGENTS.md + CLAUDE.md (nav-pill + brand-mark facts, counts, parity-suite description), README (design note, counts, logo tree entry), digma_SKILL.md v1.5.0 (F11 post-hydration measurement lesson, F12 hosted-image-as-decodable-geometry lesson, counts), docs/session_10.md written
+
+Stage Summary:
+- Session 10 delivered: parity restored on three surfaces (nav active pill, brand mark, login footer) with the session-8 R2 measurement error root-caused (pre-hydration SPA read) and the lesson pinned; gate green at 72 unit / 28 smoke / 53 e2e; PAD v1.6.0

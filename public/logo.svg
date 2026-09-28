@@ -1,7 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="7" fill="#0F172A"/>
-  <rect x="7" y="7" width="8" height="8" rx="2" fill="#2ECC8A"/>
-  <rect x="17" y="7" width="8" height="8" rx="2" fill="#3B82F6"/>
-  <rect x="7" y="17" width="8" height="8" rx="2" fill="#8B5CF6"/>
-  <rect x="17" y="17" width="8" height="8" rx="2" fill="#F59E0B"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="90 0 470 470" fill="none">
+  <!-- Digma brand mark — geometry decoded from the reference app's logo
+       (pixel-measured 2026-09-28, session 10). See src/components/logo.tsx. -->
+  <rect x="90" y="0" width="470" height="470" fill="#0d1017"/>
+  <path d="M306,65 H234.5 A57.5,57.5 0 0 0 234.5,180 H306 Z" fill="#f33559"/>
+  <path d="M308,66 H380.5 A55.5,55.5 0 0 1 380.5,177 H308 Z" fill="#f4a24c"/>
+  <path d="M310,180 H234.5 A57.5,57.5 0 0 0 234.5,295 H310 Z" fill="#b03af2"/>
+  <circle cx="414" cy="235" r="62" fill="#4cb6f2"/>
+  <path d="M306,295 H234.5 A57.5,57.5 0 0 0 234.5,410 H306 Z" fill="#20bc72"/>
+  <path d="M308,293 H375.5 A58.5,58.5 0 0 1 375.5,410 H308 Z" fill="#325ddd"/>
 </svg>

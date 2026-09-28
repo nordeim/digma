@@ -66,7 +66,7 @@ function MobileNav() {
       >
         <SheetHeader className="space-y-0 border-b border-gray-200 px-5 py-4 text-left">
           <div className="flex items-center gap-3">
-            <LogoMark className="h-8 w-8" />
+            <LogoMark stretch className="h-8 w-8" />
             <SheetTitle className="text-xl font-bold text-gray-900">Digma</SheetTitle>
           </div>
         </SheetHeader>
@@ -137,25 +137,40 @@ export function AppHeader({ user }: { user: HeaderUser }) {
           <div className="flex items-center gap-4 md:gap-8">
             <MobileNav />
             <Link href="/Dashboard" className="flex items-center gap-3" aria-label="Digma home">
-              <LogoMark className="h-8 w-8" />
+              {/* The reference's header logo: the full source frame squeezed
+               * into a 32×32 square (object-fit: fill, no rounding). */}
+              <LogoMark stretch className="h-8 w-8" />
               <h1 className="text-xl font-bold text-gray-900">Digma</h1>
             </Link>
             <nav aria-label="Primary" className="hidden items-center space-x-8 md:flex">
-              {NAV_LINKS.map((link) => (
-                /* Reference parity: every nav link is text-gray-600 with the
-                 * same hover — the reference ships NO per-route active pill
-                 * (measured live: all three links carry identical classes on
-                 * /Dashboard). aria-current stays for a11y. */
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  aria-current={isNavActive(pathname, link.href) ? "page" : undefined}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                >
-                  <link.icon className="h-4 w-4" aria-hidden />
-                  {link.label}
-                </Link>
-              ))}
+              {NAV_LINKS.map((link) => {
+                const active = isNavActive(pathname, link.href);
+                return (
+                  /* Reference parity (re-measured session 10, post-hydration):
+                   * the CURRENT route's link carries the purple pill
+                   * (bg-purple-50 text-purple-700, no hover classes on the
+                   * active variant); the others are gray with hovers. Session
+                   * 8's "no active pill" reading was taken pre-hydration —
+                   * the reference is a Base44 SPA whose SSR shell ships bare
+                   * <a> tags and client hydration applies the classes. The
+                   * mobile drawer below styles its active links the same way.
+                   * aria-current stays for a11y. */
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      active
+                        ? "bg-purple-50 text-purple-700"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                    )}
+                  >
+                    <link.icon className="h-4 w-4" aria-hidden />
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
 
