@@ -188,8 +188,12 @@ test.describe("editor parity pins (session 8)", () => {
     expect(structure.groupChildren).toEqual(["DIV", "DIV"]); // bubble + timestamp below
     expect(structure.timestampInsideBubble).toBe(false);
 
-    // The input row: h-8 input + a SEPARATE blue send button (reference), no
-    // "Try:" suggestions line.
+    // The input row: h-8 input + a SEPARATE blue send button (reference).
+    // Session-14 reversal: session 8 recorded "no suggestions line" — a
+    // misread (the reference's DOM, its session-10/12 screenshots, and
+    // digma_SKILL §6 all carry the line). The reference wraps the form AND a
+    // `mt-1 text-xs text-gray-500` suggestions div in a `p-3 border-t`
+    // container; the Try: line is the reference's initial-state hint.
     const input = page.getByRole("textbox", { name: "Message the AI design assistant" });
     await expect(input).toBeVisible();
     const inputHeight = await input.evaluate((el) => getComputedStyle(el).height);
@@ -203,7 +207,45 @@ test.describe("editor parity pins (session 8)", () => {
       return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
     });
     expect(sendBg).toBe("2563eb"); // blue-600
-    await expect(page.getByText(/^Try:/)).toHaveCount(0);
+
+    // The suggestions line (session-14 reversal of session 8's "no line"
+    // misread): visible in the initial state, below the form, inside the
+    // border-t container, with the reference's classes and exact text.
+    const suggestion = page.getByText(/^Try:/);
+    await expect(suggestion).toBeVisible();
+    const suggestionInfo = await suggestion.evaluate((el) => {
+      const parent = el.parentElement as HTMLElement;
+      const form = parent.querySelector("form");
+      const container = parent.parentElement as HTMLElement | null;
+      const siblingsAfter = form
+        ? Array.from(form.parentElement?.children ?? []).filter(
+            (c) => c !== form && (c as HTMLElement).tagName !== "FORM",
+          ).map((c) => (c as HTMLElement).tagName)
+        : [];
+      return {
+        tag: el.tagName,
+        classes: el.className,
+        text: el.textContent ?? "",
+        parentTag: parent.tagName,
+        parentHasBorderT: parent.className.includes("border-t"),
+        formClasses: form?.className ?? "",
+        formIsSibling: siblingsAfter.length > 0,
+        containerClasses: container?.className ?? "",
+      };
+    });
+    expect(suggestionInfo.tag).toBe("P");
+    expect(suggestionInfo.classes).toContain("mt-1");
+    expect(suggestionInfo.classes).toContain("text-xs");
+    expect(suggestionInfo.classes).toContain("text-gray-500");
+    expect(suggestionInfo.text).toBe(
+      'Try: "Add 3 colored circles", "Make selected elements red", "Create a login form"',
+    );
+    // The form and the suggestions line are siblings inside the p-3
+    // border-t wrapper (the reference's exact structure — the border lives
+    // on the wrapper, not the form).
+    expect(suggestionInfo.formIsSibling).toBe(true);
+    expect(suggestionInfo.parentHasBorderT).toBe(true);
+    expect(suggestionInfo.parentTag).toBe("DIV");
   });
 });
 

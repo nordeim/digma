@@ -1,8 +1,8 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite chdir trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.6.0
-last_updated: 2026-09-28
+version: 1.7.0
+last_updated: 2026-09-29
 project_state: "72 unit checks green · 54 Playwright checks green · 28 smoke checks green · build 20 routes"
 ---
 
@@ -265,6 +265,7 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 13. **F13 — When pinning a parity fact, pin its ROUTE SCOPE too.** Session 10 restored the nav pill (correct) but over-scoped it to `/` — the reference's active check is an EXACT pathname match, so the root renders NO pill. Session 12 measured four settled routes and corrected the scope. A pin that asserts the right styling on the wrong route set is still a wrong pin.
 14. **F14 — Characterization pin BEFORE convention migrations.** The middleware→proxy rename (Next 16.3) had been deferred because nothing pinned the redirect contract. Writing the legacy-redirect e2e FIRST (passing against the old middleware), then renaming, keeps the behavior proven through the migration — the migration becomes a no-op for the test suite instead of a leap of faith.
 15. **F15 — Re-verify hosted reference assets when URLs change.** The reference re-hosted its logo (old Supabase URL 404s, new `.jpeg` URL, same 651×470 art). Download and pixel-compare the new asset against the recorded decode before assuming the clone's recreation still matches — and before trusting a VLM's small-thumbnail description (it misread the 96×96 chip as "a letter D"; the pixel decode is the ground truth).
+16. **F16 — A negative parity claim needs the same re-measurement rigor as a positive one.** Session 8 recorded "the reference's AI panel has no suggestions line" while restructuring the input row — the reference's `Try:` hint line (below the form, inside the `p-3 border-t` wrapper) went unnoticed, the clone's own line was REMOVED, and an e2e pin (`toHaveCount(0)`) locked the wrong fact in for six sessions even though `digma_SKILL.md` §6 kept documenting the line (the code drifted from the project's own reference doc). "The reference has no X" is a claim about absence — prove it like a presence claim: measure the settled DOM, check the reference screenshots, and re-audit "no X" findings on later sessions exactly as you would re-check a positive one. Session 14 reversed it (the reference's DOM + its session-10/12 screenshots + the SKILL doc all carried the line) and re-pinned presence, classes, text, and position.
 
 ## §13 Pitfalls to Avoid
 

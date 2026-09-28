@@ -14,6 +14,17 @@ type ChatMessage = {
   time: string;
 };
 
+// The reference's measured example prompts — rendered under the input as
+// the "Try: …" hint line (measured live: `mt-1 text-xs text-gray-500`,
+// below the flex gap-2 form, inside the p-3 border-t wrapper). Session 8
+// dropped the line on a misread; session 14 restored it with the
+// reference's exact classes and text.
+const SUGGESTIONS = [
+  "Add 3 colored circles",
+  "Make selected elements red",
+  "Create a login form",
+];
+
 function nowLabel(): string {
   return new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
@@ -182,32 +193,43 @@ export function AiAssistant() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input — measured live: p-3 border-t row, a flex gap-2 form with an
-          h-8 flex-1 input and a SEPARATE blue-600 send button (no inline
-          icon, no suggestions line). */}
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          send(input);
-        }}
-        className="flex gap-2 border-t border-[#30363d] p-3"
-      >
-        <input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder="Create a blue button, make it bigger, delete selected..."
-          aria-label="Message the AI design assistant"
-          className="h-8 w-full flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-xs text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || sending}
-          aria-label="Send message"
-          className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-blue-600 px-2 text-xs font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+      {/* Input — measured live (re-measured session 14): a p-3 border-t
+          WRAPPER div holds the flex gap-2 form (h-8 flex-1 input + a
+          SEPARATE blue-600 send button, no inline icon) and, below it, the
+          "Try: …" suggestions line (`mt-1 text-xs text-gray-500`). The line
+          renders in the initial state only — the reference's post-send DOM
+          is unmeasurable (its assistant crashes on submission), and hints
+          are noise once a conversation is running. */}
+      <div className="border-t border-[#30363d] p-3">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            send(input);
+          }}
+          className="flex gap-2"
         >
-          <Send className="h-3 w-3" aria-hidden />
-        </button>
-      </form>
+          <input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Create a blue button, make it bigger, delete selected..."
+            aria-label="Message the AI design assistant"
+            className="h-8 w-full flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-xs text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || sending}
+            aria-label="Send message"
+            className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-blue-600 px-2 text-xs font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+          >
+            <Send className="h-3 w-3" aria-hidden />
+          </button>
+        </form>
+        {messages.every((message) => message.role !== "user") && (
+          <p className="mt-1 text-xs text-gray-500">
+            Try: {SUGGESTIONS.map((s) => `"${s}"`).join(", ")}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
