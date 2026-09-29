@@ -249,6 +249,73 @@ test.describe("editor parity pins (session 8)", () => {
   });
 });
 
+test.describe("create-project dialog parity pins (session 15)", () => {
+  // Measured this session at DOM level on both apps (the sixth audit went
+  // INSIDE the dialogs, not just the page chrome):
+  //   - the reference's template cards carry per-template lucide icons
+  //     (file-text / smartphone / monitor / globe — verified by SVG path
+  //     data), text-purple-600, NO selected/unselected opacity variation;
+  //   - the selected color-swatch preset renders a lucide Check SVG
+  //     (w-4 h-4 sm:w-5 sm:h-5, white) — not a text glyph;
+  //   - the Create Project submit button is text-only (no icon).
+  // The clone shipped Plus icons on all four cards, a "✓" text char, and a
+  // Plus in the submit button — all fixed in session 15 and pinned here.
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Create New Design" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+  });
+
+  test("the template cards carry the reference's per-template icons (no Plus)", async ({ page }) => {
+    const dialog = page.getByRole("dialog");
+    const expected: Array<[string, string]> = [
+      ["Blank Canvas", "lucide-file-text"],
+      ["Mobile App", "lucide-smartphone"],
+      ["Desktop App", "lucide-monitor"],
+      ["Website", "lucide-globe"],
+    ];
+    for (const [label, iconClass] of expected) {
+      const card = dialog.locator("button", { hasText: label }).first();
+      await expect(card).toBeVisible();
+      // The icon sits in the title row next to the label.
+      await expect(card.locator(`svg.${iconClass}`)).toHaveCount(1);
+    }
+    // The old bug: a Plus icon on every card.
+    await expect(dialog.locator("svg.lucide-plus")).toHaveCount(0);
+    // The reference renders every template icon identically in selected and
+    // unselected states — no opacity dimming (measured: computed opacity 1).
+    const opacities = await dialog
+      .locator("button")
+      .filter({ hasText: /canvas|mobile|desktop|website/i })
+      .locator("svg")
+      .evaluateAll((svgs) =>
+        svgs.map((s) => Number(getComputedStyle(s as SVGElement).opacity)),
+      );
+    expect(opacities).toHaveLength(4);
+    for (const opacity of opacities) expect(opacity).toBe(1);
+  });
+
+  test("the selected color swatch renders the reference's Check SVG", async ({ page }) => {
+    const dark = page.getByRole("button", { name: "Background color Dark" });
+    await expect(dark).toBeVisible();
+    await expect(dark).toHaveAttribute("aria-pressed", "true");
+    // The reference's selected marker: a lucide Check icon (w-4 h-4, white).
+    await expect(dark.locator("svg.lucide-check")).toHaveCount(1);
+    // The unselected presets render no marker at all (measured in the
+    // reference DOM: empty buttons).
+    const light = page.getByRole("button", { name: "Background color Light" });
+    await expect(light.locator("svg")).toHaveCount(0);
+    await expect(light).toHaveText("");
+  });
+
+  test("the Create Project submit button is text-only (reference parity)", async ({ page }) => {
+    const create = page.getByRole("button", { name: /Create Project/ });
+    await expect(create).toBeVisible();
+    await expect(create.locator("svg")).toHaveCount(0);
+    await expect(create).toHaveText(/Create Project/);
+  });
+});
+
 test.describe("logged-out parity pins (session 8 + session 10)", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 

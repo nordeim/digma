@@ -160,9 +160,11 @@ function HexColorRow({
 }
 
 /**
- * Native-range slider row (the reference uses a Radix slider — visually the
- * blue accent track/thumb; the native input is the zero-dependency
- * equivalent and is keyboard/screen-reader accessible out of the box).
+ * Native-range slider row (session-15 parity fix: the reference's Radix
+ * slider LOOK — 6px rounded track with a #171717 fill, 16px white thumb —
+ * applied via the .editor-range class in globals.css; the native input
+ * keeps keyboard/screen-reader semantics for free). Row geometry matches
+ * the measured reference: `flex items-center gap-2 mt-1` + a w-8 readout.
  */
 function SliderRow({
   label,
@@ -181,10 +183,11 @@ function SliderRow({
   onChange: (value: number) => void;
   format?: (value: number) => string;
 }) {
+  const fill = `${(((value - min) / (max - min)) * 100).toFixed(2)}%`;
   return (
     <div>
       <span className="text-xs font-medium text-gray-300">{label}</span>
-      <div className="mt-2 flex items-center gap-3">
+      <div className="mt-1 flex items-center gap-2">
         <input
           type="range"
           aria-label={label}
@@ -193,7 +196,8 @@ function SliderRow({
           step={step}
           value={value}
           onChange={(event) => onChange(Number(event.target.value))}
-          className="h-1.5 flex-1 accent-blue-600"
+          className="editor-range h-1.5 flex-1"
+          style={{ "--range-fill": fill } as React.CSSProperties}
         />
         <span className="w-8 text-right text-xs text-gray-300" aria-live="polite">
           {format ? format(value) : Math.round(value)}
@@ -249,8 +253,8 @@ export function PropertiesPanel() {
                 label="All Corners"
                 value={single.radius}
                 min={0}
-                max={75}
-                onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), 75) })}
+                max={50}
+                onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), 50) })}
               />
               {/* Per-corner inputs — linked corners: the element model keeps a
                   single radius, so each input edits the shared value (the
@@ -266,7 +270,17 @@ export function PropertiesPanel() {
 
             <section aria-label="Fill and stroke">
               <SectionHeading icon="fill">Fill &amp; Stroke</SectionHeading>
-              <div className="mb-3 flex gap-1" ref={fillModeRef}>
+              {/* Session-15 parity fix: the reference renders the mode pills as
+                   a SEGMENTED CONTROL — a bg-[#30363d] h-9 rounded-lg track
+                   with the active segment painted white (bg-background /
+                   text-foreground + shadow in its class list). Behavior is
+                   unchanged: Gradient/Image taps keep the scope-cut toast
+                   (the reference's own tabs are no-ops — verified this
+                   session). */}
+              <div
+                className="mb-3 grid h-9 w-full grid-cols-3 items-center justify-center rounded-lg bg-[#30363d] p-1"
+                ref={fillModeRef}
+              >
                 {(["Solid", "Gradient", "Image"] as const).map((mode) => (
                   <button
                     key={mode}
@@ -280,8 +294,10 @@ export function PropertiesPanel() {
                         });
                       }
                     }}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                      mode === "Solid" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"
+                    className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                      mode === "Solid"
+                        ? "bg-white text-gray-900 shadow"
+                        : "text-gray-400 hover:text-white"
                     }`}
                   >
                     {mode}
@@ -292,11 +308,12 @@ export function PropertiesPanel() {
                 <HexColorRow label="Fill Color" value={single.fill} onChange={(fill) => fill && update({ fill })} />
                 <HexColorRow label="Stroke" value={single.stroke} onChange={(stroke) => update({ stroke })} />
                 {single.stroke && (
-                  <NumberField
+                  <SliderRow
                     label="Stroke Width"
                     value={single.strokeWidth}
-                    onChange={(strokeWidth) => update({ strokeWidth: Math.max(strokeWidth, 0) })}
                     min={0}
+                    max={20}
+                    onChange={(strokeWidth) => update({ strokeWidth: Math.min(Math.max(strokeWidth, 0), 20) })}
                   />
                 )}
               </div>
@@ -304,9 +321,9 @@ export function PropertiesPanel() {
 
             <section aria-label="Transform">
               <SectionHeading>Transform</SectionHeading>
-              {/* Rotation: slider + editable number input (the reference pairs
-                  its Radix slider with a w-16 number box; the native input is
-                  the zero-dependency equivalent). */}
+              {/* Rotation: slider + editable number input + the reference's
+                  degree suffix (measured: `w-16` input followed by a
+                  text-xs text-gray-300 "°" div). */}
               <div>
                 <span className="text-xs font-medium text-gray-300">Rotation</span>
                 <div className="mt-2 flex items-center gap-3">
@@ -318,7 +335,12 @@ export function PropertiesPanel() {
                     step={1}
                     value={single.rotation}
                     onChange={(event) => update({ rotation: Number(event.target.value) })}
-                    className="h-1.5 flex-1 accent-blue-600"
+                    className="editor-range h-1.5 flex-1"
+                    style={
+                      {
+                        "--range-fill": `${(((single.rotation + 180) / 360) * 100).toFixed(2)}%`,
+                      } as React.CSSProperties
+                    }
                   />
                   <input
                     type="number"
@@ -330,6 +352,9 @@ export function PropertiesPanel() {
                     onChange={(event) => update({ rotation: Math.min(Math.max(Number(event.target.value) || 0, -180), 180) })}
                     className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
                   />
+                  <span className="text-xs text-gray-300" aria-hidden>
+                    °
+                  </span>
                 </div>
               </div>
               {/* Scale: slider 0.1–3.0 with the reference's "1.0x" readout. */}
@@ -344,7 +369,12 @@ export function PropertiesPanel() {
                     step={0.1}
                     value={single.scale ?? 1}
                     onChange={(event) => update({ scale: Number(event.target.value) })}
-                    className="h-1.5 flex-1 accent-blue-600"
+                    className="editor-range h-1.5 flex-1"
+                    style={
+                      {
+                        "--range-fill": `${((((single.scale ?? 1) - 0.1) / 2.9) * 100).toFixed(2)}%`,
+                      } as React.CSSProperties
+                    }
                   />
                   <span
                     className="w-12 text-right text-xs text-gray-300"
@@ -359,14 +389,37 @@ export function PropertiesPanel() {
 
             <section aria-label="Opacity">
               <SectionHeading icon="opacity">Opacity</SectionHeading>
-              <SliderRow
-                label="Opacity"
-                value={Math.round(single.opacity * 100)}
-                min={0}
-                max={100}
-                onChange={(pct) => update({ opacity: Math.min(Math.max(pct, 0), 100) / 100 })}
-                format={(v) => `${Math.round(v)}%`}
-              />
+              {/* Session-15 parity fix: the reference's Opacity row has NO
+                   label (the h4 IS the label) — `flex items-center gap-3`
+                   holding the slider + a w-16 editable number input + a "%"
+                   suffix (measured in the reference DOM). */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  aria-label="Opacity"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Math.round(single.opacity * 100)}
+                  onChange={(event) => update({ opacity: Number(event.target.value) / 100 })}
+                  className="editor-range h-1.5 flex-1"
+                  style={{ "--range-fill": `${Math.round(single.opacity * 100)}%` } as React.CSSProperties}
+                />
+                <input
+                  type="number"
+                  aria-label="Opacity value"
+                  min={0}
+                  max={100}
+                  value={Math.round(single.opacity * 100)}
+                  onChange={(event) =>
+                    update({ opacity: Math.min(Math.max(Number(event.target.value) || 0, 0), 100) / 100 })
+                  }
+                  className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
+                />
+                <span className="text-xs text-gray-300" aria-hidden>
+                  %
+                </span>
+              </div>
             </section>
 
             {single.type === "text" && (

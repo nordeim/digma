@@ -88,3 +88,55 @@ describe("the @theme contract (Tailwind v4 CSS-first)", () => {
     }
   });
 });
+
+describe("the editor slider contract (session 15 — the reference's Radix look)", () => {
+  // The reference's properties-panel sliders are Radix sliders measured at
+  // DOM level: a 6px rounded-full track of rgba(23,23,23,0.2) with a solid
+  // rgb(23,23,23) fill span, and a 16px white thumb with a 1px
+  // rgba(23,23,23,0.5) border (shadow measured transparent at rest). The
+  // clone ships the same LOOK on native range inputs via the .editor-range
+  // class in globals.css (zero-dependency, keyboard-accessible), with the
+  // fill length driven by the --range-fill custom property each input sets.
+  // Before session 15 the panel sliders were bare accent-blue-600 inputs
+  // (blue platform thumbs — a VLM-confirmed visible difference on zoom crops
+  // of both apps).
+
+  const panelPath = path.join(repoRoot, "src", "components", "editor", "properties-panel.tsx");
+  const panelSource = readFileSync(panelPath, "utf8");
+
+  it("defines the .editor-range track/thumb rules with the measured reference values", () => {
+    expect(css, ".editor-range rules missing from globals.css").toMatch(
+      /\.editor-range\s*\{/,
+    );
+    // The webkit thumb: 16px white circle with the measured border.
+    expect(css).toMatch(/\.editor-range::-webkit-slider-thumb\s*\{/);
+    expect(css).toMatch(/height:\s*16px/);
+    expect(css).toMatch(/width:\s*16px/);
+    expect(css).toMatch(/background:\s*#fff/);
+    expect(css).toMatch(/border:\s*1px solid rgba\(23,\s*23,\s*23,\s*0\.5\)/);
+    // The webkit track: 6px rounded with the two-tone fill gradient.
+    expect(css).toMatch(/\.editor-range::-webkit-slider-runnable-track\s*\{/);
+    expect(css).toMatch(/border-radius:\s*9999px/);
+    expect(css).toMatch(/rgba\(23,\s*23,\s*23,\s*0\.2\)/);
+    expect(css).toMatch(/#171717/);
+    // Firefox equivalents (the progress pseudo carries the fill).
+    expect(css).toMatch(/\.editor-range::-moz-range-track\s*\{/);
+    expect(css).toMatch(/\.editor-range::-moz-range-thumb\s*\{/);
+  });
+
+  it("the panel's range inputs use editor-range, not the old accent-blue-600", () => {
+    // Every range input in the panel carries the class. (A plain
+    // /<input[^>]*>/ regex stops at the `>` inside the JSX arrow functions,
+    // so we window the 400 chars that FOLLOW each type="range" marker —
+    // the className/style always land inside that window.)
+    const afterMarkers = panelSource.split('type="range"').slice(1);
+    expect(afterMarkers.length).toBeGreaterThanOrEqual(4);
+    for (const after of afterMarkers) {
+      const chunk = after.slice(0, 400);
+      expect(chunk, `unstyled range input near: ${chunk.slice(0, 60)}`).toMatch(
+        /editor-range/,
+      );
+      expect(chunk).not.toMatch(/accent-blue-600/);
+    }
+  });
+});

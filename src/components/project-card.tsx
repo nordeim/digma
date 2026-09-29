@@ -3,7 +3,18 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  Clock,
+  FileText,
+  Globe,
+  Monitor,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Smartphone,
+  Trash2,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,6 +45,17 @@ import {
   type ProjectDTO,
 } from "@/lib/editor";
 import { memberColorFor } from "@/lib/team";
+
+// The create-dialog's template cards carry the reference's per-template icons
+// (session-15 parity fix, SVG-path-verified in the reference's DOM):
+// Blank Canvas → file-text, Mobile App → smartphone, Desktop App → monitor,
+// Website → globe. (Plus remains only as the unreachable fallback.)
+const TEMPLATE_ICONS: Record<string, typeof FileText> = {
+  blank: FileText,
+  mobile: Smartphone,
+  desktop: Monitor,
+  website: Globe,
+};
 
 // ---------------------------------------------------------------------------
 // Canvas thumbnail — a scaled, read-only render of the project's elements
@@ -457,7 +479,12 @@ export function CreateProjectDialog({
                     )}
                     style={{ backgroundColor: preset.value }}
                   >
-                    {selected && <span className="text-xs text-white">✓</span>}
+                    {/* Session-15 parity fix: the reference's selected marker is
+                         a lucide Check SVG (w-4 h-4 sm:w-5 sm:h-5, white), not
+                         a text glyph. */}
+                    {selected && (
+                      <Check className="h-4 w-4 text-white sm:h-5 sm:w-5" aria-hidden />
+                    )}
                   </button>
                 );
               })}
@@ -507,13 +534,20 @@ export function CreateProjectDialog({
                       />
                     </div>
                     <div className="mb-1 flex items-center gap-1 sm:mb-2 sm:gap-2">
-                      <Plus
-                        className={cn(
-                          "h-3 w-3 flex-shrink-0 text-purple-600 sm:h-4 sm:w-4",
-                          selected ? "opacity-100" : "opacity-40",
-                        )}
-                        aria-hidden
-                      />
+                      {/* Session-15 parity fix: the reference renders a distinct
+                           lucide icon per template card (file-text / smartphone /
+                           monitor / globe — SVG-path-verified), text-purple-600,
+                           with NO selected/unselected opacity variation (the old
+                           Plus + opacity-40/100 combo was the drift). */}
+                      {(() => {
+                        const TemplateIcon = TEMPLATE_ICONS[key] ?? Plus;
+                        return (
+                          <TemplateIcon
+                            className="h-3 w-3 flex-shrink-0 text-purple-600 sm:h-4 sm:w-4"
+                            aria-hidden
+                          />
+                        );
+                      })()}
                       <span className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
                         {meta.label}
                       </span>
@@ -539,7 +573,7 @@ export function CreateProjectDialog({
               disabled={!valid || submitting}
               className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 font-semibold hover:from-purple-700 hover:to-pink-700"
             >
-              <Plus />
+              {/* Session-15 parity: the reference's submit button is text-only. */}
               {submitting ? "Creating…" : "Create Project"}
             </Button>
           </div>

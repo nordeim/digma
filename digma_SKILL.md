@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite chdir trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.7.0
+version: 1.8.0
 last_updated: 2026-09-29
-project_state: "72 unit checks green · 54 Playwright checks green · 28 smoke checks green · build 20 routes"
+project_state: "74 unit checks green · 62 Playwright checks green · 28 smoke checks green · build 20 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -143,7 +143,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 | Toolbar | `src/components/editor/toolbar.tsx` | 8 tools; buttons carry `title="{Tool} ({shortcut})"` |
 | LayersPanel | `src/components/editor/layers-panel.tsx` | Visibility/lock/reorder/rename; Select All ↔ Deselect All header toggle (`selected === layers ? Deselect : Select`, incl. the 0/0 quirk) |
 | ComponentsPanel | `src/components/editor/components-panel.tsx` | The reference's second w-60 column (ADR-010): header + blue "+" + "No components yet" empty state; presentational (scope cut) |
-| PropertiesPanel | `src/components/editor/properties-panel.tsx` | The reference's five-section layout (ADR-011): Position & Size, Corner Radius (slider + linked per-corner), Fill & Stroke (Solid/Gradient/Image pills + swatch/hex), Transform (rotation slider + number input, per-element Scale 0.1–3.0x persisted — ADR-012), Opacity; Canvas Properties → Background Color row when nothing selected |
+| PropertiesPanel | `src/components/editor/properties-panel.tsx` | The reference's five-section layout (ADR-011): Position & Size, Corner Radius (slider 0–50 + linked per-corner), Fill & Stroke (segmented Solid/Gradient/Image control + swatch/hex + Stroke Width slider 0–20), Transform (rotation slider + number input + ° suffix, per-element Scale 0.1–3.0x persisted — ADR-012), Opacity (slider + number input + % suffix, no row label); Canvas Properties → Background Color row when nothing selected. All sliders carry `editor-range` — the reference's Radix look on native inputs (session 15, pinned by `tests/theme.test.ts` + e2e) |
 | AiAssistant | `src/components/editor/ai-assistant.tsx` | Chat UI; "Working on it..." while sending; applies `{reply, operations[]}` |
 
 **React 19 rules that bit us (all fixed with sanctioned patterns):**
@@ -266,6 +266,7 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 14. **F14 — Characterization pin BEFORE convention migrations.** The middleware→proxy rename (Next 16.3) had been deferred because nothing pinned the redirect contract. Writing the legacy-redirect e2e FIRST (passing against the old middleware), then renaming, keeps the behavior proven through the migration — the migration becomes a no-op for the test suite instead of a leap of faith.
 15. **F15 — Re-verify hosted reference assets when URLs change.** The reference re-hosted its logo (old Supabase URL 404s, new `.jpeg` URL, same 651×470 art). Download and pixel-compare the new asset against the recorded decode before assuming the clone's recreation still matches — and before trusting a VLM's small-thumbnail description (it misread the 96×96 chip as "a letter D"; the pixel decode is the ground truth).
 16. **F16 — A negative parity claim needs the same re-measurement rigor as a positive one.** Session 8 recorded "the reference's AI panel has no suggestions line" while restructuring the input row — the reference's `Try:` hint line (below the form, inside the `p-3 border-t` wrapper) went unnoticed, the clone's own line was REMOVED, and an e2e pin (`toHaveCount(0)`) locked the wrong fact in for six sessions even though `digma_SKILL.md` §6 kept documenting the line (the code drifted from the project's own reference doc). "The reference has no X" is a claim about absence — prove it like a presence claim: measure the settled DOM, check the reference screenshots, and re-audit "no X" findings on later sessions exactly as you would re-check a positive one. Session 14 reversed it (the reference's DOM + its session-10/12 screenshots + the SKILL doc all carried the line) and re-pinned presence, classes, text, and position.
+17. **F17 — Dialogs and panel interiors deserve the same DOM-level audit depth as pages.** Five consecutive page-level audits graded the create-project dialog and the properties panel by their SHELLS (title, fields, buttons present) — and missed seven measurable interior gaps: per-template lucide icons on the template cards (the clone shipped `Plus` ×4), the Check-SVG selected state on the color swatches (the clone shipped a `✓` text glyph), the text-only submit button, the Radix-look sliders (the clone shipped `accent-blue-600` platform thumbs), the radius cap (75 vs the reference's 50), the segmented Fill-mode control (the clone shipped separate blue pills), and the stroke-width slider (the clone shipped a plain number input). Zoom-crop forensics + SVG-path extraction beat full-page VLM reads for small controls — the VLM read the 16px per-card icons as "plus signs" on BOTH apps; the DOM was the ground truth. On the next audit, open every dialog, select an element, and measure the interior rows — not just the page chrome around them.
 
 ## §13 Pitfalls to Avoid
 

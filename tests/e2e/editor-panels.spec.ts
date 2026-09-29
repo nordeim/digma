@@ -154,6 +154,96 @@ test.describe("transform section: scale + rotation inputs (reference parity)", (
   });
 });
 
+test.describe("properties panel reference chrome (session 15)", () => {
+  // Measured this session in the reference's DOM (the sixth audit went inside
+  // the panel interiors):
+  //   - the corner-radius slider caps at 50 (aria-valuemax="50"), not 75;
+  //   - every slider row is a Radix-style slider (6px rounded track, 16px
+  //     white thumb) — the clone ships the same LOOK via the .editor-range
+  //     class on native range inputs (zero-dependency, keyboard-accessible);
+  //   - the Fill & Stroke mode pills are a SEGMENTED CONTROL: a
+  //     bg-[#30363d] h-9 rounded-lg track, the active segment painted white;
+  //   - Stroke Width is a slider row (0–20) with a w-8 numeric readout;
+  //   - the Rotation row carries a "°" suffix after its number input;
+  //   - the Opacity row has NO label — slider + w-16 number input + "%" suffix.
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+    await page.getByRole("button", { name: "Layer Headline" }).click();
+    await expect(page.getByRole("heading", { level: 4, name: "Transform" })).toBeVisible();
+  });
+
+  test("the corner-radius slider caps at 50 (reference aria-valuemax)", async ({ page }) => {
+    const slider = page.getByRole("slider", { name: "All Corners" });
+    await expect(slider).toBeVisible();
+    await expect(slider).toHaveAttribute("min", "0");
+    await expect(slider).toHaveAttribute("max", "50");
+  });
+
+  test("every panel slider carries the editor-range class (the Radix look)", async ({ page }) => {
+    // The five slider seams: radius, stroke-width (after setting a stroke),
+    // rotation, scale, opacity.
+    await page.getByRole("textbox", { name: "Stroke hex" }).fill("#000000");
+    const strokeSlider = page.getByRole("slider", { name: "Stroke Width" });
+    await expect(strokeSlider).toBeVisible();
+    await expect(strokeSlider).toHaveAttribute("min", "0");
+    await expect(strokeSlider).toHaveAttribute("max", "20");
+
+    for (const name of ["All Corners", "Stroke Width", "Rotation", "Scale", "Opacity"]) {
+      const slider = page.getByRole("slider", { name });
+      await expect(slider).toHaveClass(/editor-range/);
+      await expect(slider).not.toHaveClass(/accent-blue-600/);
+    }
+  });
+
+  test("the Fill & Stroke mode pills are the reference's segmented control", async ({ page }) => {
+    const fillSection = page.locator("section[aria-label='Fill and stroke']");
+    // The track: bg-[#30363d] rounded-lg h-9 grid — measured classes.
+    const track = fillSection.locator("[class*='grid-cols-3'][class*='bg-[#30363d]']").first();
+    await expect(track).toBeVisible();
+    await expect(track).toHaveClass(/h-9/);
+    await expect(track).toHaveClass(/rounded-lg/);
+    // The active (Solid) segment paints WHITE — the reference's
+    // bg-background/foreground tab pair (pixel-read, v4 emits lab()/oklch()).
+    const solid = track.getByRole("button", { name: "Solid" });
+    await expect(solid).toHaveAttribute("aria-pressed", "true");
+    const bg = await solid.evaluate((el) => {
+      const ctx = document.createElement("canvas").getContext("2d")!;
+      ctx.fillStyle = getComputedStyle(el).backgroundColor;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+    });
+    expect(bg).toBe("ffffff");
+    // The inactive segments stay quiet on the dark track.
+    const gradient = track.getByRole("button", { name: "Gradient" });
+    await expect(gradient).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("the Rotation row carries the degree suffix after the number input", async ({ page }) => {
+    const rotationInput = page.getByRole("spinbutton", { name: "Rotation value" });
+    await expect(rotationInput).toBeVisible();
+    const suffix = rotationInput.locator("xpath=following-sibling::span[1]");
+    await expect(suffix).toHaveText("°");
+  });
+
+  test("the Opacity row matches the reference: no label, number input, percent suffix", async ({ page }) => {
+    const section = page.locator("section[aria-label='Opacity']");
+    // No "Opacity" text LABEL under the h4 (the heading IS the label — the
+    // old SliderRow rendered a span; the reference has none).
+    await expect(section.locator("span", { hasText: /^Opacity$/ })).toHaveCount(0);
+    // The editable w-16 number input + the "%" suffix.
+    const numberInput = page.getByRole("spinbutton", { name: "Opacity value" });
+    await expect(numberInput).toBeVisible();
+    await expect(numberInput).toHaveValue("100");
+    const suffix = numberInput.locator("xpath=following-sibling::span[1]");
+    await expect(suffix).toHaveText("%");
+    // Editing the number input updates the element's opacity.
+    await numberInput.fill("50");
+    await expect(numberInput).toHaveValue("50");
+  });
+});
+
 test.describe("panel chips render only where their panels can (responsive fix)", () => {
   test("chips are hidden on the mobile editor (no dead controls)", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
