@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Circle, Frame, Image as ImageIcon, Lock, Minus, Pen, Square, Trash2, Type } from "lucide-react";
+import { Circle, Eye, EyeOff, Frame, Image as ImageIcon, Lock, Minus, Pen, Square, Trash2, Type } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "./editor-store";
@@ -159,7 +159,16 @@ export function LayersPanel() {
                           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                           if (e.key === "Escape") setRenaming(null);
                         }}
-                        className="w-full rounded bg-[#0d1117] px-1 text-sm text-white outline-none ring-1 ring-blue-500"
+                        // Session-19 fix (S19-1) — the reference's measured
+                        // chrome (double-click on a layer row name, live DOM):
+                        // the input renders the shadcn-Input base plus editor
+                        // overrides — rounded-md, a VISIBLE border-[#30363d],
+                        // bg-[#0d1117], text-white, h-6 px-2 py-1, text-sm,
+                        // shadow-sm — with the focus ring only on
+                        // focus-visible. The previous `rounded px-1 ring-1
+                        // ring-blue-500` shipped an always-on blue ring, no
+                        // border, and the wrong rounding/padding.
+                        className="h-6 w-full rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-1 text-sm text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
@@ -176,18 +185,15 @@ export function LayersPanel() {
                       }}
                       className="rounded p-1 opacity-0 transition-colors hover:bg-white/10 group-hover:opacity-100 aria-hidden:focus:opacity-100"
                     >
+                      {/* Session-19 (S19-4): lucide-react components, not
+                          hand-inlined SVGs — the reference's DOM carries
+                          `lucide lucide-eye w-3 h-3` (component-generated).
+                          The eye swap (eye ↔ eye-off) is the clone's working
+                          superset over the reference's no-op eye. */}
                       {el.visible ? (
-                        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                          <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
+                        <Eye className="h-3 w-3" aria-hidden strokeWidth={2} />
                       ) : (
-                        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                          <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
-                          <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-                          <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
-                          <path d="m2 2 20 20" />
-                        </svg>
+                        <EyeOff className="h-3 w-3" aria-hidden strokeWidth={2} />
                       )}
                     </button>
                     <button
@@ -199,18 +205,22 @@ export function LayersPanel() {
                       }}
                       className="rounded p-1 opacity-0 transition-colors hover:bg-white/10 group-hover:opacity-100 focus:opacity-100"
                     >
-                      {el.locked ? (
-                        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                          <rect width="18" height="11" x="3" y="11" rx="2" />
-                          <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-                        </svg>
-                      ) : (
-                        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                          <rect width="18" height="11" x="3" y="11" rx="2" />
-                          <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-                          <path d="m2 2 20 20" opacity="0" />
-                        </svg>
-                      )}
+                      {/* Session-19 fix (S19-2) — the reference's lock is
+                          OPACITY-BASED, not icon-swap-based: the same
+                          lucide-lock icon in both states, the svg's opacity
+                          class flipping 50 (unlocked) ↔ 100 (locked)
+                          (measured live on three rows, one locked via a real
+                          click: `lucide lucide-lock w-3 h-3 opacity-50` /
+                          `opacity-100`). The lock is FUNCTIONAL in the
+                          reference (the canvas element gains
+                          cursor-not-allowed + cursor:default); the clone's
+                          pointer-events:none approach is the observably
+                          equivalent working implementation. */}
+                      <Lock
+                        className={cn("h-3 w-3", el.locked ? "opacity-100" : "opacity-50")}
+                        aria-hidden
+                        strokeWidth={2}
+                      />
                     </button>
                     {/* Session-17 parity fix: the reference's THIRD row action —
                         a red trash that deletes the layer immediately (measured:

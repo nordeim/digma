@@ -1,13 +1,26 @@
-# Digma — Master Project Architecture Document (PAD) v1.10.0
+# Digma — Master Project Architecture Document (PAD) v1.11.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-09-29 (v1.10.0 — layer-row-interior parity pass: the reference's third hover action — the red trash delete — added to every layer row; the corner-radius max REVERTED to 75 after session 16's single-reading misread was caught by the session-17 double-measurement; 74 unit / 63 e2e)
+**Last Updated:** 2026-09-29 (v1.11.0 — layer-row FUNCTIONAL-semantics parity pass: the eye toggle's canvas contract completed (hidden elements no longer render), the rename input re-chromed to the reference's measured shadcn-Input-based editor input, the lock icon switched to the reference's opacity-based semantics; 74 unit / 66 e2e)
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
+
+#### Revision Block — v1.11.0 (Tracked Changes)
+
+Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+- `[SR]` **Layer-row functional-semantics parity pass (S19-1…S19-4) — the eighth audit swept the reference's eye/lock FUNCTIONALLY (the session-18 next-steps directive), and the clone's own eye was the headline find.**
+  1. **The canvas rendered hidden elements (S19-3, High):** the clone's eye toggle LOOKED complete (the row icon swaps eye ↔ eye-off; the hit-test, marquee, presentation, and thumbnail layers all honor `element.visible`) — but `canvas.tsx` mapped ALL elements, so after "Hide layer" the row said hidden while the canvas still painted the element (verified live: `display: block; visibility: visible`). Fixed: the map filters `el.visible` — every consumer of the flag now agrees. The reference's own eye is a NO-OP (verified live TWICE: its icon never flips and its canvas never changes — its no-op class, like Create Team/ellipsis); the clone keeps the WORKING SUPERSET (the documented convention for reference bugs), now coherent end-to-end. Pinned by a new e2e test (hide → the named element leaves the canvas DOM, count N→N−1, row stays; show → it returns).
+  2. **Rename-input chrome re-measured (S19-1, Medium):** double-clicking a layer row name in the reference swaps in an input carrying the shadcn-Input base plus editor overrides — `flex w-full rounded-md border py-1 shadow-sm transition-colors … md:text-sm text-sm bg-[#0d1117] border-[#30363d] text-white h-6 px-2` (rounded-md, a VISIBLE border, h-6 px-2 py-1, shadow-sm, focus ring only on focus-visible). The clone shipped `rounded px-1 ring-1 ring-blue-500` — an always-on blue ring, no border, wrong rounding/padding/height. Fixed to the measured set; pinned by a new e2e test (class pins + the rename round-trip + Escape-cancel).
+  3. **Lock semantics are OPACITY-based (S19-2, Medium):** measured live on three reference rows (one locked via a real click): the reference renders the SAME `lucide lucide-lock w-3 h-3` icon in both states, the svg's class flipping `opacity-50` (unlocked) ↔ `opacity-100` (locked) — a class flip, not an icon swap. The reference's lock is FUNCTIONAL (its locked canvas element gains `cursor-not-allowed` + inline `cursor: default`); the clone's `pointer-events: none` canvas approach is the observably equivalent working implementation (no canvas change). Fixed: the two hand-inlined padlock SVGs replaced by a single lucide-react `Lock` with the measured opacity classes; pinned by a new e2e test (same icon, the flip, both directions).
+  4. **Icons are lucide-react components (S19-4, Low):** the reference's row buttons carry `lucide lucide-eye w-3 h-3` (component-generated); the clone hand-inlined the eye/eye-off/lock SVGs. Refactored to lucide-react (the trash already was) — DOM parity + simpler rows.
+- `[SR]` **Lesson (F19, recorded in digma_SKILL v1.10.0): audit FUNCTIONAL semantics, not just chrome.** A control can look complete and do half its job — the eye toggle's icon swap was convincing enough that seven chrome-level audits never traced the data path to its canvas consequence. For every interactive control, click it and verify the OBSERVABLE outcome on BOTH apps; that sweep is also what distinguishes "the reference can't do X" (superset territory — its no-op eye) from "the clone half-does X" (bug territory — the unfiltered canvas).
+- `[SR]` Eighth consecutive full parity re-audit — the mobile-nav fix re-verified end-to-end at 390×844 (44×44 trigger, drawer, scroll lock, tap-navigate-and-dismiss, Escape close, hidden at 768) while the reference STILL ships failure class A (nav `display:none`, no hamburger, the 36×36 bell only); the reference's AI crash re-confirmed (the `charAt` TypeError from its assets in the console); page-level chrome spot-checked (nav pill exact-match, Teams flat + blue Create Team, Recent sort/toggles/count badge); Tailwind v4 health on the clone (no legacy config, zero @apply, Inter on body, console clean).
+- `[SR]` Test counts: 74 unit (unchanged) / 28 smoke (unchanged) / 66 e2e (+3 net-new: the eye-hide canvas test, the rename-chrome test, the lock-opacity test) / 20 build routes. The fast gates re-run green BEFORE the change (baseline: 74 unit) and the full gate AFTER (delivery: 74/28/66). En-route test engineering: the eye test identifies its target by NAME (rows render in reverse order — DOM position ≠ row position), and the rename test's negative class checks anchor at class-list boundaries so `focus-visible:ring-1` (legitimate) never trips the "no always-on ring" assertion.
 
 #### Revision Block — v1.10.0 (Tracked Changes)
 
@@ -774,7 +787,7 @@ No numeric coverage tooling is configured (deliberate: the check counts are the 
 - [ ] `bun run test` → 74/74
 - [ ] `bun run build` succeeds; standalone assets copied
 - [ ] `./scripts/smoke-test.sh` → 28/28 (dev server STOPPED — the script's own standalone boot must own :3000)
-- [ ] `bun run test:e2e` → 63/63 (fresh e2e DB; :3100)
+- [ ] `bun run test:e2e` → 66/66 (fresh e2e DB; :3100)
 - [ ] Mobile navigation verified at 390×844 (the mobile suite IS this check)
 - [ ] No new `.env`, key files, or `db/*.db` staged
 
@@ -880,7 +893,7 @@ None of the above are release blockers for the deliverable; all are consciously 
 |------|-------|---------|
 | `src/components/editor/editor-store.ts` | 315 | THE Zustand store: elements, selection, tool, zoom/pan, undo/redo, saveState |
 | `src/components/editor/editor-view.tsx` | 577 | Editor layout + 800ms-debounced autosave PUT + id remap + chip responsive guard |
-| `src/components/editor/canvas.tsx` | 497 | Pointer events: draw/move/resize/select; zoom/pan; scale-aware transforms + visual-space resize |
+| `src/components/editor/canvas.tsx` | 506 | Pointer events: draw/move/resize/select; zoom/pan; scale-aware transforms + visual-space resize; renders only VISIBLE elements (S19) |
 | `src/components/editor/properties-panel.tsx` | 439 | Reference five-section layout + Transform scale (ADR-011/012) |
 | `src/components/editor/components-panel.tsx` | 42 | Reference Components column + empty state (ADR-010) |
 | `src/components/project-card.tsx` | 550 | Card + thumbnail art + ellipsis menu (rename/delete, stopPropagation) |
@@ -889,7 +902,7 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `src/components/dashboard-view.tsx` | 352 | Gradient hero, Quick Stats, Continue Working, project grid, create dialog |
 | `src/components/login-screen.tsx` | 359 | Three-state auth card (ADR-013): branded sign-in; minimal sign-up with Confirm Password + inline mismatch validation; minimal forgot |
 | `src/components/editor/ai-assistant.tsx` | 213 | Chat UI (reference chrome: bot avatars, timestamp-below bubbles, blue send); applies `{reply, operations[]}` to the store |
-| `src/components/editor/layers-panel.tsx` | 235 | Layer list: visibility/lock/trash, reorder, rename |
+| `src/components/editor/layers-panel.tsx` | 253 | Layer list: visibility/lock/trash, reorder, rename; lucide-react eye/lock icons, opacity-based lock, reference-chrome rename input (S19) |
 | `src/lib/editor.ts` | 268 | Pure element domain: types, geometry, clamps, scale-aware bounds |
 | `src/lib/ai-assistant.ts` | 271 | LLM sanitizer + deterministic fallback parser |
 | `src/lib/auth.ts` | 101 | scrypt + HMAC sessions, cookie helpers |

@@ -19,7 +19,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 |---------|-------------|
 | 🎨 **Canvas design editor** | DOM-element canvas over a 20px grid: draw rectangles/ellipses/lines/text/frames, marquee + click + shift-click selection, drag-move, 8-handle resize, rotate, opacity, fill/stroke/radius — all inline-styled like the reference |
 | 🧰 **Tool rail + shortcuts** | Select/Hand/Frame/Rectangle/Ellipse/Line/Pen/Text/Image with `V H F R O L T` shortcuts, Space-to-pan, Ctrl+wheel zoom, `Delete`, `Ctrl+Z`/`Ctrl+Shift+Z`, `Ctrl+0` reset |
-| 🗂 **Layers panel** | Reverse-ordered layer list with drag-reorder, per-layer visibility (eye), lock, and the reference's red **trash delete** (immediate, undo-recoverable), double-click rename, live "N layers • N selected" counter |
+| 🗂 **Layers panel** | Reverse-ordered layer list with drag-reorder, per-layer visibility (eye — the toggle actually hides the element on the canvas), the reference's opacity-based lock (same lucide-lock icon, `opacity-50` ↔ `opacity-100`), and the reference's red **trash delete** (immediate, undo-recoverable), double-click rename with the reference's measured input chrome (`h-6 px-2 py-1` bordered editor input), live "N layers • N selected" counter |
 | ⚙️ **Properties panel** | The reference's five sections — Position & Size (X/Y/W/H), Corner Radius (slider 0–75 + per-corner), Fill & Stroke (segmented Solid/Gradient/Image control with a white active segment, swatch + hex rows, Stroke Width slider 0–20), Transform (rotation slider + number input + ° suffix, **per-element Scale 0.1–3.0x** — persisted, rendered as `translate(x,y) scale(s) rotate(r)`), Opacity (slider + number input + % suffix) — plus Text properties; "Canvas Properties" with a Background Color swatch + hex row when nothing is selected. All sliders render the reference's Radix-slider look (6px rounded track + 16px white thumb). Panel-toggle chips (bottom-left) independently show/hide the Layers, Components, and Properties panels — and render only where those panels can (hidden below md; the Properties chip waits for lg) |
 | 🤖 **AI design assistant** | Chat panel below the canvas — LLM (`z-ai-web-dev-sdk`, server-side) parses instructions into element operations with a deterministic fallback parser ("Add 3 red circles", "Create a login form") — degrade-not-fail, never hard-fails |
 | 🕐 **Autosave + history** | 800ms-debounced full-list `PUT` with id remapping, "Saved / Saving… / Unsaved" badge, undo/redo history (60 snapshots) |
@@ -93,7 +93,7 @@ Digma gives every signed-in user a personal design workspace: a gradient-greetin
 | Components | shadcn/ui on Radix | vendored | dialog, dropdown-menu, sheet, tabs, toast, button, input, label, textarea |
 | Client state | Zustand | 5 | The editor store (elements, selection, tool, zoom, history) |
 | Unit tests | Vitest | 5 | 74 checks on the pure domain seams + the `@theme`, slider-CSS, and brand-mark contracts |
-| E2E tests | Playwright | 1.63 | 63 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, the panel-toggle/properties suites (incl. the slider + segmented-pill chrome pins and the layer-row trash action), the AI no-crash regression pin, the auth-card state structure suite (sign-up minimal card, Confirm Password validation, forgot state), the legacy-lowercase→canonical redirect pin (ADR-008, proven through the middleware→proxy migration), and the visual-parity suite (font, nav pill exact-match, toggles, Teams, zoom icons, AI panel, create-dialog icons/swatch/submit) |
+| E2E tests | Playwright | 1.63 | 66 browser checks incl. the mobile-navigation regression suite, the Untitled-editor contract, the panel-toggle/properties suites (incl. the slider + segmented-pill chrome pins, the layer-row trash action, and the session-19 layer-row action pins: the eye toggle hides the element on the canvas, the rename input's reference chrome, the lock icon's opacity flip), the AI no-crash regression pin, the auth-card state structure suite (sign-up minimal card, Confirm Password validation, forgot state), the legacy-lowercase→canonical redirect pin (ADR-008, proven through the middleware→proxy migration), and the visual-parity suite (font, nav pill exact-match, toggles, Teams, zoom icons, AI panel, create-dialog icons/swatch/submit) |
 | ORM | Prisma | 6 | Schema, client, `db push`, seed |
 | Database | SQLite | — | Zero-config local persistence (`db/custom.db`) |
 | Auth | Node `crypto` (scrypt + HMAC) | — | Cookie sessions, no external auth service |
@@ -269,7 +269,7 @@ Status colors: blue `#3B82F6` (default fill/active tool), green `#10B981` (Saved
 
 ```bash
 bun run test              # unit tests — 74 checks on the pure domain seams
-bun run test:e2e          # Playwright — 63 browser checks (needs `bun run build` first)
+bun run test:e2e          # Playwright — 66 browser checks (needs `bun run build` first)
 ./scripts/smoke-test.sh   # curl E2E — 28 checks against the production build
 ```
 

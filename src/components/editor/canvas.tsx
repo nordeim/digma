@@ -332,7 +332,16 @@ export function Canvas() {
         className="absolute left-0 top-0"
         style={{ transform: `translate(${panX}px, ${panY}px) scale(${zoom})`, transformOrigin: "0px 0px" }}
       >
-        {elements.map((el) => (
+        {/* Session-19 fix (S19-3): hidden elements must NOT render on the
+            canvas. Every other consumer of element.visible already agrees —
+            the click hit-test ("topmost visible unlocked element"), the
+            marquee containment, presentation mode, and the thumbnails — but
+            the canvas kept painting hidden elements, so the layer row's eye
+            icon said "hidden" while the canvas said "visible" (an internally
+            inconsistent state; the reference's own eye is a no-op — this
+            clone ships the working superset, and the whole contract must be
+            coherent). */}
+        {elements.filter((el) => el.visible).map((el) => (
           <CanvasElement key={el.id} element={el} selected={selectedIds.includes(el.id)} />
         ))}
 

@@ -118,6 +118,137 @@ test.describe("layers header selection toggle", () => {
   });
 });
 
+test.describe("layer row action interiors: eye/lock/rename (session 19)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  test("the layer eye toggle hides the element on the canvas (session 19)", async ({ page }) => {
+    // The reference's eye is a NO-OP (verified live twice: the icon stays
+    // lucide-eye and the canvas element stays rendered — its no-op class).
+    // The clone ships the working superset, and the WHOLE contract must be
+    // coherent: the row icon flips AND the canvas stops rendering the hidden
+    // element — the same `visible` filter the hit-test, marquee, presentation,
+    // and thumbnails already enforce. Before session 19 the canvas kept
+    // rendering hidden elements (the icon said hidden, the canvas said
+    // visible — an internally inconsistent state).
+    const rows = page.locator("[role=button][aria-label^='Layer']");
+    const before = await rows.count();
+    expect(before).toBeGreaterThanOrEqual(6);
+    const canvas = page.locator("[data-element-id]");
+    await expect(canvas).toHaveCount(before);
+
+    // Hide the FIRST row's element. Rows render in REVERSE order (newest
+    // first), so identify the target by its NAME (the canvas element carries
+    // the element name as its aria-label) — not by DOM position.
+    const firstRow = rows.first();
+    const firstName = ((await firstRow.getAttribute("aria-label")) ?? "").replace(/^Layer /, "");
+    await expect(page.locator(`[data-element-id][aria-label="${firstName}"]`)).toHaveCount(1);
+
+    await firstRow.getByRole("button", { name: "Hide layer" }).click();
+
+    // The canvas drops exactly that element; the row itself stays.
+    await expect(page.locator(`[data-element-id][aria-label="${firstName}"]`)).toHaveCount(0);
+    await expect(canvas).toHaveCount(before - 1);
+    await expect(rows).toHaveCount(before);
+    // The row's action flips to "Show layer".
+    await expect(firstRow.getByRole("button", { name: "Show layer" })).toBeVisible();
+
+    // Showing it again restores the canvas element.
+    await firstRow.getByRole("button", { name: "Show layer" }).click();
+    await expect(page.locator(`[data-element-id][aria-label="${firstName}"]`)).toHaveCount(1);
+    await expect(canvas).toHaveCount(before);
+  });
+
+  test("the layer rename input carries the reference chrome (session 19)", async ({ page }) => {
+    // Measured live in the reference (double-click on a layer row's name):
+    // the input that replaces the name div inside the flex-1 min-w-0 wrapper
+    // renders the shadcn-Input base plus editor overrides — rounded-md,
+    // border-[#30363d], bg-[#0d1117], text-white, h-6 px-2 py-1, text-sm,
+    // shadow-sm — with the focus ring only on focus-visible. The pre-session
+    // clone rendered `rounded px-1 ring-1 ring-blue-500` (an ALWAYS-on blue
+    // ring, no border).
+    const firstRow = page.locator("[role=button][aria-label^='Layer']").first();
+
+    await firstRow.dblclick();
+    const input = firstRow.locator("input");
+    await expect(input).toBeVisible();
+    // Prefilled with the row's current name (the reference's behavior).
+    const rowName = (await firstRow.getAttribute("aria-label")) ?? "";
+    await expect(input).toHaveValue(rowName.replace(/^Layer /, ""));
+    // The reference's measured chrome.
+    await expect(input).toHaveClass(/h-6/);
+    await expect(input).toHaveClass(/px-2/);
+    await expect(input).toHaveClass(/border-\[#30363d\]/);
+    await expect(input).toHaveClass(/bg-\[#0d1117\]/);
+    await expect(input).toHaveClass(/rounded-md/);
+    await expect(input).toHaveClass(/text-sm/);
+    // NOT the pre-fix always-on blue ring. The class string may legitimately
+    // carry `focus-visible:ring-1` (the reference's focus ring) — the bug was
+    // the UNPREFIXED always-on ring-1/ring-blue-500, so the negative checks
+    // anchor at a class-list boundary (no ":" before the token).
+    await expect(input).not.toHaveClass(/(?:^|\s)ring-1(\s|$)/);
+    await expect(input).not.toHaveClass(/(?:^|\s)ring-blue-500(\s|$)/);
+
+    // Typing a new name and blurring renames the row.
+    await input.fill("Renamed Hero");
+    await input.blur();
+    await expect(page.locator("[role=button][aria-label^='Layer']").first()).toContainText("Renamed Hero");
+
+    // Escape cancels the rename (the row keeps its name).
+    const topRow = page.locator("[role=button][aria-label^='Layer']").first();
+    const currentName = (await topRow.getAttribute("aria-label")) ?? "";
+    await topRow.dblclick();
+    const cancelInput = topRow.locator("input");
+    await expect(cancelInput).toBeVisible();
+    await cancelInput.press("Escape");
+    await expect(cancelInput).toBeHidden();
+    await expect(page.locator("[role=button][aria-label^='Layer']").first()).toHaveAttribute(
+      "aria-label",
+      currentName,
+    );
+  });
+
+  test("the layer lock icon follows the reference's opacity semantics (session 19)", async ({ page }) => {
+    // Measured live on the reference (three rows, one locked via a real
+    // click): the reference renders the SAME lucide-lock icon in BOTH states,
+    // flipping only the svg's opacity class — opacity-50 unlocked /
+    // opacity-100 locked. The pre-session clone swapped two different
+    // hand-inlined padlock SVGs with no opacity distinction.
+    const firstRow = page.locator("[role=button][aria-label^='Layer']").first();
+    const lockButton = firstRow.getByRole("button", { name: "Lock layer" });
+    const lockSvg = lockButton.locator("svg");
+
+    // Unlocked: the lucide-lock component icon, dimmed to 50%.
+    await expect(lockSvg).toHaveClass(/lucide-lock/);
+    await expect(lockSvg).toHaveClass(/h-3 w-3/);
+    await expect(lockSvg).toHaveClass(/opacity-50/);
+    await expect(lockSvg).not.toHaveClass(/opacity-100/);
+
+    // Locking flips the SAME icon's opacity to 100 (a class flip, not an
+    // icon swap) and swaps the aria-label.
+    await lockButton.click();
+    const unlockedButton = firstRow.getByRole("button", { name: "Unlock layer" });
+    await expect(unlockedButton).toBeVisible();
+    const lockedSvg = unlockedButton.locator("svg");
+    await expect(lockedSvg).toHaveClass(/lucide-lock/);
+    await expect(lockedSvg).toHaveClass(/opacity-100/);
+    await expect(lockedSvg).not.toHaveClass(/opacity-50/);
+
+    // Unlocking returns the dimmed state.
+    await unlockedButton.click();
+    await expect(firstRow.getByRole("button", { name: "Lock layer" })).toBeVisible();
+    await expect(firstRow.getByRole("button", { name: "Lock layer" }).locator("svg")).toHaveClass(/opacity-50/);
+
+    // The eye button renders the lucide component icon too (not a
+    // hand-inlined svg) — the reference's DOM carries lucide lucide-eye.
+    const eyeSvg = firstRow.getByRole("button", { name: "Hide layer" }).locator("svg");
+    await expect(eyeSvg).toHaveClass(/lucide-eye/);
+    await expect(eyeSvg).toHaveClass(/h-3 w-3/);
+  });
+});
+
 test.describe("properties panel section layout", () => {
   test.beforeEach(async ({ page }) => {
     await openSeededEditor(page);
