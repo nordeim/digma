@@ -122,12 +122,21 @@ export function Canvas() {
       return;
     }
 
-    // select tool: hit-test topmost visible unlocked element
+    // select tool: hit-test the TOPMOST VISIBLE element — a LOCKED element
+    // is hit too. It is a pointer WALL (reference parity, S23-1): the locked
+    // element INTERCEPTS the interaction and consumes it — no selection
+    // change, no drag, and nothing beneath is selected or displaced (the
+    // reference's measured semantics: a drag/click on its locked element
+    // moves nothing, selects nothing, and preserves the current selection).
+    // The pre-fix code skipped locked elements here (and rendered them
+    // pointer-events:none), turning the lock into a WINDOW — drags fell
+    // through and displaced the element underneath.
     const hit = [...elements]
       .reverse()
-      .find((el) => el.visible && !el.locked && elementIsPointInside(el, point.x, point.y));
+      .find((el) => el.visible && elementIsPointInside(el, point.x, point.y));
 
     if (hit) {
+      if (hit.locked) return;
       const already = selectedIds.includes(hit.id);
       const nextIds = event.shiftKey
         ? already
@@ -357,7 +366,11 @@ export function Canvas() {
             }}
           >
             <div className="absolute inset-0 border border-blue-500" aria-hidden />
-            {HANDLES.map((handle) => (
+            {/* A locked element cannot be canvas-transformed (the wall) —
+                its selection renders the outline but NOT the resize handles
+                (S23-2: the affordance the contract forbids). */}
+            {!selected[0]!.locked &&
+              HANDLES.map((handle) => (
               <div
                 key={handle.id}
                 className="pointer-events-auto absolute h-2 w-2 rounded-sm border border-white bg-blue-500"
@@ -442,9 +455,12 @@ function CanvasElement({ element, selected }: { element: DesignElementDTO; selec
     opacity: element.opacity,
     width: element.width,
     height: element.type === "line" ? Math.max(element.height, 0) : element.height,
-    cursor: tool === "select" ? "default" : "crosshair",
+    cursor: element.locked
+      ? "not-allowed"
+      : tool === "select"
+        ? "default"
+        : "crosshair",
     userSelect: "none",
-    pointerEvents: element.locked ? "none" : "auto",
     boxShadow: selected ? "0 0 0 2px rgba(59, 130, 246, 0.9)" : undefined,
   };
 
@@ -467,7 +483,13 @@ function CanvasElement({ element, selected }: { element: DesignElementDTO; selec
 
   return (
     <div
-      className={cn("absolute select-none", selected && "ring-2 ring-blue-500 ring-offset-0")}
+      className={cn(
+        "absolute select-none",
+        selected && "ring-2 ring-blue-500 ring-offset-0",
+        // The reference's measured chrome: its locked element carries the
+        // cursor-not-allowed class (the affordance that says "blocked").
+        element.locked && "cursor-not-allowed",
+      )}
       style={style}
       data-element-id={element.id}
       aria-label={element.name ?? element.type}

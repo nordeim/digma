@@ -604,3 +604,145 @@ test.describe("properties number-input commit semantics (session 21)", () => {
     await expect(page.getByRole("textbox", { name: "Color hex" })).toBeVisible();
   });
 });
+
+test.describe("locked-element pointer contract (session 23)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  async function lockGlow(page: import("@playwright/test").Page) {
+    // Idempotent: the lock persists across tests (the autosave replace
+    // contract writes it to the e2e DB) — only click when not already locked.
+    const row = page.locator("[role=button][aria-label='Layer Glow']");
+    const unlock = row.getByRole("button", { name: "Unlock layer" });
+    if (!(await unlock.isVisible())) {
+      await row.getByRole("button", { name: "Lock layer" }).click();
+    }
+    await expect(unlock).toBeVisible();
+  }
+
+  // The 800ms-debounced autosave's cleanup DISCARDS a pending flush — wait
+  // for the green "Saved" badge before leaving the page (the session-21
+  // discipline) so the next test's re-open loads the mutated state.
+  async function waitForSaved(page: import("@playwright/test").Page) {
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  test("a drag over a locked element never displaces the element beneath it (session 23)", async ({ page }) => {
+    // The reference's locked element is a pointer WALL — measured live on its
+    // stacked rectangles (Rectangle 2 locked directly over Rectangle 1): a
+    // real drag on the pair moved NOTHING. The pre-fix clone made the locked
+    // element a pointer WINDOW (pointer-events:none + a hit-test that skips
+    // locked elements), so the drag fell through and DISPLACED the element
+    // beneath (live-audited: dragging across the locked Glow teleported the
+    // Hero Section frame by the full drag delta).
+    await lockGlow(page);
+
+    const frame = page.locator("[data-element-id][aria-label='Hero Section']");
+    const glow = page.locator("[data-element-id][aria-label='Glow']");
+    const frameBefore = await frame.getAttribute("style");
+    const glowBefore = await glow.getAttribute("style");
+
+    // A real drag across the locked Glow's center (the Hero Section frame
+    // sits directly beneath that point).
+    const box = await glow.boundingBox();
+    expect(box).toBeTruthy();
+    const cx = box!.x + box!.width / 2;
+    const cy = box!.y + box!.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 80, cy + 40, { steps: 8 });
+    await page.mouse.up();
+
+    // Neither the locked element NOR the frame beneath it moved (the drag was
+    // consumed by the wall). Pre-fix: the frame teleports (+80, +40).
+    await expect(frame).toHaveAttribute("style", frameBefore!);
+    await expect(glow).toHaveAttribute("style", glowBefore!);
+  });
+
+  test("a click on a locked element neither selects it nor clears the current selection (session 23)", async ({ page }) => {
+    // Measured live on the reference: a real click on a locked element that
+    // is ROW-SELECTED preserves the selection (the badge stays "1 selected")
+    // — the interaction is fully consumed. The pre-fix clone's click fell
+    // through to the element beneath and REPLACED the selection (clicking
+    // Glow's center selected the Hero Section frame instead).
+    await lockGlow(page);
+
+    // Row-select the Headline (rows are the selection path for any element,
+    // locked or not — parity).
+    const headlineRow = page.locator("[role=button][aria-label='Layer Headline']");
+    await headlineRow.click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+    await expect(headlineRow).toHaveClass(/bg-blue-600/);
+
+    // Click the locked Glow's canvas center.
+    const box = await page.locator("[data-element-id][aria-label='Glow']").boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+
+    // The Headline stays selected — the locked click was consumed (pre-fix:
+    // the fall-through selects the Hero Section frame and steals the pill).
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+    await expect(headlineRow).toHaveClass(/bg-blue-600/);
+  });
+
+  test("the locked canvas element renders the reference's not-allowed cursor (session 23)", async ({ page }) => {
+    // The reference's locked element carries the cursor-not-allowed class
+    // (its measured chrome — the affordance that says "this interaction is
+    // blocked"). The pre-fix clone set pointer-events:none (an invisible
+    // element inherits no cursor of its own).
+    await lockGlow(page);
+    await expect(page.locator("[data-element-id][aria-label='Glow']")).toHaveCSS("cursor", "not-allowed");
+  });
+
+  test("a locked single-selection renders the outline but no resize handles (session 23)", async ({ page }) => {
+    // Coherence with the wall: a locked element that cannot be canvas-dragged
+    // cannot be canvas-RESIZED either. The selection stays visible (the row
+    // highlight + the outline) — but the transform affordance is what the
+    // wall forbids. Pre-fix: the 8 handles rendered and resized the locked
+    // element. (The reference ships no handles at all — this pins the
+    // superset's internal consistency, S23-2.)
+    await lockGlow(page);
+    await page.locator("[role=button][aria-label='Layer Glow']").click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    // The outline renders (the selection is visible)…
+    await expect(page.locator("div.pointer-events-none.absolute > div.border-blue-500")).toHaveCount(1);
+    // …but there are NO resize handles on the locked selection.
+    await expect(page.locator("div.h-2.w-2.rounded-sm")).toHaveCount(0);
+  });
+
+  test("Select All + drag moves only the unlocked elements (session 23)", async ({ page }) => {
+    // The Layers header Select All selects every VISIBLE element (locked
+    // included — visible-only is its contract). A subsequent canvas drag
+    // must move only the unlocked ones: the store's moveElements skips
+    // locked ids (S23-3). Pre-fix: the locked Glow rode along.
+    await lockGlow(page);
+    await page.getByRole("button", { name: "Select All" }).click();
+    await expect(page.getByText("6 selected", { exact: true })).toBeVisible();
+
+    const headline = page.locator("[data-element-id][aria-label='Headline']");
+    const glow = page.locator("[data-element-id][aria-label='Glow']");
+    const glowBefore = await glow.getAttribute("style");
+    const headlineBefore = await headline.getAttribute("style");
+
+    // Drag the (unlocked) Headline — its center is topmost there.
+    const box = await headline.boundingBox();
+    expect(box).toBeTruthy();
+    const cx = box!.x + box!.width / 2;
+    const cy = box!.y + box!.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 60, cy + 30, { steps: 6 });
+    await page.mouse.up();
+
+    // The unlocked Headline moved…
+    const headlineAfter = await headline.getAttribute("style");
+    expect(headlineAfter).not.toBe(headlineBefore);
+    // …and the locked Glow stayed exactly where it was.
+    await expect(glow).toHaveAttribute("style", glowBefore!);
+
+    await waitForSaved(page);
+  });
+});

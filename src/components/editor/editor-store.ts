@@ -222,11 +222,20 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   moveElements: (ids, dx, dy) =>
     set((state) => {
+      // Locked elements never move via canvas drags (the pointer wall,
+      // S23-3): a multi-selection that includes locked elements (e.g. via
+      // Select All, which selects every VISIBLE element) drags only its
+      // unlocked members. saveState flips only when something moved.
       const idSet = new Set(ids);
-      return {
-        elements: state.elements.map((el) => (idSet.has(el.id) ? { ...el, x: el.x + dx, y: el.y + dy } : el)),
-        saveState: "unsaved",
-      };
+      let moved = false;
+      const elements = state.elements.map((el) => {
+        if (idSet.has(el.id) && !el.locked) {
+          moved = true;
+          return { ...el, x: el.x + dx, y: el.y + dy };
+        }
+        return el;
+      });
+      return moved ? { elements, saveState: "unsaved" as const } : {};
     }),
 
   deleteElements: (ids) =>
