@@ -67,6 +67,15 @@ export default defineConfig({
       NODE_ENV: "production",
       DATABASE_URL: E2E_DATABASE_URL,
       AUTH_SECRET: "playwright-e2e-session-secret",
+      // Deterministic AI seam (session 27): the z-ai SDK is REACHABLE from
+      // the standalone server in this environment, so the LLM path can win
+      // and its free-form replies make every AI assertion non-deterministic
+      // (observed live: the LLM echoed "Deleted selected element" with
+      // bogus ids while the fallback would have said "Deleted 1 element.").
+      // The e2e suite pins the DETERMINISTIC FALLBACK's exact replies — the
+      // LLM path stays covered by its degrade-not-fail contract (any reply
+      // shape, canvas mutation, no crash).
+      DIGMA_DISABLE_AI_LLM: "1",
     } as Record<string, string>,
   },
 });

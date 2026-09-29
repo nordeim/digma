@@ -95,10 +95,18 @@ const SPACING = 30;
  * "Add 3 colored circles", "Make selected elements red", "Create a login
  * form", "Delete selected", "Make it bigger". Unknown input returns a
  * helpful no-op reply (never throws, never fails the request).
+ *
+ * The delete branch is LOCK-AWARE (session 27): `lockedTargetIds` carries
+ * the selected ids whose elements are locked, and an instruction-level
+ * delete never removes them — the wall's AI contract (S27-1; the reference's
+ * only measured outcome for the seam is the locked element SURVIVING its AI
+ * delete, RA-1). The replies are honest about the skip (never the
+ * reference's false "I have deleted X" claim over an unchanged canvas).
  */
 export function parseFallbackCommand(
   message: string,
   targetIds: string[],
+  lockedTargetIds: string[] = [],
 ): AiCommand {
   const lowered = message.toLowerCase().trim();
   const countMatch = lowered.match(/(?:add|create|draw)\s+(\d+)/);
@@ -107,6 +115,26 @@ export function parseFallbackCommand(
   // ---- delete ----
   if (/\b(delete|remove)\b/.test(lowered)) {
     if (targetIds.length > 0) {
+      // The wall's AI contract: locked elements never ride along with an
+      // instruction-level delete — the same guard the keyboard seam carries
+      // (S25-1). The layer-row TRASH is the explicit per-element delete and
+      // DELIBERATELY deletes locked elements (reference parity R1); an AI
+      // instruction is an indirect selection-level action.
+      const locked = new Set(lockedTargetIds);
+      const unlocked = targetIds.filter((id) => !locked.has(id));
+      if (unlocked.length === 0) {
+        return {
+          reply: "The selection is locked — unlock it first, then ask me to delete it.",
+          operations: [],
+        };
+      }
+      if (unlocked.length < targetIds.length) {
+        const skipped = targetIds.length - unlocked.length;
+        return {
+          reply: `Deleted ${unlocked.length} element${unlocked.length > 1 ? "s" : ""} — skipped ${skipped} locked (unlock ${skipped > 1 ? "them" : "it"} to delete).`,
+          operations: [{ op: "delete", ids: unlocked }],
+        };
+      }
       return { reply: `Deleted ${targetIds.length} element${targetIds.length > 1 ? "s" : ""}.`, operations: [{ op: "delete", ids: targetIds }] };
     }
     return { reply: "Nothing selected to delete. Select elements first, then try again.", operations: [] };

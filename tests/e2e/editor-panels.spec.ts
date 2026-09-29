@@ -888,3 +888,157 @@ test.describe("keyboard delete locked contract (session 25)", () => {
     expect(layerCount).toBe(5);
   });
 });
+
+test.describe("AI delete locked contract (session 27)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  async function lockGlow(page: import("@playwright/test").Page) {
+    // Idempotent (the session-23/25 convention): the lock persists across
+    // tests via the autosave replace contract — only click when not locked.
+    const row = page.locator("[role=button][aria-label='Layer Glow']");
+    const unlock = row.getByRole("button", { name: "Unlock layer" });
+    if (!(await unlock.isVisible())) {
+      await row.getByRole("button", { name: "Lock layer" }).click();
+    }
+    await expect(unlock).toBeVisible();
+  }
+
+  async function waitForSaved(page: import("@playwright/test").Page) {
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  async function askAssistant(page: import("@playwright/test").Page, message: string) {
+    await page.getByRole("textbox", { name: "Message the AI design assistant" }).fill(message);
+    await page.getByRole("button", { name: "Send message" }).click();
+    // The deterministic fallback answers (pre-fix "Deleted N element(s).",
+    // post-fix the locked-aware replies — both shapes contain "deleted" or
+    // "locked"; the user's own message "delete selected" contains neither).
+    await expect(page.getByText(/deleted|locked/i)).toBeVisible({ timeout: 15_000 });
+  }
+
+  test("AI delete on a row-selected locked element is a no-op — the wall's AI contract (session 27)", async ({ page }) => {
+    // Measured live on the reference this session (RA-1): its AI delete on a
+    // LOCKED element claimed success ("I have deleted Rectangle 2", "1
+    // action(s) performed") while the element SURVIVED on the canvas — the
+    // wall extends to the AI seam. The pre-fix clone's AI delete REMOVED the
+    // row-selected locked Glow outright (6 → 5 layers, live-audited). The
+    // guard lives in applyOperations (the client seam), never in
+    // deleteElements (the row trash keeps its reference-parity locked
+    // delete). Same CAPTURE-RESTORE-ASSERT discipline as session 25: the
+    // autosave flushes during the assertion-retry window, so the canvas is
+    // restored BEFORE any hard assertion — a RED failure must never leave
+    // the shared e2e DB mutated.
+    await lockGlow(page);
+
+    const glowRow = page.locator("[role=button][aria-label='Layer Glow']");
+    await glowRow.click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await askAssistant(page, "delete selected");
+
+    // Capture the outcome before any restoring action.
+    const glowOnCanvas = await page.locator("[data-element-id][aria-label='Glow']").count();
+    const layerCount = await page.locator("[data-element-id]").count();
+    const replyMentionsLock = (await page.getByText(/locked/i).count()) > 0;
+
+    // Restore the canvas for the following tests (pre-fix: the delete removed
+    // the Glow — undo recovers it; post-fix: nothing was deleted, and the
+    // fresh page's empty undo stack makes this a harmless dead key).
+    await page.keyboard.press("Control+z");
+    await expect(page.locator("[data-element-id]")).toHaveCount(6);
+    await waitForSaved(page);
+
+    // The locked element survived the AI delete, the canvas never lost it,
+    // and the reply is honest about the lock (pre-fix: 0 / 5 / false — the
+    // Glow vanished with a "Deleted 1 element." claim).
+    expect(glowOnCanvas).toBe(1);
+    expect(layerCount).toBe(6);
+    expect(replyMentionsLock).toBe(true);
+  });
+
+  test("AI delete with Select All deletes only the unlocked elements (session 27)", async ({ page }) => {
+    // The bulk path of the same wall contract: Select All selects every
+    // VISIBLE element (locked included — its contract), and the AI delete
+    // must remove exactly the unlocked members (mirroring Select All + drag
+    // and Select All + Delete). Pre-fix: ALL six layers were deleted via the
+    // AI, locked included (live-audited: the reply claimed success over an
+    // empty canvas).
+    await lockGlow(page);
+    await page.getByRole("button", { name: "Select All" }).click();
+    await expect(page.getByText("• 6 selected")).toBeVisible();
+
+    await askAssistant(page, "delete selected");
+
+    // Capture the outcome before restoring.
+    const glowOnCanvas = await page.locator("[data-element-id][aria-label='Glow']").count();
+    const layerCount = await page.locator("[data-element-id]").count();
+
+    // Restore the canvas and persist the restore.
+    await page.keyboard.press("Control+z");
+    await expect(page.locator("[data-element-id]")).toHaveCount(6);
+    await waitForSaved(page);
+
+    // Exactly the five unlocked layers are gone; only the locked Glow
+    // remains (pre-fix: 0 / 0 — everything deleted, locked included).
+    expect(glowOnCanvas).toBe(1);
+    expect(layerCount).toBe(1);
+  });
+
+  test("AI delete on an unlocked selection still deletes (the working superset preserved) (session 27)", async ({ page }) => {
+    // The control: the fix must not break the working path — an UNLOCKED
+    // row-selected element still deletes via the AI instruction, and Ctrl+Z
+    // still recovers it. (GREEN pre-fix by design: it pins the preserved
+    // behavior so the locked filter can never deaden the assistant.)
+    const headlineRow = page.locator("[role=button][aria-label='Layer Headline']");
+    await headlineRow.click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await askAssistant(page, "delete selected");
+
+    // Capture, then restore.
+    const headlineGone = await page.locator("[data-element-id][aria-label='Headline']").count();
+    const layerCount = await page.locator("[data-element-id]").count();
+
+    await page.keyboard.press("Control+z");
+    await expect(page.locator("[data-element-id]")).toHaveCount(6);
+    await waitForSaved(page);
+
+    expect(headlineGone).toBe(0);
+    expect(layerCount).toBe(5);
+  });
+
+  test("the AI reply carries the reference's action footer and a working Revert (session 27)", async ({ page }) => {
+    // Newly-measured reference chrome (RA-4 — its post-send reply DOM was
+    // unmeasurable until its delete commands stopped crashing the panel):
+    // the reply bubble carries a flex items-center justify-between footer
+    // with a text-xs font-semibold "N action(s) performed" line and an
+    // orange rotate-ccw Revert button. The clone's port is honest (the count
+    // reflects operations ACTUALLY applied) and the Revert WORKS (a dead
+    // control that lies is a documented bug class): it restores the
+    // pre-message canvas snapshot through a store-level restore that is
+    // itself undoable. The reference's own Revert function is unmeasurable
+    // (its operations never execute — there is nothing to revert).
+    const before = await page.locator("[data-element-id]").count();
+
+    await page.getByRole("textbox", { name: "Message the AI design assistant" }).fill("add 2 blue squares");
+    await page.getByRole("button", { name: "Send message" }).click();
+    // The deterministic fallback answers (DIGMA_DISABLE_AI_LLM=1 in the e2e
+    // webServer env — session 27's deterministic AI seam).
+    await expect(page.getByText("Added 2 squares")).toBeVisible({ timeout: 15_000 });
+
+    // The footer renders the honest applied count…
+    await expect(page.getByText("2 action(s) performed")).toBeVisible();
+    // …the canvas grew by exactly the two squares…
+    await expect(page.locator("[data-element-id]")).toHaveCount(before + 2);
+
+    // …and Revert returns the canvas to its pre-message state (the footer
+    // settles away with the reverted message).
+    await page.getByRole("button", { name: "Revert" }).click();
+    await expect(page.locator("[data-element-id]")).toHaveCount(before);
+    await expect(page.getByText("2 action(s) performed")).toHaveCount(0);
+    await waitForSaved(page);
+  });
+});

@@ -18,6 +18,11 @@ type Snapshot = {
   backgroundColor: string;
 };
 
+// Exported for the AI assistant's per-message Revert (session 27): each
+// assistant reply that applied operations captures a pre-apply snapshot and
+// restoreSnapshot() puts it back (an undoable restore, not a raw overwrite).
+export type EditorSnapshot = Snapshot;
+
 export type SaveState = "saved" | "saving" | "unsaved";
 
 let localCounter = 0;
@@ -83,6 +88,11 @@ type EditorStore = {
   commit: () => void;
   undo: () => void;
   redo: () => void;
+  // The AI reply's Revert (session 27): restores a captured pre-message
+  // snapshot. The restore pushes the CURRENT state onto `past` first — a
+  // revert is itself undoable (Ctrl+Z undoes the revert), exactly like
+  // every other mutation.
+  restoreSnapshot: (snapshot: EditorSnapshot) => void;
 };
 
 function snapshotOf(state: {
@@ -321,4 +331,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         saveState: "unsaved",
       };
     }),
+
+  restoreSnapshot: (snapshot) =>
+    set((state) => ({
+      // A revert is a mutation like any other: the CURRENT state goes onto
+      // `past` first, so Ctrl+Z undoes the revert itself (session 27).
+      past: [...state.past, snapshotOf(state)].slice(-60),
+      future: [],
+      elements: snapshot.elements.map((el) => ({ ...el })),
+      backgroundColor: snapshot.backgroundColor,
+      selectedIds: state.selectedIds.filter((id) => snapshot.elements.some((el) => el.id === id)),
+      saveState: "unsaved",
+    })),
 }));

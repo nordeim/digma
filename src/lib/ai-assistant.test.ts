@@ -63,6 +63,48 @@ describe("parseFallbackCommand — modify selection", () => {
   });
 });
 
+describe("parseFallbackCommand — locked-aware delete (session 27)", () => {
+  // The wall's AI contract (S27-1): an instruction-level delete never
+  // removes locked elements — the same guard the keyboard seam carries
+  // (S25-1). Measured live on the reference: its AI delete on a locked
+  // element claimed success while the element SURVIVED on the canvas (RA-1).
+
+  it("delete with a locked target deletes only the unlocked ids and says so", () => {
+    const command = parseFallbackCommand("delete selected", ["el-1", "el-2"], ["el-2"]);
+    const op = command.operations[0]!;
+    expect(op.op).toBe("delete");
+    if (op.op === "delete") expect(op.ids).toEqual(["el-1"]);
+    // The reply is honest: it reports the deletion AND the skipped lock.
+    expect(command.reply).toMatch(/1 element/);
+    expect(command.reply).toMatch(/locked/i);
+  });
+
+  it("delete with an all-locked selection is a declined no-op", () => {
+    const command = parseFallbackCommand("delete selected", ["el-2"], ["el-2"]);
+    expect(command.operations).toHaveLength(0);
+    expect(command.reply.toLowerCase()).toContain("locked");
+  });
+
+  it("delete with no locked targets keeps the legacy behavior", () => {
+    // The boundary pin: the locked-awareness must never over-reach into the
+    // plain unlocked path (GREEN pre-fix by design).
+    const command = parseFallbackCommand("delete selected", ["el-1", "el-2"], []);
+    const op = command.operations[0]!;
+    expect(op.op).toBe("delete");
+    if (op.op === "delete") expect(op.ids).toEqual(["el-1", "el-2"]);
+    expect(command.reply).toBe("Deleted 2 elements.");
+  });
+
+  it("the locked-aware parameter defaults for old callers", () => {
+    // Backwards-compat pin: the two-arg call shape every existing caller
+    // uses keeps working (GREEN pre-fix by design).
+    const command = parseFallbackCommand("delete selected", ["el-1"]);
+    const op = command.operations[0]!;
+    expect(op.op).toBe("delete");
+    if (op.op === "delete") expect(op.ids).toEqual(["el-1"]);
+  });
+});
+
 describe("parseFallbackCommand — templates and unknown input", () => {
   it("builds a login form", () => {
     const command = parseFallbackCommand("Create a login form", []);

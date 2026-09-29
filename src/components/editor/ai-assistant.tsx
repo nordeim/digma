@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Bot, Send, WandSparkles } from "lucide-react";
+import { Bot, RotateCcw, Send, WandSparkles } from "lucide-react";
 
-import { useEditorStore } from "./editor-store";
+import { useEditorStore, type EditorSnapshot } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { AiOperation } from "@/lib/ai-assistant";
 
@@ -12,6 +12,13 @@ type ChatMessage = {
   role: "user" | "assistant";
   text: string;
   time: string;
+  // The reference's post-send footer (measured session 27 — RA-4): the
+  // honest applied-operation count and a WORKING Revert (the pre-apply
+  // canvas snapshot; a dead control that lies is a documented bug class,
+  // so Revert actually restores through restoreSnapshot).
+  actionCount?: number;
+  revertSnapshot?: EditorSnapshot;
+  reverted?: boolean;
 };
 
 // The reference's measured example prompts — rendered under the input as
@@ -51,8 +58,12 @@ export function AiAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
-  function applyOperations(operations: AiOperation[]) {
+  function applyOperations(operations: AiOperation[]): number {
+    // Returns the number of operations ACTUALLY applied (post-locked-filter)
+    // — the honest count the reply footer renders (the reference's own
+    // count is claimed-success theater over an unchanged canvas, RA-2).
     const store = useEditorStore.getState();
+    let applied = 0;
     for (const operation of operations) {
       if (operation.op === "add") {
         store.addElements([
@@ -68,6 +79,7 @@ export function AiAssistant() {
             radius: operation.element.radius || undefined,
           },
         ]);
+        applied += 1;
       } else if (operation.op === "update") {
         const targets = operation.ids.filter((id) => store.elements.some((el) => el.id === id));
         if (targets.length === 0) continue;
@@ -79,14 +91,42 @@ export function AiAssistant() {
         if (operation.patch.text !== undefined) patch.text = operation.patch.text;
         if (operation.patch.scale !== undefined) {
           store.scaleElements(targets, operation.patch.scale);
+          applied += 1;
           continue;
         }
-        if (Object.keys(patch).length > 0) store.updateElements(targets, patch as never);
+        if (Object.keys(patch).length > 0) {
+          store.updateElements(targets, patch as never);
+          applied += 1;
+        }
       } else if (operation.op === "delete") {
-        const targets = operation.ids.filter((id) => store.elements.some((el) => el.id === id));
-        if (targets.length > 0) store.deleteElements(targets);
+        // The wall's AI contract (S27-1): locked elements never ride along
+        // with an instruction-level delete — the same guard the keyboard
+        // seam carries (S25-1). The layer-row TRASH is the explicit
+        // per-element delete and DELIBERATELY deletes locked elements
+        // (reference parity R1/session-25); an AI instruction is an indirect
+        // selection-level action, and the reference's only measured outcome
+        // for the seam (RA-1, session 27) is the locked element SURVIVING
+        // its AI delete. The guard lives HERE — the client seam where both
+        // operation sources (fallback + LLM) meet the store — never in
+        // deleteElements, whose locked-deleting row-trash path stays
+        // reference parity.
+        const targets = operation.ids.filter(
+          (id) => store.elements.some((el) => el.id === id && !el.locked),
+        );
+        if (targets.length > 0) {
+          store.deleteElements(targets);
+          applied += 1;
+        }
       }
     }
+    return applied;
+  }
+
+  function revertMessage(id: string) {
+    const message = messages.find((m) => m.id === id);
+    if (!message?.revertSnapshot || message.reverted) return;
+    useEditorStore.getState().restoreSnapshot(message.revertSnapshot);
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, reverted: true } : m)));
   }
 
   async function send(text: string) {
@@ -109,9 +149,16 @@ export function AiAssistant() {
         state.elements.length > 0
           ? `Canvas has ${state.elements.length} elements: ${state.elements
               .slice(0, 20)
-              .map((el) => `${el.type} (${Math.round(el.x)},${Math.round(el.y)} ${Math.round(el.width)}x${Math.round(el.height)})`)
+              .map((el) => `${el.type}${el.locked ? " [locked]" : ""} (${Math.round(el.x)},${Math.round(el.y)} ${Math.round(el.width)}x${Math.round(el.height)})`)
               .join("; ")}`
           : "Canvas is empty.";
+      // The selected ids whose elements are LOCKED (session 27): the server's
+      // fallback skips them on instruction-level deletes (the wall's AI
+      // contract, S27-1) and the LLM's system prompt is told to leave them
+      // alone — the replies stay honest about what actually happened.
+      const lockedTargetIds = state.selectedIds.filter((id) =>
+        state.elements.some((el) => el.id === id && el.locked),
+      );
 
       const response = await fetch("/api/ai-assistant", {
         method: "POST",
@@ -119,6 +166,7 @@ export function AiAssistant() {
         body: JSON.stringify({
           message,
           targetIds: state.selectedIds,
+          lockedTargetIds,
           elementSummary: summary,
         }),
       });
@@ -129,10 +177,25 @@ export function AiAssistant() {
       }
 
       const { reply, operations } = body.data as { reply: string; operations: AiOperation[] };
-      applyOperations(operations);
+      // Capture the pre-apply canvas state (fresh — the await may have straddled
+      // other mutations) BEFORE the operations run, so Revert restores exactly
+      // what the user saw when they hit send (session 27, S27-2).
+      const preApply = useEditorStore.getState();
+      const revertSnapshot: EditorSnapshot = {
+        elements: preApply.elements.map((el) => ({ ...el })),
+        backgroundColor: preApply.backgroundColor,
+      };
+      const actionCount = applyOperations(operations);
       setMessages((prev) => [
         ...prev,
-        { id: `a-${Date.now()}`, role: "assistant", text: reply, time: nowLabel() },
+        {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          text: reply,
+          time: nowLabel(),
+          actionCount,
+          revertSnapshot: actionCount > 0 ? revertSnapshot : undefined,
+        },
       ]);
     } catch {
       toast.error("Network error", "The assistant could not be reached.");
@@ -168,7 +231,14 @@ export function AiAssistant() {
           ) : (
             /* Assistant rows — measured live: a blue→purple gradient bot
                avatar chip, an 80%-width p-2 rounded-lg bubble, and the
-               timestamp BELOW the bubble (a sibling, text-left). */
+               timestamp BELOW the bubble (a sibling, text-left). Replies
+               that carried applied operations also render the reference's
+               post-send footer (measured session 27, RA-4): a flex
+               items-center justify-between row with the honest
+               text-xs font-semibold action count and the orange
+               rotate-ccw Revert button (a WORKING revert — the pre-apply
+               snapshot restored through restoreSnapshot; the footer settles
+               away with the reverted message). */
             <div key={message.id} className="flex justify-start gap-2">
               <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600">
                 <Bot className="h-3 w-3 text-white" aria-hidden />
@@ -176,6 +246,19 @@ export function AiAssistant() {
               <div className="max-w-[80%]">
                 <div className="rounded-lg bg-[#21262d] p-2 text-xs text-gray-300">
                   <p className="whitespace-pre-wrap">{message.text}</p>
+                  {message.actionCount != null && message.actionCount > 0 && !message.reverted && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold">{message.actionCount} action(s) performed</p>
+                      <button
+                        type="button"
+                        onClick={() => revertMessage(message.id)}
+                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors hover:bg-accent h-5 px-1 text-xs text-orange-400 hover:text-orange-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" aria-hidden />
+                        Revert
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-1 text-left text-xs text-gray-500">{message.time}</div>
               </div>

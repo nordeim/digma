@@ -110,8 +110,11 @@ test.describe("workspace shell (desktop)", () => {
     await page.getByRole("textbox", { name: "Message the AI design assistant" }).fill("Add 2 blue squares");
     await page.getByRole("button", { name: "Send message" }).click();
 
-    // A reply arrives (deterministic fallback when the SDK is down)…
-    await expect(page.getByText("Added 2 blue squares")).toBeVisible({ timeout: 15_000 });
+    // A reply arrives — the DETERMINISTIC fallback's exact phrasing (the
+    // e2e webServer sets DIGMA_DISABLE_AI_LLM=1, session 27: the reachable
+    // SDK's free-form replies made this assertion non-deterministic; the
+    // fallback's reply for "Add 2 blue squares" is "Added 2 squares.")…
+    await expect(page.getByText("Added 2 squares")).toBeVisible({ timeout: 15_000 });
     // …the canvas grew…
     await expect.poll(() => page.getByRole("button", { name: /^Layer / }).count()).toBeGreaterThan(before);
     // …and the page is still fully interactive (no blank-screen crash).
