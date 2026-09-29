@@ -746,3 +746,145 @@ test.describe("locked-element pointer contract (session 23)", () => {
     await waitForSaved(page);
   });
 });
+
+test.describe("keyboard delete locked contract (session 25)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  async function lockGlow(page: import("@playwright/test").Page) {
+    // Idempotent (the session-23 convention): the lock persists across tests
+    // via the autosave replace contract — only click when not already locked.
+    const row = page.locator("[role=button][aria-label='Layer Glow']");
+    const unlock = row.getByRole("button", { name: "Unlock layer" });
+    if (!(await unlock.isVisible())) {
+      await row.getByRole("button", { name: "Lock layer" }).click();
+    }
+    await expect(unlock).toBeVisible();
+  }
+
+  async function waitForSaved(page: import("@playwright/test").Page) {
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  test("Delete on a row-selected locked element is a no-op — the wall's keyboard contract (session 25)", async ({ page }) => {
+    // The reference's keyboard layer is entirely DEAD (measured live this
+    // session: Delete on its row-selected UNLOCKED element never removed it —
+    // no keyboard parity data exists), so the clone's working keyboard is
+    // superset territory and must stay coherent with the wall the reference
+    // DID measure: a locked element never rides along with a canvas-space
+    // bulk operation (moveElements skips locked ids, S23-3). Pre-fix: the
+    // keyboard Delete removed the row-selected locked Glow outright.
+    //
+    // Test-engineering: CAPTURE the outcome immediately, RESTORE the canvas
+    // (Ctrl+Z + autosave wait) BEFORE asserting, then assert on the captured
+    // values — a RED failure must never leave the shared e2e DB mutated (the
+    // 10s assertion-retry window lets the autosave flush otherwise, and the
+    // next test's prerequisites vanish with the Glow).
+    await lockGlow(page);
+
+    const glowRow = page.locator("[role=button][aria-label='Layer Glow']");
+    await glowRow.click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await page.keyboard.press("Delete");
+
+    // Capture the outcome before any restoring action.
+    const glowOnCanvas = await page.locator("[data-element-id][aria-label='Glow']").count();
+    const layerCount = await page.locator("[data-element-id]").count();
+    const stillSelected = await page.getByText("1 selected", { exact: true }).isVisible();
+
+    // Restore the canvas for the following tests (pre-fix: the delete removed
+    // the Glow — undo recovers it; post-fix: the no-op pushed nothing, and
+    // the fresh page's empty undo stack makes this a harmless dead key).
+    await page.keyboard.press("Control+z");
+    await expect(page.locator("[data-element-id]")).toHaveCount(6);
+    await waitForSaved(page);
+
+    // The locked element survived, the canvas never lost it, and the
+    // selection is untouched (pre-fix: 0 / 5 / false — the Glow vanished).
+    expect(glowOnCanvas).toBe(1);
+    expect(layerCount).toBe(6);
+    expect(stillSelected).toBe(true);
+  });
+
+  test("Select All + Delete deletes only the unlocked elements (session 25)", async ({ page }) => {
+    // The bulk path of the same wall contract: Select All selects every
+    // VISIBLE element (locked included — its contract), and the keyboard
+    // Delete must remove exactly the unlocked members (mirroring Select All
+    // + drag, S23-3). Pre-fix: ALL six layers were deleted, locked included.
+    // (Same capture-restore-assert discipline as the test above.)
+    await lockGlow(page);
+    await page.getByRole("button", { name: "Select All" }).click();
+    await expect(page.getByText("• 6 selected")).toBeVisible();
+
+    await page.keyboard.press("Delete");
+
+    // Capture the outcome before restoring.
+    const glowOnCanvas = await page.locator("[data-element-id][aria-label='Glow']").count();
+    const layerCount = await page.locator("[data-element-id]").count();
+    const glowRowVisible = await page.locator("[role=button][aria-label='Layer Glow']").isVisible();
+
+    // Restore the canvas and persist the restore.
+    await page.keyboard.press("Control+z");
+    await expect(page.locator("[data-element-id]")).toHaveCount(6);
+    await waitForSaved(page);
+
+    // Exactly the five unlocked layers are gone; the locked Glow survives
+    // (pre-fix: 0 / 0 / false — everything deleted, locked included).
+    expect(glowOnCanvas).toBe(1);
+    expect(layerCount).toBe(1);
+    expect(glowRowVisible).toBe(true);
+  });
+
+  test("Delete on an unlocked selection still deletes (the working superset preserved) (session 25)", async ({ page }) => {
+    // The control: the fix must not break the working path — an UNLOCKED
+    // row-selected element still deletes via the keyboard, and Ctrl+Z still
+    // recovers it. (GREEN pre-fix by design: it pins the preserved behavior
+    // so the locked filter can never over-reach into a dead keyboard.)
+    const headlineRow = page.locator("[role=button][aria-label='Layer Headline']");
+    await headlineRow.click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await page.keyboard.press("Delete");
+
+    // Capture, then restore.
+    const headlineGone = await page.locator("[data-element-id][aria-label='Headline']").count();
+    const layerCount = await page.locator("[data-element-id]").count();
+
+    await page.keyboard.press("Control+z");
+    await expect(page.locator("[data-element-id]")).toHaveCount(6);
+    await waitForSaved(page);
+
+    expect(headlineGone).toBe(0);
+    expect(layerCount).toBe(5);
+  });
+
+  test("the layer-row trash deletes a locked element (reference parity — the explicit row action) (session 25)", async ({ page }) => {
+    // Measured live on the reference this session: its row trash REMOVED a
+    // LOCKED rectangle immediately (3 → 2 layers, no confirm). The lock
+    // blocks canvas interaction, NOT the explicit row-level management
+    // action — so deleteElements deliberately carries NO locked guard, and
+    // the keyboard filter (the fix above) is the only wall in the delete
+    // path. This pin guards that boundary against a future over-reach into
+    // the store action.
+    await lockGlow(page);
+
+    const glowRow = page.locator("[role=button][aria-label='Layer Glow']");
+    await glowRow.getByRole("button", { name: "Delete layer Glow" }).click();
+
+    // Capture, then restore (undo recovers the locked element — the
+    // recovery path, session 17).
+    const glowOnCanvas = await page.locator("[data-element-id][aria-label='Glow']").count();
+    const layerCount = await page.locator("[data-element-id]").count();
+
+    await page.keyboard.press("Control+z");
+    await expect(page.locator("[role=button][aria-label='Layer Glow']")).toBeVisible();
+    await expect(page.locator("[data-element-id]")).toHaveCount(6);
+    await waitForSaved(page);
+
+    expect(glowOnCanvas).toBe(0);
+    expect(layerCount).toBe(5);
+  });
+});

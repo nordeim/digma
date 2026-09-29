@@ -166,7 +166,18 @@ function useEditorShortcuts() {
       if (event.key === "Delete" || event.key === "Backspace") {
         if (store.selectedIds.length > 0) {
           event.preventDefault();
-          store.deleteElements(store.selectedIds);
+          // The wall's keyboard contract (S25-1): locked elements never ride
+          // along with a keyboard delete — the same guard moveElements
+          // carries (S23-3). The layer-row TRASH is the explicit per-element
+          // delete and DELIBERATELY deletes locked elements (the reference's
+          // measured semantics — verified live on its locked rectangle: the
+          // row trash removed it while its own keyboard was entirely dead),
+          // so the guard lives HERE, in the keyboard seam, not in the shared
+          // deleteElements action.
+          const unlockedIds = store.elements
+            .filter((el) => store.selectedIds.includes(el.id) && !el.locked)
+            .map((el) => el.id);
+          if (unlockedIds.length > 0) store.deleteElements(unlockedIds);
         }
         return;
       }
