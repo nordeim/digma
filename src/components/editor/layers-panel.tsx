@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Circle, Frame, Image as ImageIcon, Minus, Pen, Square, Type } from "lucide-react";
+import { Circle, Frame, Image as ImageIcon, Lock, Minus, Pen, Square, Trash2, Type } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "./editor-store";
@@ -19,7 +19,10 @@ const TYPE_ICON: Record<DesignElementDTO["type"], React.ComponentType<{ classNam
 
 // The Layers panel — measured from the reference (w-60 dark panel, header
 // with "Deselect All", "N layers • N selected" counter, draggable rows with
-// eye/lock hover actions, selected row bg-blue-600).
+// eye/lock/trash hover actions, selected row bg-blue-600). The trash is the
+// session-17 find: the reference renders THREE hover actions per row and its
+// delete is IMMEDIATE (no confirm — verified live: 1 layer → 0); recovery is
+// undo, which this store already snapshots (60 deep).
 export function LayersPanel() {
   const elements = useEditorStore((s) => s.elements);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -208,6 +211,25 @@ export function LayersPanel() {
                           <path d="m2 2 20 20" opacity="0" />
                         </svg>
                       )}
+                    </button>
+                    {/* Session-17 parity fix: the reference's THIRD row action —
+                        a red trash that deletes the layer immediately (measured:
+                        p-1 hover:bg-red-500/20 rounded text-red-400 opacity-0
+                        group-hover:opacity-100, lucide-trash2 w-3 h-3; clicking
+                        it live-deleted the reference's layer with no confirm).
+                        Undo (Ctrl+Z) is the recovery path — deleteElements
+                        pushes the history snapshot and the autosave replace
+                        contract persists the removal. */}
+                    <button
+                      type="button"
+                      aria-label={`Delete layer ${el.name ?? el.type}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        useEditorStore.getState().deleteElements([el.id]);
+                      }}
+                      className="rounded p-1 text-red-400 opacity-0 transition-colors hover:bg-red-500/20 group-hover:opacity-100 focus:opacity-100"
+                    >
+                      <Trash2 className="h-3 w-3" aria-hidden strokeWidth={2} />
                     </button>
                   </div>
                 </div>

@@ -87,7 +87,7 @@ test.describe("workspace shell (desktop)", () => {
     await expect(page.getByRole("heading", { name: "Marketing Hero Banner" })).toBeVisible();
     await expect(page.getByRole("toolbar", { name: "Editor tools" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Layers" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Layer Headline" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Layer Headline", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI Assistant" })).toBeVisible();
   });
 

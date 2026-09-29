@@ -71,6 +71,39 @@ test.describe("layers header selection toggle", () => {
     await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
   });
 
+  test("layer rows carry the reference's trash hover action (session 17)", async ({ page }) => {
+    // Measured in the reference's live DOM (seventh audit): every layer row
+    // renders THREE hover actions — eye, lock, and a red delete button
+    // (p-1 hover:bg-red-500/20 rounded text-red-400 opacity-0
+    // group-hover:opacity-100, lucide-trash2 w-3 h-3). The reference's
+    // trash deletes IMMEDIATELY (no confirm — verified live: 1 layer → 0);
+    // the clone's recovery path is undo (Ctrl+Z, 60 snapshots).
+    const rows = page.locator("[role=button][aria-label^='Layer']");
+    const before = await rows.count();
+    expect(before).toBeGreaterThanOrEqual(6);
+
+    // Every row exposes exactly three action buttons, the third one the
+    // reference's red trash.
+    const trash = page.getByRole("button", { name: /Delete layer/ });
+    await expect(trash.first()).toBeVisible();
+    await expect(trash).toHaveCount(before);
+    const firstTrash = trash.first();
+    await expect(firstTrash).toHaveClass(/text-red-400/);
+    await expect(firstTrash).toHaveClass(/hover:bg-red-500\/20/);
+    await expect(firstTrash).toHaveClass(/opacity-0/);
+    await expect(firstTrash.locator("svg.lucide-trash2")).toHaveClass(/h-3 w-3/);
+    // The eye + lock actions are still there (three actions per row).
+    await expect(page.getByRole("button", { name: /Hide layer|Show layer/ }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /Lock layer|Unlock layer/ }).first()).toBeVisible();
+
+    // Clicking it deletes exactly that layer — immediate, no confirm dialog.
+    await firstTrash.click();
+    await expect(rows).toHaveCount(before - 1);
+    await expect(page.getByText(/• \d+ selected/)).toBeHidden();
+    // The counter reflects the deletion.
+    await expect(page.getByText(new RegExp(`^${before - 1} layers?$`))).toBeVisible();
+  });
+
   test("Select All selects everything and flips to Deselect All", async ({ page }) => {
     const toggle = page.getByRole("button", { name: "Select All" });
     await expect(toggle).toBeVisible();
@@ -97,7 +130,7 @@ test.describe("properties panel section layout", () => {
   });
 
   test("one element selected: the reference's five sections render", async ({ page }) => {
-    await page.getByRole("button", { name: "Layer Headline" }).click();
+    await page.getByRole("button", { name: "Layer Headline", exact: true }).click();
 
     for (const section of ["Position & Size", "Corner Radius", "Fill & Stroke", "Transform", "Opacity"]) {
       await expect(page.getByRole("heading", { level: 4, name: section })).toBeVisible();
@@ -110,7 +143,7 @@ test.describe("transform section: scale + rotation inputs (reference parity)", (
   test.beforeEach(async ({ page }) => {
     await openSeededEditor(page);
     await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
-    await page.getByRole("button", { name: "Layer Headline" }).click();
+    await page.getByRole("button", { name: "Layer Headline", exact: true }).click();
     await expect(page.getByRole("heading", { level: 4, name: "Transform" })).toBeVisible();
   });
 
@@ -149,7 +182,7 @@ test.describe("transform section: scale + rotation inputs (reference parity)", (
     await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
     await page.reload();
     await expect(page.getByTestId("scale-value")).toBeHidden(); // nothing selected after reload
-    await page.getByRole("button", { name: "Layer Headline" }).click();
+    await page.getByRole("button", { name: "Layer Headline", exact: true }).click();
     await expect(page.getByTestId("scale-value")).toHaveText("2.0x");
   });
 });
@@ -157,7 +190,9 @@ test.describe("transform section: scale + rotation inputs (reference parity)", (
 test.describe("properties panel reference chrome (session 15)", () => {
   // Measured this session in the reference's DOM (the sixth audit went inside
   // the panel interiors):
-  //   - the corner-radius slider caps at 50 (aria-valuemax="50"), not 75;
+  //   - the corner-radius slider caps at 75 (aria-valuemax="75" — the
+  //     session-17 double-measurement reversed session 16's single "50"
+  //     misread; sessions 1–5 measured 75 too);
   //   - every slider row is a Radix-style slider (6px rounded track, 16px
   //     white thumb) — the clone ships the same LOOK via the .editor-range
   //     class on native range inputs (zero-dependency, keyboard-accessible);
@@ -169,15 +204,21 @@ test.describe("properties panel reference chrome (session 15)", () => {
   test.beforeEach(async ({ page }) => {
     await openSeededEditor(page);
     await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
-    await page.getByRole("button", { name: "Layer Headline" }).click();
+    await page.getByRole("button", { name: "Layer Headline", exact: true }).click();
     await expect(page.getByRole("heading", { level: 4, name: "Transform" })).toBeVisible();
   });
 
-  test("the corner-radius slider caps at 50 (reference aria-valuemax)", async ({ page }) => {
+  test("the corner-radius slider caps at 75 (reference aria-valuemax; session-17 re-measure)", async ({ page }) => {
+    // Session 16 pinned max="50" from a single reading — the misread outlier.
+    // Session 17 re-measured TWICE on fresh page loads with freshly drawn
+    // elements: the reference's All Corners Radix thumb carries
+    // aria-valuemin="0" aria-valuemax="75" (sessions 1–5 also measured 75).
+    // The reversal of a previously-verified fact needs double-measurement
+    // before it ships — lesson F18.
     const slider = page.getByRole("slider", { name: "All Corners" });
     await expect(slider).toBeVisible();
     await expect(slider).toHaveAttribute("min", "0");
-    await expect(slider).toHaveAttribute("max", "50");
+    await expect(slider).toHaveAttribute("max", "75");
   });
 
   test("every panel slider carries the editor-range class (the Radix look)", async ({ page }) => {

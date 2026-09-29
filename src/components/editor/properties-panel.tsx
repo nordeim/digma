@@ -253,8 +253,8 @@ export function PropertiesPanel() {
                 label="All Corners"
                 value={single.radius}
                 min={0}
-                max={50}
-                onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), 50) })}
+                max={75}
+                onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), 75) })}
               />
               {/* Per-corner inputs — linked corners: the element model keeps a
                   single radius, so each input edits the shared value (the

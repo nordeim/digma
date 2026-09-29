@@ -50,6 +50,8 @@ test.describe("untitled editor (unknown or missing projectId)", () => {
 
     // The canvas survives a reload (the created project is real now).
     await page.reload();
-    await expect(page.getByRole("button", { name: /Rectangle 1/ })).toBeVisible({ timeout: 10_000 });
+    // Exact match: the layer-row trash button ("Delete layer Rectangle 1")
+    // also matches a /Rectangle 1/ substring (session-17 row action).
+    await expect(page.getByRole("button", { name: "Layer Rectangle 1", exact: true })).toBeVisible({ timeout: 10_000 });
   });
 });
