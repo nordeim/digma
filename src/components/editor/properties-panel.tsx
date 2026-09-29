@@ -90,8 +90,20 @@ function NumberField({
         step={step}
         onChange={(event) => {
           setDraft(event.target.value);
+          // Session-21 fix (S21-2): an EMPTY draft is the user mid-edit, not
+          // a request for 0 — Number("") === 0 is the trap that teleported
+          // elements to x=0 the instant their field was cleared. Only a
+          // non-empty, finite draft commits (the working-superset contract:
+          // live commit for real values, never for empty prefixes).
+          if (event.target.value.trim() === "") return;
           const parsed = Number(event.target.value);
           if (Number.isFinite(parsed)) onChange(parsed);
+        }}
+        onBlur={() => {
+          // Abandoned edit: an empty or unparseable draft restores the
+          // element's current value — the input never dead-ends empty.
+          const parsed = Number(draft);
+          if (draft.trim() === "" || !Number.isFinite(parsed)) setDraft(display);
         }}
         className={`mt-1 h-8 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none ${
           width ?? "w-full"
@@ -139,7 +151,7 @@ function HexColorRow({
         />
         <input
           type="text"
-          aria-label={`${label} hex`}
+          aria-label={`${label ?? "Color"} hex`}
           value={draft}
           placeholder="transparent"
           spellCheck={false}

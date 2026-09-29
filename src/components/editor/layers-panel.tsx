@@ -28,7 +28,6 @@ export function LayersPanel() {
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const [renaming, setRenaming] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
-  const [dragOver, setDragOver] = React.useState<number | null>(null);
 
   const selectedSet = new Set(selectedIds);
 
@@ -39,10 +38,6 @@ export function LayersPanel() {
     } else {
       store.select([id]);
     }
-  }
-
-  function onDrop(index: number) {
-    setDragOver(null);
   }
 
   return (
@@ -88,17 +83,7 @@ export function LayersPanel() {
             const Icon = TYPE_ICON[el.type] ?? Square;
             const isSelected = selectedSet.has(el.id);
             return (
-              <div
-                key={el.id}
-                className="relative"
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  const after = event.clientY > rect.top + rect.height / 2;
-                  setDragOver(after ? elements.length - 0 : 0);
-                }}
-                onDrop={() => onDrop(0)}
-              >
+              <div key={el.id} className="relative">
                 <div
                   draggable={renaming !== el.id}
                   onDragStart={(event) => {
@@ -106,24 +91,29 @@ export function LayersPanel() {
                     event.dataTransfer.effectAllowed = "move";
                   }}
                   onDragOver={(event) => {
+                    // Allow the drop (the HTML5 DnD contract). The insertion
+                    // index is computed FROM THE EVENT at drop time — no
+                    // state, no closure staleness (session-21 fix).
                     event.preventDefault();
-                    const rows = Array.from(
-                      event.currentTarget.parentElement?.parentElement?.children ?? [],
-                    );
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    const after = event.clientY > rect.top + rect.height / 2;
-                    const ownIndex =
-                      elements.length - 1 - rows.indexOf(event.currentTarget.parentElement as Element);
-                    setDragOver(Math.min(Math.max(after ? ownIndex + 1 : ownIndex, 0), elements.length));
                   }}
                   onDrop={(event) => {
                     event.preventDefault();
                     const fromId = event.dataTransfer.getData("text/layer-id");
-                    if (fromId && dragOver !== null) {
-                      // Reverse-mapped display order -> element order.
-                      useEditorStore.getState().reorderElements([fromId], elements.length - dragOver);
-                    }
-                    setDragOver(null);
+                    if (!fromId || fromId === el.id) return;
+                    const store = useEditorStore.getState();
+                    const remaining = store.elements.filter((e) => e.id !== fromId);
+                    const targetIndex = remaining.findIndex((e) => e.id === el.id);
+                    if (targetIndex === -1) return;
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const after = event.clientY > rect.top + rect.height / 2;
+                    // Rows render in REVERSE element order, so "below row X
+                    // on screen" = insert at X's index in the
+                    // elements-minus-dragged array (X keeps its slot and the
+                    // dragged row renders after it); "above row X" = one
+                    // index later. reorderElements inserts at the given index
+                    // in that same array, so the list ends land exactly at
+                    // the top/bottom via its clamp.
+                    store.reorderElements([fromId], after ? targetIndex : targetIndex + 1);
                   }}
                   onDoubleClick={() => {
                     setRenaming(el.id);

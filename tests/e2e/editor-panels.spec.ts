@@ -442,3 +442,165 @@ test.describe("panel chips render only where their panels can (responsive fix)",
     await expect(page.getByRole("button", { name: "Toggle Properties panel" })).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Session 21 — the F19 functional sweep: the layers drag-reorder's PRECISION
+// and the properties number inputs' commit semantics.
+//
+// Reference-side context (measured live, session 21): the reference's own
+// drag-reorder is DEAD (rows render draggable="true" but no reorder ever
+// happens — and the SELECTED row renders draggable="false", which kills the
+// gesture in practice since clicking a row selects it). The reference's
+// number inputs are display-only no-ops (typed/blurred/Enter/spinner — the
+// element never moved). The clone ships working supersets for BOTH, and
+// these tests pin the QUALITY of those supersets: insertion must be precise,
+// and an empty draft must never commit.
+// ---------------------------------------------------------------------------
+
+test.describe("layers drag-reorder precision (session 21)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  // Seeded display order (top → bottom):
+  //   CTA Label, CTA Button, Headline, Glow, Accent Bar, Hero Section
+
+  async function rowOrder(page: import("@playwright/test").Page): Promise<string[]> {
+    return page.locator("[role=button][aria-label^='Layer']").evaluateAll((rows) =>
+      rows.map((r) => (r.getAttribute("aria-label") ?? "").replace(/^Layer /, "")),
+    );
+  }
+
+  // Dispatch a real HTML5 drag (dragstart → dragover → drop) with a real
+  // DataTransfer carrying the row's text/layer-id payload — the same event
+  // sequence a native drag gesture produces. The events land on the target
+  // ROW element at the requested height fraction (upper vs lower half).
+  async function dragRowOnto(
+    page: import("@playwright/test").Page,
+    sourceName: string,
+    targetName: string,
+    heightFraction: number,
+  ) {
+    await page.evaluate(
+      ({ sourceName, targetName, heightFraction }) => {
+        const rows = Array.from(
+          document.querySelectorAll("[role=button][aria-label^='Layer']"),
+        );
+        const source = rows.find((r) =>
+          (r.getAttribute("aria-label") ?? "").includes(sourceName),
+        );
+        const target = rows.find((r) =>
+          (r.getAttribute("aria-label") ?? "").includes(targetName),
+        );
+        if (!source || !target) throw new Error(`row not found: ${sourceName}/${targetName}`);
+        const rect = target.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height * heightFraction;
+        const dt = new DataTransfer();
+        source.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: dt }));
+        target.dispatchEvent(
+          new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+            clientX: x,
+            clientY: y,
+          }),
+        );
+        target.dispatchEvent(
+          new DragEvent("drop", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+            clientX: x,
+            clientY: y,
+          }),
+        );
+      },
+      { sourceName, targetName, heightFraction },
+    );
+  }
+
+  // The reorder must PERSIST before the next test re-opens the editor: the
+  // autosave is debounced 800ms and its cleanup DISCARDS a pending flush, so
+  // wait for the green "Saved" badge before leaving the page.
+  async function waitForAutosave(page: import("@playwright/test").Page) {
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  test("a drop on a row's lower half inserts the dragged row directly below it", async ({ page }) => {
+    // Pre-fix behavior: the per-row wrapper's onDragOver (which fires AFTER
+    // the row's own handler — DOM bubbling) clobbered the row's computed
+    // index with a crude top/bottom value, so this one-position move landed
+    // the dragged row at the BOTTOM of the whole list instead.
+    await dragRowOnto(page, "CTA Label", "Glow", 0.7);
+    await expect
+      .poll(() => rowOrder(page), { timeout: 5_000 })
+      .toEqual(["CTA Button", "Headline", "Glow", "CTA Label", "Accent Bar", "Hero Section"]);
+    await waitForAutosave(page);
+  });
+
+  test("a drop on a row's upper half inserts the dragged row directly above it", async ({ page }) => {
+    // Whether run standalone (seeded order) or after the test above, dragging
+    // CTA Label onto Glow's UPPER half lands it DIRECTLY ABOVE Glow — a
+    // precise one-position move, never the list top/bottom.
+    // (Pre-fix, this landed the row at the TOP of the whole list — from the
+    // seeded order, no visible move at all.)
+    await dragRowOnto(page, "CTA Label", "Glow", 0.3);
+    await expect
+      .poll(() => rowOrder(page), { timeout: 5_000 })
+      .toEqual(["CTA Button", "Headline", "CTA Label", "Glow", "Accent Bar", "Hero Section"]);
+    await waitForAutosave(page);
+  });
+});
+
+test.describe("properties number-input commit semantics (session 21)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  test("the properties number input never commits an empty draft (session 21)", async ({ page }) => {
+    // The reference's number inputs are display-only no-ops (verified live:
+    // typing, blurring, Enter, and the ArrowUp spinner never moved its
+    // element). The clone's input is the working superset — but an EMPTY
+    // field is the user MID-EDIT, not a request for 0. The pre-fix onChange
+    // ran Number("") → 0 → committed, teleporting the element to x=0 the
+    // instant the field was cleared (live-verified: translate(120px, …) →
+    // translate(0px, …)). Abandoning the edit (blur) must restore the value.
+    await page.locator("[role=button][aria-label='Layer Accent Bar']").click();
+    const element = page.locator("[data-element-id][aria-label='Accent Bar']");
+    await expect(element).toHaveCount(1);
+
+    const x = page.getByRole("spinbutton", { name: "X" });
+    await expect(x).toHaveValue("120");
+
+    const inlineTransform = () => element.evaluate((node) => node.style.transform);
+
+    // Clearing the field keeps the element exactly where it was.
+    await x.fill("");
+    await expect.poll(inlineTransform, { timeout: 5_000 }).toContain("translate(120px");
+
+    // Typing a full value commits it (the working superset — live commit).
+    await x.fill("200");
+    await expect.poll(inlineTransform, { timeout: 5_000 }).toContain("translate(200px");
+
+    // Clearing again and blurring RESTORES the input (abandoned edit) and
+    // leaves the element at the last committed value.
+    await x.fill("");
+    await x.blur();
+    await expect(x).toHaveValue("200");
+    await expect.poll(inlineTransform, { timeout: 5_000 }).toContain("translate(200px");
+  });
+
+  test("the canvas-properties hex input carries a real accessible name (session 21)", async ({ page }) => {
+    // Nothing selected → the Canvas Properties panel. The pre-fix hex input
+    // rendered aria-label="undefined hex" (the template literal lacked the
+    // ?? "Color" fallback its sibling swatch input already had).
+    await expect(page.getByRole("heading", { name: "Canvas Properties" })).toBeVisible();
+
+    await expect(page.getByRole("textbox", { name: "undefined hex" })).toHaveCount(0);
+    await expect(page.getByRole("textbox", { name: "Color hex" })).toBeVisible();
+  });
+});
