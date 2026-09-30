@@ -1202,3 +1202,130 @@ test.describe("line + text element rendering (session 29)", () => {
     await waitForSaved(page);
   });
 });
+
+test.describe("frame container rendering (session 31)", () => {
+  // The 800ms-debounced autosave's cleanup DISCARDS a pending flush — wait
+  // for the green "Saved" badge before leaving the page (the session-21
+  // discipline).
+  async function waitForSaved(page: import("@playwright/test").Page) {
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  // Draws a frame with the Frame tool on an empty canvas region and returns
+  // the drawn element's locator (fresh frames are named "Frame N").
+  async function drawFrame(page: import("@playwright/test").Page) {
+    await page.getByRole("button", { name: "Frame tool" }).click();
+    const canvas = page.getByRole("application", { name: "Design canvas" });
+    const box = await canvas.boundingBox();
+    expect(box).toBeTruthy();
+    // A clear region away from the seeded elements (bottom-right quadrant).
+    const sx = box!.x + box!.width * 0.72;
+    const sy = box!.y + box!.height * 0.72;
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.mouse.move(sx + 110, sy + 80, { steps: 8 });
+    await page.mouse.up();
+    await expect(page.locator("[data-element-id][aria-label^='Frame']").first()).toBeVisible();
+    return page.locator("[data-element-id][aria-label^='Frame']").first();
+  }
+
+  test("drawing a frame renders the labeled transparent container (session 31)", async ({ page }) => {
+    // The reference's frame (RA-13/RA-18): a TRANSPARENT container div —
+    // border 1px solid #555555 via the STROKE model fields, radius 0 —
+    // carrying an ALWAYS-ON name label chip: -top-5 left-0 text-xs
+    // text-gray-300 bg-[#161b22] px-1.5 py-0.5 pointer-events-none. The
+    // pre-fix clone rendered a solid #161B22 panel (radius 8, no border)
+    // with a bare 10px gray label.
+    const frame = await drawFrame(page);
+
+    // The container body: transparent, bordered, square corners.
+    await expect(frame).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(frame).toHaveCSS("border-top-width", "1px");
+    await expect(frame).toHaveCSS("border-top-color", "rgb(85, 85, 85)");
+    await expect(frame).toHaveCSS("border-radius", "0px");
+
+    // The label chip: the reference's measured chrome (bg #161b22, 12px
+    // text) carrying the frame's name, and pointer-events: none so it never
+    // intercepts canvas interaction.
+    const label = frame.locator("span").first();
+    await expect(label).toHaveText(/^Frame \d+$/);
+    await expect(label).toHaveCSS("background-color", "rgb(22, 27, 34)");
+    await expect(label).toHaveCSS("font-size", "12px");
+    await expect(label).toHaveCSS("pointer-events", "none");
+
+    // Cleanup: undo the draw and let the autosave settle.
+    await page.keyboard.press("Control+z");
+    await waitForSaved(page);
+  });
+
+  test("the frame label counter-scales at zoom — constant screen size (session 31)", async ({ page }) => {
+    // The reference's label carries transform: scale(1/zoom) with
+    // transform-origin: left top (measured at 128% zoom: scale 0.778866 =
+    // 1/1.28392) so the label's TEXT stays at a constant screen size at any
+    // zoom. The pre-fix clone's label scaled WITH the canvas (live-measured
+    // 19px → 39px tall from 100% → 207% zoom).
+    const frame = await drawFrame(page);
+    const label = frame.locator("span").first();
+    const at100 = await label.boundingBox();
+    expect(at100).toBeTruthy();
+
+    // Zoom in three steps (100% → ~173%).
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole("button", { name: "Zoom in" }).click();
+    }
+    await expect(page.getByText("173%")).toBeVisible();
+
+    const at173 = await label.boundingBox();
+    expect(at173).toBeTruthy();
+    // The counter-scale keeps the label within a small tolerance of its
+    // 100% screen height (the pre-fix label roughly doubles).
+    expect(Math.abs(at173!.height - at100!.height)).toBeLessThanOrEqual(3);
+
+    // Cleanup: reset the zoom, undo the draw, wait for the autosave.
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole("button", { name: "Zoom out" }).click();
+    }
+    await expect(page.getByText("100%")).toBeVisible();
+    await page.keyboard.press("Control+z");
+    await waitForSaved(page);
+  });
+
+  test("the seeded Hero Section renders the container contract (session 31)", async ({ page }) => {
+    // The seed's frame adopts the reference's container contract: the
+    // pre-fix seed carried fill #161B22 + radius 12 (a solid panel); the
+    // remediated seed is a transparent bordered container with its label.
+    const frame = page.locator("[data-element-id][aria-label='Hero Section']");
+    await expect(frame).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(frame).toHaveCSS("border-top-width", "1px");
+    await expect(frame).toHaveCSS("border-top-color", "rgb(85, 85, 85)");
+    const label = frame.locator("span").first();
+    await expect(label).toHaveText("Hero Section");
+    await expect(label).toHaveCSS("background-color", "rgb(22, 27, 34)");
+  });
+
+  test("the thumbnail renders the frame border without the label (session 31)", async ({ page }) => {
+    // The reference's project-card thumbnail (RA-19): the frame's scaled
+    // div carries the 1px #555555 border and an EMPTY interior — NO label
+    // child. The pre-fix thumbnail rendered the solid #161B22 panel.
+    await page.goto("/");
+    const card = page.locator("[aria-label^='Open ']").filter({ hasText: SEEDED_PROJECT }).first();
+    await expect(card).toBeVisible();
+
+    const thumb = card.locator(".aspect-\\[16\\/10\\]");
+    // The bordered container renders inside the thumbnail.
+    const bordered = await thumb.evaluate((root) => {
+      return Array.from(root.querySelectorAll("div")).some((d) => {
+        const cs = getComputedStyle(d);
+        return cs.borderTopWidth === "1px" && cs.borderTopColor === "rgb(85, 85, 85)";
+      });
+    });
+    expect(bordered).toBe(true);
+    // The label never reaches the thumbnail (RA-19).
+    await expect(thumb.getByText("Hero Section")).toHaveCount(0);
+  });
+});

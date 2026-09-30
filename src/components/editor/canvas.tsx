@@ -351,7 +351,15 @@ export function Canvas() {
             clone ships the working superset, and the whole contract must be
             coherent). */}
         {elements.filter((el) => el.visible).map((el) => (
-          <CanvasElement key={el.id} element={el} selected={selectedIds.includes(el.id)} />
+          <CanvasElement
+            key={el.id}
+            element={el}
+            selected={selectedIds.includes(el.id)}
+            // Only frames consume the zoom (the label's counter-scale) —
+            // undefined for every other type keeps their renders memoized
+            // across zoom changes.
+            zoom={el.type === "frame" ? zoom : undefined}
+          />
         ))}
 
         {/* Selection outline + handles (single selection only) */}
@@ -445,7 +453,17 @@ function isTypingTarget(target: EventTarget | null): boolean {
 // (transform translate/rotate, opacity, blend, width/height, fill, border,
 // radius). Locked elements dim slightly; hidden ones don't render at all.
 
-function CanvasElement({ element, selected }: { element: DesignElementDTO; selected: boolean }) {
+function CanvasElement({
+  element,
+  selected,
+  zoom,
+}: {
+  element: DesignElementDTO;
+  selected: boolean;
+  // Passed ONLY to frame elements (the label's counter-scale consumer) so
+  // non-frame elements keep their memoized renders across zoom changes.
+  zoom?: number;
+}) {
   const tool = useEditorStore((s) => s.tool);
 
   const style: React.CSSProperties = {
@@ -531,9 +549,16 @@ function CanvasElement({ element, selected }: { element: DesignElementDTO; selec
         </svg>
       ) : null}
       {element.type === "frame" && element.name ? (
+        // The reference's frame label (session 31, RA-13): an ALWAYS-ON name
+        // chip at -top-5 left-0 — text-xs text-gray-300 on bg-[#161b22] with
+        // px-1.5 py-0.5 padding, pointer-events-none so it never intercepts
+        // canvas interaction, and a 1/zoom COUNTER-SCALE (measured at 128%
+        // zoom: scale 0.778866 = 1/1.28392) so the label's text stays at a
+        // constant screen size at any zoom while its distance from the frame
+        // scales with the canvas. nowrap keeps long names on one line.
         <span
-          className="absolute left-0 top-0 -translate-y-full pb-1 text-[10px] text-gray-500"
-          style={{ fontSize: 10 }}
+          className="pointer-events-none absolute -top-5 left-0 whitespace-nowrap bg-[#161b22] px-1.5 py-0.5 text-xs text-gray-300"
+          style={{ transform: `scale(${1 / (zoom ?? 1)})`, transformOrigin: "left top" }}
           aria-hidden
         >
           {element.name}

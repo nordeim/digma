@@ -75,6 +75,23 @@ describe("defaultElementFor", () => {
     expect(line.strokeWidth).toBe(2);
   });
 
+  it("gives frames the reference's labeled-container defaults (session 31)", () => {
+    // The reference's fresh frame (RA-13/RA-18): a TRANSPARENT container
+    // whose structural border comes from the STROKE model fields —
+    // border 1px solid #555555, radius 0. The pre-fix clone rendered a
+    // solid #161B22 panel with radius 8 and no border.
+    const frame = defaultElementFor("frame", 0, 0, 240, 160, 0);
+    expect(frame.fill).toBeNull();
+    expect(frame.stroke).toBe("#555555");
+    expect(frame.strokeWidth).toBe(1);
+    expect(frame.radius).toBe(0);
+    // The border renders through the shared style chain (the standard
+    // stroke mechanism — never a special-case).
+    const style = elementToStyle({ ...el({}), ...frame, id: "el", projectId: "p" });
+    expect(style.border).toBe("1px solid #555555");
+    expect(style.backgroundColor).toBeUndefined();
+  });
+
   it("defaults scale to 1 (the reference's per-element scale unit)", () => {
     for (const type of ["rectangle", "ellipse", "text", "frame", "line"] as const) {
       const out = defaultElementFor(type, 0, 0, 10, 10, 0);

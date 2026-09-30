@@ -188,6 +188,12 @@ export function ProjectCard({
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [renameValue, setRenameValue] = React.useState(project.name);
   const [renaming, setRenaming] = React.useState(false);
+  // The delete confirm (session 31, S31-2): a destructive, undo-less action
+  // requires an explicit second interaction — the reference's own guard is a
+  // native window.confirm (RA-16); the clone's convention is a dialog local
+  // to the card (never a global AlertDialog).
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
 
   const elements = project.elements ?? [];
   const opened = new Date(project.lastOpenedAt);
@@ -236,6 +242,7 @@ export function ProjectCard({
   }
 
   async function deleteProject() {
+    setDeleting(true);
     try {
       const response = await fetch(`/api/projects/${project.id}`, { method: "DELETE" });
       const body = await response.json().catch(() => null);
@@ -244,9 +251,12 @@ export function ProjectCard({
         return;
       }
       onDeleted?.(project.id);
+      setDeleteConfirmOpen(false);
       toast.success("Project deleted", project.name);
     } catch {
       toast.error("Network error", "Could not delete the project.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -298,7 +308,12 @@ export function ProjectCard({
                   Rename
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={deleteProject} className="text-red-600 focus:text-red-600">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setDeleteConfirmOpen(true);
+                  }}
+                  className="text-red-600 focus:text-red-600"
+                >
                   <Trash2 />
                   Delete
                 </DropdownMenuItem>
@@ -332,7 +347,20 @@ export function ProjectCard({
         </div>
       </div>
 
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+      {/* Card-local dialogs render through React PORTALS — and React
+          propagates portal events through the REACT tree, not the DOM tree,
+          so every click inside them would bubble to this card's
+          openProject() onClick and navigate to the editor (the en-route
+          S31-3 discovery: the rename dialog's Cancel had the same latent
+          navigation bug). The wrapper stops the synthetic bubble at the
+          React seam — the same convention the ellipsis-menu wrapper above
+          uses. Keydown too: Enter inside the rename form must never reach
+          the card's Enter/Space openProject handler. */}
+      <div
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>Rename project</DialogTitle>
@@ -367,6 +395,27 @@ export function ProjectCard({
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Delete project?</DialogTitle>
+            <DialogDescription>
+              This permanently removes &ldquo;{project.name}&rdquo; and its canvas. This action cannot
+              be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="destructive" disabled={deleting} onClick={deleteProject}>
+              {deleting ? "Deleting…" : "Yes, Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      </div>
     </div>
   );
 }

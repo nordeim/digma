@@ -54,6 +54,8 @@ async function main() {
     width: number;
     height: number;
     fill?: string;
+    stroke?: string;
+    strokeWidth?: number;
     radius?: number;
     text?: string;
     fontSize?: number;
@@ -61,7 +63,10 @@ async function main() {
     textAlign?: string;
     sortOrder: number;
   }> = [
-    { type: "frame", name: "Hero Section", x: 120, y: 80, width: 560, height: 320, fill: "#161B22", radius: 12, sortOrder: 0 },
+    // The frame carries the reference's container contract (session 31,
+    // RA-13): a TRANSPARENT labeled container — 1px #555555 border via the
+    // stroke fields, radius 0 (the pre-fix seed was a solid #161B22 panel).
+    { type: "frame", name: "Hero Section", x: 120, y: 80, width: 560, height: 320, stroke: "#555555", strokeWidth: 1, radius: 0, sortOrder: 0 },
     { type: "rectangle", name: "Accent Bar", x: 120, y: 80, width: 560, height: 8, fill: "#8B5CF6", radius: 4, sortOrder: 1 },
     { type: "ellipse", name: "Glow", x: 480, y: 140, width: 160, height: 160, fill: "#8B5CF6", sortOrder: 2 },
     { type: "text", name: "Headline", x: 160, y: 160, width: 320, height: 48, text: "Design faster,\ntogether.", fontSize: 32, fontWeight: "700", textAlign: "left", sortOrder: 3 },
@@ -80,6 +85,8 @@ async function main() {
         width: el.width,
         height: el.height,
         fill: el.fill ?? null,
+        stroke: el.stroke ?? null,
+        strokeWidth: el.strokeWidth ?? 0,
         radius: el.radius ?? 0,
         text: el.text ?? null,
         fontSize: el.fontSize ?? null,

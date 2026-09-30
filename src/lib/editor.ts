@@ -129,7 +129,7 @@ export function defaultElementFor(
     fill: DEFAULT_FILL,
     stroke: null,
     strokeWidth: 0,
-    radius: type === "frame" ? 8 : 0,
+    radius: 0,
     text: null,
     fontSize: null,
     fontWeight: null,
@@ -159,7 +159,12 @@ export function defaultElementFor(
     };
   }
   if (type === "frame") {
-    return { ...base, fill: "#161B22", radius: 8 };
+    // The reference's frame is a LABELED CONTAINER (session 31, RA-13/RA-18):
+    // a TRANSPARENT body whose structural border comes from the STROKE model
+    // fields (1px solid #555555 — measured live in its Fill & Stroke panel)
+    // with radius 0. The pre-fix clone rendered a solid #161B22 panel with
+    // radius 8 — the pre-measurement invention.
+    return { ...base, fill: null, stroke: "#555555", strokeWidth: 1, radius: 0 };
   }
   if (type === "line") {
     return { ...base, height: 0, stroke: "#FFFFFF", strokeWidth: 2, fill: null };

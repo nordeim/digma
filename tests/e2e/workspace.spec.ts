@@ -122,3 +122,44 @@ test.describe("workspace shell (desktop)", () => {
     await expect(page.getByRole("heading", { name: "Layers" })).toBeVisible();
   });
 });
+
+test.describe("project delete confirm (session 31)", () => {
+  test("deletion confirms before deleting — Cancel keeps, Yes Delete removes", async ({ page }) => {
+    // The reference's delete guard (RA-16, measured live): a confirm step
+    // before the destructive DELETE. The pre-fix clone fired the DELETE
+    // immediately on the menu click (live-verified: the project vanished on
+    // the first click). The port: a dialog local to the card — Cancel keeps
+    // the project, "Yes, Delete" removes it.
+    //
+    // Setup: create a sacrificial project through the real dialog flow.
+    await page.goto("/");
+    await page.getByRole("button", { name: "Create New Design" }).click();
+    const create = page.getByRole("dialog");
+    await create.getByLabel("Project Name *").fill("Delete Confirm Spec");
+    await create.getByRole("button", { name: "Create Project" }).click();
+    await expect(page).toHaveURL(/\/Editor\?projectId=/, { timeout: 15_000 });
+    await page.goto("/");
+
+    const card = page.locator("[aria-label^='Open ']").filter({ hasText: "Delete Confirm Spec" }).first();
+    await expect(card).toBeVisible();
+
+    // Open the ellipsis menu and click Delete — the CONFIRM renders (the
+    // pre-fix code deleted immediately: this assertion is the RED line).
+    await card.getByRole("button", { name: /More options for Delete Confirm Spec/ }).click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    const confirm = page.getByRole("dialog");
+    await expect(confirm.getByRole("heading", { name: "Delete project?" })).toBeVisible();
+
+    // Cancel: the project survives.
+    await confirm.getByRole("button", { name: "Cancel" }).click();
+    await expect(confirm).toHaveCount(0);
+    await expect(card).toBeVisible();
+
+    // Delete again — "Yes, Delete" removes the project (and cleans up).
+    await card.getByRole("button", { name: /More options for Delete Confirm Spec/ }).click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    await expect(confirm.getByRole("heading", { name: "Delete project?" })).toBeVisible();
+    await confirm.getByRole("button", { name: "Yes, Delete" }).click();
+    await expect(card).toHaveCount(0, { timeout: 10_000 });
+  });
+});
