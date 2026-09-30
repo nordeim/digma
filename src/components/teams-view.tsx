@@ -87,63 +87,79 @@ export function TeamsView({ user }: { user: HeaderUser }) {
     <>
       <AppHeader user={user} />
       <main className="min-h-[calc(100vh-4rem)]">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          {/* Header — measured live: h1 + subtitle (text-gray-500 mt-1) + a
-              solid blue-600 Create Team button on an md: row. The Teams page
-              carries NO background wash (unlike /Recent). */}
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Teams</h1>
-              <p className="mt-1 text-gray-500">Collaborate with your team members</p>
+        {/* The page header renders in its own FULL-WIDTH BORDERED BAND
+            (session 37, RA-44 — bundle-decoded + live-measured at 113px):
+            `border-b border-gray-200 bg-white` wrapping a flat
+            `max-w-7xl mx-auto px-6 py-6` (no sm: gating — the reference
+            computes 24px at every viewport), with the row ported to the
+            reference's exact `flex flex-col md:flex-row justify-between
+            items-start md:items-center gap-4`. The grid container below is
+            SEPARATE (`px-6 py-8`) — the band's border carries the
+            separation. The Create Team button carries the reference's
+            standard `shadow` token (live-measured — the bundle's custom
+            className MERGES onto the Fe button base, whose default variant
+            renders `shadow`; reading only the decoded custom string missed
+            the base-variant token — the F26 className-reading lesson). */}
+        <div className="border-b border-gray-200 bg-white">
+          <div className="mx-auto max-w-7xl px-6 py-6">
+            <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Teams</h1>
+                <p className="mt-1 text-gray-500">Collaborate with your team members</p>
+              </div>
+              <Button
+                type="button"
+                onClick={() => setCreateOpen(true)}
+                className="h-9 rounded-xl bg-blue-600 px-6 py-3 font-medium text-white shadow hover:bg-blue-700"
+              >
+                <Plus />
+                Create Team
+              </Button>
             </div>
-            <Button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="h-9 rounded-xl bg-blue-600 px-6 py-3 font-medium text-white shadow hover:bg-blue-700"
-            >
-              <Plus />
-              Create Team
-            </Button>
           </div>
+        </div>
 
-          <div className="mt-8">
-            {loading ? (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-44 animate-pulse rounded-xl bg-gray-100" />
-                ))}
-              </div>
-            ) : teams.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {teams.map((team) => (
-                  <TeamCard
-                    key={team.id}
-                    team={team}
-                    onInvite={() => setInviteFor(team)}
-                    onDeleted={(id) => setTeams((prev) => prev.filter((t) => t.id !== id))}
-                    onMemberAdded={refresh}
-                  />
-                ))}
-              </div>
-            ) : (
-              /* Reference empty state (measured live): a plain gray-300 Users
-                 glyph — no gradient circle — with semibold copy at the default
-                 size, on a py-16 centered block. */
-              <div className="py-16 text-center">
-                <Users className="mx-auto mb-4 h-16 w-16 text-gray-300" aria-hidden />
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">No teams yet</h3>
-                <p className="mb-6 text-gray-500">Create a team to collaborate with others</p>
-                <Button
-                  type="button"
-                  onClick={() => setCreateOpen(true)}
-                  className="h-9 bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700"
-                >
-                  <Plus />
-                  Create Your First Team
-                </Button>
-              </div>
-            )}
-          </div>
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          {loading ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* The reference's loading state (RA-44, bundle-decoded):
+                  Array(6) skeleton cards, `bg-gray-100 rounded-xl h-48
+                  animate-pulse` (192px). */}
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-48 animate-pulse rounded-xl bg-gray-100" />
+              ))}
+            </div>
+          ) : teams.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {teams.map((team) => (
+                <TeamCard
+                  key={team.id}
+                  team={team}
+                  onInvite={() => setInviteFor(team)}
+                  onDeleted={(id) => setTeams((prev) => prev.filter((t) => t.id !== id))}
+                  onMemberAdded={refresh}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Reference empty state (measured live): a plain gray-300 Users
+               glyph — no gradient circle — with semibold copy at the default
+               size, on a py-16 centered block. The button renders at the Fe
+               default padding + the standard shadow token (RA-44). */
+            <div className="py-16 text-center">
+              <Users className="mx-auto mb-4 h-16 w-16 text-gray-300" aria-hidden />
+              <h3 className="mb-2 text-xl font-semibold text-gray-900">No teams yet</h3>
+              <p className="mb-6 text-gray-500">Create a team to collaborate with others</p>
+              <Button
+                type="button"
+                onClick={() => setCreateOpen(true)}
+                className="h-9 bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700"
+              >
+                <Plus />
+                Create Your First Team
+              </Button>
+            </div>
+          )}
         </div>
       </main>
 
@@ -186,22 +202,25 @@ function TeamCard({
   const shown = team.members.slice(0, 5);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-gray-300 hover:shadow-md">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ backgroundColor: team.color }}
-            aria-hidden
-          >
-            <Users className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-gray-900">{team.name}</h3>
-            <p className="text-xs text-gray-500">
-              {team.members.length} {team.members.length === 1 ? "member" : "members"}
-            </p>
-          </div>
+    /* The reference's card chrome (session 37, RA-43 — bundle-decoded):
+       `bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg
+       transition-all duration-300` — 24px padding, NO base shadow, NO
+       border-color change on hover. The reference's own ellipsis and
+       "Manage" buttons render with NO onClick (dead chrome — RA-42/RA-43);
+       this clone's Delete confirm and Invite Member are the working
+       supersets in those slots. */
+    <div className="rounded-xl border border-gray-200 bg-white p-6 transition-all duration-300 hover:shadow-lg">
+      {/* Header row — the reference's: `flex items-start justify-between
+          mb-4` carrying the 48px FIXED blue-to-purple GRADIENT chip (Users
+          w-6 h-6 white — the card NEVER paints the team's color) left and
+          its dead ellipsis right; the clone's Delete-confirm cluster is the
+          working superset in the right slot. */}
+      <div className="mb-4 flex items-start justify-between">
+        <div
+          className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-purple-600"
+          aria-hidden
+        >
+          <Users className="h-6 w-6 text-white" />
         </div>
         {confirmDelete ? (
           <div className="flex items-center gap-2 text-xs">
@@ -220,8 +239,15 @@ function TeamCard({
         )}
       </div>
 
-      {team.description && <p className="mb-4 line-clamp-2 text-sm text-gray-600">{team.description}</p>}
+      {/* The name renders BELOW the header row at the reference's
+          `text-xl font-semibold mb-2` (20px) — not beside the chip. */}
+      <h3 className="mb-2 text-xl font-semibold text-gray-900">{team.name}</h3>
 
+      {team.description && <p className="mb-4 line-clamp-2 text-sm text-gray-500">{team.description}</p>}
+
+      {/* The member LIST is the clone's WORKING SUPERSET (RA-43: the
+          reference's card renders NO member list — members exist only as a
+          count) — avatars + names + role sub-labels, unchanged. */}
       <ul className="mb-4 space-y-2">
         {shown.map((member) => (
           <li key={member.id} className="flex items-center gap-3">
@@ -243,7 +269,21 @@ function TeamCard({
         )}
       </ul>
 
-      <Button type="button" variant="outline" size="sm" onClick={onInvite} className="w-full border-gray-200">
+      {/* The reference's FOOTER row: `flex items-center justify-between
+          text-sm` with the member COUNT left — `flex items-center gap-2
+          text-gray-500` + Users w-4 h-4 + "N members" (the reference
+          renders the plural unconditionally, "1 members" — its own grammar
+          bug; the clone's proper singular stays the coherent superset, the
+          RA-35 family). Its right slot (the dead "Manage") stays empty
+          here — the Invite Member button below is the working superset. */}
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-2 text-gray-500">
+          <Users className="h-4 w-4" aria-hidden />
+          {team.members.length} {team.members.length === 1 ? "member" : "members"}
+        </div>
+      </div>
+
+      <Button type="button" variant="outline" size="sm" onClick={onInvite} className="mt-4 w-full border-gray-200">
         <UserPlus />
         Invite Member
       </Button>

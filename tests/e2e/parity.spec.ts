@@ -484,3 +484,246 @@ test.describe("session 35 parity pins (the flat mobile hero)", () => {
     expect(hero.cardWidth).toBeLessThan(340);
   });
 });
+
+test.describe("session 37 parity pins (seventeenth audit — the editor avatar stack, RA-41)", () => {
+  // The seventeenth audit decoded the reference's avatar-stack component
+  // (M4) verbatim from its shipped bundle: it renders TWO HARDCODED
+  // placeholder collaborators — "Alex Design" (#3b82f6) and "Sarah UI"
+  // (#10b981) — seeded through a useEffect, never fetched, with fake cursor
+  // data that is never rendered (dead collaboration theater). The chips
+  // render name.charAt(0) with title={name}; the counter is UNGATED
+  // (flex items-center gap-1 text-gray-400 text-sm + lucide-users w-4 h-4 +
+  // "2" — live-measured display:flex at BOTH 1440x900 and 390x844).
+  // The clone's FIRST chip stays the REAL user (the RA-40 working-superset
+  // family — the reference's slot is an unwired placeholder); the SECOND
+  // chip's identity and the counter's ungating are pinned here.
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await expect(page).toHaveURL(/\/Editor\?projectId=/);
+    await expect(page.getByRole("heading", { name: "AI Assistant" })).toBeVisible();
+  });
+
+  test("the second avatar chip titles 'Sarah UI' (the reference's verbatim identity)", async ({ page }) => {
+    const titles = await page.evaluate(() => {
+      const stack = document.querySelector("header .-space-x-2")!;
+      return Array.from(stack.children).map((c) => ({
+        title: (c as HTMLElement).title,
+        text: c.textContent,
+        bg: (c as HTMLElement).style.backgroundColor,
+      }));
+    });
+    // Chip 1: the clone's working superset — the REAL user's initial on the
+    // reference's blue (the reference hardcodes "Alex Design" here).
+    expect(titles[0].text).toBe("D");
+    expect(titles[0].bg).toBe("rgb(59, 130, 246)");
+    // Chip 2: the reference's verbatim placeholder identity — "S" on the
+    // reference's green, titled "Sarah UI" (the pre-fix clone titled it
+    // "Collaborator", a title the reference never renders).
+    expect(titles[1].text).toBe("S");
+    expect(titles[1].bg).toBe("rgb(16, 185, 129)");
+    expect(titles[1].title).toBe("Sarah UI");
+  });
+
+  test("the avatar counter renders UNGATED at mobile 390x844 (the reference's counter has no hidden-sm gating)", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const counter = await page.evaluate(() => {
+      const stack = document.querySelector("header .-space-x-2")!;
+      const wrap = stack.parentElement!;
+      const el = Array.from(wrap.children).find((c) => c.querySelector("svg.lucide-users"));
+      if (!el) return { found: false };
+      return {
+        found: true,
+        display: getComputedStyle(el).display,
+        text: el.textContent.trim(),
+        size: getComputedStyle(el).fontSize,
+      };
+    });
+    // The reference's counter is `flex items-center gap-1 text-gray-400
+    // text-sm` — visible at EVERY viewport (live-measured display:flex at
+    // 390x844 on 2026-09-30). The pre-fix clone gated it `hidden sm:flex`,
+    // rendering display:none below 640px.
+    expect(counter.found).toBe(true);
+    expect(counter.display).toBe("flex");
+    expect(counter.text).toBe("2");
+    expect(counter.size).toBe("14px");
+  });
+});
+
+test.describe("session 37 parity pins (seventeenth audit — the Teams header band + card chrome, RA-43/RA-44)", () => {
+  // The reference's Teams page (bundle-decoded + live-measured): the page
+  // header sits in its own FULL-WIDTH BORDERED BAND (border-b border-gray-200
+  // bg-white, live 113px) wrapping max-w-7xl mx-auto px-6 py-6 — FLAT px-6 at
+  // every viewport — with the grid in a SEPARATE px-6 py-8 container. The
+  // team card: p-6 hover:shadow-lg duration-300 (no base shadow, no
+  // border-color change), a 48px blue-to-purple GRADIENT chip (the card
+  // never paints a team color), the name text-xl BELOW the header row, the
+  // member count in a FOOTER row (text-sm text-gray-500 + Users w-4 h-4 +
+  // "N members"), the description text-gray-500, and a 6 x h-48 loading
+  // skeleton. The reference's Create Team buttons, per-card ellipsis, and
+  // per-card Manage are ALL dead (no onClick — RA-42/RA-43); the clone's
+  // Create dialog, Delete confirm, Invite Member, and member LIST (with its
+  // role labels) stay the working supersets — pinned below so the chrome
+  // port never drops them.
+
+  test("the page header renders in its own bordered band, the grid in a separate flat-px-6 container (RA-44)", async ({ page }) => {
+    await page.goto("/Teams");
+    await expect(page.getByRole("heading", { name: "Teams", level: 1 })).toBeVisible();
+
+    const structure = await page.evaluate(() => {
+      const main = document.querySelector("main")!;
+      const band = main.querySelector(".border-b");
+      const h1 = main.querySelector("h1");
+      const bandRect = band?.getBoundingClientRect();
+      // The content container is the direct child AFTER the band.
+      const content = band ? (band.nextElementSibling as HTMLElement) : null;
+      return {
+        bandPresent: !!band,
+        bandContainsH1: !!band?.contains(h1!),
+        bandHeight: bandRect?.height ?? 0,
+        contentPadLeft: content ? getComputedStyle(content).paddingLeft : null,
+        contentPadTop: content ? getComputedStyle(content).paddingTop : null,
+        viewport: window.innerWidth,
+      };
+    });
+    // The pre-fix clone merged header + grid in ONE px-4 sm:px-6 container
+    // with NO band at all (zero .border-b in main).
+    expect(structure.bandPresent).toBe(true);
+    expect(structure.bandContainsH1).toBe(true);
+    // Live-measured band height on the reference: 113px (24px padding top
+    // and bottom around the 30px h1 + 20px subtitle + gap).
+    expect(structure.bandHeight).toBeGreaterThan(100);
+    // The content container is FLAT px-6 — the same 24px at desktop AND at
+    // mobile (the pre-fix clone rendered 16px below sm).
+    expect(structure.contentPadLeft).toBe("24px");
+    expect(structure.contentPadTop).toBe("32px");
+    expect(structure.viewport).toBeGreaterThanOrEqual(1280);
+  });
+
+  test("the Teams header band + flat px-6 container hold at mobile 390x844 (RA-44)", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/Teams");
+    await expect(page.getByRole("heading", { name: "Teams", level: 1 })).toBeVisible();
+    const structure = await page.evaluate(() => {
+      const main = document.querySelector("main")!;
+      const band = main.querySelector(".border-b");
+      const content = band ? (band.nextElementSibling as HTMLElement) : null;
+      return {
+        bandPresent: !!band,
+        contentPadLeft: content ? getComputedStyle(content).paddingLeft : null,
+        viewport: window.innerWidth,
+      };
+    });
+    expect(structure.viewport).toBe(390);
+    expect(structure.bandPresent).toBe(true);
+    // FLAT px-6 at mobile too — the reference has no sm: gating (the
+    // pre-fix clone computed 16px here).
+    expect(structure.contentPadLeft).toBe("24px");
+  });
+
+  test("the Create Team button carries the reference's standard shadow token (RA-44, live-measured)", async ({ page }) => {
+    await page.goto("/Teams");
+    const shadow = await page
+      .getByRole("button", { name: "Create Team", exact: true })
+      .evaluate((el) => getComputedStyle(el).boxShadow);
+    // Live-measured on the reference (2026-09-30): its Create Team button
+    // DOES render the standard shadow token — `rgba(0, 0, 0, 0.1) 0px 1px
+    // 3px 0px, rgba(0, 0, 0, 0.1) 0px 1px 2px -1px`. The bundle's decoded
+    // custom className ("bg-blue-600 hover:bg-blue-700 …") MERGES onto the
+    // Fe button's base, whose default variant carries `shadow` — reading
+    // only the custom string misses base-variant tokens (the F26
+    // className-reading lesson). The transparent reset layers differ
+    // between the reference's v3 and this clone's v4 computed outputs, so
+    // the pin asserts the VISIBLE layers.
+    expect(shadow).toContain("rgba(0, 0, 0, 0.1)");
+  });
+
+  test("the team card chrome matches the reference: p-6, 48px gradient chip, text-xl name, footer count row (RA-43)", async ({ page }) => {
+    await page.goto("/Teams");
+    await expect(page.getByRole("heading", { name: "Design Team" })).toBeVisible();
+
+    const card = await page.evaluate(() => {
+      const h3 = Array.from(document.querySelectorAll("main h3")).find((h) =>
+        h.textContent.includes("Design Team"),
+      )!;
+      const cardEl = h3.closest("div.rounded-xl") as HTMLElement;
+      const chip = cardEl.querySelector(".bg-gradient-to-r") as HTMLElement | null;
+      const desc = cardEl.querySelector("p.line-clamp-2") as HTMLElement | null;
+      // The footer count row: the div carrying "members" text + a Users svg.
+      const countRow = Array.from(cardEl.querySelectorAll("div")).find(
+        (d) => /members?$/.test(d.textContent.trim()) && d.querySelector("svg.lucide-users") && d.closest("div") !== cardEl,
+      ) as HTMLElement | null;
+      const rect = chip?.getBoundingClientRect();
+      return {
+        cardPad: getComputedStyle(cardEl).padding,
+        cardClass: cardEl.className,
+        chipW: rect?.width ?? 0,
+        chipH: rect?.height ?? 0,
+        chipBg: chip ? getComputedStyle(chip).backgroundImage.slice(0, 40) : "NO CHIP",
+        h3Size: getComputedStyle(h3).fontSize,
+        descColor: desc ? getComputedStyle(desc).color : null,
+        countRowText: countRow?.textContent.replace(/\s+/g, " ").trim() ?? "NO COUNT ROW",
+        countRowSize: countRow ? getComputedStyle(countRow).fontSize : null,
+      };
+    });
+    // Card: 24px padding, no base shadow, hover:shadow-lg with duration-300
+    // (the pre-fix clone: p-5 shadow-sm hover:border-gray-300 hover:shadow-md).
+    expect(card.cardPad).toBe("24px");
+    expect(card.cardClass).not.toContain("shadow-sm");
+    expect(card.cardClass).toContain("duration-300");
+    // The chip is the reference's FIXED blue-to-purple gradient at 48x48 —
+    // the card never paints the team's color (the pre-fix clone rendered a
+    // 40px solid team.color chip).
+    expect(card.chipW).toBe(48);
+    expect(card.chipH).toBe(48);
+    expect(card.chipBg).toContain("linear-gradient");
+    // The name renders BELOW the header row at text-xl (20px) — the
+    // pre-fix clone rendered it beside the chip at text-base (16px).
+    expect(card.h3Size).toBe("20px");
+    // The description is the reference's gray-500 (the pre-fix clone's
+    // gray-600 computed rgb(75, 85, 99)).
+    expect(card.descColor).toBe("rgb(107, 114, 128)");
+    // The member count sits in the reference's FOOTER row at text-sm with
+    // the Users icon — the pre-fix clone rendered it in the header at
+    // text-xs. The seeded team carries 3 members.
+    expect(card.countRowText).toContain("3 members");
+    expect(card.countRowSize).toBe("14px");
+  });
+
+  test("the member LIST with role labels still renders (the clone's working superset over the reference's count-only card)", async ({ page }) => {
+    // RA-43: the reference's card renders NO member list — members exist
+    // only as a count. The clone's list (avatars + names + role sub-labels)
+    // is its own superset design; this pin guards the session-37 chrome
+    // port against dropping it in the restructure.
+    await page.goto("/Teams");
+    await expect(page.getByText("Alex Design")).toBeVisible();
+    await expect(page.getByText("Lead Designer")).toBeVisible();
+    await expect(page.getByText("Sarah UI")).toBeVisible();
+    await expect(page.getByText("UX Designer")).toBeVisible();
+    // The Invite Member button (the superset over the reference's DEAD
+    // "Manage") stays functional chrome on the card.
+    await expect(page.getByRole("button", { name: "Invite Member" }).first()).toBeVisible();
+  });
+
+  test("the Teams loading skeleton renders 6 h-48 cards (RA-44)", async ({ page }) => {
+    // The reference's loading state: Array(6).fill(0) skeleton cards,
+    // `bg-gray-100 rounded-xl h-48 animate-pulse`. The pre-fix clone
+    // rendered 3 x h-44. The API route is intercepted with a delay so the
+    // loading state is observable.
+    await page.route("**/api/teams", async (route) => {
+      await new Promise((r) => setTimeout(r, 700));
+      await route.continue();
+    });
+    await page.goto("/Teams");
+    const skeleton = await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll("main .animate-pulse"));
+      return {
+        count: cards.length,
+        height: cards[0] ? getComputedStyle(cards[0]).height : null,
+      };
+    });
+    expect(skeleton.count).toBe(6);
+    expect(skeleton.height).toBe("192px");
+  });
+});

@@ -474,19 +474,29 @@ export function EditorView({ user }: { user: HeaderUser }) {
               >
                 {user.name.charAt(0)}
               </div>
-              {/* Second collaborator chip — measured from the reference DOM:
-                  "S" on #10B981 (green). Presentation-only (the schema has no
-                  project-collaborator relation yet); it mirrors the live app's
-                  two-avatar cluster. */}
+              {/* Second collaborator chip — the reference's VERBATIM identity
+                  (session 37, RA-41, bundle-decoded): its avatar stack renders
+                  two HARDCODED placeholder collaborators — "Alex Design"
+                  (#3b82f6) + "Sarah UI" (#10b981) — seeded through a useEffect
+                  with fake cursor data that is never rendered (dead
+                  collaboration theater; never the logged-in account). The
+                  clone's FIRST chip stays the REAL user (the RA-40
+                  working-superset family); this second chip carries the
+                  reference's exact "S" / "Sarah UI" / #10B981. Presentation-only
+                  (the schema has no project-collaborator relation yet). */}
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-medium text-white"
-                title="Collaborator"
+                title="Sarah UI"
                 style={{ backgroundColor: "#10B981" }}
               >
                 S
               </div>
             </div>
-            <div className="hidden items-center gap-1 text-sm text-gray-400 sm:flex">
+            {/* The reference's counter is UNGATED (session 37, RA-41 —
+                live-measured display:flex at BOTH 1440x900 and 390x844):
+                `flex items-center gap-1 text-gray-400 text-sm` + the Users
+                icon (w-4 h-4) + the count. No hidden/sm:flex gating. */}
+            <div className="flex items-center gap-1 text-sm text-gray-400">
               <Users className="h-4 w-4" aria-hidden />2
             </div>
           </div>
