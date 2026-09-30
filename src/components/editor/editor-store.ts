@@ -151,9 +151,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   setTool: (tool) => set({ tool }),
 
-  setZoom: (zoom) => set({ zoom: clamp(zoom, 0.05, 8) }),
-  zoomIn: () => set((state) => ({ zoom: clamp(state.zoom * 1.2, 0.05, 8) })),
-  zoomOut: () => set((state) => ({ zoom: clamp(state.zoom / 1.2, 0.05, 8) })),
+  // RA-50 (session 39): the reference's zoom cluster is functional via its
+  // BUTTONS with multiplicative steps — x1.2 zoom-in, ÷1.2 zoom-out — hard-
+  // clamped to [10%, 500%] (live-measured both ends: the pill stops at 500
+  // after repeated zoom-in and holds 10 after repeated zoom-out). The
+  // pre-fix clone clamped [0.05, 8]. The clone's Ctrl+wheel superset flows
+  // through setZoom and inherits the same coherent range.
+  setZoom: (zoom) => set({ zoom: clamp(zoom, 0.1, 5) }),
+  zoomIn: () => set((state) => ({ zoom: clamp(state.zoom * 1.2, 0.1, 5) })),
+  zoomOut: () => set((state) => ({ zoom: clamp(state.zoom / 1.2, 0.1, 5) })),
   resetView: () => set({ zoom: 1, panX: 0, panY: 0 }),
 
   panBy: (dx, dy) => set((state) => ({ panX: state.panX + dx, panY: state.panY + dy })),

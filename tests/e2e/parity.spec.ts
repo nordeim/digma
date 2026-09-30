@@ -727,3 +727,171 @@ test.describe("session 37 parity pins (seventeenth audit — the Teams header ba
     expect(skeleton.height).toBe("192px");
   });
 });
+
+test.describe("session 39 parity pins (eighteenth audit — the Recent toolbar contracts, RA-45…RA-51)", () => {
+  // The eighteenth audit functionally swept the reference's never-tested
+  // Recent-page toolbar with three discriminating probe projects and its
+  // editor zoom cluster button-by-button:
+  //  - RA-45: the sort control IS functional — every option refetches
+  //    entities/Project?sort=-<field> and ALL FOUR sorts are DESCENDING
+  //    (the name sort measured "ZZZ Sort Probe", "Test Project One",
+  //    "AAA Alpha Probe" — Z > T > A). The pre-fix clone sorted names
+  //    ASCENDING.
+  //  - RA-46/RA-47: the search (client-side, case-insensitive) and the
+  //    grid/list toggles work — already clone parity.
+  //  - RA-48/RA-49: the LIST view renders separate space-y-2 cards —
+  //    p-3, a 40×40 mini-canvas thumbnail on the blue-100/purple-100
+  //    gradient, a name-only link, clock + "Sep 30, 2026" dates, and the
+  //    ellipsis menu (its Rename DEAD, its Delete a native confirm — the
+  //    clone's working dialog controls are the documented supersets).
+  //  - RA-50: the zoom cluster's BUTTONS are functional — ×1.2 in, ÷1.2
+  //    out, hard-clamped to [10%, 500%] (the pre-fix clone clamped
+  //    [5%, 800%]; Ctrl+wheel is dead on the reference — the clone's
+  //    wheel zoom stays the working superset).
+  //  - RA-51: the search-empty state — py-16, a BARE lucide-search
+  //    w-16 h-16 text-gray-300, "No files found" (font-semibold), "Try
+  //    adjusting your search terms or filters".
+
+  test("the Recent name sort is DESCENDING (RA-45 — the reference's ?sort=-name)", async ({ page }) => {
+    await page.goto("/Recent");
+    await page.locator("#recent-sort").selectOption("name");
+    // Auto-retrying settle before the raw evaluate (the session-8 lesson —
+    // a selectOption's change event and React's re-sort can straddle a
+    // snapshot): the first card heading must BE the P-name before reading.
+    await expect(page.locator("main h3").first()).toHaveText("Portfolio Website Redesign");
+    // Seeded discriminators: "Portfolio Website Redesign" (P) vs
+    // "Marketing Hero Banner" (M) — descending renders P first.
+    const first = await page.evaluate(() => {
+      const h3 = document.querySelector("main h3");
+      return h3 ? h3.textContent : null;
+    });
+    expect(first).toBe("Portfolio Website Redesign");
+  });
+
+  test("the list view renders the reference's separate p-3 cards with the 40px thumbnail (RA-48)", async ({ page }) => {
+    await page.goto("/Recent");
+    await page.getByRole("button", { name: "List view" }).click();
+    await expect(page.locator("main .space-y-2")).toHaveCount(1);
+    const card = await page.evaluate(() => {
+      const container = document.querySelector("main .space-y-2")!;
+      const row = container.firstElementChild as HTMLElement;
+      const thumb = row.querySelector("a + div img, .w-10") as HTMLElement | null;
+      const thumbBox = row.querySelector('[class*="w-10"]') as HTMLElement | null;
+      const link = row.querySelector("a");
+      return {
+        padding: getComputedStyle(row).padding,
+        cardCls: row.className,
+        thumbWidth: thumbBox ? Math.round(thumbBox.getBoundingClientRect().width) : null,
+        linkFontSize: link ? getComputedStyle(link).fontSize : null,
+        linkHref: link ? link.getAttribute("href") : null,
+        linkCls: link ? link.className : null,
+      };
+    });
+    // The reference's card: p-3 (12px), a 40px thumbnail, a 14px name link.
+    expect(card.padding).toBe("12px");
+    expect(card.thumbWidth).toBe(40);
+    expect(card.linkFontSize).toBe("14px");
+    expect(card.linkHref).toContain("/Editor?projectId=");
+    expect(card.cardCls).toContain("group");
+  });
+
+  test("the list card renders the reference's short date + the ellipsis menu (RA-48/RA-49)", async ({ page }) => {
+    await page.goto("/Recent");
+    await page.getByRole("button", { name: "List view" }).click();
+    await expect(page.locator("main .space-y-2")).toHaveCount(1);
+    const date = await page.evaluate(() => {
+      const row = document.querySelector("main .space-y-2")!.firstElementChild!;
+      const cells = Array.from(row.querySelectorAll("div")).filter(
+        (d) => d.textContent && /^[A-Z][a-z]{2} \d{1,2}, \d{4}$/.test(d.textContent.trim()),
+      );
+      return cells.map((c) => c.textContent!.trim());
+    });
+    // "Sep 30, 2026" — month-short, day, year (the grid's "Opened Sep 30"
+    // carries no year; the pre-fix list rendered a full toLocaleString()).
+    expect(date.length).toBeGreaterThan(0);
+    // The ellipsis menu exists on the row (the pre-fix list had none) and
+    // opens with the clone's working Rename + Delete controls.
+    const row = page.locator("main .space-y-2 > div").first();
+    await row.locator('button[aria-haspopup="menu"]').click();
+    await expect(page.getByRole("menuitem", { name: "Rename" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Delete" })).toBeVisible();
+  });
+
+  test("the list-view Delete opens the card-local confirm dialog (the superset over the reference's native confirm)", async ({ page }) => {
+    await page.goto("/Recent");
+    await page.getByRole("button", { name: "List view" }).click();
+    const row = page.locator("main .space-y-2 > div").first();
+    await row.locator('button[aria-haspopup="menu"]').click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    // The clone's superset guard (the RA-16 family): a card-local
+    // "Delete project?" dialog with Yes/Cancel — NOT a native confirm.
+    await expect(page.getByText("Delete project?")).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    // Cancel keeps the project — the row still renders.
+    await expect(page.locator("main .space-y-2 > div")).toHaveCount(2);
+  });
+
+  test("the zoom clamps match the reference's [10%, 500%] (RA-50)", async ({ page }) => {
+    await page.goto("/");
+    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await expect(page).toHaveURL(/\/Editor\?projectId=/);
+    await expect(page.getByRole("heading", { name: "AI Assistant" })).toBeVisible();
+
+    const readPill = () =>
+      page.evaluate(() => {
+        const pill = Array.from(document.querySelectorAll("div,span")).find(
+          (d) => d.textContent && /^\d+%$/.test(d.textContent.trim()) && d.children.length === 0,
+        );
+        return pill ? pill.textContent!.trim() : null;
+      });
+
+    // One zoom-in from 100% -> 120% (the x1.2 step, stable in both).
+    await page.getByRole("button", { name: "Zoom in" }).click();
+    expect(await readPill()).toBe("120%");
+
+    // 20 zoom-out clicks from 120%: 120 x (5/6)^20 ~= 0.9% -> hard floor.
+    // The reference's floor is 10% (measured); the pre-fix clone's was 5%.
+    for (let i = 0; i < 20; i++) {
+      await page.getByRole("button", { name: "Zoom out" }).click();
+    }
+    expect(await readPill()).toBe("10%");
+
+    // 24 zoom-in clicks from the 10% floor: 10 x 1.2^24 ~= 795 -> clamps
+    // hard at the 500% ceiling. The reference's max is 500% (measured);
+    // the pre-fix clone's was 800%.
+    for (let i = 0; i < 24; i++) {
+      await page.getByRole("button", { name: "Zoom in" }).click();
+    }
+    expect(await readPill()).toBe("500%");
+  });
+
+  test("the search-empty state renders the reference's bare search icon + 'No files found' copy (RA-51)", async ({ page }) => {
+    await page.goto("/Recent");
+    await page.getByPlaceholder("Search files...").fill("zzzznomatch");
+    // Auto-retrying settle before the raw evaluate (the fill's input event
+    // and React's empty-state render can straddle a snapshot).
+    await expect(page.getByRole("heading", { name: "No files found" })).toBeVisible();
+    const empty = await page.evaluate(() => {
+      const main = document.querySelector("main")!;
+      const icon = main.querySelector(".py-16 svg");
+      const h3 = main.querySelector(".py-16 h3");
+      const p = main.querySelector(".py-16 p");
+      return {
+        containerCls: main.querySelector(".py-16")?.className ?? null,
+        iconCls: icon?.getAttribute("class") ?? null,
+        iconWidth: icon ? Math.round(icon.getBoundingClientRect().width) : null,
+        h3Text: h3?.textContent ?? null,
+        h3FontWeight: h3 ? getComputedStyle(h3).fontWeight : null,
+        pText: p?.textContent ?? null,
+        pColor: p ? getComputedStyle(p).color : null,
+      };
+    });
+    expect(empty.containerCls).toContain("py-16");
+    expect(empty.iconCls).toContain("lucide-search");
+    expect(empty.iconWidth).toBe(64);
+    expect(empty.h3Text).toBe("No files found");
+    expect(empty.h3FontWeight).toBe("600");
+    expect(empty.pText).toBe("Try adjusting your search terms or filters");
+    expect(empty.pColor).toBe("rgb(107, 114, 128)");
+  });
+});

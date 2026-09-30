@@ -1,13 +1,39 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
-import { Calendar, Grid3x3, List, Search, Users } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  Calendar,
+  Clock,
+  Grid3x3,
+  List,
+  MoreHorizontal,
+  Pencil,
+  Search,
+  Trash2,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AppHeader, type HeaderUser } from "@/components/app-header";
-import { ProjectCard } from "@/components/project-card";
+import { CanvasThumbnail, ProjectCard } from "@/components/project-card";
 import { toast } from "@/hooks/use-toast";
 import type { ProjectDTO } from "@/lib/editor";
 
@@ -45,8 +71,235 @@ function sortProjects(projects: ProjectDTO[], sort: SortKey): ProjectDTO[] {
     case "created_date":
       return copy.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
     case "name":
-      return copy.sort((a, b) => a.name.localeCompare(b.name));
+      // RA-45 (session 39): the reference's name sort is DESCENDING — its
+      // select refetches entities/Project?sort=-name and the rendered order
+      // followed Z > T > A on the discriminating probe set. All four sorts
+      // carry the - (descending) prefix; the three date branches above
+      // already sorted descending.
+      return copy.sort((a, b) => b.name.localeCompare(a.name));
   }
+}
+
+// ---------------------------------------------------------------------------
+// List-row card — measured from the reference's /Recent list view (session 39,
+// RA-48/RA-49): a SEPARATE p-3 card (space-y-2 container, NOT a bordered
+// table) carrying a 40x40 mini-canvas thumbnail on the blue-100/purple-100
+// gradient, a name-ONLY link (the row itself never navigates — cursor stays
+// auto on the reference), and a right slot with the clock icon + a
+// "Sep 30, 2026" short date + the ellipsis dropdown (w-7 h-7). The
+// reference's own list Rename is DEAD and its Delete is a native
+// window.confirm — the clone's working Rename dialog + card-local
+// "Delete project?" confirm are the documented supersets (the RA-16/S31
+// family), ported here from the grid ProjectCard.
+
+function RecentListCard({
+  project,
+  onRenamed,
+  onDeleted,
+}: {
+  project: ProjectDTO;
+  onRenamed: (project: ProjectDTO) => void;
+  onDeleted: (id: string) => void;
+}) {
+  const router = useRouter();
+  const [renameOpen, setRenameOpen] = React.useState(false);
+  const [renameValue, setRenameValue] = React.useState(project.name);
+  const [renaming, setRenaming] = React.useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+
+  async function openProject() {
+    // Touch lastOpenedAt so Recent reorders — the grid card's PATCH.
+    await fetch(`/api/projects/${project.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lastOpened: true }),
+    }).catch(() => null);
+    router.push(`/Editor?projectId=${project.id}`);
+  }
+
+  async function saveRename() {
+    if (renaming) return;
+    const name = renameValue.trim();
+    if (!name) {
+      toast.error("Rename failed", "Project name cannot be empty.");
+      return;
+    }
+    setRenaming(true);
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.ok) {
+        toast.error("Rename failed", body?.error?.message ?? "Please try again.");
+        return;
+      }
+      onRenamed(body.data.project as ProjectDTO);
+      setRenameOpen(false);
+      toast.success("Project renamed", name);
+    } catch {
+      toast.error("Network error", "Could not rename the project.");
+    } finally {
+      setRenaming(false);
+    }
+  }
+
+  async function deleteProject() {
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, { method: "DELETE" });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.ok) {
+        toast.error("Delete failed", body?.error?.message ?? "Please try again.");
+        return;
+      }
+      onDeleted(project.id);
+      setDeleteConfirmOpen(false);
+      toast.success("Project deleted", project.name);
+    } catch {
+      toast.error("Network error", "Could not delete the project.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  // RA-48: the reference's list date is "Sep 30, 2026" — month short,
+  // day, YEAR (the grid's "Opened Sep 30" carries no year).
+  const openedLabel = new Date(project.lastOpenedAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <div className="group flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 transition-all duration-200 hover:shadow-sm">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-blue-100 to-purple-100">
+          <CanvasThumbnail project={project} elements={project.elements ?? []} />
+        </div>
+        <div className="min-w-0">
+          <a
+            href={`/Editor?projectId=${project.id}`}
+            onClick={(event) => {
+              event.preventDefault();
+              void openProject();
+            }}
+            className="block truncate text-sm font-semibold text-gray-800 transition-colors group-hover:text-purple-600"
+          >
+            {project.name}
+          </a>
+        </div>
+      </div>
+      <div className="ml-4 flex flex-shrink-0 items-center gap-6 text-xs text-gray-500">
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3" aria-hidden />
+          <span>{openedLabel}</span>
+        </div>
+        <div onClick={(event) => event.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="iconSm"
+                className="data-[state=open]:bg-gray-100"
+                aria-label={`More options for ${project.name}`}
+              >
+                <MoreHorizontal className="h-4 w-4 text-gray-500" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onSelect={() => {
+                  setRenameValue(project.name);
+                  setRenameOpen(true);
+                }}
+              >
+                <Pencil />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => {
+                  setDeleteConfirmOpen(true);
+                }}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      {/* Card-local dialogs render through React PORTALS — the S31-3
+          stopPropagation seam (defense-in-depth; the row itself never
+          navigates, so the bubble has no target — the guard stays for the
+          keydown path and future wrappers). */}
+      <div
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle>Rename project</DialogTitle>
+              <DialogDescription>Give &ldquo;{project.name}&rdquo; a new name.</DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveRename();
+              }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <Label htmlFor={`list-rename-${project.id}`}>Project name</Label>
+                <Input
+                  id={`list-rename-${project.id}`}
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  maxLength={120}
+                  className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setRenameOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={renaming}>
+                  {renaming ? "Saving…" : "Save"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle>Delete project?</DialogTitle>
+              <DialogDescription>
+                This permanently removes &ldquo;{project.name}&rdquo; and its canvas. This action cannot
+                be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" variant="destructive" disabled={deleting} onClick={deleteProject}>
+                {deleting ? "Deleting…" : "Yes, Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
 }
 
 export function RecentView({ user }: { user: HeaderUser }) {
@@ -186,34 +439,24 @@ export function RecentView({ user }: { user: HeaderUser }) {
                   ))}
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  {visible.map((project, index) => (
-                    <a
+                <div className="space-y-2">
+                  {visible.map((project) => (
+                    <RecentListCard
                       key={project.id}
-                      href={`/Editor?projectId=${project.id}`}
-                      className={cn(
-                        "flex items-center gap-4 px-4 py-3 transition-colors hover:bg-gray-50",
-                        index > 0 && "border-t border-gray-100",
-                      )}
-                    >
-                      <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
-                      <span className="flex-1 truncate text-sm font-medium text-gray-800">
-                        {project.name}
-                      </span>
-                      <span className="hidden text-xs text-gray-400 sm:block">
-                        {new Date(project.lastOpenedAt).toLocaleString()}
-                      </span>
-                    </a>
+                      project={project}
+                      onRenamed={(updated) =>
+                        setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+                      }
+                      onDeleted={(id) => setProjects((prev) => prev.filter((p) => p.id !== id))}
+                    />
                   ))}
                 </div>
               )
             ) : (
-              <div className="py-20 text-center">
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
-                  <Users className="h-8 w-8 text-white" aria-hidden />
-                </div>
-                <h3 className="mb-2 text-xl font-bold text-gray-900">No recent files</h3>
-                <p className="text-sm text-gray-600">Files you&apos;ve recently worked on will appear here</p>
+              <div className="py-16 text-center">
+                <Search className="mx-auto mb-4 h-16 w-16 text-gray-300" aria-hidden />
+                <h3 className="mb-2 text-xl font-semibold text-gray-900">No files found</h3>
+                <p className="text-gray-500">Try adjusting your search terms or filters</p>
               </div>
             )}
           </div>
