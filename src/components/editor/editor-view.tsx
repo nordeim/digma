@@ -14,7 +14,7 @@ import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO, canvasFontFamily } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily, fillPaintFor } from "@/lib/editor";
 
 // The Untitled editor state (ADR-009): loaded when the ?projectId is unknown
 // or missing — the reference app renders a fully working "Untitled" canvas
@@ -283,7 +283,9 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                 transform: `rotate(${el.rotation}deg) scale(${el.scale ?? 1})`,
                 transformOrigin: "0px 0px",
                 opacity: el.opacity,
-                backgroundColor: el.fill ?? undefined,
+                // The one fill paint seam (session 41, RA-54): image >
+                // gradient > solid; text keeps its own color contract.
+                ...(el.type !== "text" ? fillPaintFor(el) : {}),
                 // A line's stroke feeds its SVG diagonal, never the box
                 // border (session 29, RA-8).
                 border:

@@ -33,7 +33,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppHeader, type HeaderUser } from "@/components/app-header";
-import { CanvasThumbnail, ProjectCard } from "@/components/project-card";
+import { CanvasThumbnail, InlineProjectRename, ProjectCard } from "@/components/project-card";
 import { toast } from "@/hooks/use-toast";
 import type { ProjectDTO } from "@/lib/editor";
 
@@ -103,8 +103,6 @@ function RecentListCard({
 }) {
   const router = useRouter();
   const [renameOpen, setRenameOpen] = React.useState(false);
-  const [renameValue, setRenameValue] = React.useState(project.name);
-  const [renaming, setRenaming] = React.useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
 
@@ -116,35 +114,6 @@ function RecentListCard({
       body: JSON.stringify({ lastOpened: true }),
     }).catch(() => null);
     router.push(`/Editor?projectId=${project.id}`);
-  }
-
-  async function saveRename() {
-    if (renaming) return;
-    const name = renameValue.trim();
-    if (!name) {
-      toast.error("Rename failed", "Project name cannot be empty.");
-      return;
-    }
-    setRenaming(true);
-    try {
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok || !body?.ok) {
-        toast.error("Rename failed", body?.error?.message ?? "Please try again.");
-        return;
-      }
-      onRenamed(body.data.project as ProjectDTO);
-      setRenameOpen(false);
-      toast.success("Project renamed", name);
-    } catch {
-      toast.error("Network error", "Could not rename the project.");
-    } finally {
-      setRenaming(false);
-    }
   }
 
   async function deleteProject() {
@@ -181,6 +150,20 @@ function RecentListCard({
           <CanvasThumbnail project={project} elements={project.elements ?? []} />
         </div>
         <div className="min-w-0">
+          {/* Session 41 (RA-52): the reference's LIST rename is DEAD (RA-49) —
+              the clone's working rename is the documented superset, now
+              rendered as the reference's own INLINE editor design (the
+              grid card's mechanism, unified for cross-view coherence). */}
+          {renameOpen ? (
+            <InlineProjectRename
+              project={project}
+              onRenamed={(updated) => {
+                setRenameOpen(false);
+                onRenamed(updated);
+              }}
+              onCancel={() => setRenameOpen(false)}
+            />
+          ) : (
           <a
             href={`/Editor?projectId=${project.id}`}
             onClick={(event) => {
@@ -191,6 +174,7 @@ function RecentListCard({
           >
             {project.name}
           </a>
+          )}
         </div>
       </div>
       <div className="ml-4 flex flex-shrink-0 items-center gap-6 text-xs text-gray-500">
@@ -213,7 +197,6 @@ function RecentListCard({
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem
                 onSelect={() => {
-                  setRenameValue(project.name);
                   setRenameOpen(true);
                 }}
               >
@@ -237,47 +220,14 @@ function RecentListCard({
       {/* Card-local dialogs render through React PORTALS — the S31-3
           stopPropagation seam (defense-in-depth; the row itself never
           navigates, so the bubble has no target — the guard stays for the
-          keydown path and future wrappers). */}
+          keydown path and future wrappers). Session 41 (RA-52): the rename
+          DIALOG retired — the working rename renders as the INLINE editor
+          in the name slot above (the grid card's mechanism, unified); only
+          the delete confirm remains here. */}
       <div
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
       >
-        <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-          <DialogContent className="sm:max-w-[420px]">
-            <DialogHeader>
-              <DialogTitle>Rename project</DialogTitle>
-              <DialogDescription>Give &ldquo;{project.name}&rdquo; a new name.</DialogDescription>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                saveRename();
-              }}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor={`list-rename-${project.id}`}>Project name</Label>
-                <Input
-                  id={`list-rename-${project.id}`}
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  maxLength={120}
-                  className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setRenameOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={renaming}>
-                  {renaming ? "Saving…" : "Save"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
         <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
           <DialogContent className="sm:max-w-[420px]">
             <DialogHeader>

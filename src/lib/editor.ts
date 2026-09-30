@@ -2,6 +2,11 @@
 // canvas. No React, no DB — unit-testable seams the editor components and the
 // AI-assistant route both import.
 
+// The editor's pure geometry + paint seams. Keep this module import-free
+// except the shared validation helpers (clampColor) — it is the domain core
+// every render site consumes.
+import { clampColor } from "@/lib/validation";
+
 export type ElementType =
   | "rectangle"
   | "ellipse"
@@ -57,6 +62,13 @@ export type DesignElementDTO = {
   textAlign: string | null;
   src: string | null;
   path: string | null;
+  /** The Gradient tab's persisted document (session 41, RA-54) — a JSON
+   * string on the wire and in the store, parsed by parseGradient at the
+   * consumption seams. Null = no gradient (the solid `fill` paints). */
+  fillGradient: string | null;
+  /** The Image tab's persisted data URL (session 41, RA-54). Null = no
+   * image fill. Wins over fillGradient when set. */
+  fillImage: string | null;
   zIndex: number;
   visible: boolean;
   locked: boolean;
@@ -137,6 +149,8 @@ export function defaultElementFor(
     textAlign: null,
     src: null,
     path: null,
+    fillGradient: null,
+    fillImage: null,
     zIndex: sortOrder,
     visible: true,
     locked: false,
@@ -236,7 +250,13 @@ export function elementToStyle(el: DesignElementDTO): ElementStyle {
     width: `${el.width}px`,
     height: `${el.height}px`,
   };
-  if (el.fill) style.backgroundColor = el.fill;
+  // The one fill paint seam (session 41, RA-54) — image > gradient > solid;
+  // TEXT keeps its own color contract below and never takes a background.
+  if (el.type !== "text") {
+    const paint = fillPaintFor(el);
+    if (paint.backgroundColor) style.backgroundColor = paint.backgroundColor;
+    if (paint.backgroundImage) style.backgroundImage = paint.backgroundImage;
+  }
   // A line's stroke feeds its SVG diagonal, NEVER the box border (the
   // reference's line div measured border-0 on all four sides despite
   // stroke #FFFFFF + strokeWidth 2 — session 29, RA-8).
@@ -301,7 +321,111 @@ export function fitToBounds(
   };
 }
 
-/** Clamps zoom to the editor's supported range (5% — 800%). */
+/** Clamps zoom to the editor's supported range — the reference's measured
+ * [10%, 500%] (session 39, RA-50; the Ctrl+wheel superset inherits it). */
 export function clampZoom(zoom: number): number {
-  return Math.min(Math.max(zoom, 0.05), 8);
+  // The reference's measured range (session 39, RA-50): [10%, 500%].
+  return Math.min(Math.max(zoom, 0.1), 5);
+}
+
+// ---------------------------------------------------------------------
+// Session 41 (RA-54) — the Fill/Gradient/Image seams. The reference's
+// segmented control is a fully functional three-tab editor; these pure
+// seams serve its model, CSS rendering, sanitization, and the one paint
+// chain every render site (canvas / thumbnail / present) consumes.
+// ---------------------------------------------------------------------
+
+export type GradientStop = { color: string; position: number };
+export type GradientFill = {
+  type: "linear" | "radial";
+  angle: number;
+  stops: GradientStop[];
+};
+
+const GRADIENT_STOP_CAP = 8;
+
+/** The reference's measured defaults (RA-54): a Linear gradient at 0deg
+ * from #3b82f6 (0%) to #8b5cf6 (100%) — the two stops its Color Stops
+ * list opens with. */
+export function defaultGradient(): GradientFill {
+  return {
+    type: "linear",
+    angle: 0,
+    stops: [
+      { color: "#3b82f6", position: 0 },
+      { color: "#8b5cf6", position: 100 },
+    ],
+  };
+}
+
+/** The CSS the canvas paints for a gradient fill — stops sorted by
+ * position (the list is user-editable and not guaranteed ordered). */
+export function gradientCss(g: GradientFill): string {
+  const stops = [...g.stops]
+    .sort((a, b) => a.position - b.position)
+    .map((stop) => `${stop.color} ${stop.position}%`)
+    .join(", ");
+  if (g.type === "radial") return `radial-gradient(circle, ${stops})`;
+  return `linear-gradient(${g.angle}deg, ${stops})`;
+}
+
+/** The add-stop button's measured behavior (RA-54): inserts a #ffffff stop
+ * at 50%, at its position-sorted index (the reference's stop list renders in
+ * position order — [#3b82f6 0, #ffffff 50, #8b5cf6 100] after one add).
+ * Returns the list unchanged at the stop cap. */
+export function addGradientStop(stops: GradientStop[]): GradientStop[] {
+  if (stops.length >= GRADIENT_STOP_CAP) return stops;
+  const stop: GradientStop = { color: "#ffffff", position: 50 };
+  const index = stops.findIndex((s) => s.position > 50);
+  if (index === -1) return [...stops, stop];
+  return [...stops.slice(0, index), stop, ...stops.slice(index)];
+}
+
+/** The sanitize seam for the stored gradient JSON (the clampColor family):
+ * type/enum, angle [0,360], stop positions [0,100], stop colors, and the
+ * stop count are clamped; anything malformed yields null (the solid fill
+ * paints — the degrade-not-fail discipline). */
+export function parseGradient(raw: string | null | undefined): GradientFill | null {
+  if (typeof raw !== "string" || raw.trim() === "") return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null) return null;
+  const obj = parsed as Record<string, unknown>;
+  if (!Array.isArray(obj.stops) || obj.stops.length === 0) return null;
+  const type = obj.type === "radial" ? "radial" : "linear";
+  const angle = typeof obj.angle === "number" && Number.isFinite(obj.angle)
+    ? Math.min(Math.max(obj.angle, 0), 360)
+    : 0;
+  const stops = (obj.stops as unknown[])
+    .filter((s): s is Record<string, unknown> => typeof s === "object" && s !== null)
+    .slice(0, GRADIENT_STOP_CAP)
+    .map((s) => ({
+      color: clampColor(typeof s.color === "string" ? s.color : "", "#0D1117"),
+      position:
+        typeof s.position === "number" && Number.isFinite(s.position)
+          ? Math.min(Math.max(s.position, 0), 100)
+          : 0,
+    }));
+  if (stops.length === 0) return null;
+  return { type, angle, stops };
+}
+
+/** The ONE paint seam for an element's fill (session 41, RA-54): the image
+ * wins, then the gradient, then the solid fill — the precedence the
+ * reference's setters maintain (a Solid hex edit clears both non-solid
+ * modes; applying an image clears the gradient). Consumers: the canvas
+ * element, the card thumbnail, and the present overlay. TEXT keeps its own
+ * `color: fill` contract and never consults this seam. */
+export function fillPaintFor(
+  el: Pick<DesignElementDTO, "fill" | "fillGradient" | "fillImage">,
+): { backgroundColor?: string; backgroundImage?: string } {
+  if (el.fillImage) return { backgroundImage: `url("${el.fillImage}")` };
+  const gradient = parseGradient(el.fillGradient);
+  if (gradient) return { backgroundImage: gradientCss(gradient) };
+  if (el.fill) return { backgroundColor: el.fill };
+  return {};
 }

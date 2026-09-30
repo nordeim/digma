@@ -14,6 +14,7 @@ import {
   Plus,
   Smartphone,
   Trash2,
+  X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ import {
   TEMPLATE_META,
   boundsOf,
   canvasFontFamily,
+  fillPaintFor,
   type DesignElementDTO,
   type ProjectDTO,
 } from "@/lib/editor";
@@ -121,7 +123,9 @@ export function CanvasThumbnail({
                   transform: `rotate(${el.rotation}deg) scale(${el.scale ?? 1})`,
                   transformOrigin: "0px 0px",
                   opacity: el.opacity,
-                  backgroundColor: el.fill ?? undefined,
+                  // The one fill paint seam (session 41, RA-54): image >
+                  // gradient > solid; text keeps its own color contract.
+                  ...(el.type !== "text" ? fillPaintFor(el) : {}),
                   // A line's stroke feeds its SVG diagonal, never the box
                   // border (session 29, RA-8 — the reference's line div
                   // measured border-0).
@@ -172,6 +176,114 @@ export function CanvasThumbnail({
 }
 
 // ---------------------------------------------------------------------------
+// The inline rename row (session 41, RA-52) — the reference's GRID-card
+// ellipsis Rename is an INLINE header-row editor, NOT a dialog: the card's
+// h3 area swaps to a div.flex.items-center.gap-1.w-full carrying the input
+// (the shadcn Input base + h-7 text-sm, AUTO-FOCUSED, its value initialized
+// from the project's CURRENT name on every open — the coherent superset
+// over the reference's stale-draft quirk: its X-cancel leaves the last
+// uncommitted draft in state, so reopening shows the draft, not the name),
+// a Check button (the default variant + h-7 w-7 p-0 rounded-md text-xs +
+// lucide-check w-4 h-4) committing the PATCH, and an X button (the ghost
+// variant, same size, lucide-x w-4 h-4) discarding. Enter submits,
+// Escape discards. The S31-3 seam applies doubly here: the row renders
+// INSIDE the card's onClick-wrapped root, so it stops click AND keydown
+// propagation (Enter/Escape drive the rename, never the card's open).
+
+export function InlineProjectRename({
+  project,
+  onRenamed,
+  onCancel,
+}: {
+  project: ProjectDTO;
+  onRenamed: (project: ProjectDTO) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = React.useState(project.name);
+  const [saving, setSaving] = React.useState(false);
+
+  async function commit() {
+    if (saving) return;
+    const name = value.trim();
+    if (!name) {
+      toast.error("Rename failed", "Project name cannot be empty.");
+      return;
+    }
+    if (name === project.name) {
+      onCancel();
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.ok) {
+        toast.error("Rename failed", body?.error?.message ?? "Please try again.");
+        return;
+      }
+      toast.success("Project renamed", name);
+      onRenamed(body.data.project as ProjectDTO);
+    } catch {
+      toast.error("Network error", "Could not rename the project.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className="flex w-full items-center gap-1"
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+    >
+      <Input
+        autoFocus
+        aria-label={`Rename ${project.name}`}
+        value={value}
+        maxLength={120}
+        disabled={saving}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            void commit();
+          } else if (event.key === "Escape") {
+            event.preventDefault();
+            onCancel();
+          }
+        }}
+        className="h-7 text-sm"
+      />
+      <Button
+        type="button"
+        size="iconSm"
+        className="flex-shrink-0"
+        disabled={saving}
+        aria-label="Save rename"
+        onClick={() => void commit()}
+      >
+        <Check className="h-4 w-4" aria-hidden />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="iconSm"
+        className="flex-shrink-0"
+        disabled={saving}
+        aria-label="Cancel rename"
+        onClick={onCancel}
+      >
+        <X className="h-4 w-4" aria-hidden />
+      </Button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Project card — measured from the reference: white rounded card, 16/10
 // thumbnail with hover overlay, p-3 footer (title, ellipsis menu, opened
 // time, avatar stack). Used by both Dashboard sections and the Recent view.
@@ -187,8 +299,6 @@ export function ProjectCard({
 }) {
   const router = useRouter();
   const [renameOpen, setRenameOpen] = React.useState(false);
-  const [renameValue, setRenameValue] = React.useState(project.name);
-  const [renaming, setRenaming] = React.useState(false);
   // The delete confirm (session 31, S31-2): a destructive, undo-less action
   // requires an explicit second interaction — the reference's own guard is a
   // native window.confirm (RA-16); the clone's convention is a dialog local
@@ -211,35 +321,6 @@ export function ProjectCard({
       body: JSON.stringify({ lastOpened: true }),
     }).catch(() => null);
     router.push(`/Editor?projectId=${project.id}`);
-  }
-
-  async function saveRename() {
-    if (renaming) return;
-    const name = renameValue.trim();
-    if (!name) {
-      toast.error("Rename failed", "Project name cannot be empty.");
-      return;
-    }
-    setRenaming(true);
-    try {
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok || !body?.ok) {
-        toast.error("Rename failed", body?.error?.message ?? "Please try again.");
-        return;
-      }
-      onRenamed?.(body.data.project as ProjectDTO);
-      setRenameOpen(false);
-      toast.success("Project renamed", name);
-    } catch {
-      toast.error("Network error", "Could not rename the project.");
-    } finally {
-      setRenaming(false);
-    }
   }
 
   async function deleteProject() {
@@ -283,6 +364,21 @@ export function ProjectCard({
       </div>
       <div className="p-3">
         <div className="mb-2 flex items-start justify-between">
+          {/* Session 41 (RA-52): the ellipsis Rename opens the reference's
+              INLINE header-row editor (input + Check/X icon buttons), not a
+              dialog — the whole title row swaps (the ellipsis hides while
+              renaming, matching the reference's w-full row). */}
+          {renameOpen ? (
+            <InlineProjectRename
+              project={project}
+              onRenamed={(updated) => {
+                setRenameOpen(false);
+                onRenamed?.(updated);
+              }}
+              onCancel={() => setRenameOpen(false)}
+            />
+          ) : (
+            <>
           <h3 className="flex-1 truncate pr-2 text-sm font-semibold leading-tight text-gray-800">
             {project.name}
           </h3>
@@ -301,7 +397,6 @@ export function ProjectCard({
               <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem
                   onSelect={() => {
-                    setRenameValue(project.name);
                     setRenameOpen(true);
                   }}
                 >
@@ -321,28 +416,30 @@ export function ProjectCard({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+            </>
+          )}
         </div>
         <div className="flex items-center justify-between text-xs text-gray-400">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" aria-hidden />
             <span>{openedLabel}</span>
           </div>
+          {/* Session 41 (RA-53): the reference's card avatar pair, decoded
+              verbatim from its bundle — "A" on the blue-500 -> purple-600
+              gradient and "B" on the green-500 -> teal-600 gradient, w-5 h-5
+              rounded-full border-2 border-white with the text-[9px] font-
+              medium white initials, NO titles. The FIRST chip keeps the
+              clone's real-user identity (title "You", the RA-40 working-
+              superset family) but adopts the reference's gradient paint. */}
           <div className="flex -space-x-2">
             <div
-              className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white"
-              style={{ backgroundColor: "#3B82F6" }}
+              className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-blue-500 to-purple-600"
               title="You"
             >
               <span className="text-[9px] font-medium text-white">Y</span>
             </div>
-            <div
-              className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white"
-              style={{ backgroundColor: memberColorFor(project.id) }}
-              title={TEMPLATE_META[project.template]?.label ?? "Collaborator"}
-            >
-              <span className="text-[9px] font-medium text-white">
-                {(TEMPLATE_META[project.template]?.label ?? "D").charAt(0)}
-              </span>
+            <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-green-500 to-teal-600">
+              <span className="text-[9px] font-medium text-white">B</span>
             </div>
           </div>
         </div>
@@ -351,52 +448,18 @@ export function ProjectCard({
       {/* Card-local dialogs render through React PORTALS — and React
           propagates portal events through the REACT tree, not the DOM tree,
           so every click inside them would bubble to this card's
-          openProject() onClick and navigate to the editor (the en-route
-          S31-3 discovery: the rename dialog's Cancel had the same latent
-          navigation bug). The wrapper stops the synthetic bubble at the
-          React seam — the same convention the ellipsis-menu wrapper above
-          uses. Keydown too: Enter inside the rename form must never reach
-          the card's Enter/Space openProject handler. */}
+          openProject() onClick and navigate to the editor (the S31-3
+          discovery). The wrapper stops the synthetic bubble at the React
+          seam — the same convention the inline rename row and the
+          ellipsis-menu wrapper use. Keydown too: Enter inside the dialog
+          must never reach the card's Enter/Space openProject handler.
+          (Session 41, RA-52: the Rename DIALOG retired — the rename is the
+          reference's INLINE header-row editor above; only the delete
+          confirm remains here.) */}
       <div
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
       >
-        <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>Rename project</DialogTitle>
-            <DialogDescription>Give &ldquo;{project.name}&rdquo; a new name.</DialogDescription>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              saveRename();
-            }}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor={`rename-${project.id}`}>Project name</Label>
-              <Input
-                id={`rename-${project.id}`}
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                maxLength={120}
-                className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setRenameOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={renaming}>
-                {renaming ? "Saving…" : "Save"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>

@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "./editor-store";
-import { boundsOf, canvasFontFamily, clampZoom, type DesignElementDTO, type EditorTool } from "@/lib/editor";
+import { boundsOf, canvasFontFamily, clampZoom, fillPaintFor, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
 // ---------------------------------------------------------------------------
 // The canvas: a DOM-element canvas (the reference's approach — absolutely
@@ -482,7 +482,14 @@ function CanvasElement({
     boxShadow: selected ? "0 0 0 2px rgba(59, 130, 246, 0.9)" : undefined,
   };
 
-  if (element.fill) style.backgroundColor = element.fill;
+  // The ONE fill paint seam (session 41, RA-54): image > gradient > solid —
+  // the reference's measured precedence. TEXT keeps its own `color: fill`
+  // contract below and never takes a background paint.
+  if (element.type !== "text") {
+    const paint = fillPaintFor(element);
+    if (paint.backgroundColor) style.backgroundColor = paint.backgroundColor;
+    if (paint.backgroundImage) style.backgroundImage = paint.backgroundImage;
+  }
   // A line's stroke feeds its SVG diagonal, NEVER the box border (the
   // reference's line div measured border-0 on all four sides despite
   // stroke #FFFFFF + strokeWidth 2 — session 29, RA-8).

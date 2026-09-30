@@ -10,7 +10,7 @@ import {
   clampTextAlign,
   isElementType,
 } from "@/lib/validation";
-import { defaultNameFor, type ElementType } from "@/lib/editor";
+import { defaultNameFor, parseGradient, type ElementType } from "@/lib/editor";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +18,18 @@ type Params = { params: Promise<{ id: string }> };
 
 async function loadProject(id: string) {
   return db.project.findUnique({ where: { id } });
+}
+
+const FILL_IMAGE_MAX_CHARS = 700_000; // ~500 KB data URL + overhead — the Image tab's self-hosted cap
+
+/** The Image tab's data-URL sanitize: accepts ONLY well-formed image data
+ * URLs within the size cap (the autosave PUT carries the full element list —
+ * an unbounded image would bloat every save); anything else nulls it. */
+function clampFillImage(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (!/^data:image\/(png|jpeg|jpg|gif|svg\+xml|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return null;
+  if (value.length > FILL_IMAGE_MAX_CHARS) return null;
+  return value;
 }
 
 /** GET /api/projects/[id]/elements — the canvas element list. */
@@ -68,6 +80,11 @@ export async function POST(request: NextRequest, { params }: Params) {
       scale: clampNumber(body?.scale, 0.05, 20, 1),
       opacity: clampNumber(body?.opacity, 0, 1, 1),
       fill: body?.fill === null ? null : clampColor(String(body?.fill ?? "#3B82F6"), "#3B82F6"),
+      fillGradient:
+        body?.fillGradient === null || body?.fillGradient === undefined
+          ? null
+          : (() => { const g = parseGradient(String(body.fillGradient)); return g ? JSON.stringify(g) : null; })(),
+      fillImage: clampFillImage(body?.fillImage),
       stroke: body?.stroke === null ? null : clampColor(String(body?.stroke ?? "#FFFFFF"), "#FFFFFF"),
       strokeWidth: clampNumber(body?.strokeWidth, 0, 100, 0),
       radius: clampNumber(body?.radius, 0, 2000, 0),
@@ -128,6 +145,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
       scale: clampNumber(raw?.scale, 0.05, 20, 1),
       opacity: clampNumber(raw?.opacity, 0, 1, 1),
       fill: raw?.fill === null || raw?.fill === undefined ? null : clampColor(String(raw.fill), "#3B82F6"),
+      fillGradient: (() => {
+        if (raw?.fillGradient === null || raw?.fillGradient === undefined) return null;
+        const g = parseGradient(String(raw.fillGradient));
+        return g ? JSON.stringify(g) : null;
+      })(),
+      fillImage: clampFillImage(raw?.fillImage),
       stroke: raw?.stroke === null || raw?.stroke === undefined ? null : clampColor(String(raw.stroke), "#FFFFFF"),
       strokeWidth: clampNumber(raw?.strokeWidth, 0, 100, 0),
       radius: clampNumber(raw?.radius, 0, 2000, 0),

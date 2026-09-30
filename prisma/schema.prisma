@@ -53,7 +53,9 @@ model DesignElement {
   rotation    Float    @default(0)
   scale       Float    @default(1) // per-element visual scale (reference slider 0.1–3.0)
   opacity     Float    @default(1)
-  fill        String? // hex/rgba
+  fill        String? // hex/rgba — the Solid tab's color (RETAINED under a gradient; the gradient paints)
+  fillGradient String? // JSON: { type: "linear"|"radial", angle: 0-360, stops: [{ color, position: 0-100 }] } — the Gradient tab (session 41, RA-54)
+  fillImage   String? // data URL — the Image tab's uploaded fill (session 41, RA-54; wins over fillGradient)
   stroke      String?
   strokeWidth Float    @default(0)
   radius      Float    @default(0) // corner radius

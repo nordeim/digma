@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  addGradientStop,
   boundsOf,
   canvasFontFamily,
   clampZoom,
   cornerRadiusMax,
   defaultElementFor,
+  defaultGradient,
   elementToStyle,
+  fillPaintFor,
   fitToBounds,
+  gradientCss,
   normalizeRect,
+  parseGradient,
   type DesignElementDTO,
 } from "@/lib/editor";
 
@@ -38,6 +43,8 @@ function el(partial: Partial<DesignElementDTO>): DesignElementDTO {
     textAlign: null,
     src: null,
     path: null,
+    fillGradient: null,
+    fillImage: null,
     zIndex: 0,
     visible: true,
     locked: false,
@@ -223,9 +230,158 @@ describe("canvasFontFamily (session 33, RA-30)", () => {
 });
 
 describe("clampZoom", () => {
-  it("clamps to the 5%—800% range", () => {
-    expect(clampZoom(0.01)).toBe(0.05);
-    expect(clampZoom(10)).toBe(8);
+  it("clamps to the reference's [10%, 500%] range (session 39, RA-50)", () => {
+    expect(clampZoom(0.01)).toBe(0.1);
+    expect(clampZoom(10)).toBe(5);
     expect(clampZoom(1)).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Session 41 (RA-54) — the Fill/Gradient/Image seam. The reference's
+// segmented control is a FULLY FUNCTIONAL three-tab editor (reversing the
+// session-29 "no-op" decode — live-measured, persisted through reload):
+// the Gradient tab paints linear/radial CSS gradients from an angle +
+// color-stop list; the Image tab paints an uploaded image; a Solid hex
+// edit clears both. These are the pure seams every render site consumes.
+// ---------------------------------------------------------------------
+
+describe("defaultGradient (RA-54)", () => {
+  it("returns the reference's measured defaults: linear, 0deg, blue -> purple", () => {
+    expect(defaultGradient()).toEqual({
+      type: "linear",
+      angle: 0,
+      stops: [
+        { color: "#3b82f6", position: 0 },
+        { color: "#8b5cf6", position: 100 },
+      ],
+    });
+  });
+});
+
+describe("gradientCss (RA-54)", () => {
+  it("renders the linear contract: angle in deg + the stop chain", () => {
+    expect(
+      gradientCss({ type: "linear", angle: 90, stops: [
+        { color: "#3b82f6", position: 0 },
+        { color: "#8b5cf6", position: 100 },
+      ] }),
+    ).toBe("linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)");
+  });
+
+  it("renders the radial contract: circle + the stop chain (angle ignored)", () => {
+    expect(
+      gradientCss({ type: "radial", angle: 45, stops: [
+        { color: "#3b82f6", position: 0 },
+        { color: "#8b5cf6", position: 100 },
+      ] }),
+    ).toBe("radial-gradient(circle, #3b82f6 0%, #8b5cf6 100%)");
+  });
+
+  it("sorts stops by position before rendering (unsorted input)", () => {
+    expect(
+      gradientCss({ type: "linear", angle: 0, stops: [
+        { color: "#8b5cf6", position: 100 },
+        { color: "#ffffff", position: 50 },
+        { color: "#3b82f6", position: 0 },
+      ] }),
+    ).toBe("linear-gradient(0deg, #3b82f6 0%, #ffffff 50%, #8b5cf6 100%)");
+  });
+});
+
+describe("addGradientStop (RA-54)", () => {
+  it("appends the reference's measured middle stop: white at 50%", () => {
+    const stops = addGradientStop([
+      { color: "#3b82f6", position: 0 },
+      { color: "#8b5cf6", position: 100 },
+    ]);
+    expect(stops).toHaveLength(3);
+    expect(stops[1]).toEqual({ color: "#ffffff", position: 50 });
+  });
+
+  it("returns the list unchanged at the stop cap", () => {
+    const stops = Array.from({ length: 8 }, (_, i) => ({ color: "#ffffff", position: i * 10 }));
+    expect(addGradientStop(stops)).toHaveLength(8);
+  });
+});
+
+describe("parseGradient (RA-54 sanitize seam)", () => {
+  it("parses a valid stored gradient JSON verbatim", () => {
+    const parsed = parseGradient(JSON.stringify({ type: "radial", angle: 12, stops: [{ color: "#22c55e", position: 30 }] }));
+    expect(parsed).toEqual({ type: "radial", angle: 12, stops: [{ color: "#22c55e", position: 30 }] });
+  });
+
+  it("returns null for null/undefined/malformed input", () => {
+    expect(parseGradient(null)).toBeNull();
+    expect(parseGradient(undefined)).toBeNull();
+    expect(parseGradient("not json")).toBeNull();
+    expect(parseGradient("{}")).toBeNull(); // no stops — not a gradient object
+  });
+
+  it("clamps the type enum, the angle, and the stop positions; caps the stop count", () => {
+    const parsed = parseGradient(
+      JSON.stringify({
+        type: "diagonal",
+        angle: 999,
+        stops: [
+          { color: "#3b82f6", position: -20 },
+          { color: "#8b5cf6", position: 140 },
+          { color: "#ffffff", position: 50 },
+          ...Array.from({ length: 10 }, (_, i) => ({ color: "#000000", position: i })),
+        ],
+      }),
+    );
+    expect(parsed?.type).toBe("linear"); // unknown type falls back to linear
+    expect(parsed?.angle).toBe(360);
+    expect(parsed?.stops).toHaveLength(8); // the cap
+    expect(parsed?.stops[0]?.position).toBe(0);
+    expect(parsed?.stops[1]?.position).toBe(100);
+  });
+
+  it("sanitizes invalid stop colors to the fallback hex", () => {
+    const parsed = parseGradient(
+      JSON.stringify({ type: "linear", angle: 0, stops: [{ color: "oops", position: 0 }] }),
+    );
+    expect(parsed?.stops[0]?.color).toBe("#0D1117");
+  });
+});
+
+describe("fillPaintFor (RA-54 — the one paint seam)", () => {
+  it("paints the solid fill as backgroundColor", () => {
+    expect(fillPaintFor(el({ fill: "#3B82F6" }))).toEqual({ backgroundColor: "#3B82F6" });
+  });
+
+  it("a gradient WINS over the solid fill (the reference keeps both; the gradient paints)", () => {
+    const paint = fillPaintFor(
+      el({
+        fill: "#3B82F6",
+        fillGradient: JSON.stringify({ type: "linear", angle: 3, stops: [
+          { color: "#3b82f6", position: 0 },
+          { color: "#8b5cf6", position: 100 },
+        ] }),
+      }),
+    );
+    expect(paint).toEqual({ backgroundImage: "linear-gradient(3deg, #3b82f6 0%, #8b5cf6 100%)" });
+  });
+
+  it("an image WINS over the gradient", () => {
+    const paint = fillPaintFor(
+      el({
+        fill: "#3B82F6",
+        fillGradient: JSON.stringify(defaultGradient()),
+        fillImage: "data:image/png;base64,AAAA",
+      }),
+    );
+    expect(paint).toEqual({ backgroundImage: 'url("data:image/png;base64,AAAA")' });
+  });
+
+  it("returns an empty paint for a fill-less element", () => {
+    expect(fillPaintFor(el({ fill: null }))).toEqual({});
+  });
+
+  it("ignores a malformed stored gradient (falls back to the solid fill)", () => {
+    expect(fillPaintFor(el({ fill: "#22c55e", fillGradient: "garbage" }))).toEqual({
+      backgroundColor: "#22c55e",
+    });
   });
 });

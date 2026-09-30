@@ -1,13 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { AlignCenter, AlignLeft, AlignRight, CornerUpLeft, Layers, Move3d, Palette, Type } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, CornerUpLeft, Image as ImageIcon, Layers, Move3d, Palette, Plus, Type } from "lucide-react";
 
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FONT_FAMILIES } from "@/lib/validation";
-import { cornerRadiusMax } from "@/lib/editor";
+import {
+  addGradientStop,
+  cornerRadiusMax,
+  defaultGradient,
+  parseGradient,
+  type DesignElementDTO,
+  type GradientFill,
+} from "@/lib/editor";
 
 // The Properties panel (right edge, w-72) — restructured to the reference
 // DOM (session-3 audit): a fixed header block (border-b) carrying the panel
@@ -222,6 +231,189 @@ function SliderRow({
   );
 }
 
+/**
+ * The Gradient tab's editor (session 41, RA-54) — the reference's measured
+ * three-section panel: Gradient Type (Linear/Radial, the active button on
+ * the default variant), Angle (a 0–360 slider with a degree readout), and
+ * Color Stops (the icon-only add button + the color/position rows). Every
+ * edit applies LIVE through the store (the autosave PUT persists it);
+ * opening the tab alone paints nothing (the reference's own behavior —
+ * its paint stayed flat until the first edit).
+ */
+function GradientPanel({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  const gradient: GradientFill = parseGradient(element.fillGradient) ?? defaultGradient();
+  const apply = (next: GradientFill) => update({ fillGradient: JSON.stringify(next), fillImage: null });
+  const setStop = (index: number, patch: Partial<GradientFill["stops"][number]>) =>
+    apply({ ...gradient, stops: gradient.stops.map((stop, i) => (i === index ? { ...stop, ...patch } : stop)) });
+
+  return (
+    <>
+      <div>
+        <span className="mb-2 block text-xs font-medium text-gray-300">Gradient Type</span>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={gradient.type === "linear" ? "default" : "outline"}
+            size="sm"
+            className="flex-1"
+            aria-pressed={gradient.type === "linear"}
+            onClick={() => apply({ ...gradient, type: "linear" })}
+          >
+            Linear
+          </Button>
+          <Button
+            type="button"
+            variant={gradient.type === "radial" ? "default" : "outline"}
+            size="sm"
+            className="flex-1"
+            aria-pressed={gradient.type === "radial"}
+            onClick={() => apply({ ...gradient, type: "radial" })}
+          >
+            Radial
+          </Button>
+        </div>
+      </div>
+      <div>
+        <span className="text-xs font-medium text-gray-300">Angle</span>
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            type="range"
+            aria-label="Gradient angle"
+            min={0}
+            max={360}
+            step={1}
+            value={gradient.angle}
+            onChange={(event) => apply({ ...gradient, angle: Number(event.target.value) })}
+            className="editor-range h-1.5 flex-1"
+            style={{ "--range-fill": `${((gradient.angle / 360) * 100).toFixed(2)}%` } as React.CSSProperties}
+          />
+          <span className="w-10 text-right text-xs text-gray-300" aria-live="polite">
+            {gradient.angle}&deg;
+          </span>
+        </div>
+      </div>
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs font-medium text-gray-300">Color Stops</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 rounded-md px-2 text-xs"
+            aria-label="Add gradient stop"
+            onClick={() => apply({ ...gradient, stops: addGradientStop(gradient.stops) })}
+          >
+            <Plus className="h-3 w-3" aria-hidden />
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {gradient.stops.map((stop, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <input
+                type="color"
+                aria-label={`Stop ${index + 1} color`}
+                value={stop.color}
+                onChange={(event) => setStop(index, { color: event.target.value })}
+                className="h-6 w-6 rounded border border-[#30363d] bg-transparent"
+              />
+              <input
+                type="number"
+                aria-label={`Stop ${index + 1} position`}
+                min={0}
+                max={100}
+                value={stop.position}
+                onChange={(event) =>
+                  setStop(index, {
+                    position: Math.min(Math.max(Number(event.target.value) || 0, 0), 100),
+                  })
+                }
+                className="h-6 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
+              />
+              <span className="text-xs text-gray-400">%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/**
+ * The Image tab's editor (session 41, RA-54) — the reference's measured
+ * dropzone chrome (dashed border, the hidden file input, the lucide-image
+ * glyph, "Click to upload image", "PNG, JPG, SVG"). The clone stores the
+ * image as a data URL (self-hosted: no file hosting service) with a 500 KB
+ * client-side cap — the autosave PUT carries the full element list, so an
+ * unbounded image would bloat every save. The paint lands through the
+ * fillPaintFor seam at every render site.
+ */
+function ImagePanel({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  const inputId = `image-upload-${element.id}`;
+  const [busy, setBusy] = React.useState(false);
+
+  const readFile = (file: File | undefined) => {
+    if (!file || busy) return;
+    if (file.size > 500 * 1024) {
+      toast.show({
+        title: "Image too large",
+        description: "Please pick an image under 500 KB — larger files would slow every autosave.",
+      });
+      return;
+    }
+    setBusy(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result ?? "");
+      setBusy(false);
+      if (dataUrl.startsWith("data:image/")) {
+        update({ fillImage: dataUrl, fillGradient: null });
+      } else {
+        toast.show({ title: "Unsupported image", description: "PNG, JPG, GIF, WebP, or SVG images are supported." });
+      }
+    };
+    reader.onerror = () => {
+      setBusy(false);
+      toast.show({ title: "Upload failed", description: "Could not read the image file. Please try again." });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div>
+      <span className="mb-2 block text-xs font-medium text-gray-300">Upload Image</span>
+      <div className="rounded-lg border-2 border-dashed border-[#30363d] p-4 text-center transition-colors hover:border-[#404040]">
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          id={inputId}
+          onChange={(event) => {
+            readFile(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+        <label htmlFor={inputId} className="flex cursor-pointer flex-col items-center gap-2">
+          <ImageIcon className="h-8 w-8 text-gray-400" aria-hidden />
+          <span className="text-sm text-gray-400">{busy ? "Reading image…" : "Click to upload image"}</span>
+          <span className="text-xs text-gray-500">PNG, JPG, SVG</span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 export function PropertiesPanel() {
   const elements = useEditorStore((s) => s.elements);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -234,7 +426,29 @@ export function PropertiesPanel() {
   const update = (patch: Parameters<ReturnType<typeof useEditorStore.getState>["updateElements"]>[1]) =>
     useEditorStore.getState().updateElements(selectedIds, patch);
 
-  const fillModeRef = React.useRef<HTMLDivElement>(null);
+  // Session 41 (RA-54): the Fill tab is DERIVED from the element's fill
+  // state (image > gradient > solid) — the coherent superset over the
+  // reference's reset-to-Solid-on-reselect quirk (its tabs are
+  // selection-local state; a gradient-filled element re-opens showing the
+  // Solid editor while its canvas paints the gradient). The render-time
+  // compare-and-adjust pattern (React 19's sanctioned setState-in-render
+  // form — same as HexColorRow's draft sync): the tab re-derives whenever
+  // the ELEMENT or its fill MODE changes, and stays put while the user
+  // only BROWSES a different tab.
+  const [fillTab, setFillTab] = React.useState<"solid" | "gradient" | "image">("solid");
+  const [prevFillKey, setPrevFillKey] = React.useState<string | null>(null);
+  const derivedFillMode = single
+    ? single.fillImage
+      ? "image"
+      : parseGradient(single.fillGradient)
+        ? "gradient"
+        : "solid"
+    : "solid";
+  const fillKey = single ? `${single.id}:${derivedFillMode}` : "none";
+  if (prevFillKey !== fillKey) {
+    setPrevFillKey(fillKey);
+    setFillTab(derivedFillMode);
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -301,42 +515,41 @@ export function PropertiesPanel() {
             {single.type !== "text" && (
             <section aria-label="Fill and stroke">
               <SectionHeading icon="fill">Fill &amp; Stroke</SectionHeading>
-              {/* Session-15 parity fix: the reference renders the mode pills as
-                   a SEGMENTED CONTROL — a bg-[#30363d] h-9 rounded-lg track
-                   with the active segment painted white (bg-background /
-                   text-foreground + shadow in its class list). Behavior is
-                   unchanged: Gradient/Image taps keep the scope-cut toast
-                   (the reference's own tabs are no-ops — verified this
-                   session). */}
-              <div
-                className="mb-3 grid h-9 w-full grid-cols-3 items-center justify-center rounded-lg bg-[#30363d] p-1"
-                ref={fillModeRef}
-              >
-                {(["Solid", "Gradient", "Image"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    aria-pressed={mode === "Solid"}
-                    onClick={() => {
-                      if (mode !== "Solid") {
-                        toast.show({
-                          title: "Not available yet",
-                          description: "Gradient and image fills are a documented scope cut — solid fills only.",
-                        });
-                      }
-                    }}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                      mode === "Solid"
-                        ? "bg-white text-gray-900 shadow"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-              <div className="space-y-3">
-                <HexColorRow label="Fill Color" value={single.fill} onChange={(fill) => fill && update({ fill })} />
+              {/* Session 41 (RA-54): the segmented control is a Radix TABLIST
+                   (the reference's own structure — role=tablist with
+                   data-state tabs on the bg-[#30363d] h-9 rounded-lg track,
+                   the active tab painted white) where EVERY TAB opens a
+                   working editor. The session-29 "the reference's own tabs
+                   are no-ops" decode is REVERSED — live-measured: its
+                   Gradient tab paints linear/radial CSS gradients live and
+                   persists them; its Image tab uploads and paints a real
+                   image; a Solid hex edit clears both. The active tab
+                   derives from the element's fill state (the derivation
+                   above the return). */}
+              <Tabs value={fillTab} onValueChange={(value) => setFillTab(value as "solid" | "gradient" | "image")}>
+                <TabsList className="grid h-9 w-full grid-cols-3 items-center justify-center rounded-lg bg-[#30363d] p-1">
+                  <TabsTrigger value="solid" className="px-3 py-1 text-xs">Solid</TabsTrigger>
+                  <TabsTrigger value="gradient" className="px-3 py-1 text-xs">Gradient</TabsTrigger>
+                  <TabsTrigger value="image" className="px-3 py-1 text-xs">Image</TabsTrigger>
+                </TabsList>
+                <TabsContent value="solid" className="mt-4 space-y-4">
+                  {/* A Solid hex edit CLEARS the gradient/image fill — the
+                      reference's measured semantics (its flat re-apply made
+                      the gradient vanish through the next reload). */}
+                  <HexColorRow
+                    label="Fill Color"
+                    value={single.fill}
+                    onChange={(fill) => update({ fill, fillGradient: null, fillImage: null })}
+                  />
+                </TabsContent>
+                <TabsContent value="gradient" className="mt-4 space-y-4">
+                  <GradientPanel element={single} update={update} />
+                </TabsContent>
+                <TabsContent value="image" className="mt-4 space-y-4">
+                  <ImagePanel element={single} update={update} />
+                </TabsContent>
+              </Tabs>
+              <div className="mt-3 space-y-3">
                 <HexColorRow label="Stroke" value={single.stroke} onChange={(stroke) => update({ stroke })} />
                 {single.stroke && (
                   <SliderRow

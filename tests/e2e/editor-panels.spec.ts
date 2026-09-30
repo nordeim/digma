@@ -388,10 +388,14 @@ test.describe("properties panel reference chrome (session 15)", () => {
     await expect(track).toBeVisible();
     await expect(track).toHaveClass(/h-9/);
     await expect(track).toHaveClass(/rounded-lg/);
-    // The active (Solid) segment paints WHITE — the reference's
+    // Session 41 (RA-54): the segmented control is a Radix TABLIST — the
+    // tabs carry role=tab + data-state (the reference's own structure,
+    // live-re-measured; the aria-pressed button contract retired with the
+    // scope-cut toast). The active (Solid) segment paints WHITE — the
     // bg-background/foreground tab pair (pixel-read, v4 emits lab()/oklch()).
-    const solid = track.getByRole("button", { name: "Solid" });
-    await expect(solid).toHaveAttribute("aria-pressed", "true");
+    const solid = track.getByRole("tab", { name: "Solid" });
+    await expect(solid).toHaveAttribute("data-state", "active");
+    await expect(solid).toHaveAttribute("aria-selected", "true");
     const bg = await solid.evaluate((el) => {
       const ctx = document.createElement("canvas").getContext("2d")!;
       ctx.fillStyle = getComputedStyle(el).backgroundColor;
@@ -400,9 +404,10 @@ test.describe("properties panel reference chrome (session 15)", () => {
       return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
     });
     expect(bg).toBe("ffffff");
-    // The inactive segments stay quiet on the dark track.
-    const gradient = track.getByRole("button", { name: "Gradient" });
-    await expect(gradient).toHaveAttribute("aria-pressed", "false");
+    // The inactive tabs stay quiet on the dark track.
+    const gradient = track.getByRole("tab", { name: "Gradient" });
+    await expect(gradient).toHaveAttribute("data-state", "inactive");
+    await expect(gradient).toHaveAttribute("aria-selected", "false");
   });
 
   test("the Rotation row carries the degree suffix after the number input", async ({ page }) => {
@@ -1408,6 +1413,250 @@ test.describe("dynamic panel contracts (session 33)", () => {
     // Cleanup: restore the seeded background before leaving (a failure must
     // never leave the shared e2e DB mutated).
     await page.getByRole("textbox", { name: "Color hex" }).fill("#0D1117");
+    await waitForSaved(page);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Session 41 (RA-54) — the Fill/Gradient/Image tabs are a FULLY FUNCTIONAL
+// three-tab editor. The session-29 decode ("the reference's own tabs are
+// no-ops") is REVERSED by live measurement: its Gradient tab paints
+// linear/radial CSS gradients LIVE (type toggle, angle slider, color stops)
+// and PERSISTS them through reload; its Image tab uploads a file and paints
+// it as a background image; a Solid hex edit clears both. These pins hold
+// the clone to the re-measured contract (the F18 double-measurement
+// discipline applied before reversing a five-session-old decode).
+// ---------------------------------------------------------------------------
+
+test.describe("fill tabs: the functional three-tab editor (session 41, RA-54)", () => {
+  const CTA = '[data-element-id][aria-label="CTA Button"]';
+
+  async function openOnCta(page: import("@playwright/test").Page) {
+    await page.goto("/");
+    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await expect(page).toHaveURL(/\/Editor\?projectId=/);
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 4, name: "Fill & Stroke" })).toBeVisible();
+  }
+
+  async function waitForSaved(page: import("@playwright/test").Page) {
+    // Deterministic (the session-41 lesson): the badge may already read
+    // "Saved" from a PREVIOUS save — asserting its presence alone can pass
+    // on the STALE badge while the debounced autosave (800ms) is still
+    // pending, and a reload then KILLS the timer (observed live: the
+    // revert fill committed in the store, no PUT ever fired, the DB kept
+    // the gradient). Wait for the actual elements PUT response, then the
+    // badge settling back to Saved.
+    await page.waitForResponse(
+      (response) =>
+        response.request().method() === "PUT" && response.url().includes("/elements"),
+      { timeout: 10_000 },
+    );
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  // Every gradient test starts from a KNOWN state — the shared e2e DB
+  // carries whatever the previous test left (a mid-test failure can strand
+  // a mutation before its cleanup — the session-25 discipline hardened the
+  // epilogues; this prologue makes each test order-independent too).
+  // A same-value fill fires NO React onChange (the value tracker sees no
+  // change — observed live: the revert fill committed nothing and no PUT
+  // ever fired). Force a real change first, then the target.
+  async function setSolidFill(page: import("@playwright/test").Page, hex: string) {
+    const input = page.getByRole("textbox", { name: "Fill Color hex" });
+    await input.fill(hex === "#3B82F6" ? "#3B82F7" : "#3B82F6");
+    await input.fill(hex);
+  }
+
+  async function resetCtaFill(page: import("@playwright/test").Page) {
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
+    await waitForSaved(page);
+    await page.getByRole("tab", { name: "Gradient" }).click();
+  }
+
+  test("the tablist is the reference's Radix tab contract (the aria-pressed pills retired)", async ({ page }) => {
+    await openOnCta(page);
+    const fillSection = page.locator("section[aria-label='Fill and stroke']");
+    const tablist = fillSection.getByRole("tablist");
+    await expect(tablist).toBeVisible();
+    await expect(tablist).toHaveClass(/bg-\[#30363d\]/);
+    await expect(tablist).toHaveClass(/h-9/);
+    await expect(tablist).toHaveClass(/rounded-lg/);
+    // Three tabs; Solid is the active one (the element paints a solid fill).
+    const solid = tablist.getByRole("tab", { name: "Solid" });
+    await expect(solid).toHaveAttribute("data-state", "active");
+    await expect(solid).toHaveAttribute("aria-selected", "true");
+    await expect(tablist.getByRole("tab", { name: "Gradient" })).toHaveAttribute("data-state", "inactive");
+    await expect(tablist.getByRole("tab", { name: "Image" })).toHaveAttribute("data-state", "inactive");
+    // The active tab paints WHITE (the bg-background/foreground pair —
+    // pixel-read, v4 emits lab()/oklch()).
+    const bg = await solid.evaluate((el) => {
+      const ctx = document.createElement("canvas").getContext("2d")!;
+      ctx.fillStyle = getComputedStyle(el).backgroundColor;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+    });
+    expect(bg).toBe("ffffff");
+  });
+
+  // The stop controls live INSIDE the tabpanel (the section also carries
+  // the shared Stroke swatch below the tabs — scope or overcount).
+  const stopColors = (page: import("@playwright/test").Page) => page.locator("[role=tabpanel] input[type=color]");
+
+  test("the Gradient tabpanel renders the reference's three sections with the measured defaults", async ({ page }) => {
+    await openOnCta(page);
+    await resetCtaFill(page);
+    // Three labeled sections (the reference's measured panel).
+    for (const label of ["Gradient Type", "Angle", "Color Stops"]) {
+      await expect(page.getByText(label, { exact: true })).toBeVisible();
+    }
+    // The type row: Linear ACTIVE (default variant) + Radial outline.
+    const linear = page.getByRole("button", { name: "Linear", exact: true });
+    await expect(linear).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Radial", exact: true })).toHaveAttribute("aria-pressed", "false");
+    // The default stops: #3b82f6 @ 0 + #8b5cf6 @ 100 (the measured pair).
+    await expect(stopColors(page)).toHaveCount(2);
+    await expect(stopColors(page).nth(0)).toHaveValue("#3b82f6");
+    await expect(stopColors(page).nth(1)).toHaveValue("#8b5cf6");
+    await expect(page.getByRole("spinbutton", { name: "Stop 1 position" })).toHaveValue("0");
+    await expect(page.getByRole("spinbutton", { name: "Stop 2 position" })).toHaveValue("100");
+    // Merely OPENING the tab paints nothing (the reference's own behavior —
+    // its paint stayed flat until the first edit).
+    await expect(page.locator(CTA)).toHaveCSS("background-color", "rgb(59, 130, 246)");
+  });
+
+  test("the Linear/Radial toggle and the Angle slider paint the canvas LIVE (RA-54)", async ({ page }) => {
+    await openOnCta(page);
+    await page.getByRole("tab", { name: "Gradient" }).click();
+    // Radial paints the circle contract.
+    await page.getByRole("button", { name: "Radial", exact: true }).click();
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "radial-gradient(circle, rgb(59, 130, 246) 0%, rgb(139, 92, 246) 100%)",
+    );
+    // Back to Linear: the angle-0 contract.
+    await page.getByRole("button", { name: "Linear", exact: true }).click();
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "linear-gradient(0deg, rgb(59, 130, 246) 0%, rgb(139, 92, 246) 100%)",
+    );
+    // The Angle slider paints live (90deg).
+    await page.getByRole("slider", { name: "Gradient angle" }).fill("90");
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "linear-gradient(90deg, rgb(59, 130, 246) 0%, rgb(139, 92, 246) 100%)",
+    );
+    // Cleanup: clear back to the seeded solid fill (a failure must never
+    // leave the shared e2e DB mutated — the session-25 discipline).
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
+    await waitForSaved(page);
+  });
+
+  test("add-stop appends the reference's white middle stop and paints the 3-stop chain", async ({ page }) => {
+    await openOnCta(page);
+    await resetCtaFill(page);
+    await page.getByRole("button", { name: "Add gradient stop" }).click();
+    await expect(stopColors(page)).toHaveCount(3);
+    await expect(stopColors(page).nth(1)).toHaveValue("#ffffff");
+    await expect(page.getByRole("spinbutton", { name: "Stop 2 position" })).toHaveValue("50");
+    // The paint renders the sorted 3-stop chain.
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "linear-gradient(0deg, rgb(59, 130, 246) 0%, rgb(255, 255, 255) 50%, rgb(139, 92, 246) 100%)",
+    );
+    // Cleanup.
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
+    await waitForSaved(page);
+  });
+
+  test("the gradient PERSISTS through reload (the F26 set-saved-reload-assert full path)", async ({ page }) => {
+    await openOnCta(page);
+    await resetCtaFill(page);
+    await page.getByRole("button", { name: "Radial", exact: true }).click();
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "radial-gradient(circle, rgb(59, 130, 246) 0%, rgb(139, 92, 246) 100%)",
+    );
+    await waitForSaved(page);
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Canvas Properties" })).toBeVisible();
+    // The paint survives the reload…
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "radial-gradient(circle, rgb(59, 130, 246) 0%, rgb(139, 92, 246) 100%)",
+    );
+    // …and a Solid hex edit CLEARS it (the reference's measured semantics:
+    // its flat re-apply made the gradient vanish through the next reload).
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Gradient" })).toHaveAttribute("data-state", "active");
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
+    await waitForSaved(page);
+    await page.reload();
+    await expect(page.locator(CTA)).toHaveCSS("background-color", "rgb(59, 130, 246)");
+    await expect(page.locator(CTA)).toHaveCSS("background-image", "none");
+  });
+
+  test("the active tab DERIVES from the element's fill state (the coherent superset over the reset-to-Solid quirk)", async ({ page }) => {
+    await openOnCta(page);
+    await page.getByRole("tab", { name: "Gradient" }).click();
+    await page.getByRole("button", { name: "Radial", exact: true }).click();
+    await waitForSaved(page);
+    // Deselect (click empty canvas) then re-select: the reference resets to
+    // SOLID here (selection-local tab state, its own quirk); the clone
+    // derives IMAGE > GRADIENT > SOLID from the element.
+    await page.getByRole("button", { name: "Layer Accent Bar", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Solid" })).toHaveAttribute("data-state", "active");
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Gradient" })).toHaveAttribute("data-state", "active");
+    // Cleanup.
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
+    await waitForSaved(page);
+  });
+
+  test("the Image tab uploads and paints a data-URL fill that persists (RA-54)", async ({ page }) => {
+    await openOnCta(page);
+    await page.getByRole("tab", { name: "Image" }).click();
+    // The reference's dropzone chrome: dashed border + the lucide-image
+    // glyph + the measured copy.
+    await expect(page.getByText("Upload Image", { exact: true })).toBeVisible();
+    await expect(page.getByText("Click to upload image")).toBeVisible();
+    await expect(page.getByText("PNG, JPG, SVG")).toBeVisible();
+    const dropzone = page.locator("section[aria-label='Fill and stroke'] div.border-dashed");
+    await expect(dropzone).toHaveClass(/border-\[#30363d\]/);
+    // Upload the 16x16 orange probe PNG.
+    await page
+      .locator("section[aria-label='Fill and stroke'] input[type=file]")
+      .setInputFiles({
+        name: "probe-orange.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAF0lEQVR4nGP438BAEiJN9aiGUQ1DSgMAnHV/EBlpJJcAAAAASUVORK5CYII=",
+          "base64",
+        ),
+      });
+    // The paint: the data URL as background-image.
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAF0lEQVR4nGP438BAEiJN9aiGUQ1DSgMAnHV/EBlpJJcAAAAASUVORK5CYII=")',
+    );
+    await waitForSaved(page);
+    // The F26 full path: persists through reload.
+    await page.reload();
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAF0lEQVR4nGP438BAEiJN9aiGUQ1DSgMAnHV/EBlpJJcAAAAASUVORK5CYII=")',
+    );
+    // Cleanup: back to the seeded solid fill.
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Image" })).toHaveAttribute("data-state", "active");
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
     await waitForSaved(page);
   });
 });

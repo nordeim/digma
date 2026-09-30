@@ -54,6 +54,8 @@ async function main() {
     width: number;
     height: number;
     fill?: string;
+    fillGradient?: string;
+    fillImage?: string;
     stroke?: string;
     strokeWidth?: number;
     radius?: number;
@@ -85,6 +87,8 @@ async function main() {
         width: el.width,
         height: el.height,
         fill: el.fill ?? null,
+        fillGradient: el.fillGradient ?? null,
+        fillImage: el.fillImage ?? null,
         stroke: el.stroke ?? null,
         strokeWidth: el.strokeWidth ?? 0,
         radius: el.radius ?? 0,

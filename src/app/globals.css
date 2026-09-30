@@ -53,6 +53,9 @@
   --color-green-500: #22c55e;
   --color-green-600: #16a34a;
   --color-green-700: #15803d;
+  /* Session 41 (RA-53): the card avatar's second chip — the reference's
+     from-green-500 to-teal-600 gradient (v3 hex). */
+  --color-teal-600: #0d9488;
   --color-purple-50: #faf5ff;
   --color-purple-100: #f3e8ff;
   --color-purple-200: #e9d5ff;

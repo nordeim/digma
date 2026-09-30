@@ -895,3 +895,109 @@ test.describe("session 39 parity pins (eighteenth audit — the Recent toolbar c
     expect(empty.pColor).toBe("rgb(107, 114, 128)");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Session 41 (RA-52/RA-53) — the GRID-card ellipsis Rename is an INLINE
+// header-row editor (NOT a dialog: the h3 area swaps to an input + Check/X
+// icon buttons; Check PUTs the rename, X discards), and the card avatar
+// stack is the reference's hardcoded gradient pair ("A" blue->purple, "B"
+// green->teal — bundle-decoded verbatim; the clone's first chip keeps the
+// real-user identity with the reference's gradient paint).
+// ---------------------------------------------------------------------------
+
+test.describe("grid-card inline rename + avatar chips (session 41, RA-52/RA-53)", () => {
+  test("the ellipsis Rename opens the reference's INLINE header-row editor (RA-52)", async ({ page }) => {
+    await page.goto("/");
+    // The All Projects grid card's ellipsis (the last expanded menu on the
+    // dashboard grid — the seeded workspace renders one card per section).
+    const card = page.locator("main .grid > div.group").last();
+    await card.locator('button[aria-haspopup="menu"]').click();
+    await page.getByRole("menuitem", { name: "Rename" }).click();
+    // The inline editor: the h3 area swaps to input + Check + X (the
+    // pre-fix clone opened a "Rename project" DIALOG instead).
+    const input = page.getByRole("textbox", { name: /^Rename / });
+    await expect(input).toBeVisible();
+    await expect(input).toHaveValue("Portfolio Website Redesign");
+    await expect(input).toBeFocused();
+    // The measured chrome: h-7 (28px) input + the two h-7 w-7 icon buttons.
+    await expect(input.locator("xpath=following-sibling::button[1]")).toBeVisible();
+    const checkBtn = page.getByRole("button", { name: "Save rename" });
+    const xBtn = page.getByRole("button", { name: "Cancel rename" });
+    await expect(checkBtn).toBeVisible();
+    await expect(xBtn).toBeVisible();
+    const checkBox = await checkBtn.boundingBox();
+    expect(Math.round(checkBox?.height ?? 0)).toBe(28);
+    expect(Math.round(checkBox?.width ?? 0)).toBe(28);
+    // The dialog is GONE.
+    await expect(page.getByText("Rename project")).toHaveCount(0);
+    // X discards: the card keeps its name, the editor closes.
+    await xBtn.click();
+    await expect(page.getByRole("textbox", { name: /^Rename / })).toHaveCount(0);
+    await expect(page.getByText("Portfolio Website Redesign").filter({ visible: true }).first()).toBeVisible();
+  });
+
+  test("the inline Check commits the rename; a fresh open shows the CURRENT name (RA-52)", async ({ page }) => {
+    await page.goto("/");
+    const card = page.locator("main .grid > div.group").last();
+    await card.locator('button[aria-haspopup="menu"]').click();
+    await page.getByRole("menuitem", { name: "Rename" }).click();
+    const input = page.getByRole("textbox", { name: /^Rename / });
+    await input.fill("Session 41 Rename Probe");
+    await page.getByRole("button", { name: "Save rename" }).click();
+    // Both dashboard sections re-render the new name (Continue Working +
+    // All Projects share the entity).
+    await expect(page.getByText("Session 41 Rename Probe").first()).toBeVisible();
+    // The rename persists through a reload (the PATCH really landed).
+    await page.reload();
+    await expect(page.getByText("Session 41 Rename Probe").first()).toBeVisible();
+
+    // The coherent superset: a CANCEL leaves no stale draft — reopening the
+    // editor shows the CURRENT name (the reference's own X leaves the last
+    // uncommitted draft in state; not ported).
+    const card2 = page.locator("main .grid > div.group").last();
+    await card2.locator('button[aria-haspopup="menu"]').click();
+    await page.getByRole("menuitem", { name: "Rename" }).click();
+    await page.getByRole("textbox", { name: /^Rename / }).fill("Discarded Draft");
+    await page.getByRole("button", { name: "Cancel rename" }).click();
+    await card2.locator('button[aria-haspopup="menu"]').click();
+    await page.getByRole("menuitem", { name: "Rename" }).click();
+    await expect(page.getByRole("textbox", { name: /^Rename / })).toHaveValue("Session 41 Rename Probe");
+
+    // Rename back (leave the board pristine — the seeded name).
+    await page.getByRole("textbox", { name: /^Rename / }).fill("Portfolio Website Redesign");
+    await page.getByRole("button", { name: "Save rename" }).click();
+    await expect(page.getByText("Portfolio Website Redesign").filter({ visible: true }).first()).toBeVisible();
+  });
+
+  test("the card avatar stack paints the reference's gradient pair (RA-53)", async ({ page }) => {
+    await page.goto("/");
+    // The dashboard fetches its projects client-side — settle before the
+    // raw evaluate (the session-8 lesson).
+    await expect(page.locator("main .grid div.group").first()).toBeVisible();
+    const chips = await page.evaluate(() => {
+      const card = document.querySelectorAll("main .grid div.group")[0];
+      const stack = [...card.querySelectorAll("div")].find((d) => d.className.includes("-space-x-2"));
+      if (!stack) throw new Error("avatar stack not found");
+      return [...stack.children].map((node) => {
+        const chip = node as HTMLElement;
+        const cs = getComputedStyle(chip);
+        const initials = chip.textContent.trim();
+        return { backgroundImage: cs.backgroundImage.slice(0, 110), initials, title: chip.title };
+      });
+    });
+    // First chip: the real-user identity (title "You", the RA-40 superset
+    // family) on the reference's blue-500 -> purple-600 gradient.
+    expect(chips[0]?.title).toBe("You");
+    expect(chips[0]?.initials).toBe("Y");
+    expect(chips[0]?.backgroundImage).toContain("linear-gradient");
+    expect(chips[0]?.backgroundImage).toContain("rgb(59, 130, 246)");
+    expect(chips[0]?.backgroundImage).toContain("rgb(147, 51, 234)");
+    // Second chip: the reference's verbatim "B" on green-500 -> teal-600,
+    // NO title (bundle-decoded: children "A"/"B", the card's own mock pair).
+    expect(chips[1]?.title).toBe("");
+    expect(chips[1]?.initials).toBe("B");
+    expect(chips[1]?.backgroundImage).toContain("linear-gradient");
+    expect(chips[1]?.backgroundImage).toContain("rgb(34, 197, 94)");
+    expect(chips[1]?.backgroundImage).toContain("rgb(13, 148, 136)");
+  });
+});
