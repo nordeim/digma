@@ -41,6 +41,7 @@ import {
   CANVAS_BACKGROUND_PRESETS,
   TEMPLATE_META,
   boundsOf,
+  canvasFontFamily,
   type DesignElementDTO,
   type ProjectDTO,
 } from "@/lib/editor";
@@ -132,7 +133,7 @@ export function CanvasThumbnail({
                   color: el.type === "text" ? el.fill ?? "#fff" : undefined,
                   fontSize: el.type === "text" ? el.fontSize ?? 16 : undefined,
                   fontWeight: el.type === "text" ? el.fontWeight ?? "500" : undefined,
-                  fontFamily: el.type === "text" ? el.fontFamily ?? "Inter" : undefined,
+                  fontFamily: el.type === "text" ? canvasFontFamily(el.fontFamily) : undefined,
                   display: el.type === "text" ? "flex" : undefined,
                   alignItems: el.type === "text" ? "center" : undefined,
                   textAlign: (el.type === "text" ? el.textAlign ?? "left" : undefined) as React.CSSProperties["textAlign"],

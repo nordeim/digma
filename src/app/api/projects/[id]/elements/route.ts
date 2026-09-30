@@ -106,6 +106,14 @@ export async function PUT(request: NextRequest, { params }: Params) {
   if (!list) return fail("VALIDATION", "elements array is required", 400);
   if (list.length > 2000) return fail("VALIDATION", "Too many elements (max 2000)", 400);
 
+  // Session 33 (S33-3): the autosave PUT carries the FULL canvas state —
+  // an optional backgroundColor alongside the element list. Validated like
+  // every other color field and written inside the SAME transaction as the
+  // element replace (one atomic save). Absent/invalid → "" → the stored
+  // background is untouched (backward-compatible with every other caller).
+  const backgroundColor =
+    typeof body?.backgroundColor === "string" ? clampColor(body.backgroundColor, "") : "";
+
   const rows = list.map((raw: Record<string, unknown>, index: number) => {
     const type = typeof raw?.type === "string" ? raw.type : "";
     if (!isElementType(type)) throw new Error(`invalid type at ${index}`);
@@ -142,7 +150,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
     if (rows.length > 0) {
       await tx.designElement.createMany({ data: rows.map((r) => ({ ...r, projectId: id })) });
     }
-    await tx.project.update({ where: { id }, data: { updatedAt: new Date() } });
+    await tx.project.update({
+      where: { id },
+      data: { updatedAt: new Date(), ...(backgroundColor ? { backgroundColor } : {}) },
+    });
   });
 
   const elements = await db.designElement.findMany({

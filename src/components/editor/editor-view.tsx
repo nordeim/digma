@@ -14,7 +14,7 @@ import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily } from "@/lib/editor";
 
 // The Untitled editor state (ADR-009): loaded when the ?projectId is unknown
 // or missing — the reference app renders a fully working "Untitled" canvas
@@ -85,7 +85,15 @@ function useAutosave() {
         const response = await fetch(`/api/projects/${projectId}/elements`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ elements: useEditorStore.getState().elements }),
+          // Session 33 (S33-3): the body carries the FULL canvas state —
+          // elements AND the canvas background. The pre-fix body carried
+          // only elements, so a Background Color change flipped unsaved,
+          // fired this PUT, and silently reverted on reload (the store's
+          // setBackgroundColor was already wired; the seam was the body).
+          body: JSON.stringify({
+            elements: useEditorStore.getState().elements,
+            backgroundColor: useEditorStore.getState().backgroundColor,
+          }),
         });
         const body = await response.json().catch(() => null);
         if (!response.ok || !body?.ok) {
@@ -286,7 +294,7 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                 color: el.type === "text" ? el.fill ?? "#fff" : undefined,
                 fontSize: el.type === "text" ? (el.fontSize ?? undefined) : undefined,
                 fontWeight: el.type === "text" ? (el.fontWeight ?? undefined) : undefined,
-                fontFamily: el.type === "text" ? (el.fontFamily ?? "Inter") : undefined,
+                fontFamily: el.type === "text" ? canvasFontFamily(el.fontFamily) : undefined,
                 display: el.type === "text" ? "flex" : undefined,
                 alignItems: el.type === "text" ? "center" : undefined,
                 textAlign: (el.type === "text" ? el.textAlign ?? "left" : undefined) as React.CSSProperties["textAlign"],

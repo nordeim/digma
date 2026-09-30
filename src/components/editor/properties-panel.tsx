@@ -7,6 +7,7 @@ import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FONT_FAMILIES } from "@/lib/validation";
+import { cornerRadiusMax } from "@/lib/editor";
 
 // The Properties panel (right edge, w-72) — restructured to the reference
 // DOM (session-3 audit): a fixed header block (border-b) carrying the panel
@@ -274,18 +275,21 @@ export function PropertiesPanel() {
                 label="All Corners"
                 value={single.radius}
                 min={0}
-                max={75}
-                onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), 75) })}
+                max={cornerRadiusMax(single)}
+                onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })}
               />
               {/* Per-corner inputs — linked corners: the element model keeps a
                   single radius, so each input edits the shared value (the
                   Figma "linked corners" behavior; per-corner splits are a
-                  documented scope cut, PAD §10). */}
+                  documented scope cut, PAD §10). Session 33 (RA-29): the
+                  inputs clamp to the SAME dynamic max as the slider —
+                  min(w,h)/2 — so the section's controls share one coherent
+                  range (a value above the slider's max would peg it). */}
               <div className="mt-3 grid grid-cols-2 gap-3">
-                <NumberField label="Top Left" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
-                <NumberField label="Top Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
-                <NumberField label="Bottom Left" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
-                <NumberField label="Bottom Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
+                <NumberField label="Top Left" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })} />
+                <NumberField label="Top Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })} />
+                <NumberField label="Bottom Left" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })} />
+                <NumberField label="Bottom Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })} />
               </div>
             </section>
             )}

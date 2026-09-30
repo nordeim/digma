@@ -351,17 +351,18 @@ test.describe("properties panel reference chrome (session 15)", () => {
     await expect(page.getByRole("heading", { level: 4, name: "Transform" })).toBeVisible();
   });
 
-  test("the corner-radius slider caps at 75 (reference aria-valuemax; session-17 re-measure)", async ({ page }) => {
+  test("the corner-radius slider max is dynamic — half the element's smaller side (session 33, RA-29)", async ({ page }) => {
     // Session 16 pinned max="50" from a single reading — the misread outlier.
-    // Session 17 re-measured TWICE on fresh page loads with freshly drawn
-    // elements: the reference's All Corners Radix thumb carries
-    // aria-valuemin="0" aria-valuemax="75" (sessions 1–5 also measured 75).
-    // The reversal of a previously-verified fact needs double-measurement
-    // before it ships — lesson F18.
+    // Session 17 re-measured TWICE and read 75 — which session 33's functional
+    // sweep corrected: the max is min(w,h)/2 of the SELECTED element, and every
+    // historical reading (sessions 1–17) had been taken on 200x150-class
+    // audit rectangles whose min/2 IS 75. Triple-measured live: 200x150 -> 75,
+    // 46x23.366 -> 11.68298487339743, 156x117 -> 58.41492436698704.
+    // The seeded CTA Button (160x44) must read max="22" (pre-fix: "75").
     const slider = page.getByRole("slider", { name: "All Corners" });
     await expect(slider).toBeVisible();
     await expect(slider).toHaveAttribute("min", "0");
-    await expect(slider).toHaveAttribute("max", "75");
+    await expect(slider).toHaveAttribute("max", "22");
   });
 
   test("every panel slider carries the editor-range class (the Radix look)", async ({ page }) => {
@@ -1327,5 +1328,86 @@ test.describe("frame container rendering (session 31)", () => {
     expect(bordered).toBe(true);
     // The label never reaches the thumbnail (RA-19).
     await expect(thumb.getByText("Hero Section")).toHaveCount(0);
+  });
+});
+
+test.describe("dynamic panel contracts (session 33)", () => {
+  // The fifteenth audit's functional sweep of the reference's properties
+  // controls measured its panel sliders/pickers ALL functional (RA-21…27)
+  // and found two NEW contracts the clone diverged from:
+  //   - the Corner Radius slider's MAX is dynamic: min(w,h)/2 of the
+  //     selected element (RA-29 — triple-measured);
+  //   - the fresh text's computed font-family is "Inter, sans-serif" (the
+  //     default carries a fallback chain; RA-30);
+  // plus one clone-side persistence gap the sweep live-reproduced:
+  //   - the Background Color control works in-session but the change never
+  //     reaches the server (the autosave PUT body carries only elements —
+  //     S33-3, the F19 "half-does X" class).
+
+  async function waitForSaved(page: import("@playwright/test").Page) {
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  test("the corner-radius max and per-corner clamp follow the selected element (RA-29)", async ({ page }) => {
+    // The seeded CTA Button (160x44): the slider max reads 22 (min/2) and a
+    // per-corner input typed above the max clamps to it (the linked-corner
+    // inputs and the slider share one coherent range).
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
+    const slider = page.getByRole("slider", { name: "All Corners" });
+    await expect(slider).toHaveAttribute("max", "22");
+
+    await page.getByRole("spinbutton", { name: "Top Left" }).fill("75");
+    const cta = page.locator("[data-element-id][aria-label='CTA Button']");
+    await expect(cta).toHaveCSS("border-radius", "22px");
+
+    // The seeded Hero Section frame (560x320 — frames KEEP Corner Radius,
+    // RA-17): the max follows the frame's own smaller side.
+    await page.getByRole("button", { name: "Layer Hero Section", exact: true }).click();
+    await expect(page.getByRole("slider", { name: "All Corners" })).toHaveAttribute("max", "160");
+
+    // Cleanup: restore the CTA Button's seeded radius (8) before the flush.
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
+    await page.getByRole("spinbutton", { name: "Top Left" }).fill("8");
+    await expect(page.locator("[data-element-id][aria-label='CTA Button']")).toHaveCSS("border-radius", "8px");
+    await waitForSaved(page);
+  });
+
+  test("the seeded text renders the reference's default font fallback chain (RA-30)", async ({ page }) => {
+    // A fresh reference text measured computed font-family "Inter, sans-serif"
+    // (its combobox displays "Inter"); Roboto/Arial render verbatim. The
+    // clone's pre-fix canvas rendered "Inter" alone — no fallback.
+    const headline = page.locator("[data-element-id][aria-label='Headline']");
+    await expect(headline).toHaveCSS("font-family", "Inter, sans-serif");
+  });
+
+  test("the canvas background color persists across reload (S33-3)", async ({ page }) => {
+    // The pre-fix clone: setBackgroundColor flips unsaved, the autosave PUT
+    // fires — but the body carries only { elements }, so the change silently
+    // reverts on reload (live-reproduced during the audit).
+    await expect(page.getByRole("heading", { name: "Canvas Properties" })).toBeVisible();
+    await page.getByRole("textbox", { name: "Color hex" }).fill("#1a2b3c");
+    await waitForSaved(page);
+
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Canvas Properties" })).toBeVisible();
+    // The hex input still reads the chosen color…
+    await expect(page.getByRole("textbox", { name: "Color hex" })).toHaveValue("#1a2b3c");
+    // …and the canvas surface still paints it.
+    const painted = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll("div")).some((d) => {
+        return d.style.backgroundColor === "rgb(26, 43, 60)" && d.getBoundingClientRect().width > 500;
+      });
+    });
+    expect(painted).toBe(true);
+
+    // Cleanup: restore the seeded background before leaving (a failure must
+    // never leave the shared e2e DB mutated).
+    await page.getByRole("textbox", { name: "Color hex" }).fill("#0D1117");
+    await waitForSaved(page);
   });
 });

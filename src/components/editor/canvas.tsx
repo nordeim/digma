@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "./editor-store";
-import { boundsOf, clampZoom, type DesignElementDTO, type EditorTool } from "@/lib/editor";
+import { boundsOf, canvasFontFamily, clampZoom, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
 // ---------------------------------------------------------------------------
 // The canvas: a DOM-element canvas (the reference's approach — absolutely
@@ -498,8 +498,10 @@ function CanvasElement({
     style.fontWeight = element.fontWeight ?? "500";
     // The reference's Font Family combobox (session 29, RA-10) — measured
     // functional live (picking Arial changed its canvas text's computed
-    // font-family).
-    style.fontFamily = element.fontFamily ?? "Inter";
+    // font-family). Session 33 (RA-30): the DEFAULT chain carries the
+    // reference's fallback — "Inter, sans-serif" (measured on a fresh text);
+    // chosen families render verbatim.
+    style.fontFamily = canvasFontFamily(element.fontFamily);
     style.display = "flex";
     style.alignItems = "center";
     // The reference's Text Align buttons are functional too (measured:

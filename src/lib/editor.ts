@@ -203,6 +203,27 @@ export function normalizeRect(
 
 export type ElementStyle = Record<string, string>;
 
+/** The Corner Radius slider's DYNAMIC max — half the element's smaller side
+ * (session 33, RA-29 — triple-measured on the reference: a 200x150 rectangle
+ * reads aria-valuemax="75" = 150/2; a 46x23.366 rectangle reads
+ * 11.68298487339743 = 23.366/2; a 156x117 frame reads 58.41492436698704 =
+ * 117/2). The historical "fixed 75" reading was the 200x150-class audit
+ * rectangle's own min/2 — the cap is a FUNCTION of the element, never a
+ * constant. */
+export function cornerRadiusMax(el: Pick<DesignElementDTO, "width" | "height">): number {
+  return Math.min(el.width, el.height) / 2;
+}
+
+/** The font chain the canvas renders a text element with (session 33,
+ * RA-30): the reference's fresh text measures computed font-family
+ * "Inter, sans-serif" — ONLY the default (null/undefined/"Inter") carries
+ * the fallback; chosen families render verbatim (Roboto -> "Roboto",
+ * Arial -> "Arial"). The Font Family COMBOBOX still displays the model
+ * value ("Inter") — this is the render-side chain only. */
+export function canvasFontFamily(fontFamily?: string | null): string {
+  return fontFamily && fontFamily !== "Inter" ? fontFamily : "Inter, sans-serif";
+}
+
 /** The inline style the canvas renders an element with (mirrors the
  * reference: translate(x,y) scale(s) rotate(r) — scale sits between the
  * translate and the rotate, exactly the chain the reference DOM ships). */
@@ -226,7 +247,7 @@ export function elementToStyle(el: DesignElementDTO): ElementStyle {
   if (el.type === "text" && el.text) {
     style.fontSize = `${el.fontSize ?? 16}px`;
     style.fontWeight = el.fontWeight ?? "500";
-    style.fontFamily = el.fontFamily ?? "Inter";
+    style.fontFamily = canvasFontFamily(el.fontFamily);
     style.color = el.fill ?? "#FFFFFF";
     style.display = "flex";
     style.alignItems = "center";

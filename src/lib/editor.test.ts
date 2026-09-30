@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   boundsOf,
+  canvasFontFamily,
   clampZoom,
+  cornerRadiusMax,
   defaultElementFor,
   elementToStyle,
   fitToBounds,
@@ -178,6 +180,45 @@ describe("elementToStyle", () => {
     const style = elementToStyle(el({ type: "text", text: "Type here...", fontSize: 16, fontFamily: "Arial", fill: "#FFFFFF" }));
     expect(style.fontFamily).toBe("Arial");
     expect(style.fontSize).toBe("16px");
+  });
+
+  it("renders the DEFAULT text font with the reference's fallback chain (session 33, RA-30)", () => {
+    // A fresh reference text measured computed font-family "Inter, sans-serif"
+    // (the combobox still displays "Inter"); Roboto/Arial render verbatim.
+    // Pre-fix: the chain was "Inter" alone — no fallback when Inter is absent.
+    const style = elementToStyle(el({ type: "text", text: "Type here..." }));
+    expect(style.fontFamily).toBe("Inter, sans-serif");
+  });
+});
+
+describe("cornerRadiusMax (session 33, RA-29)", () => {
+  it("is half the element's smaller side — the reference's dynamic slider max", () => {
+    // Triple-measured on the reference: a 200x150 rectangle read
+    // aria-valuemax="75" (= 150/2 — the historical "fixed 75" reading was
+    // THIS element's min/2); a 46x23.366 rectangle read 11.68298487339743
+    // (= 23.366/2, unrounded); a 156x117 frame read 58.41492436698704.
+    expect(cornerRadiusMax({ width: 160, height: 44 })).toBe(22);
+    expect(cornerRadiusMax({ width: 200, height: 150 })).toBe(75);
+    expect(cornerRadiusMax({ width: 156, height: 117 })).toBe(58.5);
+    expect(cornerRadiusMax({ width: 46, height: 23.366 })).toBe(11.683);
+  });
+
+  it("keeps the seeded Accent Bar exactly at its max (560x8, radius 4)", () => {
+    expect(cornerRadiusMax({ width: 560, height: 8 })).toBe(4);
+  });
+});
+
+describe("canvasFontFamily (session 33, RA-30)", () => {
+  it("maps the default (null/undefined/Inter) to the fallback chain", () => {
+    expect(canvasFontFamily(undefined)).toBe("Inter, sans-serif");
+    expect(canvasFontFamily(null)).toBe("Inter, sans-serif");
+    expect(canvasFontFamily("Inter")).toBe("Inter, sans-serif");
+  });
+
+  it("renders chosen families verbatim (measured: Roboto and Arial carry no fallback)", () => {
+    expect(canvasFontFamily("Arial")).toBe("Arial");
+    expect(canvasFontFamily("Roboto")).toBe("Roboto");
+    expect(canvasFontFamily("Times New Roman")).toBe("Times New Roman");
   });
 });
 
