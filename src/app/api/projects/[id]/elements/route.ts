@@ -10,7 +10,7 @@ import {
   clampTextAlign,
   isElementType,
 } from "@/lib/validation";
-import { defaultNameFor, parseGradient, type ElementType } from "@/lib/editor";
+import { clampFillImageFit, defaultNameFor, parseGradient, type ElementType } from "@/lib/editor";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +85,7 @@ export async function POST(request: NextRequest, { params }: Params) {
           ? null
           : (() => { const g = parseGradient(String(body.fillGradient)); return g ? JSON.stringify(g) : null; })(),
       fillImage: clampFillImage(body?.fillImage),
+      fillImageFit: clampFillImageFit(body?.fillImageFit),
       stroke: body?.stroke === null ? null : clampColor(String(body?.stroke ?? "#FFFFFF"), "#FFFFFF"),
       strokeWidth: clampNumber(body?.strokeWidth, 0, 100, 0),
       radius: clampNumber(body?.radius, 0, 2000, 0),
@@ -151,6 +152,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
         return g ? JSON.stringify(g) : null;
       })(),
       fillImage: clampFillImage(raw?.fillImage),
+      fillImageFit: clampFillImageFit(raw?.fillImageFit),
       stroke: raw?.stroke === null || raw?.stroke === undefined ? null : clampColor(String(raw.stroke), "#FFFFFF"),
       strokeWidth: clampNumber(raw?.strokeWidth, 0, 100, 0),
       radius: clampNumber(raw?.radius, 0, 2000, 0),

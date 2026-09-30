@@ -53,6 +53,50 @@ UNAUTH=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/api/projects")
 [ "$UNAUTH" = "401" ] && ok "unauthenticated /api/projects rejected 401" || bad "unauthenticated /api/projects rejected 401 (got $UNAUTH)"
 
 # ---------------------------------------------------------------------------
+# Session 43, RA-58: the register → verify-otp round-trip. The register opens
+# NO session (the reference's verify-email flow); the 6-digit code travels in
+# the response (the self-hosted in-app delivery); verify-otp opens the
+# session; the wrong-code path decrements the attempts counter.
+SMOKE_TS=$(date +%s)
+REGISTER=$(curl -s -X POST "$BASE/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"smoke-$SMOKE_TS@digma.app\",\"password\":\"SmokePass123!\",\"name\":\"Smoke\"}")
+echo "$REGISTER" | grep -q '"verificationCode"' && ok "register returns a verification code (no session)" || bad "register returns a verification code: $REGISTER"
+SMOKE_CODE=$(echo "$REGISTER" | grep -o '"verificationCode":"[0-9]*"' | grep -o '[0-9]*')
+SMOKE_EMAIL="smoke-$SMOKE_TS@digma.app"
+
+WRONGOTP=$(curl -s -X POST "$BASE/api/auth/verify-otp" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$SMOKE_EMAIL\",\"code\":\"000000\"}")
+echo "$WRONGOTP" | grep -q '4 attempts remaining' && ok "wrong OTP shows the decrementing attempts error" || bad "wrong OTP attempts error: $WRONGOTP"
+
+VERIFY=$(curl -s -c /tmp/smoke-verify-cookies.txt -X POST "$BASE/api/auth/verify-otp" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$SMOKE_EMAIL\",\"code\":\"$SMOKE_CODE\"}")
+echo "$VERIFY" | grep -q '"ok":true' && ok "verify-otp with the delivered code opens the session" || bad "verify-otp: $VERIFY"
+VERIFIED_ME=$(curl -s -b /tmp/smoke-verify-cookies.txt "$BASE/api/auth/me")
+echo "$VERIFIED_ME" | grep -q '"ok":true' && ok "the verified account's session resolves" || bad "verified session: $VERIFIED_ME"
+
+# The resend round-trip on a SECOND unverified account (the first is now
+# verified — resend answers 409 there): a fresh code replaces the old one.
+SMOKE_TS2=$((SMOKE_TS + 1))
+REGISTER2=$(curl -s -X POST "$BASE/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"smoke-$SMOKE_TS2@digma.app\",\"password\":\"SmokePass123!\",\"name\":\"Smoke2\"}")
+SMOKE_CODE2=$(echo "$REGISTER2" | grep -o '"verificationCode":"[0-9]*"' | grep -o '[0-9]*')
+SMOKE_EMAIL2="smoke-$SMOKE_TS2@digma.app"
+RESEND=$(curl -s -X POST "$BASE/api/auth/resend-otp" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$SMOKE_EMAIL2\"}")
+echo "$RESEND" | grep -q '"verificationCode"' && ok "resend-otp regenerates a code (no cooldown)" || bad "resend-otp: $RESEND"
+SMOKE_CODE2B=$(echo "$RESEND" | grep -o '"verificationCode":"[0-9]*"' | grep -o '[0-9]*')
+[ -n "$SMOKE_CODE2B" ] && [ "$SMOKE_CODE2B" != "$SMOKE_CODE2" ] && ok "the resent code differs from the original (regenerated, not echoed)" || bad "resend echoed the same code ($SMOKE_CODE2 -> $SMOKE_CODE2B)"
+VERIFY2=$(curl -s -X POST "$BASE/api/auth/verify-otp" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$SMOKE_EMAIL2\",\"code\":\"$SMOKE_CODE2B\"}")
+echo "$VERIFY2" | grep -q '"ok":true' && ok "the resent code verifies" || bad "resent code verify: $VERIFY2"
+
+# ---------------------------------------------------------------------------
 step "== Authenticated reads =="
 for ENDPOINT in stats projects teams; do
   READ=$(curl -s -b /tmp/smoke-cookies.txt "$BASE/api/$ENDPOINT")

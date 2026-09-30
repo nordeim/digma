@@ -69,6 +69,11 @@ export type DesignElementDTO = {
   /** The Image tab's persisted data URL (session 41, RA-54). Null = no
    * image fill. Wins over fillGradient when set. */
   fillImage: string | null;
+  /** The Image tab's Background Size select (session 43, RA-61): the
+   * stored fit enum ("cover" | "contain" | "auto" | "stretch") — null
+   * paints as cover (the reference's upload default). Stretch maps to the
+   * reference's "100% 100%" backgroundSize at the paint seam. */
+  fillImageFit: string | null;
   zIndex: number;
   visible: boolean;
   locked: boolean;
@@ -151,6 +156,7 @@ export function defaultElementFor(
     path: null,
     fillGradient: null,
     fillImage: null,
+    fillImageFit: null,
     zIndex: sortOrder,
     visible: true,
     locked: false,
@@ -252,10 +258,14 @@ export function elementToStyle(el: DesignElementDTO): ElementStyle {
   };
   // The one fill paint seam (session 41, RA-54) — image > gradient > solid;
   // TEXT keeps its own color contract below and never takes a background.
+  // Session 43 (RA-61): the image paint also carries backgroundSize +
+  // backgroundPosition (the Background Size select's contract).
   if (el.type !== "text") {
     const paint = fillPaintFor(el);
     if (paint.backgroundColor) style.backgroundColor = paint.backgroundColor;
     if (paint.backgroundImage) style.backgroundImage = paint.backgroundImage;
+    if (paint.backgroundSize) style.backgroundSize = paint.backgroundSize;
+    if (paint.backgroundPosition) style.backgroundPosition = paint.backgroundPosition;
   }
   // A line's stroke feeds its SVG diagonal, NEVER the box border (the
   // reference's line div measured border-0 on all four sides despite
@@ -381,6 +391,16 @@ export function addGradientStop(stops: GradientStop[]): GradientStop[] {
   return [...stops.slice(0, index), stop, ...stops.slice(index)];
 }
 
+/** The stop row's remove button (session 43, RA-55 — decoded verbatim
+ * `i.length>2 && <Button onClick={()=>y(w)}>`): removes the stop at the
+ * index, guarded at the two-stop minimum — at length <= 2 the SAME array
+ * reference returns unchanged (no remove buttons render there, so the
+ * seam can never fire from the UI; the guard keeps every caller safe). */
+export function removeGradientStop(stops: GradientStop[], index: number): GradientStop[] {
+  if (stops.length <= 2) return stops;
+  return stops.filter((_, i) => i !== index);
+}
+
 /** The sanitize seam for the stored gradient JSON (the clampColor family):
  * type/enum, angle [0,360], stop positions [0,100], stop colors, and the
  * stop count are clamped; anything malformed yields null (the solid fill
@@ -419,13 +439,48 @@ export function parseGradient(raw: string | null | undefined): GradientFill | nu
  * reference's setters maintain (a Solid hex edit clears both non-solid
  * modes; applying an image clears the gradient). Consumers: the canvas
  * element, the card thumbnail, and the present overlay. TEXT keeps its own
- * `color: fill` contract and never consults this seam. */
+ * `color: fill` contract and never consults this seam.
+ *
+ * Session 43, RA-61: the image branch paints the reference's Background
+ * Size contract — `background-size: <fit>` (stretch = "100% 100%", the
+ * default cover) + `background-position: center` (the reference's upload
+ * handler sets both; its select edits the size). */
 export function fillPaintFor(
-  el: Pick<DesignElementDTO, "fill" | "fillGradient" | "fillImage">,
-): { backgroundColor?: string; backgroundImage?: string } {
-  if (el.fillImage) return { backgroundImage: `url("${el.fillImage}")` };
+  el: Pick<DesignElementDTO, "fill" | "fillGradient" | "fillImage" | "fillImageFit">,
+): { backgroundColor?: string; backgroundImage?: string; backgroundSize?: string; backgroundPosition?: string } {
+  if (el.fillImage) {
+    return {
+      backgroundImage: `url("${el.fillImage}")`,
+      backgroundSize: fillImageSizeFor(el.fillImageFit),
+      backgroundPosition: "center",
+    };
+  }
   const gradient = parseGradient(el.fillGradient);
   if (gradient) return { backgroundImage: gradientCss(gradient) };
   if (el.fill) return { backgroundColor: el.fill };
   return {};
+}
+
+/** The Image tab's Background Size mapping (session 43, RA-61 — decoded:
+ * the reference's select stores cover | contain | auto | "100% 100%"; the
+ * clone stores the enum and maps "stretch" to the CSS value at the seam).
+ * Null/unknown defaults to cover — the reference's upload default. */
+export function fillImageSizeFor(fit: string | null | undefined): string {
+  switch (fit) {
+    case "contain":
+    case "auto":
+      return fit;
+    case "stretch":
+      return "100% 100%";
+    default:
+      return "cover";
+  }
+}
+
+/** The route sanitize seam for the fit enum (session 43): the four stored
+ * values pass verbatim; everything else nulls (a null fit paints as cover
+ * at fillPaintFor — the degrade-not-fail discipline). */
+export function clampFillImageFit(value: unknown): "cover" | "contain" | "auto" | "stretch" | null {
+  if (value === "cover" || value === "contain" || value === "auto" || value === "stretch") return value;
+  return null;
 }

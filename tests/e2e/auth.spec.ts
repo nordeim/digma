@@ -32,12 +32,18 @@ test.describe("login route", () => {
     }
   });
 
-  test("wrong password is rejected without a session", async ({ page }) => {
+  test("wrong password renders the reference's inline alert (session 43, RA-60)", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email").fill("demo@digma.app");
     await page.getByLabel("Password").fill("definitely-wrong");
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByText("Sign in failed").first()).toBeVisible({ timeout: 15_000 });
+    // The reference's measured contract: the failure renders an INLINE
+    // alert INSIDE the form (role=alert, the red family, its exact text) —
+    // NO toast (the pre-fix clone showed a destructive "Sign in failed"
+    // toast; the reference shows none).
+    const alert = page.getByRole("alert").filter({ hasText: "Invalid email or password" });
+    await expect(alert).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator("[data-sonner-toast], .toast")).toHaveCount(0);
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -142,9 +148,105 @@ test.describe("auth card state structure (reference parity)", () => {
 
     // The reference's bottom toggles are gone in forgot mode.
     await expect(page.getByRole("button", { name: "Forgot password?" })).toHaveCount(0);
+    // (The submit's check-your-email transition is pinned by the RA-59
+    // test below — the pre-fix "Reset link sent" toast retired with it.)
+  });
 
-    await page.getByLabel("Email").fill("reset-me@digma.app");
+  // -------------------------------------------------------------------------
+  // Session 43 (RA-58/RA-59): the signup's verify-email follow-through and
+  // the forgot submit's check-your-email success card. NOTE the auth-call
+  // budget: the rate limiter allows 10 per IP per 15 minutes and the whole
+  // e2e run shares one window — this file keeps its total at 9 (setup 1 +
+  // wrong-password 1 + valid 1 + redirect 1 + envelope 1 + this journey's
+  // register/wrong-verify/login/verify 4). The Resend ROUND-TRIP lives in
+  // the smoke suite (its own server process, its own bucket) — this pin
+  // asserts the button's chrome only.
+  // -------------------------------------------------------------------------
+  test("the signup transitions to the verify-email card and the code opens the session (RA-58)", async ({ page }) => {
+    const probeEmail = `verify-probe-${Date.now()}@digma.app`;
+    await page.goto("/login");
+    await page.getByRole("button", { name: /Need an account\? Sign up/ }).click();
+    await page.getByLabel("Email").fill(probeEmail);
+    await page.getByLabel("Password", { exact: true }).fill("VerifyPass123!");
+    await page.getByLabel("Confirm Password").fill("VerifyPass123!");
+    await page.getByRole("button", { name: "Create account" }).click();
+
+    // The reference's verify-email card: the shield-check icon circle, the
+    // h2, the email line, the six digit inputs, the helper, the slate-900
+    // submit, and the timerless Resend row.
+    await expect(page.getByRole("heading", { name: "Verify your email", exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("We've sent a 6-digit code to")).toBeVisible();
+    await expect(page.getByText(probeEmail)).toBeVisible();
+    for (let i = 1; i <= 6; i += 1) {
+      await expect(page.getByLabel(`Verification code digit ${i}`)).toBeVisible();
+    }
+    await expect(page.getByText("Enter the verification code sent to your email")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Verify email", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Resend", exact: true })).toBeEnabled();
+
+    // The self-hosted delivery: the code note (the reference emails it —
+    // the clone has no mail service, so the API response carries it).
+    const codeNote = page.getByText(/your verification code is/);
+    await expect(codeNote).toBeVisible();
+    const deliveredCode = await codeNote.textContent();
+    const code = (deliveredCode ?? "").replace(/\D/g, "");
+
+    // A wrong code renders the reference's DECREMENTING attempts error.
+    for (let i = 1; i <= 6; i += 1) {
+      await page.getByLabel(`Verification code digit ${i}`).fill("0");
+    }
+    await page.getByRole("button", { name: "Verify email", exact: true }).click();
+    await expect(
+      page.getByRole("alert").filter({ hasText: "Invalid verification code. 4 attempts remaining." }),
+    ).toBeVisible();
+
+    // Back to sign in, then the correct-password login on the UNVERIFIED
+    // account re-opens the verify card (the clone's working superset over
+    // the reference's generic dead-end error — the login regenerated the
+    // code and carried it in the 403).
+    await page.getByRole("button", { name: "Back to sign in" }).click();
+    await expect(page.getByRole("heading", { name: "Welcome to Digma" })).toBeVisible();
+    await page.getByLabel("Email").fill(probeEmail);
+    await page.getByLabel("Password").fill("VerifyPass123!");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByRole("heading", { name: "Verify your email", exact: true })).toBeVisible({ timeout: 15_000 });
+
+    // The recovery path's fresh code verifies and the session lands.
+    const recoveryNote = page.getByText(/your verification code is/);
+    await expect(recoveryNote).toBeVisible();
+    const recoveryCode = ((await recoveryNote.textContent()) ?? "").replace(/\D/g, "");
+    for (let i = 1; i <= 6; i += 1) {
+      await page.getByLabel(`Verification code digit ${i}`).fill(recoveryCode[i - 1] ?? "");
+    }
+    await page.getByRole("button", { name: "Verify email", exact: true }).click();
+    await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
+    await expect(
+      page.getByRole("heading", { level: 1 }).filter({ hasText: /Good (morning|afternoon|evening)/ }),
+    ).toBeVisible();
+  });
+
+  test("the forgot submit transitions to the check-your-email success card (RA-59)", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Forgot password?" }).click();
+    await page.getByLabel("Email").fill("reset-flow@outlook.com");
     await page.getByRole("button", { name: "Send reset link" }).click();
-    await expect(page.getByText("Reset link sent").first()).toBeVisible();
+
+    // The reference's success card: the mail icon circle, the h2, the
+    // email line, the GREEN alert with its measured copy, and the
+    // FULL-WIDTH bottom back button (no top back-link on this state).
+    await expect(page.getByRole("heading", { name: "Check your email", exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("We've sent password reset instructions to")).toBeVisible();
+    await expect(page.getByText("reset-flow@outlook.com")).toBeVisible();
+    const greenAlert = page.getByRole("alert").filter({
+      hasText: "Please check your email for the password reset link. It may take a few minutes to arrive.",
+    });
+    await expect(greenAlert).toBeVisible();
+    // No top back-link (the minimal family's -mb-2 arrow button) on the
+    // sent state — the reference's bottom button is the only way back.
+    await expect(page.locator("button.-mb-2")).toHaveCount(0);
+
+    // The full-width bottom button returns to the sign-in card.
+    await page.getByRole("button", { name: /Back to sign in/ }).last().click();
+    await expect(page.getByRole("heading", { name: "Welcome to Digma" })).toBeVisible();
   });
 });

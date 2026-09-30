@@ -22,8 +22,33 @@ export async function POST(request: NextRequest) {
   const user = await db.user.findUnique({ where: { email } });
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return NextResponse.json(
-      { ok: false as const, error: { code: "UNAUTHENTICATED", message: "Incorrect email or password" } },
+      // The reference's measured text (session 43, RA-60): the inline alert
+      // inside the sign-in form reads "Invalid email or password" — the
+      // client renders the message verbatim.
+      { ok: false as const, error: { code: "UNAUTHENTICATED", message: "Invalid email or password" } },
       { status: 401 },
+    );
+  }
+
+  // Session 43, RA-58/RA-60: the reference's own login on a
+  // correct-password-but-UNVERIFIED account returns the SAME generic 400
+  // "Invalid email or password" (live-measured on the probe account) — a
+  // dead end with no path back to the verify card. The clone ports the
+  // WORKING SUPERSET instead (the mobile-nav/eye-toggle family): the login
+  // regenerates the code and the client re-opens the verify-email card —
+  // the recovery path the reference lacks. Documented in the PAD's
+  // deviation ledger.
+  if (!user.verified) {
+    const verifyCode = String(100000 + Math.floor(Math.random() * 900000));
+    await db.user.update({ where: { id: user.id }, data: { verifyCode, verifyAttempts: 0 } });
+    return NextResponse.json(
+      {
+        ok: false as const,
+        error: { code: "VERIFY_EMAIL", message: "Verify your email to sign in — we've sent a fresh 6-digit code." },
+        email,
+        verificationCode: verifyCode,
+      },
+      { status: 403 },
     );
   }
 

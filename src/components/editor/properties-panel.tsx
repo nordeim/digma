@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlignCenter, AlignLeft, AlignRight, CornerUpLeft, Image as ImageIcon, Layers, Move3d, Palette, Plus, Type } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, CornerUpLeft, Image as ImageIcon, Layers, Move3d, Palette, Plus, Type, X } from "lucide-react";
 
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import {
   cornerRadiusMax,
   defaultGradient,
   parseGradient,
+  removeGradientStop,
   type DesignElementDTO,
   type GradientFill,
 } from "@/lib/editor";
@@ -279,25 +280,30 @@ function GradientPanel({
           </Button>
         </div>
       </div>
-      <div>
-        <span className="text-xs font-medium text-gray-300">Angle</span>
-        <div className="mt-1 flex items-center gap-2">
-          <input
-            type="range"
-            aria-label="Gradient angle"
-            min={0}
-            max={360}
-            step={1}
-            value={gradient.angle}
-            onChange={(event) => apply({ ...gradient, angle: Number(event.target.value) })}
-            className="editor-range h-1.5 flex-1"
-            style={{ "--range-fill": `${((gradient.angle / 360) * 100).toFixed(2)}%` } as React.CSSProperties}
-          />
-          <span className="w-10 text-right text-xs text-gray-300" aria-live="polite">
-            {gradient.angle}&deg;
-          </span>
+      {/* Session 43, RA-56 (decoded `c.gradientType==="linear" && …`): the
+          Angle section renders ONLY for Linear gradients — a circle gradient
+          has no direction, and the reference hides the slider for Radial. */}
+      {gradient.type === "linear" && (
+        <div>
+          <span className="text-xs font-medium text-gray-300">Angle</span>
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="range"
+              aria-label="Gradient angle"
+              min={0}
+              max={360}
+              step={1}
+              value={gradient.angle}
+              onChange={(event) => apply({ ...gradient, angle: Number(event.target.value) })}
+              className="editor-range h-1.5 flex-1"
+              style={{ "--range-fill": `${((gradient.angle / 360) * 100).toFixed(2)}%` } as React.CSSProperties}
+            />
+            <span className="w-10 text-right text-xs text-gray-300" aria-live="polite">
+              {gradient.angle}&deg;
+            </span>
+          </div>
         </div>
-      </div>
+      )}
       <div>
         <div className="mb-2 flex items-center justify-between">
           <span className="text-xs font-medium text-gray-300">Color Stops</span>
@@ -336,6 +342,24 @@ function GradientPanel({
                 className="h-6 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
               />
               <span className="text-xs text-gray-400">%</span>
+              {/* Session 43, RA-55 (decoded `i.length>2 && <Button …>`): the
+                  reference's stop-row remove control — the ghost-variant X on
+                  the red family, rendered only above the two-stop minimum. The
+                  clone's remove COMMITS immediately (the coherent superset over
+                  the reference's uncommitted local state — its paint lags until
+                  the next committing control fires). */}
+              {gradient.stops.length > 2 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Remove stop ${index + 1}`}
+                  onClick={() => apply({ ...gradient, stops: removeGradientStop(gradient.stops, index) })}
+                  className="h-6 w-6 rounded-md p-0 text-red-400 hover:text-red-300"
+                >
+                  <X className="h-3 w-3" aria-hidden />
+                </Button>
+              )}
             </div>
           ))}
         </div>
@@ -378,7 +402,7 @@ function ImagePanel({
       const dataUrl = String(reader.result ?? "");
       setBusy(false);
       if (dataUrl.startsWith("data:image/")) {
-        update({ fillImage: dataUrl, fillGradient: null });
+        update({ fillImage: dataUrl, fillGradient: null, fillImageFit: null });
       } else {
         toast.show({ title: "Unsupported image", description: "PNG, JPG, GIF, WebP, or SVG images are supported." });
       }
@@ -391,25 +415,52 @@ function ImagePanel({
   };
 
   return (
-    <div>
-      <span className="mb-2 block text-xs font-medium text-gray-300">Upload Image</span>
-      <div className="rounded-lg border-2 border-dashed border-[#30363d] p-4 text-center transition-colors hover:border-[#404040]">
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          id={inputId}
-          onChange={(event) => {
-            readFile(event.target.files?.[0]);
-            event.target.value = "";
-          }}
-        />
-        <label htmlFor={inputId} className="flex cursor-pointer flex-col items-center gap-2">
-          <ImageIcon className="h-8 w-8 text-gray-400" aria-hidden />
-          <span className="text-sm text-gray-400">{busy ? "Reading image…" : "Click to upload image"}</span>
-          <span className="text-xs text-gray-500">PNG, JPG, SVG</span>
-        </label>
+    <div className="space-y-4">
+      <div>
+        <span className="mb-2 block text-xs font-medium text-gray-300">Upload Image</span>
+        <div className="rounded-lg border-2 border-dashed border-[#30363d] p-4 text-center transition-colors hover:border-[#404040]">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            id={inputId}
+            onChange={(event) => {
+              readFile(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+          <label htmlFor={inputId} className="flex cursor-pointer flex-col items-center gap-2">
+            <ImageIcon className="h-8 w-8 text-gray-400" aria-hidden />
+            <span className="text-sm text-gray-400">{busy ? "Reading image…" : "Click to upload image"}</span>
+            <span className="text-xs text-gray-500">PNG, JPG, SVG</span>
+          </label>
+        </div>
       </div>
+      {/* Session 43, RA-61 (decoded `c.fillType==="image"&&c.backgroundImage&&…`):
+          the Background Size select renders ONLY when the element carries an
+          image fill — the reference's Cover/Contain/Auto/Stretch options over
+          its backgroundSize field (the clone stores the fit enum; "stretch"
+          maps to its "100% 100%" at the fillPaintFor seam). The upload commits
+          the null fit which paints as cover (the reference's default). */}
+      {element.fillImage && (
+        <div>
+          <span className="text-xs font-medium text-gray-300">Background Size</span>
+          <Select
+            value={element.fillImageFit ?? "cover"}
+            onValueChange={(fit) => update({ fillImageFit: fit })}
+          >
+            <SelectTrigger aria-label="Background Size" className="mt-1 h-8 border-[#30363d] bg-[#0d1117] text-sm text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cover">Cover</SelectItem>
+              <SelectItem value="contain">Contain</SelectItem>
+              <SelectItem value="auto">Auto</SelectItem>
+              <SelectItem value="stretch">Stretch</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }
@@ -539,7 +590,7 @@ export function PropertiesPanel() {
                   <HexColorRow
                     label="Fill Color"
                     value={single.fill}
-                    onChange={(fill) => update({ fill, fillGradient: null, fillImage: null })}
+                    onChange={(fill) => update({ fill, fillGradient: null, fillImage: null, fillImageFit: null })}
                   />
                 </TabsContent>
                 <TabsContent value="gradient" className="mt-4 space-y-4">

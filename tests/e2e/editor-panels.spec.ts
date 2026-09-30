@@ -1659,4 +1659,118 @@ test.describe("fill tabs: the functional three-tab editor (session 41, RA-54)", 
     await setSolidFill(page, "#3B82F6");
     await waitForSaved(page);
   });
+
+  // -------------------------------------------------------------------------
+  // Session 43 (RA-55/RA-56/RA-61): the stop-remove control, the Angle
+  // section's Linear-only gate, and the Image tab's Background Size select.
+  // -------------------------------------------------------------------------
+  test("the stop rows carry the reference's red-X remove control with the min-2 guard (RA-55)", async ({ page }) => {
+    await openOnCta(page);
+    await resetCtaFill(page);
+    // At the two-stop default NO remove buttons render (the reference's
+    // decoded i.length>2 gate — live-measured btns:[0,0] at 2 stops).
+    await expect(page.getByRole("button", { name: /Remove stop/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Add gradient stop" }).click();
+    await expect(stopColors(page)).toHaveCount(3);
+    // With 3+ stops EVERY row renders the X (live-measured btns:[1,1,1]).
+    await expect(page.getByRole("button", { name: /Remove stop/ })).toHaveCount(3);
+    // The clone's remove COMMITS immediately (the coherent superset over
+    // the reference's uncommitted local state — its paint lags).
+    await page.getByRole("button", { name: "Remove stop 2" }).click();
+    await expect(stopColors(page)).toHaveCount(2);
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "linear-gradient(0deg, rgb(59, 130, 246) 0%, rgb(139, 92, 246) 100%)",
+    );
+    await waitForSaved(page);
+    // The guard returns: at 2 stops the X buttons vanish again.
+    await expect(page.getByRole("button", { name: /Remove stop/ })).toHaveCount(0);
+    // The F26 full path: the 2-stop state persists through reload.
+    await page.reload();
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
+    await page.getByRole("tab", { name: "Gradient" }).click();
+    await expect(stopColors(page)).toHaveCount(2);
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "linear-gradient(0deg, rgb(59, 130, 246) 0%, rgb(139, 92, 246) 100%)",
+    );
+    // Cleanup.
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
+    await waitForSaved(page);
+  });
+
+  test("the Angle section renders ONLY for Linear gradients (RA-56)", async ({ page }) => {
+    await openOnCta(page);
+    await resetCtaFill(page);
+    // Linear (the default): the Angle label and slider render.
+    await expect(page.getByText("Angle", { exact: true })).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Gradient angle" })).toBeVisible();
+    // Radial: the Angle section is GONE (decoded c.gradientType==="linear"
+    // && …; live-measured: the 0-360 slider absent from the slider list).
+    await page.getByRole("button", { name: "Radial", exact: true }).click();
+    await expect(page.getByText("Angle", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("slider", { name: "Gradient angle" })).toHaveCount(0);
+    // …and the radial paint still lands (the type toggle commits).
+    await expect(page.locator(CTA)).toHaveCSS(
+      "background-image",
+      "radial-gradient(circle, rgb(59, 130, 246) 0%, rgb(139, 92, 246) 100%)",
+    );
+    // Back to Linear: the section returns.
+    await page.getByRole("button", { name: "Linear", exact: true }).click();
+    await expect(page.getByText("Angle", { exact: true })).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Gradient angle" })).toBeVisible();
+    // Cleanup.
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
+    await waitForSaved(page);
+  });
+
+  test("the Image tab carries the reference's Background Size select and it paints (RA-61)", async ({ page }) => {
+    await openOnCta(page);
+    await page.getByRole("tab", { name: "Image" }).click();
+    // Before an upload NO select renders (decoded: fillType==="image" &&
+    // backgroundImage gates it).
+    await expect(page.getByText("Background Size", { exact: true })).toHaveCount(0);
+    await page
+      .locator("section[aria-label='Fill and stroke'] input[type=file]")
+      .setInputFiles({
+        name: "probe-orange.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAF0lEQVR4nGP438BAEiJN9aiGUQ1DSgMAnHV/EBlpJJcAAAAASUVORK5CYII=",
+          "base64",
+        ),
+      });
+    // The upload paints the DEFAULT fit contract (cover + center — the
+    // reference's upload handler sets both).
+    await expect(page.locator(CTA)).toHaveCSS("background-size", "cover");
+    await expect(page.locator(CTA)).toHaveCSS("background-position", "50% 50%");
+    // The select renders with the reference's trigger chrome and options.
+    await expect(page.getByText("Background Size", { exact: true })).toBeVisible();
+    await page.getByRole("combobox", { name: "Background Size" }).click();
+    for (const option of ["Cover", "Contain", "Auto", "Stretch"]) {
+      await expect(page.getByRole("option", { name: option, exact: true })).toBeVisible();
+    }
+    // Contain flips the paint LIVE.
+    await page.getByRole("option", { name: "Contain", exact: true }).click();
+    await expect(page.locator(CTA)).toHaveCSS("background-size", "contain");
+    await expect(page.getByRole("combobox", { name: "Background Size" })).toHaveText(/Contain/);
+    await waitForSaved(page);
+    // The F26 full path: the fit persists through reload.
+    await page.reload();
+    await expect(page.locator(CTA)).toHaveCSS("background-size", "contain");
+    // Stretch maps to the reference's "100% 100%".
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Image" })).toHaveAttribute("data-state", "active");
+    await page.getByRole("combobox", { name: "Background Size" }).click();
+    await page.getByRole("option", { name: "Stretch", exact: true }).click();
+    await expect(page.locator(CTA)).toHaveCSS("background-size", "100% 100%");
+    await waitForSaved(page);
+    // Cleanup: back to the seeded solid fill (clears the fit with the image).
+    await page.getByRole("tab", { name: "Solid" }).click();
+    await setSolidFill(page, "#3B82F6");
+    await waitForSaved(page);
+    await expect(page.locator(CTA)).toHaveCSS("background-color", "rgb(59, 130, 246)");
+  });
 });

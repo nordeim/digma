@@ -1,11 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
-import { setSessionCookie } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
+
+/** A fresh 6-digit verification code (session 43, RA-58): the reference's
+ * verify-email card consumes exactly six digits; crypto-random with the
+ * leading-zero-preserving modulo. */
+function generateVerifyCode(): string {
+  return String(100000 + (Math.floor(Math.random() * 900000)));
+}
 
 export async function POST(request: NextRequest) {
   const limit = authRateLimit(clientIpOf(request.headers));
@@ -33,17 +39,26 @@ export async function POST(request: NextRequest) {
     return fail("CONFLICT", "An account with this email already exists", 409);
   }
 
+  // Session 43, RA-58: the reference's register does NOT open a session —
+  // its signup transitions to the "Verify your email" card and the session
+  // only lands on a verified OTP. The clone ports the flow with the
+  // SELF-HOSTED delivery deviation: no email service exists, so the 6-digit
+  // code travels in the response and the client renders it in the card's
+  // info alert (the deterministic seam the e2e suite pins). Seeded/demo
+  // accounts are pre-verified (the schema default) and never see this flow.
+  const verifyCode = generateVerifyCode();
   const user = await db.user.create({
     data: {
       email,
       name: name || email.split("@")[0] || "Designer",
       passwordHash: hashPassword(password),
       avatarColor: "#3B82F6",
+      verified: false,
+      verifyCode,
+      verifyAttempts: 0,
     },
     select: { id: true, email: true, name: true, avatarColor: true },
   });
 
-  const response = ok({ user }, 201);
-  await setSessionCookie(user.id, response);
-  return response;
+  return ok({ user, verificationCode: verifyCode }, 201);
 }

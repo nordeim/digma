@@ -18,6 +18,14 @@ model User {
   name         String
   passwordHash String
   avatarColor  String   @default("#8B5CF6")
+  // Session-43, RA-58: the reference's signup transitions to a verify-email
+  // card before the session lands. The clone ports the flow with the
+  // self-hosted delivery deviation (the 6-digit code travels in the API
+  // response — no email service). Seeded/demo accounts stay pre-verified
+  // (the @default(true) keeps every existing row and the seed untouched).
+  verified       Boolean @default(true)
+  verifyCode     String? // the pending 6-digit code (null once verified)
+  verifyAttempts Int     @default(0) // wrong-code counter; 5 max, reset on resend
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -56,6 +64,7 @@ model DesignElement {
   fill        String? // hex/rgba — the Solid tab's color (RETAINED under a gradient; the gradient paints)
   fillGradient String? // JSON: { type: "linear"|"radial", angle: 0-360, stops: [{ color, position: 0-100 }] } — the Gradient tab (session 41, RA-54)
   fillImage   String? // data URL — the Image tab's uploaded fill (session 41, RA-54; wins over fillGradient)
+  fillImageFit String? // "cover"|"contain"|"auto"|"stretch" — the Image tab's Background Size select (session 43, RA-61; stretch maps to "100% 100%" at the paint seam; null = cover)
   stroke      String?
   strokeWidth Float    @default(0)
   radius      Float    @default(0) // corner radius

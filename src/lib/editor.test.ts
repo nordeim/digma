@@ -3,16 +3,19 @@ import {
   addGradientStop,
   boundsOf,
   canvasFontFamily,
+  clampFillImageFit,
   clampZoom,
   cornerRadiusMax,
   defaultElementFor,
   defaultGradient,
   elementToStyle,
+  fillImageSizeFor,
   fillPaintFor,
   fitToBounds,
   gradientCss,
   normalizeRect,
   parseGradient,
+  removeGradientStop,
   type DesignElementDTO,
 } from "@/lib/editor";
 
@@ -45,6 +48,7 @@ function el(partial: Partial<DesignElementDTO>): DesignElementDTO {
     path: null,
     fillGradient: null,
     fillImage: null,
+    fillImageFit: null,
     zIndex: 0,
     visible: true,
     locked: false,
@@ -364,7 +368,7 @@ describe("fillPaintFor (RA-54 — the one paint seam)", () => {
     expect(paint).toEqual({ backgroundImage: "linear-gradient(3deg, #3b82f6 0%, #8b5cf6 100%)" });
   });
 
-  it("an image WINS over the gradient", () => {
+  it("an image WINS over the gradient and paints the DEFAULT fit contract (session 43, RA-61)", () => {
     const paint = fillPaintFor(
       el({
         fill: "#3B82F6",
@@ -372,7 +376,11 @@ describe("fillPaintFor (RA-54 — the one paint seam)", () => {
         fillImage: "data:image/png;base64,AAAA",
       }),
     );
-    expect(paint).toEqual({ backgroundImage: 'url("data:image/png;base64,AAAA")' });
+    expect(paint).toEqual({
+      backgroundImage: 'url("data:image/png;base64,AAAA")',
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    });
   });
 
   it("returns an empty paint for a fill-less element", () => {
@@ -383,5 +391,113 @@ describe("fillPaintFor (RA-54 — the one paint seam)", () => {
     expect(fillPaintFor(el({ fill: "#22c55e", fillGradient: "garbage" }))).toEqual({
       backgroundColor: "#22c55e",
     });
+  });
+});
+
+describe("fillPaintFor with fillImageFit (session 43, RA-61 — the Background Size contract)", () => {
+  it("maps each stored fit to the reference's backgroundSize value", () => {
+    for (const [fit, size] of [
+      ["cover", "cover"],
+      ["contain", "contain"],
+      ["auto", "auto"],
+      ["stretch", "100% 100%"],
+    ] as const) {
+      const paint = fillPaintFor(
+        el({ fillImage: "data:image/png;base64,AAAA", fillImageFit: fit }),
+      );
+      expect(paint.backgroundSize).toBe(size);
+      expect(paint.backgroundPosition).toBe("center");
+    }
+  });
+
+  it("an unknown or null fit falls back to cover (the reference's default)", () => {
+    expect(fillPaintFor(el({ fillImage: "data:image/png;base64,AAAA", fillImageFit: null })).backgroundSize).toBe("cover");
+    expect(fillPaintFor(el({ fillImage: "data:image/png;base64,AAAA", fillImageFit: "diagonal" as never })).backgroundSize).toBe("cover");
+  });
+
+  it("the fit NEVER paints on a non-image fill (solid/gradient unchanged)", () => {
+    expect(fillPaintFor(el({ fill: "#3B82F6", fillImageFit: "contain" }))).toEqual({
+      backgroundColor: "#3B82F6",
+    });
+    expect(
+      fillPaintFor(
+        el({
+          fillGradient: JSON.stringify(defaultGradient()),
+          fillImageFit: "stretch",
+        }),
+      ),
+    ).toEqual({ backgroundImage: gradientCss(defaultGradient()) });
+  });
+});
+
+describe("fillImageSizeFor (session 43, RA-61 — the pure fit mapping)", () => {
+  it("maps the four enum values with stretch as the reference's 100% 100%", () => {
+    expect(fillImageSizeFor("cover")).toBe("cover");
+    expect(fillImageSizeFor("contain")).toBe("contain");
+    expect(fillImageSizeFor("auto")).toBe("auto");
+    expect(fillImageSizeFor("stretch")).toBe("100% 100%");
+  });
+
+  it("defaults to cover for null/undefined/unknown values", () => {
+    expect(fillImageSizeFor(null)).toBe("cover");
+    expect(fillImageSizeFor(undefined)).toBe("cover");
+    expect(fillImageSizeFor("noise" as never)).toBe("cover");
+  });
+});
+
+describe("clampFillImageFit (session 43 — the route sanitize seam)", () => {
+  it("keeps the four enum values verbatim", () => {
+    for (const fit of ["cover", "contain", "auto", "stretch"] as const) {
+      expect(clampFillImageFit(fit)).toBe(fit);
+    }
+  });
+
+  it("nulls everything else (a null fit paints as cover at the seam)", () => {
+    expect(clampFillImageFit(null)).toBeNull();
+    expect(clampFillImageFit(undefined)).toBeNull();
+    expect(clampFillImageFit("diagonal")).toBeNull();
+    expect(clampFillImageFit(42)).toBeNull();
+  });
+});
+
+describe("removeGradientStop (session 43, RA-55 — the min-2-guarded remove)", () => {
+  it("removes the stop at the index", () => {
+    const stops = removeGradientStop(
+      [
+        { color: "#3b82f6", position: 0 },
+        { color: "#ffffff", position: 50 },
+        { color: "#8b5cf6", position: 100 },
+      ],
+      1,
+    );
+    expect(stops).toEqual([
+      { color: "#3b82f6", position: 0 },
+      { color: "#8b5cf6", position: 100 },
+    ]);
+  });
+
+  it("guards the two-stop minimum: the reference's decoded i.length>2 gate", () => {
+    const stops = [
+      { color: "#3b82f6", position: 0 },
+      { color: "#8b5cf6", position: 100 },
+    ];
+    expect(removeGradientStop(stops, 0)).toBe(stops); // unchanged reference
+    expect(removeGradientStop(stops, 1)).toBe(stops);
+  });
+
+  it("removing the first and last stops keeps the survivors' order", () => {
+    const three = [
+      { color: "#3b82f6", position: 0 },
+      { color: "#ffffff", position: 50 },
+      { color: "#8b5cf6", position: 100 },
+    ];
+    expect(removeGradientStop(three, 0)).toEqual([
+      { color: "#ffffff", position: 50 },
+      { color: "#8b5cf6", position: 100 },
+    ]);
+    expect(removeGradientStop(three, 2)).toEqual([
+      { color: "#3b82f6", position: 0 },
+      { color: "#ffffff", position: 50 },
+    ]);
   });
 });

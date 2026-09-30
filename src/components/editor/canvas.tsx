@@ -484,11 +484,15 @@ function CanvasElement({
 
   // The ONE fill paint seam (session 41, RA-54): image > gradient > solid —
   // the reference's measured precedence. TEXT keeps its own `color: fill`
-  // contract below and never takes a background paint.
+  // contract below and never takes a background paint. Session 43 (RA-61):
+  // the image branch also carries backgroundSize (the Background Size
+  // select's fit, stretch = "100% 100%") + backgroundPosition center.
   if (element.type !== "text") {
     const paint = fillPaintFor(element);
     if (paint.backgroundColor) style.backgroundColor = paint.backgroundColor;
     if (paint.backgroundImage) style.backgroundImage = paint.backgroundImage;
+    if (paint.backgroundSize) style.backgroundSize = paint.backgroundSize;
+    if (paint.backgroundPosition) style.backgroundPosition = paint.backgroundPosition;
   }
   // A line's stroke feeds its SVG diagonal, NEVER the box border (the
   // reference's line div measured border-0 on all four sides despite
