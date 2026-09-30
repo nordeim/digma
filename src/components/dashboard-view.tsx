@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AppHeader, type HeaderUser } from "@/components/app-header";
 import { CreateProjectDialog, ProjectCard } from "@/components/project-card";
 import { toast } from "@/hooks/use-toast";
-import { greetingFor } from "@/lib/greeting";
+import { greetingFor, greetingName } from "@/lib/greeting";
 import type { ProjectDTO } from "@/lib/editor";
 
 type Stats = {
@@ -94,18 +94,25 @@ export function DashboardView({ user }: { user: HeaderUser }) {
       <AppHeader user={user} />
       <main className="min-h-[calc(100vh-4rem)]">
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
-          {/* Hero — measured: purple→pink→blue gradient, greeting, CTAs, glass stats card. */}
+          {/* Hero — measured: purple→pink→blue gradient, greeting, CTAs, glass stats card.
+           * The chrome renders FLAT at every viewport (session 35, RA-36 —
+           * measured on the reference at 390×844: text-4xl h1 / text-lg
+           * paragraph / px-6 py-12 containers / plain flex-1 text block
+           * (left-aligned at mobile) / flex-col-then-row buttons / a
+           * flex-1 max-w-sm stats wrapper (content-width at mobile). The
+           * pre-fix responsive downsizing diverged below sm/lg while
+           * desktop stayed equal. */}
           <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white">
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+            <div className="mx-auto max-w-7xl px-6 py-12">
               <div className="flex flex-col items-center justify-between gap-8 lg:flex-row">
-                <div className="flex-1 text-center lg:text-left">
-                  <h1 className="mb-3 text-3xl font-bold sm:text-4xl">
-                    {greeting}, {user.name} ✨
+                <div className="flex-1">
+                  <h1 className="mb-3 text-4xl font-bold">
+                    {greeting}, {greetingName(user.name)} ✨
                   </h1>
-                  <p className="mx-auto mb-6 max-w-xl text-base text-purple-100 sm:text-lg lg:mx-0">
+                  <p className="mb-6 max-w-xl text-lg text-purple-100">
                     Ready to bring your ideas to life? Create stunning designs with Digma.
                   </p>
-                  <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
+                  <div className="flex flex-col gap-4 sm:flex-row">
                     <Button
                       type="button"
                       onClick={() => setCreateOpen(true)}
@@ -136,7 +143,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                   </div>
                 </div>
 
-                <div className="w-full flex-1 sm:max-w-sm">
+                <div className="flex-1 max-w-sm">
                   <div className="rounded-xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg">
                     <h3 className="mb-3 text-base font-semibold">Quick Stats</h3>
                     <div className="grid grid-cols-2 gap-3">
@@ -163,7 +170,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
             </div>
           </div>
 
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+          <div className="mx-auto max-w-7xl px-6 py-12">
             {/* Continue Working */}
             <section aria-labelledby="continue-working" className="mb-16">
               <div className="mb-6 flex items-center justify-between">

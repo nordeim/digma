@@ -280,9 +280,13 @@ export function AiAssistant() {
           WRAPPER div holds the flex gap-2 form (h-8 flex-1 input + a
           SEPARATE blue-600 send button, no inline icon) and, below it, the
           "Try: …" suggestions line (`mt-1 text-xs text-gray-500`). The line
-          renders in the initial state only — the reference's post-send DOM
-          is unmeasurable (its assistant crashes on submission), and hints
-          are noise once a conversation is running. */}
+          renders UNCONDITIONALLY (session 35, RA-33 — double-measured on the
+          reference post-send: its line persists after every send with the
+          reply rendered; the historical "initial state only" gate rested on
+          a stale justification — "the reference's post-send DOM is
+          unmeasurable (its assistant crashes on submission)" — that session
+          27's live reply measurements had already dissolved: its deletes
+          answer with theater, only its ADD commands crash). */}
       <div className="border-t border-[#30363d] p-3">
         <form
           onSubmit={(event) => {
@@ -307,11 +311,9 @@ export function AiAssistant() {
             <Send className="h-3 w-3" aria-hidden />
           </button>
         </form>
-        {messages.every((message) => message.role !== "user") && (
-          <p className="mt-1 text-xs text-gray-500">
-            Try: {SUGGESTIONS.map((s) => `"${s}"`).join(", ")}
-          </p>
-        )}
+        <p className="mt-1 text-xs text-gray-500">
+          Try: {SUGGESTIONS.map((s) => `"${s}"`).join(", ")}
+        </p>
       </div>
     </div>
   );

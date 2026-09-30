@@ -117,6 +117,13 @@ test.describe("workspace shell (desktop)", () => {
     await expect(page.getByText("Added 2 squares")).toBeVisible({ timeout: 15_000 });
     // …the canvas grew…
     await expect.poll(() => page.getByRole("button", { name: /^Layer / }).count()).toBeGreaterThan(before);
+    // …the "Try: …" suggestions line is STILL visible post-send (session 35,
+    // RA-33 — double-measured on the reference: its line renders
+    // UNCONDITIONALLY, persisting after every send with the reply rendered;
+    // the clone's pre-fix "initial state only" gate rested on the stale
+    // "post-send DOM unmeasurable" justification that session 27's live
+    // reply measurements had already dissolved)…
+    await expect(page.getByText(/^Try:/)).toBeVisible();
     // …and the page is still fully interactive (no blank-screen crash).
     await expect(page.getByRole("heading", { name: "Marketing Hero Banner" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Layers" })).toBeVisible();

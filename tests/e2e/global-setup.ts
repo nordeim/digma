@@ -30,4 +30,13 @@ export default function globalSetup(): void {
   } catch {
     run("npx tsx prisma/seed.ts");
   }
+  // Seed amendment (session 35, S35-1): backdate one seed project's
+  // lastOpenedAt past the 7-day activity window (its updatedAt stays fresh —
+  // Prisma bumps it on this write) so the Quick Stats formula pin has a
+  // discriminating datum. See tests/e2e/backdate-portfolio.ts.
+  try {
+    run("bun tests/e2e/backdate-portfolio.ts");
+  } catch {
+    run("npx tsx tests/e2e/backdate-portfolio.ts");
+  }
 }

@@ -379,3 +379,108 @@ test.describe("logged-out parity pins (session 8 + session 10)", () => {
     );
   });
 });
+
+test.describe("session 35 parity pins (sixteenth audit — bundle-decoded contracts)", () => {
+  // The sixteenth audit decoded the reference's COMPUTED contracts from its
+  // shipped JS bundle (assets/index-CFEZghM7.js) where observation could not
+  // discriminate them — every assertion below was measured live in the
+  // reference's DOM first, then pinned to the decoded formula.
+
+  test("the Quick Stats card counts ACCESS-based activity, not edit-based (RA-37)", async ({ page }) => {
+    // Decoded verbatim from the reference's bundle: "Active this week"
+    // counts projects whose `last_accessed || created_date` falls within the
+    // last 7 days. The clone's lastOpenedAt is its last_accessed analog
+    // (always set, so the created fallback is structurally satisfied). The
+    // e2e seed backdates "Portfolio Website Redesign" 11 days (updatedAt
+    // stays fresh — the discriminating state), and the expected tally is
+    // DERIVED from /api/projects so the pin is order-independent against
+    // later specs' created projects. Pre-fix (edit-based): the backdated
+    // project counts → the tally diverges.
+    await page.goto("/");
+    const { projects, stats } = await page.evaluate(async () => {
+      const [projectsRes, statsRes] = await Promise.all([
+        fetch("/api/projects").then((r) => r.json()),
+        fetch("/api/stats").then((r) => r.json()),
+      ]);
+      return {
+        projects: projectsRes.data.projects as Array<{ name: string; lastOpenedAt: string }>,
+        stats: statsRes.data as { activeThisWeek: number },
+      };
+    });
+    expect(projects.length).toBeGreaterThanOrEqual(2);
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const accessTally = projects.filter((p) => new Date(p.lastOpenedAt).getTime() > weekAgo).length;
+    // The backdated seed project must actually sit OUTSIDE the window —
+    // otherwise this run discriminates nothing (a self-check on the datum).
+    const backdated = projects.find((p) => p.name === "Portfolio Website Redesign");
+    expect(backdated ? new Date(backdated.lastOpenedAt).getTime() <= weekAgo : true).toBe(true);
+    expect(stats.activeThisWeek).toBe(accessTally);
+    // And the discriminating datum is present: the tally is strictly below
+    // the project count (at least one long-unopened project).
+    expect(accessTally).toBeLessThan(projects.length);
+  });
+
+  test("the hero buttons row stays LEFT-aligned at the sm breakpoint (RA-36)", async ({ page }) => {
+    // Measured on the reference at 768×900: the buttons row computes
+    // justify-content: normal (flex-start) — the Create button starts at the
+    // row's left edge. The clone's unprefixed justify-center centered the
+    // row through the whole sm range (640–1023px).
+    await page.setViewportSize({ width: 768, height: 900 });
+    await page.goto("/");
+    const row = await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll("main button")).find((b) =>
+        b.textContent.includes("Create New Design"),
+      )!;
+      const rowEl = btn.parentElement!;
+      const b = btn.getBoundingClientRect();
+      const r = rowEl.getBoundingClientRect();
+      return {
+        justify: getComputedStyle(rowEl).justifyContent,
+        btnAtRowLeft: Math.abs(b.left - r.left) < 2,
+      };
+    });
+    expect(row.justify).toBe("normal");
+    expect(row.btnAtRowLeft).toBe(true);
+  });
+});
+
+test.describe("session 35 parity pins (the flat mobile hero)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("the dashboard hero renders FLAT at mobile — 36px left-aligned greeting, 24px container, content-width stats card (RA-36)", async ({ page }) => {
+    // Measured on the reference at 390×844: h1 text-4xl (36px) with
+    // text-align: start (its mobile hero is LEFT-aligned, wrapping),
+    // paragraph text-lg (18px), containers max-w-7xl mx-auto px-6 py-12
+    // (24px/48px), and the stats card CONTENT-width (~250px, not
+    // full-width). The clone's responsive downsizing
+    // (text-3xl/text-base/px-4 py-8/text-center/w-full) diverged at every
+    // sub-item.
+    await page.goto("/");
+    const hero = await page.evaluate(() => {
+      const h1 = document.querySelector("main h1")!;
+      const p = (h1.parentElement as HTMLElement).querySelector("p")!;
+      const container = h1.closest("div[class*=max-w-7xl]") as HTMLElement;
+      const card = Array.from(document.querySelectorAll("main div")).find((d) =>
+        d.className.includes("backdrop-blur-lg"),
+      )!;
+      return {
+        h1Size: getComputedStyle(h1).fontSize,
+        h1Align: getComputedStyle(h1).textAlign,
+        h1Wrapped: h1.getBoundingClientRect().height > 40,
+        pSize: getComputedStyle(p).fontSize,
+        containerPadLeft: getComputedStyle(container).paddingLeft,
+        cardWidth: Math.round(card.getBoundingClientRect().width),
+        viewport: window.innerWidth,
+      };
+    });
+    expect(hero.viewport).toBe(390);
+    expect(hero.h1Size).toBe("36px");
+    expect(hero.h1Align).toBe("start");
+    expect(hero.h1Wrapped).toBe(true);
+    expect(hero.pSize).toBe("18px");
+    expect(hero.containerPadLeft).toBe("24px");
+    // The stats card is CONTENT-width at mobile (the reference's ~250px),
+    // not the full-width ~358px the pre-fix w-full wrapper rendered.
+    expect(hero.cardWidth).toBeLessThan(340);
+  });
+});

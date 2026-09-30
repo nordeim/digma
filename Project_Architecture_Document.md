@@ -1,15 +1,26 @@
-# Digma — Master Project Architecture Document (PAD) v1.18.0
+# Digma — Master Project Architecture Document (PAD) v1.19.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-09-30 (v1.18.0 — dynamic panel contracts pass: the Corner Radius slider's max is the reference's measured DYNAMIC min(w,h)/2 (the historical fixed-75 reading was the 200×150 audit rectangle's own min/2), the canvas text's DEFAULT font chain carries the reference's measured "Inter, sans-serif" fallback, and the Background Color control's change now PERSISTS through the autosave PUT (the pre-fix change was live-only and silently reverted on reload — the F19 "half-does X" class); the reference's panel sliders/pickers measured ALL functional for the first time; 88 unit / 96 e2e)
+**Last Updated:** 2026-09-30 (v1.19.0 — bundle-decoded contracts pass: the Quick Stats "Active this week" formula is the reference's decoded ACCESS-based count (`last_accessed || created_date > now−7d`), the greeting's afternoon boundary is the decoded 17:00 (was 18:00) and its name is the decoded FIRST WORD with the "Designer" fallback, the AI panel's "Try: …" suggestions line renders UNCONDITIONALLY (the reference's post-send DOM measured — the stale "unmeasurable" justification dissolved), and the dashboard hero's chrome renders FLAT at every viewport (36px left-aligned greeting, 18px paragraph, px-6 py-12 containers, content-width stats card — measured at 390×844/768×900); the sixteenth audit decoded the reference's shipped JS bundle where observation could not discriminate; 92 unit / 99 e2e)
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
 
 Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+#### Revision Block — v1.19.0 (Tracked Changes)
+
+- `[SR]` **Bundle-decoded contracts pass (S35-1 + S35-2 + S35-3 + S35-5 + S35-6) — the sixteenth audit executed the session-37 next-steps directive (the reference's Quick Stats computation and its AI-panel input details) plus the standing mobile-nav sweep, extending the method: where observation could not discriminate a formula, the audit READ THE REFERENCE'S SHIPPED CLIENT BUNDLE (`assets/index-CFEZghM7.js` — fetched and grepped), decoding every formula verbatim.**
+  1. **The Quick Stats "Active this week" formula is ACCESS-based (RA-37, decoded verbatim; S35-1, Medium).** The reference's bundle computes `project.last_accessed || project.created_date > now − 7d` — NOT edit-based. The clone's pre-fix `updatedAt ≥ now−7d` count diverged whenever access and edit recency diverged (a project edited 8+ days ago but opened today counts on the reference and not on the clone — and the inverse). Fixed: `/api/stats` counts `lastOpenedAt ≥ now−7d` (the clone's `last_accessed` analog, always set through `@default(now())` so the reference's created-fallback is structurally satisfied). The e2e pin discriminates the formula with a seeded backdate (`tests/e2e/backdate-portfolio.ts` — an 11-day-old `lastOpenedAt` with a fresh `updatedAt`) and derives its expected tally from `/api/projects` (order-independent). Reference-side context: it computes the stats CLIENT-SIDE from its entity lists (`GET /entities/Project?sort=-last_accessed` + `/entities/Team?sort=-updated_date` — no stats endpoint); the numbers live-update without reload after create AND delete (RA-31, verified bidirectionally). The clone's route-based architecture stays (same visible numbers; the route re-fetches on every dashboard mount).
+  2. **The greeting's time buckets are `<12 morning · <17 afternoon · else evening` (RA-38, decoded; S35-2, Medium).** The clone's `hour < 18` boundary rendered "Good afternoon" through 17:59 where the reference renders "Good evening" from 17:00 — the historical 18:00 boundary was a measurement taken on hours that never discriminated it, and the unit test PINNED the wrong contract (`17:59 → afternoon`). Fixed: `greetingFor` switches at 17:00; the test pins corrected to the boundary's own edge hours (17:00/17:59 → evening, 16:59 → afternoon).
+  3. **The greeting's name is the FIRST WORD of the account's full name with a "Designer" fallback (RA-39, decoded; S35-3, Low).** The reference renders `full_name?.split(" ")[0] || "Designer"` — an account "Jane Doe" is greeted "Jane". Fixed: the new `greetingName(fullName)` pure seam in `src/lib/greeting.ts` (trim-hardened) feeds the h1. The reference's HEADER name slot, decoded separately, is the STATIC LITERAL "Designer" (RA-40 — `children:"Designer"` in its JSX, never the account's name): the clone's real-name header slot stays the deliberate WORKING SUPERSET (the eye/zoom/bg-control family) — this session corrected the DOCS, which had claimed "name/plan" parity without ever reading the slot's content.
+  4. **The AI panel's "Try: …" suggestions line renders UNCONDITIONALLY (RA-33, double-measured; S35-5, Medium).** The reference's line persists after the first send AND the second (with the reply rendered) — the clone's `initial state only` gate rested on a stale justification ("the reference's post-send DOM is unmeasurable — its assistant crashes") that session 27's live reply measurements had already dissolved (its deletes answer with theater; only its ADD commands crash). Fixed: the gate deleted — the line renders after every send. Also verified this session: the reference's send button disables when the input is empty (RA-32 — clone parity confirmed) and it renders a "Working on it…" indicator while processing (RA-34 — clone parity confirmed); its replies remain claim theater ("I am clearing the canvas for you…" + "1 action(s) performed" over an EMPTY canvas).
+  5. **The dashboard hero renders FLAT at every viewport (RA-36, measured at 390×844 and 768×900; S35-6, Medium).** The reference's hero: h1 `text-4xl` (36px) with `text-align: start` (LEFT-aligned, wrapping — not centered) at mobile, paragraph `text-lg` (18px), containers `max-w-7xl mx-auto px-6 py-12` (24px/48px), the text block plain `flex-1`, the buttons row `flex flex-col sm:flex-row gap-4` computing `justify-content: normal` (left) at sm, and the stats wrapper `flex-1 max-w-sm` rendering CONTENT-width (~250px) at mobile. The clone's responsive downsizing (text-3xl/text-base/px-4 py-8/text-center/w-full/justify-center) diverged at every sub-item below sm/lg while desktop stayed equal — an unmeasured early-authoring artifact, never documented as deliberate. Fixed: the seven flat classes ported (desktop-neutral, mobile/sm-aligning). Also measured: the reference's THUMBNAIL renders LINE elements WITH the 2px white box border + a clipped negative-coordinate SVG (RA-35 — its own style-chain leak across render sites; its CANVAS renders lines border-0 per RA-8) — the clone's coherent border-0 thumbnail line stays the deliberate superset, documented.
+  6. **R3 — the reference's mobile nav still ships failure class A at 390×844 (the 16th consecutive session; evidence `docs/screenshots/ref-audit-s34/ref-03-mobile-hero-390.png`) — the clone's fix re-verified end-to-end** (44×44 trigger, drawer, scroll-lock, tap-navigate-and-dismiss, body overflow restored).
+  7. **Counts:** 92 unit (+4 — the `greetingName` suite: first-word, single-word verbatim, the Designer fallbacks, trim-hardening; the boundary pins CORRECTED in place) · 99 e2e (+3 — the access-based stats discriminator with its seeded backdate, the flat-mobile-hero test at 390×844, the sm buttons-row left-alignment test; +the post-send Try-line assertion folded into the no-crash AI test) · 28 smoke (unchanged) · 20 routes (unchanged). `.env.example` unchanged this session (no new env vars).
 
 #### Revision Block — v1.18.0 (Tracked Changes)
 
@@ -840,7 +851,7 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — rate limiter | `src/lib/rate-limit.test.ts` | 7 | src/lib | Vitest |
 | Unit — db-path contract | `tests/db-path.test.ts` | 19 | tests | Vitest |
 | Unit — @theme + slider contract | `tests/theme.test.ts` | 6 | tests | Vitest |
-| Unit — greeting | `src/lib/greeting.test.ts` | 4 | src/lib | Vitest |
+| Unit — greeting | `src/lib/greeting.test.ts` | 8 | src/lib | Vitest |
 | Unit — team stats | `src/lib/team.test.ts` | 5 | src/lib | Vitest |
 | Unit — brand-mark contract | `tests/brand-mark.test.ts` | 6 | tests | Vitest |
 | E2E — auth journeys + card states | `tests/e2e/auth.spec.ts` | 11 | tests/e2e | Playwright |
@@ -849,7 +860,7 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | E2E — mobile navigation | `tests/e2e/mobile-navigation.spec.ts` | 9 | tests/e2e | Playwright |
 | E2E — untitled editor | `tests/e2e/untitled-editor.spec.ts` | 3 | tests/e2e | Playwright |
 | E2E — editor panels | `tests/e2e/editor-panels.spec.ts` | 50 | tests/e2e | Playwright |
-| E2E — visual parity pins | `tests/e2e/parity.spec.ts` | 12 | tests/e2e | Playwright |
+| E2E — visual parity pins | `tests/e2e/parity.spec.ts` | 15 | tests/e2e | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 28 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns
@@ -867,10 +878,10 @@ No numeric coverage tooling is configured (deliberate: the check counts are the 
 
 - [ ] `bun run lint` clean (React 19 hook rules are errors, not warnings)
 - [ ] `bun run typecheck` clean (build has `ignoreBuildErrors` — this is the type gate)
-- [ ] `bun run test` → 88/88
+- [ ] `bun run test` → 92/92
 - [ ] `bun run build` succeeds; standalone assets copied
 - [ ] `./scripts/smoke-test.sh` → 28/28 (dev server STOPPED — the script's own standalone boot must own :3000)
-- [ ] `bun run test:e2e` → 96/96 (fresh e2e DB; :3100; the webServer sets DIGMA_DISABLE_AI_LLM=1 — the deterministic AI seam)
+- [ ] `bun run test:e2e` → 99/99 (fresh e2e DB incl. the backdated-portfolio seed amendment; :3100; the webServer sets DIGMA_DISABLE_AI_LLM=1 — the deterministic AI seam)
 - [ ] Mobile navigation verified at 390×844 (the mobile suite IS this check)
 - [ ] No new `.env`, key files, or `db/*.db` staged
 
@@ -980,11 +991,11 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `src/components/editor/properties-panel.tsx` | 504 | Reference five-section layout + Transform scale (ADR-011/012); NumberField empty-draft semantics (S21: an empty draft never commits; blur restores) |
 | `src/components/editor/components-panel.tsx` | 42 | Reference Components column + empty state (ADR-010) |
 | `src/components/project-card.tsx` | 550 | Card + thumbnail art + ellipsis menu (rename/delete, stopPropagation) |
-| `src/components/app-header.tsx` | 238 | Desktop nav (exact-match active pill) + MobileNav Sheet drawer (the Tailwind v4 class-A fix) |
+| `src/components/app-header.tsx` | 238 | Desktop nav (exact-match active pill) + MobileNav Sheet drawer (the Tailwind v4 class-A fix); the user slot renders the REAL NAME — the reference's own slot is the static literal "Designer" (RA-40), the clone's is the documented working superset |
 | `src/components/teams-view.tsx` | 476 | Team cards, member chips, invite dialog, inline confirm deletes |
-| `src/components/dashboard-view.tsx` | 352 | Gradient hero, Quick Stats, Continue Working, project grid, create dialog |
+| `src/components/dashboard-view.tsx` | 359 | Gradient hero (FLAT chrome at every viewport, session 35), Quick Stats (access-based), Continue Working, project grid, create dialog |
 | `src/components/login-screen.tsx` | 359 | Three-state auth card (ADR-013): branded sign-in; minimal sign-up with Confirm Password + inline mismatch validation; minimal forgot |
-| `src/components/editor/ai-assistant.tsx` | 213 | Chat UI (reference chrome: bot avatars, timestamp-below bubbles, blue send); applies `{reply, operations[]}` to the store |
+| `src/components/editor/ai-assistant.tsx` | 320 | Chat UI (reference chrome: bot avatars, timestamp-below bubbles, blue send, the UNCONDITIONAL "Try: …" line); applies `{reply, operations[]}` to the store |
 | `src/components/editor/layers-panel.tsx` | 243 | Layer list: visibility/lock/trash, PRECISE stateless drag-reorder (drop-time index computation, S21), rename; lucide-react eye/lock icons, opacity-based lock, reference-chrome rename input (S19) |
 | `src/lib/editor.ts` | 268 | Pure element domain: types, geometry, clamps, scale-aware bounds |
 | `src/lib/ai-assistant.ts` | 271 | LLM sanitizer + deterministic fallback parser |
