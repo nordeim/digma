@@ -54,6 +54,23 @@ export function clampOptionalText(value: unknown, maxLength: number): string | n
 const FONT_WEIGHTS = new Set(["300", "400", "500", "600", "700", "800"]);
 const TEXT_ALIGNS = new Set(["left", "center", "right"]);
 
+// The reference's Font Family combobox options, measured live (session 29,
+// RA-10): exactly seven families on its Radix Select.
+export const FONT_FAMILIES = [
+  "Inter",
+  "Roboto",
+  "Arial",
+  "Helvetica",
+  "Times New Roman",
+  "Georgia",
+  "Verdana",
+] as const;
+
+export function clampFontFamily(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  return (FONT_FAMILIES as readonly string[]).includes(value) ? value : null;
+}
+
 export function clampFontWeight(value: unknown): string | null {
   if (typeof value !== "string") return null;
   return FONT_WEIGHTS.has(value) ? value : null;

@@ -51,6 +51,9 @@ export type DesignElementDTO = {
   text: string | null;
   fontSize: number | null;
   fontWeight: string | null;
+  /** The reference's Font Family combobox value (7 options, session 29);
+   * null falls back to Inter at every render site. */
+  fontFamily: string | null;
   textAlign: string | null;
   src: string | null;
   path: string | null;
@@ -130,6 +133,7 @@ export function defaultElementFor(
     text: null,
     fontSize: null,
     fontWeight: null,
+    fontFamily: null,
     textAlign: null,
     src: null,
     path: null,
@@ -143,9 +147,14 @@ export function defaultElementFor(
     return {
       ...base,
       fill: "#FFFFFF",
-      text: "Text",
-      fontSize: Math.min(Math.max(height, 16), 32),
+      // The reference's measured fresh-text contract (session 29, RA-10):
+      // the Content INPUT's VALUE is "Type here..." (not a placeholder),
+      // Font Size is a fixed 16, and the Font Family combobox defaults to
+      // Inter.
+      text: "Type here...",
+      fontSize: 16,
       fontWeight: "500",
+      fontFamily: "Inter",
       textAlign: "left",
     };
   }
@@ -202,13 +211,17 @@ export function elementToStyle(el: DesignElementDTO): ElementStyle {
     height: `${el.height}px`,
   };
   if (el.fill) style.backgroundColor = el.fill;
-  if (el.stroke && el.strokeWidth > 0) {
+  // A line's stroke feeds its SVG diagonal, NEVER the box border (the
+  // reference's line div measured border-0 on all four sides despite
+  // stroke #FFFFFF + strokeWidth 2 — session 29, RA-8).
+  if (el.type !== "line" && el.stroke && el.strokeWidth > 0) {
     style.border = `${el.strokeWidth}px solid ${el.stroke}`;
   }
   if (el.radius > 0) style.borderRadius = `${el.radius}px`;
   if (el.type === "text" && el.text) {
     style.fontSize = `${el.fontSize ?? 16}px`;
     style.fontWeight = el.fontWeight ?? "500";
+    style.fontFamily = el.fontFamily ?? "Inter";
     style.color = el.fill ?? "#FFFFFF";
     style.display = "flex";
     style.alignItems = "center";

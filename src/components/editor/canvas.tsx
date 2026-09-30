@@ -465,7 +465,10 @@ function CanvasElement({ element, selected }: { element: DesignElementDTO; selec
   };
 
   if (element.fill) style.backgroundColor = element.fill;
-  if (element.stroke && element.strokeWidth > 0) {
+  // A line's stroke feeds its SVG diagonal, NEVER the box border (the
+  // reference's line div measured border-0 on all four sides despite
+  // stroke #FFFFFF + strokeWidth 2 — session 29, RA-8).
+  if (element.type !== "line" && element.stroke && element.strokeWidth > 0) {
     style.border = `${element.strokeWidth}px solid ${element.stroke}`;
   }
   if (element.type === "ellipse") style.borderRadius = "50%";
@@ -475,8 +478,21 @@ function CanvasElement({ element, selected }: { element: DesignElementDTO; selec
     style.color = element.fill ?? "#FFFFFF";
     style.fontSize = element.fontSize ?? 16;
     style.fontWeight = element.fontWeight ?? "500";
+    // The reference's Font Family combobox (session 29, RA-10) — measured
+    // functional live (picking Arial changed its canvas text's computed
+    // font-family).
+    style.fontFamily = element.fontFamily ?? "Inter";
     style.display = "flex";
     style.alignItems = "center";
+    // The reference's Text Align buttons are functional too (measured:
+    // picking center changed its canvas text's computed text-align). The
+    // flex row maps the alignment to justify-content so it is VISIBLE,
+    // and the text-align itself stays measurable on the computed style.
+    const align = element.textAlign ?? "left";
+    style.textAlign = align as React.CSSProperties["textAlign"];
+    style.justifyContent = (
+      align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start"
+    ) as React.CSSProperties["justifyContent"];
     style.whiteSpace = "pre-wrap";
     style.overflow = "hidden";
   }

@@ -276,16 +276,44 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                 transformOrigin: "0px 0px",
                 opacity: el.opacity,
                 backgroundColor: el.fill ?? undefined,
+                // A line's stroke feeds its SVG diagonal, never the box
+                // border (session 29, RA-8).
+                border:
+                  el.type !== "line" && el.stroke && el.strokeWidth
+                    ? `${el.strokeWidth}px solid ${el.stroke}`
+                    : undefined,
                 borderRadius: el.type === "ellipse" ? "50%" : el.radius || undefined,
-                border: el.stroke && el.strokeWidth ? `${el.strokeWidth}px solid ${el.stroke}` : undefined,
                 color: el.type === "text" ? el.fill ?? "#fff" : undefined,
                 fontSize: el.type === "text" ? (el.fontSize ?? undefined) : undefined,
                 fontWeight: el.type === "text" ? (el.fontWeight ?? undefined) : undefined,
+                fontFamily: el.type === "text" ? (el.fontFamily ?? "Inter") : undefined,
                 display: el.type === "text" ? "flex" : undefined,
                 alignItems: el.type === "text" ? "center" : undefined,
+                textAlign: (el.type === "text" ? el.textAlign ?? "left" : undefined) as React.CSSProperties["textAlign"],
               }}
             >
               {el.type === "text" ? el.text : null}
+              {el.type === "line" ? (
+                // The reference's line rendering (session 29, RA-8): the SVG
+                // diagonal stroke the canvas shows, in the presentation.
+                <svg
+                  className="absolute left-0 top-0 overflow-visible"
+                  width={Math.max(el.width, 1)}
+                  height={Math.max(el.height, 1)}
+                  viewBox={`0 0 ${Math.max(el.width, 1)} ${Math.max(el.height, 1)}`}
+                  aria-hidden
+                >
+                  <line
+                    x1={0}
+                    y1={0}
+                    x2={el.width}
+                    y2={el.height}
+                    stroke={el.stroke ?? "#FFFFFF"}
+                    strokeWidth={el.strokeWidth || 2}
+                    strokeLinecap="round"
+                  />
+                </svg>
+              ) : null}
             </div>
           ))}
       </div>

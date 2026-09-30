@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import {
   clampColor,
+  clampFontFamily,
   clampFontWeight,
   clampNumber,
   clampOptionalText,
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       text: clampOptionalText(body?.text, 2000),
       fontSize: body?.fontSize === null || body?.fontSize === undefined ? null : clampNumber(body?.fontSize, 1, 500, 16),
       fontWeight: clampFontWeight(body?.fontWeight),
+      fontFamily: clampFontFamily(body?.fontFamily),
       textAlign: clampTextAlign(body?.textAlign),
       src: clampOptionalText(body?.src, 2000),
       path: clampOptionalText(body?.path, 20000),
@@ -124,6 +126,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       text: clampOptionalText(raw?.text, 2000),
       fontSize: raw?.fontSize === null || raw?.fontSize === undefined ? null : clampNumber(raw?.fontSize, 1, 500, 16),
       fontWeight: clampFontWeight(raw?.fontWeight),
+      fontFamily: clampFontFamily(raw?.fontFamily),
       textAlign: clampTextAlign(raw?.textAlign),
       src: clampOptionalText(raw?.src, 2000),
       path: clampOptionalText(raw?.path, 20000),

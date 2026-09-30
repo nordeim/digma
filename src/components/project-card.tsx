@@ -121,18 +121,47 @@ export function CanvasThumbnail({
                   transformOrigin: "0px 0px",
                   opacity: el.opacity,
                   backgroundColor: el.fill ?? undefined,
-                  border: el.stroke && el.strokeWidth > 0 ? `${el.strokeWidth}px solid ${el.stroke}` : undefined,
+                  // A line's stroke feeds its SVG diagonal, never the box
+                  // border (session 29, RA-8 — the reference's line div
+                  // measured border-0).
+                  border:
+                    el.type !== "line" && el.stroke && el.strokeWidth > 0
+                      ? `${el.strokeWidth}px solid ${el.stroke}`
+                      : undefined,
                   borderRadius: el.type === "ellipse" ? "50%" : el.radius > 0 ? el.radius : undefined,
                   color: el.type === "text" ? el.fill ?? "#fff" : undefined,
                   fontSize: el.type === "text" ? el.fontSize ?? 16 : undefined,
                   fontWeight: el.type === "text" ? el.fontWeight ?? "500" : undefined,
+                  fontFamily: el.type === "text" ? el.fontFamily ?? "Inter" : undefined,
                   display: el.type === "text" ? "flex" : undefined,
                   alignItems: el.type === "text" ? "center" : undefined,
+                  textAlign: (el.type === "text" ? el.textAlign ?? "left" : undefined) as React.CSSProperties["textAlign"],
                   whiteSpace: el.type === "text" ? "pre-wrap" : undefined,
                   overflow: "hidden",
                 }}
               >
                 {el.type === "text" ? el.text : null}
+                {el.type === "line" ? (
+                  // The reference's line rendering (session 29, RA-8): the
+                  // SVG diagonal stroke the canvas shows, in the thumbnail.
+                  <svg
+                    className="absolute left-0 top-0 overflow-visible"
+                    width={Math.max(el.width, 1)}
+                    height={Math.max(el.height, 1)}
+                    viewBox={`0 0 ${Math.max(el.width, 1)} ${Math.max(el.height, 1)}`}
+                    aria-hidden
+                  >
+                    <line
+                      x1={0}
+                      y1={0}
+                      x2={el.width}
+                      y2={el.height}
+                      stroke={el.stroke ?? "#FFFFFF"}
+                      strokeWidth={el.strokeWidth || 2}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                ) : null}
               </div>
             ))}
         </div>

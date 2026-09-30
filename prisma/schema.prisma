@@ -60,6 +60,7 @@ model DesignElement {
   text        String? // text elements
   fontSize    Float?
   fontWeight  String? // 400 | 500 | 600 | 700
+  fontFamily  String? // the reference's Font Family combobox (7 options, session 29)
   textAlign   String? // left | center | right
   src         String? // image elements
   path        String? // pen-tool path data

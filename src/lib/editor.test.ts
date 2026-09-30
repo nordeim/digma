@@ -32,6 +32,7 @@ function el(partial: Partial<DesignElementDTO>): DesignElementDTO {
     text: null,
     fontSize: null,
     fontWeight: null,
+    fontFamily: null,
     textAlign: null,
     src: null,
     path: null,
@@ -51,10 +52,15 @@ describe("defaultElementFor", () => {
     expect(rect.name).toBe("Rectangle 1");
   });
 
-  it("gives text elements content and typography", () => {
+  it("gives text elements the reference's measured content and typography (session 29)", () => {
     const text = defaultElementFor("text", 0, 0, 200, 40, 1);
-    expect(text.text).toBe("Text");
-    expect(text.fontSize).toBe(32); // clamped to the 16–32 band
+    // The reference's freshly-drawn text element measured live: the Content
+    // INPUT's VALUE is "Type here..." (not a placeholder), Font Size is a
+    // fixed 16 (the height-clamp formula is gone), and the Font Family
+    // combobox defaults to Inter (RA-10).
+    expect(text.text).toBe("Type here...");
+    expect(text.fontSize).toBe(16);
+    expect(text.fontFamily).toBe("Inter");
     expect(text.fill).toBe("#FFFFFF");
     expect(text.name).toBe("Text 2");
   });
@@ -64,6 +70,9 @@ describe("defaultElementFor", () => {
     expect(line.stroke).toBe("#FFFFFF");
     expect(line.fill).toBeNull();
     expect(line.height).toBe(0);
+    // The Stroke Width slider's default for a fresh line measured 2 on the
+    // reference (RA-8) — the SVG stroke-width follows it.
+    expect(line.strokeWidth).toBe(2);
   });
 
   it("defaults scale to 1 (the reference's per-element scale unit)", () => {
@@ -132,6 +141,26 @@ describe("elementToStyle", () => {
   it("keeps the identity chain legible at defaults", () => {
     const style = elementToStyle(el({}));
     expect(style.transform).toBe("translate(0px, 0px) scale(1) rotate(0deg)");
+  });
+
+  it("never renders a line's stroke as a box border (session 29)", () => {
+    // The reference's line div measured border-0 on all four sides despite
+    // stroke #FFFFFF + strokeWidth 2 (RA-8): the stroke feeds the SVG
+    // diagonal, never the box. Pre-fix: the shared chain painted a 2px white
+    // rectangle around every drawn line.
+    const style = elementToStyle(el({ type: "line", stroke: "#FFFFFF", strokeWidth: 2, fill: null }));
+    expect(style.border).toBeUndefined();
+
+    // The rectangle keeps the stroke-as-border rendering (its measured
+    // contract — the border IS how box shapes render strokes).
+    const rectStyle = elementToStyle(el({ type: "rectangle", stroke: "#FFFFFF", strokeWidth: 2 }));
+    expect(rectStyle.border).toBe("2px solid #FFFFFF");
+  });
+
+  it("renders the text's measured font chain (session 29)", () => {
+    const style = elementToStyle(el({ type: "text", text: "Type here...", fontSize: 16, fontFamily: "Arial", fill: "#FFFFFF" }));
+    expect(style.fontFamily).toBe("Arial");
+    expect(style.fontSize).toBe("16px");
   });
 });
 

@@ -260,13 +260,22 @@ test.describe("properties panel section layout", () => {
     await expect(page.getByRole("heading", { level: 4, name: "Background Color" })).toBeVisible();
   });
 
-  test("one element selected: the reference's five sections render", async ({ page }) => {
-    await page.getByRole("button", { name: "Layer Headline", exact: true }).click();
-
+  test("one element selected: the section set is TYPE-CONDITIONAL (session 29)", async ({ page }) => {
+    // The reference's measured panels (RA-9/RA-10): RECTANGLE keeps the
+    // corner-able five-section layout; TEXT renders the four-section
+    // POSITION & SIZE | TEXT | TRANSFORM | OPACITY layout.
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
     for (const section of ["Position & Size", "Corner Radius", "Fill & Stroke", "Transform", "Opacity"]) {
       await expect(page.getByRole("heading", { level: 4, name: section })).toBeVisible();
     }
     await expect(page.getByRole("heading", { name: "Properties", exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Layer Headline", exact: true }).click();
+    for (const section of ["Position & Size", "Text", "Transform", "Opacity"]) {
+      await expect(page.getByRole("heading", { level: 4, name: section })).toBeVisible();
+    }
+    await expect(page.getByRole("heading", { level: 4, name: "Corner Radius" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 4, name: "Fill & Stroke" })).toHaveCount(0);
   });
 });
 
@@ -335,7 +344,10 @@ test.describe("properties panel reference chrome (session 15)", () => {
   test.beforeEach(async ({ page }) => {
     await openSeededEditor(page);
     await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
-    await page.getByRole("button", { name: "Layer Headline", exact: true }).click();
+    // Session 29: the chrome tests below exercise the corner-able layout
+    // (Corner Radius + Fill & Stroke) — select the RECTANGLE, not the text
+    // element (the reference's text panel hides both sections, RA-9/RA-10).
+    await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
     await expect(page.getByRole("heading", { level: 4, name: "Transform" })).toBeVisible();
   });
 
@@ -1039,6 +1051,154 @@ test.describe("AI delete locked contract (session 27)", () => {
     await page.getByRole("button", { name: "Revert" }).click();
     await expect(page.locator("[data-element-id]")).toHaveCount(before);
     await expect(page.getByText("2 action(s) performed")).toHaveCount(0);
+    await waitForSaved(page);
+  });
+});
+
+test.describe("line + text element rendering (session 29)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openSeededEditor(page);
+    await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
+  });
+
+  // The 800ms-debounced autosave's cleanup DISCARDS a pending flush — wait
+  // for the green "Saved" badge before leaving the page (the session-21
+  // discipline) so the next test's re-open loads the mutated state.
+  async function waitForSaved(page: import("@playwright/test").Page) {
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  async function panelSections(page: import("@playwright/test").Page): Promise<string[]> {
+    return page.locator("section[aria-label]").evaluateAll((els) =>
+      els.map((el) => el.getAttribute("aria-label") ?? ""),
+    );
+  }
+
+  // Draws a line with the Line tool on an empty canvas region and returns
+  // the drawn element's locator (fresh lines are named "Line N").
+  async function drawLine(page: import("@playwright/test").Page) {
+    await page.getByRole("button", { name: "Line tool" }).click();
+    const canvas = page.getByRole("application", { name: "Design canvas" });
+    const box = await canvas.boundingBox();
+    expect(box).toBeTruthy();
+    // A clear region away from the seeded elements (bottom-right quadrant).
+    const sx = box!.x + box!.width * 0.72;
+    const sy = box!.y + box!.height * 0.72;
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.mouse.move(sx + 90, sy + 70, { steps: 8 });
+    await page.mouse.up();
+    // The tool resets to select after a draw; the fresh line row appears.
+    await expect(page.locator("[data-element-id][aria-label^='Line']").first()).toBeVisible();
+    return page.locator("[data-element-id][aria-label^='Line']").first();
+  }
+
+  test("drawing a line renders the SVG diagonal stroke with NO box border (session 29)", async ({ page }) => {
+    // The reference's line element (RA-8): a transparent positioning div
+    // (border-0 on ALL four sides despite stroke #FFFFFF + strokeWidth 2)
+    // carrying an SVG <line> diagonal — stroke #FFFFFF, stroke-width 2,
+    // round caps, overflow-visible. The clone's canvas already rendered the
+    // SVG diagonal; the pre-fix bug was the shared border-from-stroke style
+    // painting a 2px WHITE RECTANGLE around the diagonal (live-verified:
+    // `border: 2px rgb(255, 255, 255)`).
+    const line = await drawLine(page);
+
+    await expect(line.locator("svg > line")).toHaveAttribute("stroke", "#FFFFFF");
+    await expect(line.locator("svg > line")).toHaveAttribute("stroke-width", "2");
+    await expect(line.locator("svg > line")).toHaveAttribute("stroke-linecap", "round");
+    // The box border is GONE (the stroke feeds the SVG, never the box).
+    await expect(line).toHaveCSS("border-top-width", "0px");
+    // The layer row and the canvas agree on what this element is (the
+    // S19-3 coherence class): the row says Line, the canvas shows a stroke.
+    await expect(page.locator("[role=button][aria-label^='Layer Line']").first()).toBeVisible();
+
+    // Cleanup: undo the draw and let the autosave settle (a RED failure
+    // must never leave the shared e2e DB mutated — session 25 discipline).
+    await page.keyboard.press("Control+z");
+    await waitForSaved(page);
+  });
+
+  test("a line selection hides the Corner Radius section (session 29)", async ({ page }) => {
+    // The reference's line panel (RA-9): POSITION & SIZE | FILL & STROKE |
+    // TRANSFORM | OPACITY — NO Corner Radius (a corner-radius slider on a
+    // corner-less shape is incoherent chrome, the S23-2 class).
+    const line = await drawLine(page);
+    await page.locator("[role=button][aria-label^='Layer Line']").first().click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await expect(await panelSections(page)).toEqual([
+      "Position and size",
+      "Fill and stroke",
+      "Transform",
+      "Opacity",
+    ]);
+
+    await page.keyboard.press("Control+z");
+    await waitForSaved(page);
+  });
+
+  test("an ellipse selection hides the Corner Radius section (session 29)", async ({ page }) => {
+    // Same measured contract for ellipses (RA-9): no Corner Radius.
+    await page.locator("[role=button][aria-label='Layer Glow']").click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await expect(await panelSections(page)).toEqual([
+      "Position and size",
+      "Fill and stroke",
+      "Transform",
+      "Opacity",
+    ]);
+  });
+
+  test("a text selection renders the reference's four-section layout with the TEXT controls (session 29)", async ({ page }) => {
+    // The reference's text panel (RA-10): POSITION & SIZE | TEXT | TRANSFORM
+    // | OPACITY — no Corner Radius AND no Fill & Stroke (the text's COLOR
+    // control lives inside the TEXT section). The measured TEXT controls:
+    // Content (INPUT), Font Size, Color, Font Family (combobox, "Inter"),
+    // Text Align (segmented buttons) — no Weight control.
+    await page.locator("[role=button][aria-label='Layer Headline']").click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await expect(await panelSections(page)).toEqual([
+      "Position and size",
+      "Text",
+      "Transform",
+      "Opacity",
+    ]);
+
+    // The measured TEXT controls render.
+    await expect(page.getByRole("textbox", { name: "Text content" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Font Family" })).toHaveText(/Inter/);
+    await expect(page.getByRole("group", { name: "Text Align" }).getByRole("button")).toHaveCount(3);
+    // The Weight select is gone (the reference exposes no weight control).
+    await expect(page.getByRole("combobox", { name: "Font weight" })).toHaveCount(0);
+  });
+
+  test("changing the Font Family applies to the canvas text (session 29)", async ({ page }) => {
+    // The reference's Font Family combobox is FUNCTIONAL (measured live:
+    // picking Arial changed its canvas text's computed font-family). The
+    // clone's port must be too — a dead control that lies is a documented
+    // bug class.
+    await page.locator("[role=button][aria-label='Layer Headline']").click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await page.getByRole("combobox", { name: "Font Family" }).click();
+    await page.getByRole("option", { name: "Arial" }).click();
+
+    const headline = page.locator("[data-element-id][aria-label='Headline']");
+    await expect(headline).toHaveCSS("font-family", /Arial/);
+
+    // The Text Align buttons are functional too (measured on the reference:
+    // its center button changed the canvas text's computed text-align) —
+    // and the canvas must RENDER the alignment, not just store it.
+    await page.getByRole("button", { name: "Align center" }).click();
+    await expect(headline).toHaveCSS("text-align", "center");
+    await expect(headline).toHaveCSS("justify-content", "center");
+
+    // Restore the seed state (Inter, left) before the autosave flush.
+    await page.getByRole("combobox", { name: "Font Family" }).click();
+    await page.getByRole("option", { name: "Inter" }).click();
+    await page.getByRole("button", { name: "Align left" }).click();
     await waitForSaved(page);
   });
 });

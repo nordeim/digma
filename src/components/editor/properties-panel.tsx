@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { CornerUpLeft, Layers, Move3d, Palette, Type } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, CornerUpLeft, Layers, Move3d, Palette, Type } from "lucide-react";
 
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FONT_FAMILIES } from "@/lib/validation";
 
 // The Properties panel (right edge, w-72) — restructured to the reference
 // DOM (session-3 audit): a fixed header block (border-b) carrying the panel
@@ -259,6 +261,13 @@ export function PropertiesPanel() {
               </div>
             </section>
 
+            {/* Session 29 (RA-9): the reference renders the Corner Radius
+                section TYPE-CONDITIONALLY — measured hidden for LINE,
+                ELLIPSE, and TEXT (no Fill & Stroke either for text, see
+                below); shown for RECTANGLE. A corner-radius slider on a
+                corner-less shape is incoherent chrome (the S23-2 class).
+                Unmeasured types (frame/image/path) keep showing it. */}
+            {!["line", "ellipse", "text"].includes(single.type) && (
             <section aria-label="Corner radius">
               <SectionHeading icon="radius">Corner Radius</SectionHeading>
               <SliderRow
@@ -279,7 +288,13 @@ export function PropertiesPanel() {
                 <NumberField label="Bottom Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.max(radius, 0) })} />
               </div>
             </section>
+            )}
 
+            {/* Session 29 (RA-10): the reference's TEXT panel has NO Fill &
+                Stroke section — the text's COLOR control lives inside the
+                TEXT section below. Measured layout: POSITION & SIZE |
+                TEXT | TRANSFORM | OPACITY. */}
+            {single.type !== "text" && (
             <section aria-label="Fill and stroke">
               <SectionHeading icon="fill">Fill &amp; Stroke</SectionHeading>
               {/* Session-15 parity fix: the reference renders the mode pills as
@@ -330,6 +345,88 @@ export function PropertiesPanel() {
                 )}
               </div>
             </section>
+            )}
+
+            {single.type === "text" && (
+              <section aria-label="Text" className="space-y-3">
+                <SectionHeading icon="text">Text</SectionHeading>
+                {/* Session 29 (RA-10) — the reference's measured TEXT controls:
+                    Content (a single-line INPUT), Font Size, Color (picker +
+                    hex row), Font Family (combobox), Text Align (segmented
+                    lucide buttons). No Weight control (the model field and
+                    the canvas rendering keep honoring it — the reference
+                    exposes no weight UI). */}
+                <label className="block">
+                  <span className="text-xs font-medium text-gray-300">Content</span>
+                  <input
+                    type="text"
+                    value={single.text ?? ""}
+                    onChange={(event) => update({ text: event.target.value })}
+                    aria-label="Text content"
+                    className="mt-1 h-8 w-full rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white shadow-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </label>
+                <NumberField
+                  label="Font Size"
+                  value={single.fontSize ?? 16}
+                  onChange={(fontSize) => update({ fontSize: Math.max(fontSize, 1) })}
+                  min={1}
+                />
+                <HexColorRow label="Color" value={single.fill} onChange={(fill) => fill && update({ fill })} />
+                <div>
+                  <span className="text-xs font-medium text-gray-300">Font Family</span>
+                  <Select
+                    value={single.fontFamily ?? "Inter"}
+                    onValueChange={(fontFamily) => update({ fontFamily })}
+                  >
+                    <SelectTrigger aria-label="Font Family" className="mt-1 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_FAMILIES.map((family) => (
+                        <SelectItem key={family} value={family}>
+                          {family}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-gray-300">Text Align</span>
+                  {/* The reference's segmented lucide button group (measured:
+                      align-left/center/right icons on a flex gap-1 track —
+                      both functional: picking center changed its canvas
+                      text's computed text-align). */}
+                  <div
+                    role="group"
+                    aria-label="Text Align"
+                    className="mt-1 flex items-center gap-1"
+                  >
+                    {(["left", "center", "right"] as const).map((align) => {
+                      const AlignIcon =
+                        align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
+                      const active = (single.textAlign ?? "left") === align;
+                      return (
+                        <button
+                          key={align}
+                          type="button"
+                          aria-label={`Align ${align}`}
+                          aria-pressed={active}
+                          onClick={() => update({ textAlign: align })}
+                          className={`inline-flex h-8 w-10 items-center justify-center rounded-md border border-[#30363d] transition-colors ${
+                            active
+                              ? "bg-white text-gray-900 shadow"
+                              : "bg-[#0d1117] text-gray-400 hover:text-white"
+                          }`}
+                        >
+                          <AlignIcon className="h-4 w-4" aria-hidden />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            )}
 
             <section aria-label="Transform">
               <SectionHeading>Transform</SectionHeading>
@@ -433,55 +530,6 @@ export function PropertiesPanel() {
                 </span>
               </div>
             </section>
-
-            {single.type === "text" && (
-              <section aria-label="Text" className="space-y-3">
-                <SectionHeading icon="text">Text</SectionHeading>
-                <textarea
-                  value={single.text ?? ""}
-                  onChange={(event) => update({ text: event.target.value })}
-                  rows={3}
-                  aria-label="Text content"
-                  className="w-full rounded-md border border-[#30363d] bg-[#0d1117] p-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-                />
-                <NumberField
-                  label="Font Size"
-                  value={single.fontSize ?? 16}
-                  onChange={(fontSize) => update({ fontSize: Math.max(fontSize, 1) })}
-                  min={1}
-                />
-                <label className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-gray-300">Weight</span>
-                  <select
-                    value={single.fontWeight ?? "500"}
-                    onChange={(event) => update({ fontWeight: event.target.value })}
-                    aria-label="Font weight"
-                    className="h-8 rounded-md border border-[#30363d] bg-[#0d1117] px-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-                  >
-                    {["300", "400", "500", "600", "700", "800"].map((weight) => (
-                      <option key={weight} value={weight}>
-                        {weight}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-gray-300">Align</span>
-                  <select
-                    value={single.textAlign ?? "left"}
-                    onChange={(event) => update({ textAlign: event.target.value })}
-                    aria-label="Text alignment"
-                    className="h-8 rounded-md border border-[#30363d] bg-[#0d1117] px-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-                  >
-                    {["left", "center", "right"].map((align) => (
-                      <option key={align} value={align}>
-                        {align}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </section>
-            )}
           </>
         ) : selected.length > 1 ? (
           <section aria-label="Multiple selection" className="space-y-3">
