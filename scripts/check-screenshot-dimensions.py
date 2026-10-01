@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Dimension check for the session-53 capture set (the established
+pattern): every shot must decode as a PNG and report the viewport's
+exact dimensions (a wrong-viewport capture is the classic capture bug)."""
+import struct
+import sys
+from pathlib import Path
+
+ROOT = Path("/home/z/my-project/digma/docs/screenshots")
+
+# viewport -> expected (w, h)
+VIEWPORTS = {
+    "1440x900": (1440, 900),
+    "768x844": (768, 844),
+    "390x844": (390, 844),
+}
+
+# shot -> viewport (the capture order's own mapping)
+DESKTOP = {
+    "02-dashboard", "03-recent", "04-teams", "05-editor",
+    "27-export-png-desktop", "12-editor-components", "23-shortcuts-dialog",
+    "13-editor-transform-scale", "20-present-desktop",
+    "06-editor-untitled",
+}
+TABLET = {"11-tablet-dashboard"}
+MOBILE = {
+    "07-mobile-dashboard", "08-mobile-menu", "09-mobile-teams",
+    "10-mobile-editor", "21-mobile-editor-header", "28-export-png-mobile",
+    "29-mobile-canvas-chip", "30-mobile-canvas-sheet",
+    "25-mobile-properties-chip", "26-mobile-properties-sheet",
+    "24-shortcuts-mobile", "22-mobile-present-entry", "19-present-mobile",
+    "01-login", "14-signup", "15-signup-validation", "16-forgot",
+    "17-reset-invalid", "18-reset-form",
+}
+S62 = {
+    "ref-01-mobile-dashboard-390": (390, 844),
+    "ref-02-mobile-editor-header-390": (390, 844),
+    "clone-01-mobile-nav-390": (390, 844),
+    "clone-02-mobile-props-sheet-rect": (390, 844),
+    "clone-03-mobile-props-chip": (390, 844),
+    "clone-04-mobile-props-sheet-text": (390, 844),
+    "clone-05-mobile-canvas-sheet": (390, 844),
+    "clone-06-editor-baseline-desktop": (1440, 900),
+}
+
+
+def png_size(path: Path):
+    with path.open("rb") as f:
+        header = f.read(24)
+    if header[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    w, h = struct.unpack(">II", header[16:24])
+    return w, h
+
+
+def expected_for(name: str):
+    if name.startswith("ref-audit-s62/"):
+        return S62.get(Path(name).stem)
+    stem = Path(name).stem
+    if stem in DESKTOP:
+        return VIEWPORTS["1440x900"]
+    if stem in TABLET:
+        return VIEWPORTS["768x844"]
+    if stem in MOBILE:
+        return VIEWPORTS["390x844"]
+    return None
+
+
+def main():
+    failures = []
+    checked = 0
+    shots = sorted(
+        [p for p in ROOT.glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s62").glob("*.png")]
+    )
+    for p in shots:
+        rel = str(p.relative_to(ROOT))
+        exp = expected_for(rel)
+        got = png_size(p)
+        checked += 1
+        if got is None:
+            failures.append(f"{rel}: NOT A VALID PNG")
+            continue
+        if exp is None:
+            failures.append(f"{rel}: no viewport mapping (got {got[0]}x{got[1]})")
+            continue
+        if got != exp:
+            failures.append(f"{rel}: expected {exp[0]}x{exp[1]}, got {got[0]}x{got[1]}")
+    print(f"checked {checked} shots")
+    if failures:
+        print("FAILURES:")
+        for f in failures:
+            print("  " + f)
+        sys.exit(1)
+    print("ALL DIMENSIONS OK")
+
+
+if __name__ == "__main__":
+    main()

@@ -90,11 +90,14 @@ describe("PropertiesSections — the single-source section architecture (session
     expect(panelSource).toMatch(/<PropertiesSections element=\{single\} update=\{update\} \/>/);
     // The no-duplication markers: each section's unique control exists
     // exactly ONCE in the panel file (inside its shared component).
+    // (Session 53: the Opacity value marker is now the GuardedNumberInput
+    // PROP — `label="Opacity value"` — the component renders
+    // aria-label={label}, so the literal moved with the guard refactor.)
     const markers: Array<[string, RegExp]> = [
       ['aria-label="Position and size"', /aria-label="Position and size"/g],
       ["Stroke Width", /label="Stroke Width"/g],
       ['aria-label="Rotation"', /aria-label="Rotation"/g],
-      ['aria-label="Opacity value"', /aria-label="Opacity value"/g],
+      ['label="Opacity value"', /label="Opacity value"/g],
       ["All Corners", /label="All Corners"/g],
     ];
     for (const [name, re] of markers) {

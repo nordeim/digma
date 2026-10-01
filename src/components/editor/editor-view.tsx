@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Download, Keyboard, Play, Redo2, Share2, SlidersHorizontal, Undo2, Users, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, Download, Keyboard, Palette, Play, Redo2, Share2, SlidersHorizontal, Undo2, Users, ZoomIn, ZoomOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Toolbar } from "./toolbar";
 import { Canvas } from "./canvas";
 import { LayersPanel } from "./layers-panel";
 import { ComponentsPanel } from "./components-panel";
-import { PropertiesPanel, PropertiesSections } from "./properties-panel";
+import { CanvasBackgroundSection, PropertiesPanel, PropertiesSections } from "./properties-panel";
 import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
@@ -551,6 +551,75 @@ function MobilePropertiesEditor() {
   );
 }
 
+// The canvas-properties counterpart — session 53 (S53-C). The
+// Edit-properties chip renders exactly when a SINGLE element is
+// selected; this chip renders exactly when NOTHING is (the two are
+// mutually exclusive — each surfaces exactly when its desktop panel
+// branch is the content, so the bottom-right slot never double-books).
+// The reference's own mobile editor carries its background-color pair
+// only inside a clipped ~126px Canvas-Properties sliver (the
+// 29th-audit datum); this working Sheet completes the mobile surface
+// family (sessions 50/52 built the element surfaces). The Sheet carries
+// the SHARED CanvasBackgroundSection through the store's
+// setBackgroundColor — the session-33 persistence path (the autosave
+// PUT carries backgroundColor) flows unchanged. The chrome is the
+// Edit-properties chip's verbatim (the 44px F34 floor, lg:hidden, the
+// bottom-right placement, the dark bottom Sheet family), the icon the
+// Palette metaphor, and the label honest (F39): "Edit canvas
+// properties" describes what the Sheet actually carries.
+function MobileCanvasProperties() {
+  // The selector subscribes to the empty-selection state + the color it
+  // renders — the shell stays free of element/selection subscriptions,
+  // and this leaf re-renders only when the background actually changes.
+  const noSelection = useEditorStore((s) => s.selectedIds.length === 0);
+  const backgroundColor = useEditorStore((s) => s.backgroundColor);
+
+  const [open, setOpen] = React.useState(false);
+  // The sanctioned render-time compare-and-adjust: if a selection
+  // appears while the Sheet is open (draw/marquee between frames), the
+  // Sheet closes so the element-properties chip takes the slot cleanly.
+  const [prevNoSelection, setPrevNoSelection] = React.useState(noSelection);
+  if (prevNoSelection !== noSelection) {
+    setPrevNoSelection(noSelection);
+    if (!noSelection) setOpen(false);
+  }
+
+  // Reads the store at CALL time (never a stale closure) — the same
+  // setBackgroundColor action the desktop panel calls.
+  const update = React.useCallback((color: string) => {
+    useEditorStore.getState().setBackgroundColor(color);
+  }, []);
+
+  if (!noSelection) return null;
+
+  return (
+    <div className="absolute bottom-4 right-4 z-10 lg:hidden">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <button
+            type="button"
+            aria-label="Edit canvas properties"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+          >
+            <Palette className="h-4 w-4" aria-hidden />
+          </button>
+        </SheetTrigger>
+        <SheetContent
+          side="bottom"
+          className="max-h-[80vh] overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white"
+        >
+          <SheetHeader className="border-b border-[#30363d] px-4 py-3">
+            <SheetTitle className="text-left text-sm font-medium text-white">Canvas properties</SheetTitle>
+          </SheetHeader>
+          <div className="p-4">
+            <CanvasBackgroundSection backgroundColor={backgroundColor} onChange={update} />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // The editor shell.
 
@@ -877,6 +946,11 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 does not exist) and for any single selected element. See
                 MobilePropertiesEditor. */}
             <MobilePropertiesEditor />
+            {/* Session 53 (S53-C): the canvas-properties counterpart —
+                the same bottom-right slot when NOTHING is selected (the
+                two chips are mutually exclusive). See
+                MobileCanvasProperties. */}
+            <MobileCanvasProperties />
           </div>
 
           {/* AI assistant — bottom of the canvas column. The reference wraps

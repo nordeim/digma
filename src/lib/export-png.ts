@@ -126,7 +126,12 @@ function paintFor(
 ): { attrs: string; defs: string; children: string } {
   if (el.fillImage) {
     return {
-      attrs: "",
+      // fill="none" (session 53, S53-B): the parent shape must paint NO
+      // backing fill — SVG's initial fill (black) would otherwise back a
+      // letterboxed (contain/auto) or transparent image, where the DOM
+      // paint chain leaves the area transparent. The <image> child
+      // renders on top of the unfilled shape.
+      attrs: 'fill="none"',
       defs: "",
       children:
         `<image href="${escapeXml(el.fillImage)}" x="0" y="0" width="${n(el.width)}" height="${n(el.height)}" ` +

@@ -267,6 +267,22 @@ describe("elementsToSvg — the paint chain (gradient + image)", () => {
     const stretch = elementsToSvg([el({ fill: null, fillImage: dataUrl, fillImageFit: "stretch" })]);
     expect(stretch).toContain('preserveAspectRatio="none"');
   });
+
+  it("an image fill paints NO backing fill on the parent shape (session 53, S53-B)", () => {
+    // The DOM paint chain (fillPaintFor) returns only backgroundImage
+    // for image fills — the unfilled area stays TRANSPARENT. The SVG
+    // serializer must not let the shape's initial fill (black) back a
+    // letterboxed (contain/auto) or transparent image: the parent rect
+    // carries fill="none" and the <image> child renders on top.
+    const dataUrl = "data:image/png;base64,AAAA";
+    const svg = elementsToSvg([el({ fill: null, fillImage: dataUrl, fillImageFit: "contain" })]);
+    // The shape rect (not the background rect, which carries the
+    // backgroundColor fill) opens with fill="none" before the child.
+    const shape = svg.slice(svg.indexOf("<image"));
+    const shapeOpen = svg.slice(0, svg.indexOf("<image"));
+    expect(shapeOpen).toContain('fill="none"');
+    expect(shape).toContain("<image");
+  });
 });
 
 describe("elementsToSvg — the visibility + lock contracts", () => {

@@ -127,6 +127,77 @@ function NumberField({
 }
 
 /**
+ * The INLINE form of NumberField (session 53, S53-A): the S21-2
+ * empty-draft guard on the reference-measured value inputs that live
+ * inside a flex row with a suffix (the Rotation/Opacity `w-16` inputs,
+ * the gradient stop rows) — no label wrapper, the className arrives per
+ * site. The contract is NumberField's verbatim: a draft state, the
+ * render-time compare-and-adjust when the external value changes, the
+ * never-commit-an-empty-draft onChange (Number("") === 0 is the trap
+ * that made a cleared Opacity field VANISH the element mid-edit — an
+ * autosave-persisted mutation, now mobile-reachable through the
+ * session-52 Sheet), and the blur that restores an abandoned draft.
+ * The consumer clamps its domain (the component commits the parsed
+ * number as-is).
+ */
+function GuardedNumberInput({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  className,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  /** The inline chrome (e.g. "h-8 w-16 …px-3 py-1") — per site. */
+  className: string;
+}) {
+  const display = String(Math.round(value * 100) / 100);
+  const [draft, setDraft] = React.useState(display);
+  const [prevValue, setPrevValue] = React.useState(value);
+
+  // The sanctioned "adjust state during render" pattern (no effect, no
+  // cascade): the draft follows the external value — slider moves,
+  // undo/redo, AI edits all resynchronize the input.
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setDraft(display);
+  }
+
+  return (
+    <input
+      type="number"
+      aria-label={label}
+      min={min}
+      max={max}
+      step={step}
+      value={draft}
+      onChange={(event) => {
+        setDraft(event.target.value);
+        // An EMPTY draft is the user mid-edit, not a request for 0 —
+        // only a non-empty, finite draft commits (the S21-2 contract).
+        if (event.target.value.trim() === "") return;
+        const parsed = Number(event.target.value);
+        if (Number.isFinite(parsed)) onChange(parsed);
+      }}
+      onBlur={() => {
+        // Abandoned edit: an empty or unparseable draft restores the
+        // current value — the input never dead-ends empty.
+        const parsed = Number(draft);
+        if (draft.trim() === "" || !Number.isFinite(parsed)) setDraft(display);
+      }}
+      className={className}
+    />
+  );
+}
+
+/**
  * The reference's color row: label above, then a swatch input + hex text
  * input side by side (Fill Color, Stroke, Background Color). An empty text
  * field clears a nullable value (stroke → none); partial hexes are kept as
@@ -328,16 +399,14 @@ function GradientPanel({
                 onChange={(event) => setStop(index, { color: event.target.value })}
                 className="h-6 w-6 rounded border border-[#30363d] bg-transparent"
               />
-              <input
-                type="number"
-                aria-label={`Stop ${index + 1} position`}
+              <GuardedNumberInput
+                label={`Stop ${index + 1} position`}
+                value={stop.position}
                 min={0}
                 max={100}
-                value={stop.position}
-                onChange={(event) =>
-                  setStop(index, {
-                    position: Math.min(Math.max(Number(event.target.value) || 0, 0), 100),
-                  })
+                step={1}
+                onChange={(position) =>
+                  setStop(index, { position: Math.min(Math.max(position, 0), 100) })
                 }
                 className="h-6 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
               />
@@ -754,14 +823,13 @@ export function TransformSection({
               } as React.CSSProperties
             }
           />
-          <input
-            type="number"
-            aria-label="Rotation value"
+          <GuardedNumberInput
+            label="Rotation value"
+            value={element.rotation}
             min={-180}
             max={180}
             step={1}
-            value={Math.round(element.rotation)}
-            onChange={(event) => update({ rotation: Math.min(Math.max(Number(event.target.value) || 0, -180), 180) })}
+            onChange={(rotation) => update({ rotation: Math.min(Math.max(rotation, -180), 180) })}
             className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
           />
           <span className="text-xs text-gray-300" aria-hidden>
@@ -827,15 +895,13 @@ export function OpacitySection({
           className="editor-range h-1.5 flex-1"
           style={{ "--range-fill": `${Math.round(element.opacity * 100)}%` } as React.CSSProperties}
         />
-        <input
-          type="number"
-          aria-label="Opacity value"
+        <GuardedNumberInput
+          label="Opacity value"
+          value={Math.round(element.opacity * 100)}
           min={0}
           max={100}
-          value={Math.round(element.opacity * 100)}
-          onChange={(event) =>
-            update({ opacity: Math.min(Math.max(Number(event.target.value) || 0, 0), 100) / 100 })
-          }
+          step={1}
+          onChange={(value) => update({ opacity: Math.min(Math.max(value, 0), 100) / 100 })}
           className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
         />
         <span className="text-xs text-gray-300" aria-hidden>
@@ -885,6 +951,32 @@ export function PropertiesSections({
   );
 }
 
+// The CANVAS-properties seam — session 53 (S53-C). The Background Color
+// section (the desktop panel's no-selection branch since the early
+// sessions) extracts into ONE exported component the way TextSection
+// and the section family did: below lg the panel does not exist, so a
+// phone with NOTHING selected had no background-color surface at all —
+// the reference's own mobile editor carries its pair only inside a
+// clipped ~126px Canvas-Properties sliver (the 29th-audit datum). The
+// desktop panel AND the mobile canvas Sheet (the Edit-canvas-properties
+// chip in editor-view.tsx) consume this SAME component through the
+// store's setBackgroundColor (the session-33 persistence path — the
+// autosave PUT carries backgroundColor — flows unchanged).
+export function CanvasBackgroundSection({
+  backgroundColor,
+  onChange,
+}: {
+  backgroundColor: string;
+  onChange: (color: string) => void;
+}) {
+  return (
+    <section aria-label="Background color">
+      <h4 className="mb-3 text-xs font-medium uppercase tracking-wider text-gray-400">Background Color</h4>
+      <HexColorRow value={backgroundColor} onChange={(color) => color && onChange(color)} />
+    </section>
+  );
+}
+
 export function PropertiesPanel() {
   const elements = useEditorStore((s) => s.elements);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -918,10 +1010,7 @@ export function PropertiesPanel() {
             <HexColorRow label="Stroke" value={selected[0]?.stroke ?? null} onChange={(stroke) => update({ stroke })} />
           </section>
         ) : (
-          <section aria-label="Background color">
-            <h4 className="mb-3 text-xs font-medium uppercase tracking-wider text-gray-400">Background Color</h4>
-            <HexColorRow value={backgroundColor} onChange={(color) => color && setBackgroundColor(color)} />
-          </section>
+          <CanvasBackgroundSection backgroundColor={backgroundColor} onChange={setBackgroundColor} />
         )}
       </div>
     </div>

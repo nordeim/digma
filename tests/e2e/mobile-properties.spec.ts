@@ -1,22 +1,27 @@
 import { expect, request, test } from "@playwright/test";
 
 // THE mobile properties suite (session 50 S50-2 → extended session 52
-// S52-2). The properties panel renders `hidden … lg:flex`, so below lg
-// a phone has NO properties surface of any kind — the live probe at
-// 390×844 found ZERO text-content inputs in the whole editor. Session
-// 50 closed the TEXT gap with an "Edit text" chip opening a bottom
-// Sheet carrying the shared TextSection; session 52 completes the
-// surface: the chip (relabeled "Edit properties", the SlidersHorizontal
-// icon) opens for ANY single selected element and the Sheet carries
-// the SHARED PropertiesSections composition (S52-1) — the SAME
-// type-conditional section stack the desktop panel renders (Position &
-// Size, Corner Radius unless line/ellipse/text, Fill & Stroke unless
-// text, TEXT for text, Transform, Opacity). The reference's own mobile
-// editor has no usable properties panel either (its clipped 126px
-// sliver + 24px chip targets — re-confirmed the 28th audit), so this
-// is a PURE clone superset, the documented mobile-editor improvement
-// family (ADR-010's full-width canvas, S47-1's Present exit, S48-2's
-// header wrap).
+// S52-2 → extended session 53 S53-A/S53-C). The properties panel
+// renders `hidden … lg:flex`, so below lg a phone has NO properties
+// surface of any kind — the live probe at 390×844 found ZERO
+// text-content inputs in the whole editor. Session 50 closed the TEXT
+// gap with an "Edit text" chip opening a bottom Sheet carrying the
+// shared TextSection; session 52 completed the element surface: the
+// chip (relabeled "Edit properties", the SlidersHorizontal icon) opens
+// for ANY single selected element and the Sheet carries the SHARED
+// PropertiesSections composition (S52-1) — the SAME type-conditional
+// section stack the desktop panel renders (Position & Size, Corner
+// Radius unless line/ellipse/text, Fill & Stroke unless text, TEXT for
+// text, Transform, Opacity). Session 53 adds the two completion pins:
+// the empty-draft regression (S53-A — the Opacity value input's
+// never-commit-0 guard, the trap that VANISHED a mid-edit element) and
+// the canvas-properties counterpart (S53-C — the Edit-canvas-properties
+// chip when NOTHING is selected, carrying the shared
+// CanvasBackgroundSection; the reference's own mobile editor carries
+// its background-color pair only inside a clipped 126px sliver + 24px
+// chip targets, so the working Sheet is a PURE clone superset in the
+// documented mobile-editor improvement family — ADR-010's full-width
+// canvas, S47-1's Present exit, S48-2's header wrap).
 //
 // The F35 lesson applies to the trigger: reachability is pinned as
 // GEOMETRY (the bounding box inside the viewport) — a chip a finger
@@ -347,6 +352,165 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
       await deleteFixture(page, fixture.id);
     }
   });
+
+  test("clearing the Opacity value field NEVER commits 0 (session 53, S53-A)", async ({
+    page,
+  }) => {
+    // THE empty-draft regression pin. The Rotation value, the Opacity
+    // value, and the gradient stop positions were raw inputs with
+    // `Number(value) || 0` commit handlers — clearing the Opacity field
+    // committed opacity: 0, the element VANISHED mid-edit (an
+    // autosave-persisted mutation), and the controlled input snapped to
+    // the committed "0", destroying the edit. The session-52 Sheet
+    // carried the same inputs to mobile, where a thumb hits the trap on
+    // the widest surface. Pre-fix this test FAILS at the first
+    // post-clear assertion (the rect goes transparent); post-fix the
+    // guard holds, the abandoned draft restores on blur, and a real
+    // value still commits.
+    const fixture = await openFixtureEditor(page);
+    try {
+      await page.mouse.click(300, 382);
+      const chip = page.getByRole("button", { name: "Edit properties" });
+      await chip.click();
+      const sheet = page.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+
+      const rect = page.locator('[data-element-id][aria-label="Primary Button"]');
+      // Baseline: the seeded rectangle is fully opaque.
+      await expect(rect).toHaveCSS("opacity", "1");
+
+      // Clear the Opacity value input — the empty draft is the user
+      // MID-EDIT, never a request for 0 (the S21-2 contract).
+      const opacityInput = sheet.getByLabel("Opacity value", { exact: true });
+      await opacityInput.fill("");
+      await expect(rect, "a cleared field must not vanish the element").toHaveCSS("opacity", "1");
+
+      // The abandoned draft restores on blur — the input never
+      // dead-ends empty (opacity renders as the integer percent).
+      await opacityInput.blur();
+      await expect(opacityInput).toHaveValue("100");
+
+      // A REAL value still commits live through the same path.
+      await opacityInput.fill("50");
+      await expect(rect).toHaveCSS("opacity", "0.5");
+      await waitForSaved(page);
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
+
+  test("an empty canvas surfaces the Edit-canvas-properties chip at the 44px floor (session 53, S53-C)", async ({
+    page,
+  }) => {
+    // The canvas-properties counterpart: with NOTHING selected (the
+    // desktop panel's Canvas Properties branch), the bottom-right slot
+    // carries the canvas chip — in-viewport (F35) and >= 44x44 (F34).
+    // The two chips are MUTUALLY EXCLUSIVE: selecting an element swaps
+    // the slot to the element chip, deselecting swaps it back.
+    const fixture = await openFixtureEditor(page);
+    try {
+      const canvasChip = page.getByRole("button", { name: "Edit canvas properties" });
+      await expect(canvasChip).toBeVisible();
+      const box = await canvasChip.boundingBox();
+      expect(box, "the canvas chip must report a bounding box").toBeTruthy();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.y).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+      expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      // Nothing selected -> no ELEMENT chip (the mutual exclusion).
+      await expect(page.getByRole("button", { name: "Edit properties" })).toHaveCount(0);
+
+      // Selecting an element swaps the slot: the canvas chip vanishes,
+      // the element chip surfaces.
+      await page.getByText("Fixture headline").first().click();
+      await expect(page.getByRole("button", { name: "Edit canvas properties" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Edit properties" })).toBeVisible();
+
+      // Deselecting (a tap on empty canvas) swaps it back. The tap is a
+      // POSITION click on the canvas root — canvas-local (40,100) is empty
+      // (below the zoom-cluster row that owns the top ~50px, left of and
+      // above the fixture elements at (160,160)+); a raw viewport
+      // coordinate would land in the AI column below the canvas.
+      await page
+        .getByRole("application", { name: "Design canvas" })
+        .click({ position: { x: 40, y: 100 } });
+      await expect(page.getByRole("button", { name: "Edit canvas properties" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Edit properties" })).toHaveCount(0);
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
+
+  test("the canvas Sheet carries the Background color section; an edit paints the canvas and persists (S53-C)", async ({
+    page,
+  }) => {
+    // The functional round-trip through the SHARED CanvasBackgroundSection
+    // — the same component the desktop panel renders — through the
+    // store's setBackgroundColor (the session-33 persistence path: the
+    // autosave PUT carries backgroundColor). The reference's own mobile
+    // editor carries its background-color pair only inside a clipped
+    // sliver; this is the working superset.
+    const fixture = await openFixtureEditor(page);
+    try {
+      await page.getByRole("button", { name: "Edit canvas properties" }).click();
+      const sheet = page.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+      await expect(sheet).toHaveAccessibleName(/canvas properties/i);
+
+      // The shared section (a named <section aria-label> is a region —
+      // F39), and its HexColorRow (no label prop on the canvas row: the
+      // accessible names fall back to "Color swatch"/"Color hex").
+      await expect(sheet.getByRole("region", { name: "Background color" })).toBeVisible();
+      const hexInput = sheet.getByLabel("Color hex", { exact: true });
+      await expect(hexInput).toHaveValue(/^#[0-9A-Fa-f]{6}$/);
+
+      // The edit paints the canvas root (role=application, the store's
+      // backgroundColor on its style) and the autosave persists it.
+      // F36d: while the Radix dialog is open the app is aria-hidden and
+      // role-based locators cannot resolve the canvas — the paint
+      // assertion runs AFTER the close.
+      await hexInput.fill("#1E293B");
+      await page.keyboard.press("Escape");
+      const canvas = page.getByRole("application", { name: "Design canvas" });
+      await expect(canvas).toHaveCSS("background-color", "rgb(30, 41, 59)");
+      await waitForSaved(page);
+      await page.reload();
+      await expect(page.getByText("Fixture headline").first()).toBeVisible();
+      await expect(page.getByRole("application", { name: "Design canvas" })).toHaveCSS(
+        "background-color",
+        "rgb(30, 41, 59)",
+      );
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
+
+  test("the canvas Sheet contract: scroll lock, Escape close, focus return to the chip (S53-C)", async ({
+    page,
+  }) => {
+    // The same dialog family as the element Sheet and the mobile-nav
+    // drawer: body scroll lock while open, Escape closes, focus returns
+    // to the trigger (SheetTrigger wires the return natively).
+    const fixture = await openFixtureEditor(page);
+    try {
+      const chip = page.getByRole("button", { name: "Edit canvas properties" });
+      await chip.click();
+      const sheet = page.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+      await expect(page.locator("body")).toHaveAttribute("data-scroll-locked", "1");
+
+      await page.keyboard.press("Escape");
+      await expect(sheet).toHaveCount(0);
+      // Dialog-guarded (the app is aria-hidden while open — F36d): the
+      // focus assertion runs AFTER the close.
+      await expect(chip).toBeFocused();
+      await expect(page.locator("body")).not.toHaveAttribute("data-scroll-locked");
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
 });
 
 test.describe("the lg boundary — desktop keeps the panel, never the chip (1280×800)", () => {
@@ -372,6 +536,21 @@ test.describe("the lg boundary — desktop keeps the panel, never the chip (1280
       await page.getByText("Fixture headline").first().click();
       await expect(page.getByRole("button", { name: "Edit properties" })).toBeHidden();
       await expect(page.getByLabel("Text content")).toBeVisible();
+
+      // Session 53 (S53-C): the CANVAS chip holds the same boundary —
+      // deselect (the canvas-properties branch is the desktop panel's
+      // content) and the mobile-only chip stays hidden while the
+      // panel's Background Color row is the surface. The deselect is a
+      // POSITION click on the canvas root — canvas-local (40,100) is
+      // empty (below the zoom-cluster row that owns the top ~50px, left
+      // of and above the fixture elements at (160,160)+); a raw viewport
+      // coordinate would land in the AI column below the canvas at this
+      // height.
+      await page
+        .getByRole("application", { name: "Design canvas" })
+        .click({ position: { x: 40, y: 100 } });
+      await expect(page.getByRole("button", { name: "Edit canvas properties" })).toBeHidden();
+      await expect(page.getByRole("region", { name: "Background color" })).toBeVisible();
     } finally {
       await deleteFixture(page, fixture.id);
     }
