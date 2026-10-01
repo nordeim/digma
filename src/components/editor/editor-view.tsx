@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Keyboard, Play, Redo2, Share2, Undo2, Users, ZoomIn, ZoomOut, Type } from "lucide-react";
+import { ArrowLeft, Download, Keyboard, Play, Redo2, Share2, Undo2, Users, ZoomIn, ZoomOut, Type } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,14 @@ import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { HeaderUser } from "@/components/app-header";
 import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, fillPaintFor, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
+import {
+  EXPORT_BOARD_HEIGHT,
+  EXPORT_BOARD_WIDTH,
+  downloadPng,
+  elementsToSvg,
+  exportFilename,
+  svgToPngBlob,
+} from "@/lib/export-png";
 
 // The Untitled editor state (ADR-009): loaded when the ?projectId is unknown
 // or missing — the reference app renders a fully working "Untitled" canvas
@@ -603,6 +611,25 @@ export function EditorView({ user }: { user: HeaderUser }) {
       .catch(() => toast.show({ title: "Share this project", description: url }));
   }
 
+  // Session 51 (S51-2): the canvas PNG export — a pure clone superset
+  // (the reference has no export anywhere; Present is its only output
+  // surface). Reads the store at CALL time (getState() — no new shell
+  // subscriptions), serializes the board through the pure seam, and
+  // degrades to a toast on any failure (never a thrown error into
+  // render — the app's discipline).
+  async function onDownloadPng() {
+    try {
+      const store = useEditorStore.getState();
+      const svg = elementsToSvg(store.elements, { backgroundColor: store.backgroundColor });
+      const blob = await svgToPngBlob(svg, EXPORT_BOARD_WIDTH, EXPORT_BOARD_HEIGHT);
+      const filename = `${exportFilename(store.projectName || "design")}.png`;
+      downloadPng(blob, filename);
+      toast.success("PNG downloaded", filename);
+    } catch {
+      toast.error("Export failed", "The canvas could not be exported as PNG.");
+    }
+  }
+
   function exit() {
     // Flush pending edits before leaving. The store's projectId is
     // authoritative (in Untitled mode it may be empty — nothing to flush;
@@ -816,6 +843,24 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
               >
                 <Keyboard className="h-4 w-4" aria-hidden />
+              </button>
+              {/* Session 51 (S51-2): the canvas PNG export — the Keyboard
+                  chip's direct sibling (the S49-2 utility-cluster
+                  convention). NOT in the header: the tablet 600 short-name
+                  pin holds the header to a single 48px row and the right
+                  group already sits ~20px under that threshold — the
+                  cluster carries no such flex arithmetic, renders at every
+                  viewport (the F37 rule), and the export is a canvas
+                  action. The chip chrome is the cluster family
+                  (reference-measured 36px, like the Keyboard chip). */}
+              <button
+                type="button"
+                onClick={onDownloadPng}
+                aria-label="Download PNG"
+                title="Download PNG"
+                className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+              >
+                <Download className="h-4 w-4" aria-hidden />
               </button>
             </div>
             {/* Session 50 (S50-2): the mobile text-editing surface — the
