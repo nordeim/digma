@@ -230,6 +230,7 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
   const elements = useEditorStore((s) => s.elements);
   const backgroundColor = useEditorStore((s) => s.backgroundColor);
   const canvasRef = React.useRef<HTMLDivElement>(null);
+  const exitRef = React.useRef<HTMLButtonElement>(null);
   const [scale, setScale] = React.useState(1);
 
   React.useEffect(() => {
@@ -252,12 +253,36 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onExit]);
 
+  // Session 47 (S47-1): the dialog-management conventions the Sheet already
+  // pins, applied to the presentation takeover. (1) The body scroll lock —
+  // data-scroll-locked + overflow:hidden while presenting (react-remove-
+  // scroll's convention; the overlay and the workspace Sheet can never be
+  // open together, so no lock-owner conflict). (2) Focus moves INTO the
+  // dialog on open — onto the exit affordance, the only actionable control —
+  // and RETURNS to the element that opened it (the Present trigger) on
+  // close, the Sheet's focus contract.
+  React.useEffect(() => {
+    const body = document.body;
+    const prevOverflow = body.style.overflow;
+    const restoreFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    body.setAttribute("data-scroll-locked", "1");
+    body.style.overflow = "hidden";
+    exitRef.current?.focus();
+    return () => {
+      body.removeAttribute("data-scroll-locked");
+      body.style.overflow = prevOverflow;
+      restoreFocus?.focus();
+    };
+  }, []);
+
   return (
     <div
       ref={canvasRef}
       className="fixed inset-0 z-[200] flex items-center justify-center"
       style={{ backgroundColor }}
       role="dialog"
+      aria-modal="true"
       aria-label="Presentation mode — press Escape to exit"
     >
       <div
@@ -327,12 +352,18 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
             </div>
           ))}
       </div>
+      {/* S47-1: the 44px touch floor (min-h-11 — the mobile-nav convention,
+          every touch target at least 44px tall) + the device-coherent copy:
+          the (Esc) hint renders only at >=640px viewports (hidden sm:inline)
+          — a phone has no Esc key, so the label stops teaching the wrong
+          exit on the device that needs the button most. */}
       <button
+        ref={exitRef}
         type="button"
         onClick={onExit}
-        className="fixed bottom-4 right-4 rounded-lg border border-white/20 bg-black/50 px-4 py-2 text-xs text-white backdrop-blur-sm"
+        className="fixed bottom-4 right-4 min-h-11 rounded-lg border border-white/20 bg-black/50 px-4 text-xs text-white backdrop-blur-sm"
       >
-        Exit presentation (Esc)
+        Exit presentation<span className="hidden sm:inline"> (Esc)</span>
       </button>
     </div>
   );
