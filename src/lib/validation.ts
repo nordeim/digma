@@ -80,3 +80,26 @@ export function clampTextAlign(value: unknown): string | null {
   if (typeof value !== "string") return null;
   return TEXT_ALIGNS.has(value) ? value : null;
 }
+
+// Session 46 (RA-65/RA-66): the reference's /reset-password landing page
+// keys its two states on the ?token= query param — only a NON-EMPTY token
+// opens the "Set new password" form; a missing, empty, or differently-named
+// param renders the "Invalid Reset Link" card (measured live on ?code=…
+// and ?token=). The token's server-side validity is a separate concern
+// (checked at submit — 400 "Invalid or expired reset token").
+export function normalizeResetToken(raw: string | null | undefined): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+/** The reset token's 60-minute window ("invalid or HAS EXPIRED", RA-65). */
+export function resetTokenAlive(
+  expiresAt: Date | string | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  if (!expiresAt) return false;
+  const expiry = expiresAt instanceof Date ? expiresAt.getTime() : Date.parse(expiresAt);
+  if (!Number.isFinite(expiry)) return false;
+  return expiry > now;
+}

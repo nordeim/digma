@@ -44,6 +44,10 @@ export function LoginScreen() {
   const [digits, setDigits] = React.useState<string[]>(["", "", "", "", "", ""]);
   const [verifyCodeHint, setVerifyCodeHint] = React.useState("");
   const [verifyError, setVerifyError] = React.useState("");
+  // Session 46, RA-65: the forgot request's in-app reset link (the ADR-014
+  // family — present only when the account exists; the message itself
+  // stays the reference's no-enumeration copy either way).
+  const [resetUrl, setResetUrl] = React.useState<string | null>(null);
 
   function enterVerify(code: string) {
     setVerifyCodeHint(code);
@@ -58,12 +62,32 @@ export function LoginScreen() {
     setAuthError("");
 
     if (mode === "forgot") {
-      // Session 43, RA-59: the reference's forgot submit transitions the
-      // card to its "Check your email" success state (POST
-      // /auth/reset-password-request 200). The clone carries no mail service
-      // — the card is the UI-state port and the no-email deviation is
-      // documented (the demo account's reset lives in db:seed).
-      setMode("sent");
+      // Session 43, RA-59 + Session 46, RA-65: the reference's forgot submit
+      // POSTs its reset request and the card transitions to the "Check your
+      // email" success state. The clone now carries the round-trip: the
+      // route answers the reference's no-enumeration 200 (the same message
+      // for known and unknown emails) and — the SELF-HOSTED in-app delivery
+      // (ADR-014, same as the OTP) — includes the resetUrl for existing
+      // accounts, which the sent card renders as the demo's working link.
+      setSubmitting(true);
+      try {
+        const response = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const body = await response.json().catch(() => null);
+        if (!response.ok || !body?.ok) {
+          setAuthError(body?.error?.message ?? "Could not send the reset link. Please try again.");
+          return;
+        }
+        setResetUrl(typeof body?.data?.resetUrl === "string" ? body.data.resetUrl : null);
+        setMode("sent");
+      } catch {
+        setAuthError("Could not reach the server. Please try again.");
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
@@ -395,8 +419,10 @@ export function LoginScreen() {
                 ) : mode === "sent" ? (
                   /* Session 43, RA-59 — the reference's check-your-email card
                    * body: the green alert + the FULL-WIDTH "Back to sign in"
-                   * button (no top back-link on this state). The clone sends
-                   * no email — the documented self-hosted deviation. */
+                   * button (no top back-link on this state). Session 46
+                   * (RA-65) adds the in-app reset link below the alert — the
+                   * ADR-014 self-hosted delivery (no mail service; the link
+                   * rides in the forgot response for existing accounts). */
                   <div className="space-y-4 sm:space-y-6">
                     <div
                       role="alert"
@@ -406,11 +432,29 @@ export function LoginScreen() {
                         Please check your email for the password reset link. It may take a few minutes to arrive.
                       </p>
                     </div>
+                    {resetUrl && (
+                      <div
+                        role="status"
+                        className="w-full rounded-xl border border-blue-200 bg-blue-50/70 p-4"
+                      >
+                        <p className="text-sm text-blue-700">
+                          Self-hosted mode: no email service is configured —{" "}
+                          <a
+                            href={resetUrl}
+                            className="font-semibold underline underline-offset-2 hover:text-blue-800"
+                          >
+                            reset your password directly
+                          </a>
+                          .
+                        </p>
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
                         setMode("signin");
                         setAuthError("");
+                        setResetUrl(null);
                       }}
                       className="flex w-full items-center justify-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
                     >

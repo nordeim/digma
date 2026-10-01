@@ -26,6 +26,14 @@ model User {
   verified       Boolean @default(true)
   verifyCode     String? // the pending 6-digit code (null once verified)
   verifyAttempts Int     @default(0) // wrong-code counter; 5 max, reset on resend
+  // Session-46, RA-65: the reference's password-reset round-trip. Its
+  // POST /auth/reset-password takes {reset_token, new_password} — an
+  // invalid/expired token answers 400 "Invalid or expired reset token".
+  // The token is email-only on the reference; the clone carries the
+  // in-app delivery (the ADR-014 family — the resetUrl travels in the
+  // forgot-password response). Single-use: cleared on a successful reset.
+  resetToken           String?   // 64-hex crypto-random, null once consumed
+  resetTokenExpiresAt  DateTime? // the 60-minute window ("invalid or has expired")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

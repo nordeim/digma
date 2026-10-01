@@ -165,6 +165,109 @@ VERIFY3=$(curl -s -X POST "$BASE/api/auth/verify-otp" \
 echo "$VERIFY3" | grep -q '"ok":true' && ok "the resent code verifies (the recovery path)" || bad "verify3: $VERIFY3"
 
 # ---------------------------------------------------------------------------
+# Session 46, RA-65/RA-66: the password-reset round-trip. The reference's
+# POST /auth/reset-password-request answers the no-enumeration 200 (the token
+# never travels on the reference — email-only; the clone carries the in-app
+# resetUrl per ADR-014), and its POST /auth/reset-password takes exactly
+# {reset_token, new_password} — an invalid/expired token answers 400
+# "Invalid or expired reset token" (validated BEFORE the password). The
+# section runs under its OWN rate-limit buckets (the limiter keys on
+# X-Forwarded-For): 203.0.113.46 for the nine contract calls and
+# 203.0.113.47 for the demo-password restore — neither touches any other
+# section's budget (the shared "unknown" bucket or the final 429 burner).
+SMOKE_XFF46="203.0.113.46"
+SMOKE_XFF46R="203.0.113.47"
+step "== Password-reset round-trip (session 46) =="
+
+FORGOT=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/auth/forgot-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d '{"email":"demo@digma.app"}')
+FORGOT_BODY=$(echo "$FORGOT" | head -n -1)
+FORGOT_STATUS=$(echo "$FORGOT" | tail -n 1)
+RESET_TOKEN=$(echo "$FORGOT_BODY" | grep -o 'token=[a-f0-9]*' | head -1 | cut -d= -f2)
+{ [ "$FORGOT_STATUS" = "200" ] && echo "$FORGOT_BODY" | grep -q 'If an account exists with this email, you will receive a password reset link.' && [ -n "$RESET_TOKEN" ]; } \
+  && ok "forgot-password answers the no-enumeration 200 and carries the in-app reset URL" \
+  || bad "forgot-password (got $FORGOT_STATUS): $FORGOT_BODY"
+
+FORGOT_UNKNOWN=$(curl -s -X POST "$BASE/api/auth/forgot-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d '{"email":"no-such-user@digma.app"}')
+{ echo "$FORGOT_UNKNOWN" | grep -q 'If an account exists with this email, you will receive a password reset link.' && echo "$FORGOT_UNKNOWN" | grep -q '"resetUrl":null'; } \
+  && ok "an unknown email answers the SAME message with no reset URL (no enumeration)" \
+  || bad "forgot-password unknown email: $FORGOT_UNKNOWN"
+
+RESET_BAD=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/auth/reset-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d '{"reset_token":"definitely-not-a-real-token","new_password":"NewSmoke123!"}')
+RESET_BAD_BODY=$(echo "$RESET_BAD" | head -n -1)
+RESET_BAD_STATUS=$(echo "$RESET_BAD" | tail -n 1)
+{ [ "$RESET_BAD_STATUS" = "400" ] && echo "$RESET_BAD_BODY" | grep -q 'Invalid or expired reset token'; } \
+  && ok "an invalid token answers the reference's exact 400 message" \
+  || bad "invalid token (got $RESET_BAD_STATUS): $RESET_BAD_BODY"
+
+RESET_ORDER=$(curl -s -X POST "$BASE/api/auth/reset-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d '{"reset_token":"also-not-real","new_password":"abc"}')
+echo "$RESET_ORDER" | grep -q 'Invalid or expired reset token' \
+  && ok "the token is validated BEFORE the password (weak pw + bad token reads the token error)" \
+  || bad "token-before-password ordering: $RESET_ORDER"
+
+RESET_WEAK=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/auth/reset-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d "{\"reset_token\":\"$RESET_TOKEN\",\"new_password\":\"abc\"}")
+RESET_WEAK_BODY=$(echo "$RESET_WEAK" | head -n -1)
+RESET_WEAK_STATUS=$(echo "$RESET_WEAK" | tail -n 1)
+{ [ "$RESET_WEAK_STATUS" = "400" ] && echo "$RESET_WEAK_BODY" | grep -q 'Password must be at least 8 characters long'; } \
+  && ok "a valid token + weak password answers the reference's exact 400 message" \
+  || bad "weak password reset (got $RESET_WEAK_STATUS): $RESET_WEAK_BODY"
+
+RESET_OK=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/auth/reset-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d "{\"reset_token\":\"$RESET_TOKEN\",\"new_password\":\"ResetSmoke123!\"}")
+RESET_OK_BODY=$(echo "$RESET_OK" | head -n -1)
+RESET_OK_STATUS=$(echo "$RESET_OK" | tail -n 1)
+{ [ "$RESET_OK_STATUS" = "200" ] && echo "$RESET_OK_BODY" | grep -q '"ok":true'; } \
+  && ok "the valid token + new password resets (200)" \
+  || bad "reset ok (got $RESET_OK_STATUS): $RESET_OK_BODY"
+
+OLD_LOGIN=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/api/auth/login" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d '{"email":"demo@digma.app","password":"Digma1234!"}')
+[ "$OLD_LOGIN" = "401" ] \
+  && ok "the OLD password no longer signs in (401)" \
+  || bad "old password login (got $OLD_LOGIN — expected 401)"
+
+NEW_LOGIN=$(curl -s -c /tmp/smoke-reset-cookies.txt -X POST "$BASE/api/auth/login" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d '{"email":"demo@digma.app","password":"ResetSmoke123!"}')
+echo "$NEW_LOGIN" | grep -q '"ok":true' \
+  && ok "the NEW password signs in (the round-trip closed)" \
+  || bad "new password login: $NEW_LOGIN"
+
+REPLAY=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/api/auth/reset-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46" \
+  -d "{\"reset_token\":\"$RESET_TOKEN\",\"new_password\":\"Another123!\"}")
+[ "$REPLAY" = "400" ] \
+  && ok "the token is single-use (the replay answers 400)" \
+  || bad "token replay (got $REPLAY — expected 400)"
+
+# The restore: put the demo password back so every later section (and any
+# re-run against the same db) keeps its Digma1234! contract. Its own bucket.
+FORGOT2=$(curl -s -X POST "$BASE/api/auth/forgot-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46R" \
+  -d '{"email":"demo@digma.app"}')
+RESTORE_TOKEN=$(echo "$FORGOT2" | grep -o 'token=[a-f0-9]*' | head -1 | cut -d= -f2)
+[ -n "$RESTORE_TOKEN" ] \
+  && ok "the restore request issues a fresh token" \
+  || bad "restore forgot: $FORGOT2"
+RESTORE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/api/auth/reset-password" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF46R" \
+  -d "{\"reset_token\":\"$RESTORE_TOKEN\",\"new_password\":\"Digma1234!\"}")
+[ "$RESTORE" = "200" ] \
+  && ok "the demo password is restored (Digma1234!)" \
+  || bad "restore reset (got $RESTORE)"
+
+# ---------------------------------------------------------------------------
 step "== Authenticated reads =="
 for ENDPOINT in stats projects teams; do
   READ=$(curl -s -b /tmp/smoke-cookies.txt "$BASE/api/$ENDPOINT")
