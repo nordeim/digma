@@ -31,7 +31,9 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", "Enter a valid email address", 400);
   }
   if (password.length < 8) {
-    return fail("VALIDATION", "Password must be at least 8 characters", 400);
+    // Session 45, RA-63: the reference's exact measured text (its 400
+    // renders verbatim in the signup card's inline alert).
+    return fail("VALIDATION", "Password must be at least 8 characters long", 400);
   }
 
   const existing = await db.user.findUnique({ where: { email } });

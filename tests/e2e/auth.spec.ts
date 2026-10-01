@@ -250,3 +250,39 @@ test.describe("auth card state structure (reference parity)", () => {
     await expect(page.getByRole("heading", { name: "Welcome to Digma" })).toBeVisible();
   });
 });
+
+// -------------------------------------------------------------------------
+// Session 45 (RA-63): the reference's auth inputs carry NO client-side
+// minLength (measured on BOTH cards: minLength -1) — a weak password
+// SUBMITS and the API's 400 renders as the INLINE alert inside the form.
+// The pre-fix clone's minLength={8} blocked submission with the browser's
+// NATIVE validation bubble instead — this pin proves that path is gone.
+//
+// Budget note: this describe declares its own X-Forwarded-For header, so
+// its register attempt lands in a DEDICATED rate-limit bucket
+// (src/lib/rate-limit.ts keys on XFF) — the file's shared 9/10 budget is
+// untouched.
+// -------------------------------------------------------------------------
+test.describe("signup weak-password validation (session 45, RA-63)", () => {
+  test.use({ extraHTTPHeaders: { "X-Forwarded-For": "198.51.100.45" } });
+
+  test("a short password submits and renders the reference's inline alert — no native bubble", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: /Need an account\? Sign up/ }).click();
+    await page.getByLabel("Email").fill(`weak-probe-${Date.now()}@digma.app`);
+    await page.getByLabel("Password", { exact: true }).fill("abc");
+    await page.getByLabel("Confirm Password").fill("abc");
+    await page.getByRole("button", { name: "Create account" }).click();
+
+    // The reference's measured contract: the failure renders an INLINE
+    // alert INSIDE the form with the API's exact text — the native
+    // validation bubble never appears (the inputs carry no minLength).
+    const alert = page.getByRole("alert").filter({ hasText: "Password must be at least 8 characters long" });
+    await expect(alert).toBeVisible({ timeout: 15_000 });
+
+    // The card stays on the sign-up state — no navigation, no toast.
+    await expect(page.getByRole("heading", { name: "Create your account", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.locator("[data-sonner-toast], .toast")).toHaveCount(0);
+  });
+});

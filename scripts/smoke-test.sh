@@ -97,6 +97,74 @@ VERIFY2=$(curl -s -X POST "$BASE/api/auth/verify-otp" \
 echo "$VERIFY2" | grep -q '"ok":true' && ok "the resent code verifies" || bad "resent code verify: $VERIFY2"
 
 # ---------------------------------------------------------------------------
+# Session 45, RA-62/RA-63: the verify-otp attempts CEILING and the register
+# password contract. The whole section runs under a DEDICATED rate-limit
+# bucket (the limiter keys on X-Forwarded-For — src/lib/rate-limit.ts): its
+# exactly-ten auth calls never touch the shared "unknown" bucket the rest of
+# the suite (and the final 429 burner) depend on.
+SMOKE_XFF="203.0.113.45"
+step "== Verify-otp ceiling + weak-password contract (session 45) =="
+
+# RA-63: the reference's auth inputs carry NO client-side minLength
+# (measured: minLength -1 on both cards) — a short password SUBMITS and the
+# API answers the reference's exact 400 message.
+SMOKE_TS3=$((SMOKE_TS + 2))
+WEAK=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/auth/register" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF" \
+  -d "{\"email\":\"smoke-$SMOKE_TS3@digma.app\",\"password\":\"abc\",\"name\":\"Smoke3\"}")
+WEAK_BODY=$(echo "$WEAK" | head -n -1)
+WEAK_STATUS=$(echo "$WEAK" | tail -n 1)
+{ [ "$WEAK_STATUS" = "400" ] && echo "$WEAK_BODY" | grep -q 'Password must be at least 8 characters long'; } \
+  && ok "weak password submits and answers the reference's exact 400 message" \
+  || bad "weak password 400 (got $WEAK_STATUS): $WEAK_BODY"
+
+REGISTER3=$(curl -s -X POST "$BASE/api/auth/register" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF" \
+  -d "{\"email\":\"smoke-$SMOKE_TS3@digma.app\",\"password\":\"SmokePass123!\",\"name\":\"Smoke3\"}")
+SMOKE_CODE3=$(echo "$REGISTER3" | grep -o '"verificationCode":"[0-9]*"' | grep -o '[0-9]*')
+[ -n "$SMOKE_CODE3" ] && ok "the same email registers once the password is valid" || bad "register3: $REGISTER3"
+
+# RA-62: wrong codes 1-4 decrement (4..1); the FIFTH answers the 429
+# exhaustion with the reference's exact message; the lock then rejects even
+# the CORRECT code; a Resend resets and the fresh code verifies.
+for i in 1 2 3 4; do
+  EXPECT_REMAIN=$((5 - i))
+  W=$(curl -s -X POST "$BASE/api/auth/verify-otp" \
+    -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF" \
+    -d "{\"email\":\"smoke-$SMOKE_TS3@digma.app\",\"code\":\"00000$i\"}")
+  echo "$W" | grep -q "$EXPECT_REMAIN attempts remaining" \
+    && ok "wrong code $i reads '$EXPECT_REMAIN attempts remaining'" \
+    || bad "wrong code $i: $W"
+done
+EXH=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/auth/verify-otp" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF" \
+  -d "{\"email\":\"smoke-$SMOKE_TS3@digma.app\",\"code\":\"000009\"}")
+EXH_BODY=$(echo "$EXH" | head -n -1)
+EXH_STATUS=$(echo "$EXH" | tail -n 1)
+{ [ "$EXH_STATUS" = "429" ] && echo "$EXH_BODY" | grep -q 'Too many failed attempts. Please request a new verification code.'; } \
+  && ok "the fifth wrong code answers 429 with the reference's exhaustion message" \
+  || bad "exhaustion (got $EXH_STATUS): $EXH_BODY"
+
+LOCKED=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/api/auth/verify-otp" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF" \
+  -d "{\"email\":\"smoke-$SMOKE_TS3@digma.app\",\"code\":\"$SMOKE_CODE3\"}")
+[ "$LOCKED" = "429" ] \
+  && ok "the exhausted code is LOCKED (the correct code answers 429 until a Resend)" \
+  || bad "locked correct code (got $LOCKED)"
+
+RESEND3=$(curl -s -X POST "$BASE/api/auth/resend-otp" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF" \
+  -d "{\"email\":\"smoke-$SMOKE_TS3@digma.app\"}")
+SMOKE_CODE3B=$(echo "$RESEND3" | grep -o '"verificationCode":"[0-9]*"' | grep -o '[0-9]*')
+{ [ -n "$SMOKE_CODE3B" ] && [ "$SMOKE_CODE3B" != "$SMOKE_CODE3" ]; } \
+  && ok "resend after the lock regenerates a differing code (counter reset)" \
+  || bad "resend3: $RESEND3"
+VERIFY3=$(curl -s -X POST "$BASE/api/auth/verify-otp" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF" \
+  -d "{\"email\":\"smoke-$SMOKE_TS3@digma.app\",\"code\":\"$SMOKE_CODE3B\"}")
+echo "$VERIFY3" | grep -q '"ok":true' && ok "the resent code verifies (the recovery path)" || bad "verify3: $VERIFY3"
+
+# ---------------------------------------------------------------------------
 step "== Authenticated reads =="
 for ENDPOINT in stats projects teams; do
   READ=$(curl -s -b /tmp/smoke-cookies.txt "$BASE/api/$ENDPOINT")

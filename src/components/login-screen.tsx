@@ -487,11 +487,18 @@ export function LoginScreen() {
                         </label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden />
+                          {/* Session 45, RA-63: NO minLength here — the
+                           * reference's auth inputs carry none (measured:
+                           * minLength -1 on both cards; the "Min. 8
+                           * characters" placeholder is a hint, not a
+                           * constraint). A client-side minLength would block
+                           * submission with the browser's NATIVE validation
+                           * bubble and mask the API's 400, which renders as
+                           * the reference's inline alert instead. */}
                           <input
                             id="password"
                             type="password"
                             required
-                            minLength={8}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder={mode === "signup" ? "Min. 8 characters" : "••••••••"}
@@ -512,7 +519,6 @@ export function LoginScreen() {
                             id="confirmPassword"
                             type="password"
                             required
-                            minLength={8}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="Re-enter password"
