@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Download, Keyboard, Play, Redo2, Share2, Undo2, Users, ZoomIn, ZoomOut, Type } from "lucide-react";
+import { ArrowLeft, Download, Keyboard, Play, Redo2, Share2, SlidersHorizontal, Undo2, Users, ZoomIn, ZoomOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Toolbar } from "./toolbar";
 import { Canvas } from "./canvas";
 import { LayersPanel } from "./layers-panel";
 import { ComponentsPanel } from "./components-panel";
-import { PropertiesPanel, TextSection } from "./properties-panel";
+import { PropertiesPanel, PropertiesSections } from "./properties-panel";
 import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
@@ -452,16 +452,20 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
 }
 
 // ---------------------------------------------------------------------------
-// The mobile text-editing surface (session 50, S50-2 — the working
-// superset). The properties panel renders `hidden … lg:flex`, so below
-// lg there is NO properties surface of any kind: a phone can DRAW a text
-// element (the Text tool works at mobile; addElements selects the fresh
-// element) but can never EDIT its content — the measured gap
-// (live-verified at 390×844: zero text-content inputs in the editor).
-// The reference's own mobile editor has no properties panel either, so
-// this is the documented mobile-editor improvement family (ADR-010's
-// full-width canvas, S47-1's Present exit, S48-2's header wrap) — not a
-// parity surface to copy.
+// The mobile properties surface (session 50 S50-2 → extended session 52
+// S52-2 — the working superset). The properties panel renders `hidden …
+// lg:flex`, so below lg there is NO properties surface of any kind: a
+// phone can DRAW elements (the tools work at mobile; addElements
+// selects the fresh element) but could never EDIT them — the measured
+// gap (live-verified at 390×844: zero text-content inputs in the
+// editor, and the session-50 Sheet carried only the TEXT section, so
+// position/size/fill/stroke/radius/transform/opacity were still
+// desktop-only). The reference's own mobile editor has no usable
+// properties panel either (its clipped 126px sliver + 24px chip
+// targets — re-confirmed the 28th audit), so this is the documented
+// mobile-editor improvement family (ADR-010's full-width canvas,
+// S47-1's Present exit, S48-2's header wrap) — not a parity surface
+// to copy.
 //
 // The chip mirrors the zoom cluster's placement (its bottom-right
 // counterpart; the bottom-left panel-chip bar is hidden below md, so no
@@ -470,28 +474,32 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
 // 36px chrome and stay untouched). The surface is a BOTTOM Sheet — the
 // mobile-nav drawer's contract family (Radix focus trap, Escape + scrim
 // close, body scroll lock, native focus return through SheetTrigger) —
-// carrying the SHARED TextSection (S50-1) in the editor's dark chrome.
-// The chip renders ONLY for a single selected TEXT element (the same
-// condition under which the desktop panel shows the TEXT section) and
-// only below lg (`lg:hidden` — at ≥1024 the panel is the surface).
-function MobileTextEditor() {
+// carrying the SHARED PropertiesSections composition (S52-1: the SAME
+// type-conditional section stack the desktop panel renders — Position &
+// Size, Corner Radius, Fill & Stroke, TEXT, Transform, Opacity) in the
+// editor's dark chrome. The chip renders for ANY single selected
+// element (the same condition under which the desktop panel shows its
+// sections) and only below lg (`lg:hidden` — at ≥1024 the panel is the
+// surface).
+function MobilePropertiesEditor() {
   // The selector returns the selected element's STABLE object identity
   // (the store's immutable updates keep unrelated elements' identity), so
-  // this component re-renders only when the selected text element itself
+  // this component re-renders only when the selected element itself
   // changes — EditorView stays free of elements/selection subscriptions
   // (the shell deliberately subscribes only to projectName/saveState/
-  // zoom/past/future).
-  const selectedText = useEditorStore((s) => {
+  // zoom/past/future). ANY single selection surfaces the chip (session
+  // 52 — the surface carries every section, not just TEXT).
+  const selectedElement = useEditorStore((s) => {
     if (s.selectedIds.length !== 1) return null;
     const el = s.elements.find((e) => e.id === s.selectedIds[0]);
-    return el && el.type === "text" ? el : null;
+    return el ?? null;
   });
 
   const [open, setOpen] = React.useState(false);
-  const hasSelection = selectedText !== null;
+  const hasSelection = selectedElement !== null;
   // The sanctioned render-time compare-and-adjust (React 19's
   // set-state-in-render form): if the selection stops being a single
-  // text element while the Sheet is open (delete/deselect — the modal
+  // element while the Sheet is open (delete/deselect — the modal
   // scrim makes this rare, but the autosave's id remap and any store
   // mutation can land between frames), the Sheet closes so a later
   // re-selection never re-opens it spontaneously.
@@ -502,14 +510,14 @@ function MobileTextEditor() {
   }
 
   // Reads the store at CALL time (never a stale closure) and re-derives
-  // the same single-selected-text guard — the same updateElements path
+  // the same single-selection guard — the same updateElements path
   // the desktop panel uses, so autosave, undo/redo, and the Unsaved
   // badge all flow unchanged.
   const update = React.useCallback((patch: Partial<DesignElementDTO>) => {
     const s = useEditorStore.getState();
     if (s.selectedIds.length !== 1) return;
     const el = s.elements.find((e) => e.id === s.selectedIds[0]);
-    if (!el || el.type !== "text") return;
+    if (!el) return;
     s.updateElements([el.id], patch);
   }, []);
 
@@ -521,10 +529,10 @@ function MobileTextEditor() {
         <SheetTrigger asChild>
           <button
             type="button"
-            aria-label="Edit text"
+            aria-label="Edit properties"
             className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
           >
-            <Type className="h-4 w-4" aria-hidden />
+            <SlidersHorizontal className="h-4 w-4" aria-hidden />
           </button>
         </SheetTrigger>
         <SheetContent
@@ -532,10 +540,10 @@ function MobileTextEditor() {
           className="max-h-[80vh] overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white"
         >
           <SheetHeader className="border-b border-[#30363d] px-4 py-3">
-            <SheetTitle className="text-left text-sm font-medium text-white">Edit text</SheetTitle>
+            <SheetTitle className="text-left text-sm font-medium text-white">Edit properties</SheetTitle>
           </SheetHeader>
           <div className="p-4">
-            {selectedText && <TextSection element={selectedText} update={update} />}
+            {selectedElement && <PropertiesSections element={selectedElement} update={update} />}
           </div>
         </SheetContent>
       </Sheet>
@@ -863,11 +871,12 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 <Download className="h-4 w-4" aria-hidden />
               </button>
             </div>
-            {/* Session 50 (S50-2): the mobile text-editing surface — the
-                bottom-right mirror of the zoom cluster, visible only below
-                lg (where the properties panel does not exist) and only for
-                a single selected TEXT element. See MobileTextEditor. */}
-            <MobileTextEditor />
+            {/* Session 50 (S50-2) → session 52 (S52-2): the mobile
+                properties surface — the bottom-right mirror of the zoom
+                cluster, visible only below lg (where the properties panel
+                does not exist) and for any single selected element. See
+                MobilePropertiesEditor. */}
+            <MobilePropertiesEditor />
           </div>
 
           {/* AI assistant — bottom of the canvas column. The reference wraps

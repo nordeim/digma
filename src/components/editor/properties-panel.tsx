@@ -564,6 +564,327 @@ export function TextSection({
   );
 }
 
+
+// ---------------------------------------------------------------------------
+// The shared section components (session 52, S52-1).
+//
+// Session 50 extracted the TEXT section (TextSection above) so the mobile
+// bottom Sheet could render the SAME controls as the desktop panel — the
+// F35e lesson: two hand-maintained copies of the same domain WILL diverge.
+// Session 52 completes the architecture: EVERY section is an exported
+// component taking the element + an update patcher (the TextSection
+// contract), and the TYPE-CONDITIONAL COMPOSITION — the section order +
+// the per-type gates — lives in ONE component (PropertiesSections below)
+// consumed by BOTH the desktop panel (its single-selection branch) and the
+// mobile surface (editor-view's MobilePropertiesEditor). The panel keeps
+// only what is surface-specific: the header, the multi-selection rows, and
+// the Canvas Properties branch.
+
+export function PositionSizeSection({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  return (
+    <section aria-label="Position and size">
+      <SectionHeading icon="position">Position &amp; Size</SectionHeading>
+      <div className="grid grid-cols-2 gap-3">
+        <NumberField label="X" value={element.x} onChange={(x) => update({ x })} />
+        <NumberField label="Y" value={element.y} onChange={(y) => update({ y })} />
+        <NumberField label="W" value={element.width} onChange={(width) => update({ width: Math.max(width, 1) })} min={1} />
+        <NumberField
+          label="H"
+          value={element.height}
+          onChange={(height) => update({ height: element.type === "line" ? Math.max(height, 0) : Math.max(height, 1) })}
+          min={0}
+        />
+      </div>
+    </section>
+  );
+}
+
+export function CornerRadiusSection({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  return (
+    <section aria-label="Corner radius">
+      <SectionHeading icon="radius">Corner Radius</SectionHeading>
+      <SliderRow
+        label="All Corners"
+        value={element.radius}
+        min={0}
+        max={cornerRadiusMax(element)}
+        onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })}
+      />
+      {/* Per-corner inputs — linked corners: the element model keeps a
+          single radius, so each input edits the shared value (the
+          Figma "linked corners" behavior; per-corner splits are a
+          documented scope cut, PAD §10). Session 33 (RA-29): the
+          inputs clamp to the SAME dynamic max as the slider —
+          min(w,h)/2 — so the section's controls share one coherent
+          range (a value above the slider's max would peg it). */}
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <NumberField label="Top Left" value={element.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
+        <NumberField label="Top Right" value={element.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
+        <NumberField label="Bottom Left" value={element.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
+        <NumberField label="Bottom Right" value={element.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
+      </div>
+    </section>
+  );
+}
+
+export function FillStrokeSection({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  // Session 41 (RA-54): the fill tab is DERIVED from the element's fill
+  // state (image > gradient > solid) — the coherent superset over the
+  // reference's reset-to-Solid-on-reselect quirk (its tabs are
+  // selection-local state; a gradient-filled element re-opens showing the
+  // Solid editor while its canvas paints the gradient). The render-time
+  // compare-and-adjust pattern (React 19's sanctioned setState-in-render
+  // form — same as HexColorRow's draft sync): the tab re-derives whenever
+  // the ELEMENT or its fill MODE changes, and stays put while the user
+  // only BROWSES a different tab. The state lives INSIDE the shared
+  // section (moved from the panel in session 52) so the mobile consumer
+  // derives the same tab.
+  const [fillTab, setFillTab] = React.useState<"solid" | "gradient" | "image">("solid");
+  const [prevFillKey, setPrevFillKey] = React.useState<string | null>(null);
+  const derivedFillMode = element.fillImage
+    ? "image"
+    : parseGradient(element.fillGradient)
+      ? "gradient"
+      : "solid";
+  const fillKey = `${element.id}:${derivedFillMode}`;
+  if (prevFillKey !== fillKey) {
+    setPrevFillKey(fillKey);
+    setFillTab(derivedFillMode);
+  }
+
+  return (
+    <section aria-label="Fill and stroke">
+      <SectionHeading icon="fill">Fill &amp; Stroke</SectionHeading>
+      {/* Session 41 (RA-54): the segmented control is a Radix TABLIST
+           (the reference's own structure — role=tablist with
+           data-state tabs on the bg-[#30363d] h-9 rounded-lg track,
+           the active tab painted white) where EVERY TAB opens a
+           working editor. The session-29 "the reference's own tabs
+           are no-ops" decode is REVERSED — live-measured: its
+           Gradient tab paints linear/radial CSS gradients live and
+           persists them; its Image tab uploads and paints a real
+           image; a Solid hex edit clears both. The active tab
+           derives from the element's fill state (the derivation
+           above the return). */}
+      <Tabs value={fillTab} onValueChange={(value) => setFillTab(value as "solid" | "gradient" | "image")}>
+        <TabsList className="grid h-9 w-full grid-cols-3 items-center justify-center rounded-lg bg-[#30363d] p-1">
+          <TabsTrigger value="solid" className="px-3 py-1 text-xs">Solid</TabsTrigger>
+          <TabsTrigger value="gradient" className="px-3 py-1 text-xs">Gradient</TabsTrigger>
+          <TabsTrigger value="image" className="px-3 py-1 text-xs">Image</TabsTrigger>
+        </TabsList>
+        <TabsContent value="solid" className="mt-4 space-y-4">
+          {/* A Solid hex edit CLEARS the gradient/image fill — the
+              reference's measured semantics (its flat re-apply made
+              the gradient vanish through the next reload). */}
+          <HexColorRow
+            label="Fill Color"
+            value={element.fill}
+            onChange={(fill) => update({ fill, fillGradient: null, fillImage: null, fillImageFit: null })}
+          />
+        </TabsContent>
+        <TabsContent value="gradient" className="mt-4 space-y-4">
+          <GradientPanel element={element} update={update} />
+        </TabsContent>
+        <TabsContent value="image" className="mt-4 space-y-4">
+          <ImagePanel element={element} update={update} />
+        </TabsContent>
+      </Tabs>
+      <div className="mt-3 space-y-3">
+        <HexColorRow label="Stroke" value={element.stroke} onChange={(stroke) => update({ stroke })} />
+        {element.stroke && (
+          <SliderRow
+            label="Stroke Width"
+            value={element.strokeWidth}
+            min={0}
+            max={20}
+            onChange={(strokeWidth) => update({ strokeWidth: Math.min(Math.max(strokeWidth, 0), 20) })}
+          />
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function TransformSection({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  return (
+    <section aria-label="Transform">
+      <SectionHeading>Transform</SectionHeading>
+      {/* Rotation: slider + editable number input + the reference's
+          degree suffix (measured: `w-16` input followed by a
+          text-xs text-gray-300 "°" div). */}
+      <div>
+        <span className="text-xs font-medium text-gray-300">Rotation</span>
+        <div className="mt-2 flex items-center gap-3">
+          <input
+            type="range"
+            aria-label="Rotation"
+            min={-180}
+            max={180}
+            step={1}
+            value={element.rotation}
+            onChange={(event) => update({ rotation: Number(event.target.value) })}
+            className="editor-range h-1.5 flex-1"
+            style={
+              {
+                "--range-fill": `${(((element.rotation + 180) / 360) * 100).toFixed(2)}%`,
+              } as React.CSSProperties
+            }
+          />
+          <input
+            type="number"
+            aria-label="Rotation value"
+            min={-180}
+            max={180}
+            step={1}
+            value={Math.round(element.rotation)}
+            onChange={(event) => update({ rotation: Math.min(Math.max(Number(event.target.value) || 0, -180), 180) })}
+            className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
+          />
+          <span className="text-xs text-gray-300" aria-hidden>
+            °
+          </span>
+        </div>
+      </div>
+      {/* Scale: slider 0.1–3.0 with the reference's "1.0x" readout. */}
+      <div>
+        <span className="text-xs font-medium text-gray-300">Scale</span>
+        <div className="mt-2 flex items-center gap-3">
+          <input
+            type="range"
+            aria-label="Scale"
+            min={0.1}
+            max={3}
+            step={0.1}
+            value={element.scale ?? 1}
+            onChange={(event) => update({ scale: Number(event.target.value) })}
+            className="editor-range h-1.5 flex-1"
+            style={
+              {
+                "--range-fill": `${((((element.scale ?? 1) - 0.1) / 2.9) * 100).toFixed(2)}%`,
+              } as React.CSSProperties
+            }
+          />
+          <span
+            className="w-12 text-right text-xs text-gray-300"
+            aria-live="polite"
+            data-testid="scale-value"
+          >
+            {(element.scale ?? 1).toFixed(1)}x
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function OpacitySection({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  return (
+    <section aria-label="Opacity">
+      <SectionHeading icon="opacity">Opacity</SectionHeading>
+      {/* Session-15 parity fix: the reference's Opacity row has NO
+           label (the h4 IS the label) — `flex items-center gap-3`
+           holding the slider + a w-16 editable number input + a "%"
+           suffix (measured in the reference DOM). */}
+      <div className="flex items-center gap-3">
+        <input
+          type="range"
+          aria-label="Opacity"
+          min={0}
+          max={100}
+          step={1}
+          value={Math.round(element.opacity * 100)}
+          onChange={(event) => update({ opacity: Number(event.target.value) / 100 })}
+          className="editor-range h-1.5 flex-1"
+          style={{ "--range-fill": `${Math.round(element.opacity * 100)}%` } as React.CSSProperties}
+        />
+        <input
+          type="number"
+          aria-label="Opacity value"
+          min={0}
+          max={100}
+          value={Math.round(element.opacity * 100)}
+          onChange={(event) =>
+            update({ opacity: Math.min(Math.max(Number(event.target.value) || 0, 0), 100) / 100 })
+          }
+          className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
+        />
+        <span className="text-xs text-gray-300" aria-hidden>
+          %
+        </span>
+      </div>
+    </section>
+  );
+}
+
+// The TYPE-CONDITIONAL COMPOSITION — session 52 (S52-1). The section
+// ORDER and the per-type gates live HERE, once: the desktop panel's
+// single-selection branch and the mobile properties Sheet both render
+// this component, so the two surfaces can never diverge in layout any
+// more than in controls (the F35e rule applied to the composition, not
+// just the sections).
+export function PropertiesSections({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  return (
+    <>
+      <PositionSizeSection element={element} update={update} />
+      {/* Session 29 (RA-9): the reference renders the Corner Radius
+          section TYPE-CONDITIONALLY — measured hidden for LINE,
+          ELLIPSE, and TEXT (no Fill & Stroke either for text, see
+          below); shown for RECTANGLE. A corner-radius slider on a
+          corner-less shape is incoherent chrome (the S23-2 class).
+          Unmeasured types (frame/image/path) keep showing it. */}
+      {!["line", "ellipse", "text"].includes(element.type) && (
+        <CornerRadiusSection element={element} update={update} />
+      )}
+      {/* Session 29 (RA-10): the reference's TEXT panel has NO Fill &
+          Stroke section — the text's COLOR control lives inside the
+          TEXT section below. Measured layout: POSITION & SIZE |
+          TEXT | TRANSFORM | OPACITY. */}
+      {element.type !== "text" && (
+        <FillStrokeSection element={element} update={update} />
+      )}
+      {element.type === "text" && <TextSection element={element} update={update} />}
+      <TransformSection element={element} update={update} />
+      <OpacitySection element={element} update={update} />
+    </>
+  );
+}
+
 export function PropertiesPanel() {
   const elements = useEditorStore((s) => s.elements);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -576,30 +897,6 @@ export function PropertiesPanel() {
   const update = (patch: Parameters<ReturnType<typeof useEditorStore.getState>["updateElements"]>[1]) =>
     useEditorStore.getState().updateElements(selectedIds, patch);
 
-  // Session 41 (RA-54): the Fill tab is DERIVED from the element's fill
-  // state (image > gradient > solid) — the coherent superset over the
-  // reference's reset-to-Solid-on-reselect quirk (its tabs are
-  // selection-local state; a gradient-filled element re-opens showing the
-  // Solid editor while its canvas paints the gradient). The render-time
-  // compare-and-adjust pattern (React 19's sanctioned setState-in-render
-  // form — same as HexColorRow's draft sync): the tab re-derives whenever
-  // the ELEMENT or its fill MODE changes, and stays put while the user
-  // only BROWSES a different tab.
-  const [fillTab, setFillTab] = React.useState<"solid" | "gradient" | "image">("solid");
-  const [prevFillKey, setPrevFillKey] = React.useState<string | null>(null);
-  const derivedFillMode = single
-    ? single.fillImage
-      ? "image"
-      : parseGradient(single.fillGradient)
-        ? "gradient"
-        : "solid"
-    : "solid";
-  const fillKey = single ? `${single.id}:${derivedFillMode}` : "none";
-  if (prevFillKey !== fillKey) {
-    setPrevFillKey(fillKey);
-    setFillTab(derivedFillMode);
-  }
-
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-[#30363d] p-4">
@@ -610,215 +907,7 @@ export function PropertiesPanel() {
 
       <div className="editor-scroll flex-1 space-y-6 overflow-y-auto p-4">
         {single ? (
-          <>
-            <section aria-label="Position and size">
-              <SectionHeading icon="position">Position &amp; Size</SectionHeading>
-              <div className="grid grid-cols-2 gap-3">
-                <NumberField label="X" value={single.x} onChange={(x) => update({ x })} />
-                <NumberField label="Y" value={single.y} onChange={(y) => update({ y })} />
-                <NumberField label="W" value={single.width} onChange={(width) => update({ width: Math.max(width, 1) })} min={1} />
-                <NumberField
-                  label="H"
-                  value={single.height}
-                  onChange={(height) => update({ height: single.type === "line" ? Math.max(height, 0) : Math.max(height, 1) })}
-                  min={0}
-                />
-              </div>
-            </section>
-
-            {/* Session 29 (RA-9): the reference renders the Corner Radius
-                section TYPE-CONDITIONALLY — measured hidden for LINE,
-                ELLIPSE, and TEXT (no Fill & Stroke either for text, see
-                below); shown for RECTANGLE. A corner-radius slider on a
-                corner-less shape is incoherent chrome (the S23-2 class).
-                Unmeasured types (frame/image/path) keep showing it. */}
-            {!["line", "ellipse", "text"].includes(single.type) && (
-            <section aria-label="Corner radius">
-              <SectionHeading icon="radius">Corner Radius</SectionHeading>
-              <SliderRow
-                label="All Corners"
-                value={single.radius}
-                min={0}
-                max={cornerRadiusMax(single)}
-                onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })}
-              />
-              {/* Per-corner inputs — linked corners: the element model keeps a
-                  single radius, so each input edits the shared value (the
-                  Figma "linked corners" behavior; per-corner splits are a
-                  documented scope cut, PAD §10). Session 33 (RA-29): the
-                  inputs clamp to the SAME dynamic max as the slider —
-                  min(w,h)/2 — so the section's controls share one coherent
-                  range (a value above the slider's max would peg it). */}
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <NumberField label="Top Left" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })} />
-                <NumberField label="Top Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })} />
-                <NumberField label="Bottom Left" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })} />
-                <NumberField label="Bottom Right" value={single.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(single)) })} />
-              </div>
-            </section>
-            )}
-
-            {/* Session 29 (RA-10): the reference's TEXT panel has NO Fill &
-                Stroke section — the text's COLOR control lives inside the
-                TEXT section below. Measured layout: POSITION & SIZE |
-                TEXT | TRANSFORM | OPACITY. */}
-            {single.type !== "text" && (
-            <section aria-label="Fill and stroke">
-              <SectionHeading icon="fill">Fill &amp; Stroke</SectionHeading>
-              {/* Session 41 (RA-54): the segmented control is a Radix TABLIST
-                   (the reference's own structure — role=tablist with
-                   data-state tabs on the bg-[#30363d] h-9 rounded-lg track,
-                   the active tab painted white) where EVERY TAB opens a
-                   working editor. The session-29 "the reference's own tabs
-                   are no-ops" decode is REVERSED — live-measured: its
-                   Gradient tab paints linear/radial CSS gradients live and
-                   persists them; its Image tab uploads and paints a real
-                   image; a Solid hex edit clears both. The active tab
-                   derives from the element's fill state (the derivation
-                   above the return). */}
-              <Tabs value={fillTab} onValueChange={(value) => setFillTab(value as "solid" | "gradient" | "image")}>
-                <TabsList className="grid h-9 w-full grid-cols-3 items-center justify-center rounded-lg bg-[#30363d] p-1">
-                  <TabsTrigger value="solid" className="px-3 py-1 text-xs">Solid</TabsTrigger>
-                  <TabsTrigger value="gradient" className="px-3 py-1 text-xs">Gradient</TabsTrigger>
-                  <TabsTrigger value="image" className="px-3 py-1 text-xs">Image</TabsTrigger>
-                </TabsList>
-                <TabsContent value="solid" className="mt-4 space-y-4">
-                  {/* A Solid hex edit CLEARS the gradient/image fill — the
-                      reference's measured semantics (its flat re-apply made
-                      the gradient vanish through the next reload). */}
-                  <HexColorRow
-                    label="Fill Color"
-                    value={single.fill}
-                    onChange={(fill) => update({ fill, fillGradient: null, fillImage: null, fillImageFit: null })}
-                  />
-                </TabsContent>
-                <TabsContent value="gradient" className="mt-4 space-y-4">
-                  <GradientPanel element={single} update={update} />
-                </TabsContent>
-                <TabsContent value="image" className="mt-4 space-y-4">
-                  <ImagePanel element={single} update={update} />
-                </TabsContent>
-              </Tabs>
-              <div className="mt-3 space-y-3">
-                <HexColorRow label="Stroke" value={single.stroke} onChange={(stroke) => update({ stroke })} />
-                {single.stroke && (
-                  <SliderRow
-                    label="Stroke Width"
-                    value={single.strokeWidth}
-                    min={0}
-                    max={20}
-                    onChange={(strokeWidth) => update({ strokeWidth: Math.min(Math.max(strokeWidth, 0), 20) })}
-                  />
-                )}
-              </div>
-            </section>
-            )}
-
-            {single.type === "text" && <TextSection element={single} update={update} />}
-
-            <section aria-label="Transform">
-              <SectionHeading>Transform</SectionHeading>
-              {/* Rotation: slider + editable number input + the reference's
-                  degree suffix (measured: `w-16` input followed by a
-                  text-xs text-gray-300 "°" div). */}
-              <div>
-                <span className="text-xs font-medium text-gray-300">Rotation</span>
-                <div className="mt-2 flex items-center gap-3">
-                  <input
-                    type="range"
-                    aria-label="Rotation"
-                    min={-180}
-                    max={180}
-                    step={1}
-                    value={single.rotation}
-                    onChange={(event) => update({ rotation: Number(event.target.value) })}
-                    className="editor-range h-1.5 flex-1"
-                    style={
-                      {
-                        "--range-fill": `${(((single.rotation + 180) / 360) * 100).toFixed(2)}%`,
-                      } as React.CSSProperties
-                    }
-                  />
-                  <input
-                    type="number"
-                    aria-label="Rotation value"
-                    min={-180}
-                    max={180}
-                    step={1}
-                    value={Math.round(single.rotation)}
-                    onChange={(event) => update({ rotation: Math.min(Math.max(Number(event.target.value) || 0, -180), 180) })}
-                    className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
-                  />
-                  <span className="text-xs text-gray-300" aria-hidden>
-                    °
-                  </span>
-                </div>
-              </div>
-              {/* Scale: slider 0.1–3.0 with the reference's "1.0x" readout. */}
-              <div>
-                <span className="text-xs font-medium text-gray-300">Scale</span>
-                <div className="mt-2 flex items-center gap-3">
-                  <input
-                    type="range"
-                    aria-label="Scale"
-                    min={0.1}
-                    max={3}
-                    step={0.1}
-                    value={single.scale ?? 1}
-                    onChange={(event) => update({ scale: Number(event.target.value) })}
-                    className="editor-range h-1.5 flex-1"
-                    style={
-                      {
-                        "--range-fill": `${((((single.scale ?? 1) - 0.1) / 2.9) * 100).toFixed(2)}%`,
-                      } as React.CSSProperties
-                    }
-                  />
-                  <span
-                    className="w-12 text-right text-xs text-gray-300"
-                    aria-live="polite"
-                    data-testid="scale-value"
-                  >
-                    {(single.scale ?? 1).toFixed(1)}x
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            <section aria-label="Opacity">
-              <SectionHeading icon="opacity">Opacity</SectionHeading>
-              {/* Session-15 parity fix: the reference's Opacity row has NO
-                   label (the h4 IS the label) — `flex items-center gap-3`
-                   holding the slider + a w-16 editable number input + a "%"
-                   suffix (measured in the reference DOM). */}
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  aria-label="Opacity"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={Math.round(single.opacity * 100)}
-                  onChange={(event) => update({ opacity: Number(event.target.value) / 100 })}
-                  className="editor-range h-1.5 flex-1"
-                  style={{ "--range-fill": `${Math.round(single.opacity * 100)}%` } as React.CSSProperties}
-                />
-                <input
-                  type="number"
-                  aria-label="Opacity value"
-                  min={0}
-                  max={100}
-                  value={Math.round(single.opacity * 100)}
-                  onChange={(event) =>
-                    update({ opacity: Math.min(Math.max(Number(event.target.value) || 0, 0), 100) / 100 })
-                  }
-                  className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
-                />
-                <span className="text-xs text-gray-300" aria-hidden>
-                  %
-                </span>
-              </div>
-            </section>
-          </>
+          <PropertiesSections element={single} update={update} />
         ) : selected.length > 1 ? (
           <section aria-label="Multiple selection" className="space-y-3">
             <HexColorRow

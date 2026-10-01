@@ -1,25 +1,22 @@
 import { expect, request, test } from "@playwright/test";
 
-// THE mobile text-editing suite (session 50, S50-2). The properties
-// panel renders `hidden … lg:flex`, so below lg a phone has NO
-// properties surface of any kind — the live probe at 390×844 found
-// ZERO text-content inputs in the whole editor. A phone could DRAW a
-// text element (the Text tool works at mobile; addElements selects the
-// fresh element) but never EDIT its content: the fresh element was
-// stuck at its "Type here..." default forever. The reference's own
-// mobile editor has no properties panel either (live-measured — no
-// Position & Size container, zero text inputs), so this surface is a
-// PURE clone superset, the documented mobile-editor improvement family
-// (ADR-010's full-width canvas, S47-1's Present exit, S48-2's header
-// wrap).
-//
-// The contract under test: an "Edit text" chip (the zoom cluster's
-// bottom-right mirror, 44px floor per F34) renders ONLY below lg and
-// ONLY for a single selected TEXT element; tapping it opens a bottom
-// Sheet carrying the SHARED TextSection (S50-1 — the same component the
-// desktop panel renders, so the two surfaces can never diverge, F35e)
-// wired to the same updateElements path (autosave, undo/redo, Unsaved
-// badge all flow unchanged).
+// THE mobile properties suite (session 50 S50-2 → extended session 52
+// S52-2). The properties panel renders `hidden … lg:flex`, so below lg
+// a phone has NO properties surface of any kind — the live probe at
+// 390×844 found ZERO text-content inputs in the whole editor. Session
+// 50 closed the TEXT gap with an "Edit text" chip opening a bottom
+// Sheet carrying the shared TextSection; session 52 completes the
+// surface: the chip (relabeled "Edit properties", the SlidersHorizontal
+// icon) opens for ANY single selected element and the Sheet carries
+// the SHARED PropertiesSections composition (S52-1) — the SAME
+// type-conditional section stack the desktop panel renders (Position &
+// Size, Corner Radius unless line/ellipse/text, Fill & Stroke unless
+// text, TEXT for text, Transform, Opacity). The reference's own mobile
+// editor has no usable properties panel either (its clipped 126px
+// sliver + 24px chip targets — re-confirmed the 28th audit), so this
+// is a PURE clone superset, the documented mobile-editor improvement
+// family (ADR-010's full-width canvas, S47-1's Present exit, S48-2's
+// header wrap).
 //
 // The F35 lesson applies to the trigger: reachability is pinned as
 // GEOMETRY (the bounding box inside the viewport) — a chip a finger
@@ -46,7 +43,7 @@ import { expect, request, test } from "@playwright/test";
 //     generalized): gate on a rendered element BEFORE any coordinate
 //     interaction, or the drag fires against a still-loading canvas.
 
-const FIXTURE_NAME = "Mobile Text Fixture ZZ";
+const FIXTURE_NAME = "Mobile Props Fixture ZZ";
 
 // The fixture canvas (canvas coordinates; the canvas region origin at
 // 390×844 is (48,77) — toolbar 48px + the wrapped 77px header — so
@@ -114,21 +111,22 @@ async function waitForSaved(page: import("@playwright/test").Page) {
   await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
 }
 
-test.describe("mobile text editing — the chip geometry + guards (390×844)", () => {
+test.describe("mobile properties — the chip geometry + guards (390×844)", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
   test("selecting a text surfaces the chip IN-VIEWPORT at the 44px floor", async ({
     page,
   }) => {
-    // THE RED PIN: pre-fix there is no chip at all — the measured gap.
-    // Post-fix the geometry must hold: in-viewport (F35 — a passing tap
+    // THE RED PIN: pre-fix the text chip exists but the extended
+    // surface does not — post-session-52 the chip must hold its
+    // geometry for a TEXT selection: in-viewport (F35 — a passing tap
     // proves nothing) and >= 44x44 (F34 — the Present-exit convention;
     // the zoom chips are the reference-measured 36px chrome and are
     // deliberately untouched).
     const fixture = await openFixtureEditor(page);
     try {
       await page.getByText("Fixture headline").first().click();
-      const chip = page.getByRole("button", { name: "Edit text" });
+      const chip = page.getByRole("button", { name: "Edit properties" });
       await expect(chip).toBeVisible();
       const box = await chip.boundingBox();
       expect(box, "the chip must report a bounding box").toBeTruthy();
@@ -143,26 +141,89 @@ test.describe("mobile text editing — the chip geometry + guards (390×844)", (
     }
   });
 
-  test("a drawn RECTANGLE selection renders NO chip (the text-only guard)", async ({ page }) => {
-    // Draw a rectangle at mobile (the toolbar works at every viewport):
-    // the Rectangle tool, then a small drag on the canvas. The fresh
-    // rectangle is selected (addElements selects) — the chip must stay
-    // absent: the surface exists to edit TEXT content, and the desktop
-    // panel's TEXT section has the same single-text guard.
+  test("a selected RECTANGLE surfaces the chip and the Sheet carries the non-text section layout", async ({
+    page,
+  }) => {
+    // THE session-52 core pin: the surface is no longer text-only. A
+    // selected rectangle opens the SAME shared composition the desktop
+    // panel renders — Position & Size, Corner Radius, Fill & Stroke,
+    // Transform, Opacity — and NO TEXT section (the type-conditional
+    // gates, RA-9/RA-10, live once in PropertiesSections).
     const fixture = await openFixtureEditor(page);
     try {
-      await page.getByRole("button", { name: "Rectangle tool" }).click();
-      await page.mouse.move(200, 300);
-      await page.mouse.down();
-      await page.mouse.move(300, 380, { steps: 4 });
-      await page.mouse.up();
-      await expect(page.getByRole("button", { name: "Edit text" })).toHaveCount(0);
+      // Tap the button rectangle's exposed strip (screen y 377–389 —
+      // inside the rect but ABOVE its label, which spans 389–409 and
+      // would otherwise win the topmost hit-test).
+      await page.mouse.click(300, 382);
+      const chip = page.getByRole("button", { name: "Edit properties" });
+      await expect(chip).toBeVisible();
+      await chip.click();
+      const sheet = page.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+      await expect(sheet).toHaveAccessibleName(/edit properties/i);
+
+      // The rectangle's five sections (the desktop layout) — the named
+      // <section aria-label> elements are regions (getByLabel would
+      // substring-match the sliders inside, e.g. "Opacity value").
+      await expect(sheet.getByRole("region", { name: "Position and size" })).toBeVisible();
+      await expect(sheet.getByRole("region", { name: "Corner radius" })).toBeVisible();
+      await expect(sheet.getByRole("region", { name: "Fill and stroke" })).toBeVisible();
+      await expect(sheet.getByRole("region", { name: "Transform" })).toBeVisible();
+      await expect(sheet.getByRole("region", { name: "Opacity" })).toBeVisible();
+      // The X input carries the element's value (the shared section is
+      // wired to the real element, not a blank state). EXACT matching —
+      // getByLabel is a case-insensitive substring match, and a bare "X"
+      // also hits the "Fill Color hex"/"Stroke hex" inputs.
+      await expect(sheet.getByLabel("X", { exact: true })).toHaveValue("160");
+      // And NO TEXT section for a rectangle (RA-10's inverse gate).
+      await expect(sheet.getByLabel("Text content")).toHaveCount(0);
     } finally {
       await deleteFixture(page, fixture.id);
     }
   });
 
-  test("a MARQUEE multi-selection renders NO chip (the single-selection guard)", async ({ page }) => {
+  test("a non-TEXT edit through the Sheet reaches the canvas and persists (Fill Color)", async ({
+    page,
+  }) => {
+    // THE functional round-trip through a non-TEXT section: the Fill
+    // Color hex edit (Fill & Stroke -> Solid) paints the canvas through
+    // the same updateElements path and the autosave PUT persists it (a
+    // reload re-renders it). Pre-fix this path did not exist at mobile.
+    const fixture = await openFixtureEditor(page);
+    try {
+      await page.mouse.click(300, 382);
+      const chip = page.getByRole("button", { name: "Edit properties" });
+      await chip.click();
+      const sheet = page.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+
+      // The Solid tab is active by default for a flat-filled rect
+      // (the HexColorRow renders the swatch + the hex input — the HEX
+      // textbox is the value carrier).
+      const fillInput = sheet.getByLabel("Fill Color hex");
+      await expect(fillInput).toHaveValue("#3B82F6");
+      await fillInput.fill("#EF4444");
+
+      // The canvas rectangle repaints through the store (the
+      // editor-panels fill spec's paint-assertion pattern).
+      const rect = page.locator('[data-element-id][aria-label="Primary Button"]');
+      await expect(rect).toHaveCSS("background-color", "rgb(239, 68, 68)");
+
+      // Autosave persists (the Saved badge), and a reload re-renders it.
+      await waitForSaved(page);
+      await page.reload();
+      await expect(page.getByText("Fixture headline").first()).toBeVisible();
+      await page.mouse.click(300, 382);
+      await page.getByRole("button", { name: "Edit properties" }).click();
+      await expect(page.getByRole("dialog").getByLabel("Fill Color hex")).toHaveValue("#EF4444");
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
+
+  test("a MARQUEE multi-selection renders NO chip (the single-selection guard)", async ({
+    page,
+  }) => {
     // A marquee over the fixture's button rectangle + its label selects
     // BOTH (the containment rect fully covers each) — a multi-selection
     // renders no chip. The drag starts on EMPTY canvas below the
@@ -178,16 +239,17 @@ test.describe("mobile text editing — the chip geometry + guards (390×844)", (
       // lies outside the rect) — verify the multi-selection took, then
       // the chip's absence is meaningful (not a vacuous pass).
       await expect(page.getByText("2 selected", { exact: true })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Edit text" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Edit properties" })).toHaveCount(0);
     } finally {
       await deleteFixture(page, fixture.id);
     }
   });
 
-  test("the Sheet opens with the five controls carrying the element's values, and edits reach the canvas + persist", async ({
+  test("the text Sheet carries the TEXT section with the element's values, and edits reach the canvas + persist", async ({
     page,
   }) => {
-    // THE round-trip: chip -> Sheet -> the SHARED TextSection with the
+    // THE session-50 round-trip, carried forward onto the extended
+    // surface: chip -> Sheet -> the shared TEXT controls with the
     // element's current values -> an edit lands on the canvas through
     // the same updateElements path -> the autosave PUT persists it (a
     // reload re-renders it). The fixture's label is single-line (an
@@ -196,11 +258,20 @@ test.describe("mobile text editing — the chip geometry + guards (390×844)", (
     const fixture = await openFixtureEditor(page);
     try {
       await page.getByText("Tap me").first().click();
-      const chip = page.getByRole("button", { name: "Edit text" });
+      const chip = page.getByRole("button", { name: "Edit properties" });
       await chip.click();
       const sheet = page.getByRole("dialog");
       await expect(sheet).toBeVisible();
-      await expect(sheet).toHaveAccessibleName(/edit text/i);
+      await expect(sheet).toHaveAccessibleName(/edit properties/i);
+
+      // The text's type-conditional layout: Position & Size + TEXT +
+      // Transform + Opacity — and NO Fill & Stroke / Corner Radius.
+      await expect(sheet.getByRole("region", { name: "Position and size" })).toBeVisible();
+      await expect(sheet.getByLabel("Text content")).toBeVisible();
+      await expect(sheet.getByRole("region", { name: "Transform" })).toBeVisible();
+      await expect(sheet.getByRole("region", { name: "Opacity" })).toBeVisible();
+      await expect(sheet.getByRole("region", { name: "Fill and stroke" })).toHaveCount(0);
+      await expect(sheet.getByRole("region", { name: "Corner radius" })).toHaveCount(0);
 
       // The five shared controls, the element's values included.
       const content = sheet.getByLabel("Text content");
@@ -235,7 +306,7 @@ test.describe("mobile text editing — the chip geometry + guards (390×844)", (
     const fixture = await openFixtureEditor(page);
     try {
       await page.getByText("Tap me").first().click();
-      const chip = page.getByRole("button", { name: "Edit text" });
+      const chip = page.getByRole("button", { name: "Edit properties" });
       await chip.click();
       const sheet = page.getByRole("dialog");
       await expect(sheet).toBeVisible();
@@ -258,13 +329,13 @@ test.describe("mobile text editing — the chip geometry + guards (390×844)", (
     // The full phone workflow: Text tool -> tap canvas -> the fresh
     // element is selected -> chip -> Sheet carrying the "Type here..."
     // default -> the edit reaches the canvas and autosaves. This is the
-    // exact flow that was impossible pre-fix. The mutations land in the
-    // fixture project (deleted wholesale at the end).
+    // exact flow that was impossible pre-session-50. The mutations land
+    // in the fixture project (deleted wholesale at the end).
     const fixture = await openFixtureEditor(page);
     try {
       await page.getByRole("button", { name: "Text tool" }).click();
       await page.mouse.click(240, 240);
-      const chip = page.getByRole("button", { name: "Edit text" });
+      const chip = page.getByRole("button", { name: "Edit properties" });
       await expect(chip).toBeVisible();
       await chip.click();
       const content = page.getByRole("dialog").getByLabel("Text content");
@@ -281,7 +352,7 @@ test.describe("mobile text editing — the chip geometry + guards (390×844)", (
 test.describe("the lg boundary — desktop keeps the panel, never the chip (1280×800)", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("at lg the chip is ABSENT and the panel's TEXT section is the surface", async ({
+  test("at lg the chip is ABSENT and the panel's sections are the surface", async ({
     page,
   }) => {
     await page.goto("/");
@@ -289,10 +360,17 @@ test.describe("the lg boundary — desktop keeps the panel, never the chip (1280
     try {
       await page.goto(`/Editor?projectId=${fixture.id}`);
       await expect(page.getByText("Fixture headline").first()).toBeVisible();
+      // A rectangle selection through the layers-panel row (at 1280
+      // the panel is the surface; the row click selects the element —
+      // a coordinate tap would need the desktop canvas origin, and the
+      // rect's center is covered by its label).
+      await page.getByRole("button", { name: "Layer Primary Button", exact: true }).click();
+      await expect(page.getByRole("button", { name: "Edit properties" })).toBeHidden();
+      await expect(page.getByLabel("Fill Color hex")).toBeVisible();
+      await expect(page.getByLabel("Text content")).toHaveCount(0);
+      // And a text selection keeps the panel's TEXT section.
       await page.getByText("Fixture headline").first().click();
-      // The chip is lg:hidden — at 1280 the properties panel (lg:flex) is
-      // the only TEXT surface. Both directions of the boundary.
-      await expect(page.getByRole("button", { name: "Edit text" })).toBeHidden();
+      await expect(page.getByRole("button", { name: "Edit properties" })).toBeHidden();
       await expect(page.getByLabel("Text content")).toBeVisible();
     } finally {
       await deleteFixture(page, fixture.id);

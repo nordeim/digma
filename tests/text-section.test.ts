@@ -42,20 +42,24 @@ describe("TextSection — the single-source TEXT controls (session 50, S50-1)", 
   });
 
   it("the desktop panel consumes the shared section (no inline duplication)", () => {
-    // The panel renders THROUGH the seam. The five controls' markup —
-    // the Content input above all — must exist exactly ONCE in the
-    // file (inside the shared component); a re-inlined copy in the
+    // The panel renders THROUGH the seam. Since session 52 the panel's
+    // single-selection branch renders the PropertiesSections composer,
+    // which in turn renders the TextSection — the composition itself is
+    // shared (see tests/properties-sections.test.ts). The five controls'
+    // markup — the Content input above all — must exist exactly ONCE in
+    // the file (inside the shared component); a re-inlined copy in the
     // panel body is the divergence this seam exists to prevent.
-    expect(panelSource).toMatch(/<TextSection element=\{single\} update=\{update\} \/>/);
+    expect(panelSource).toMatch(/<PropertiesSections element=\{single\} update=\{update\} \/>/);
+    expect(panelSource).toMatch(/<TextSection element=\{element\} update=\{update\} \/>/);
     const contentInputs = panelSource.match(/aria-label="Text content"/g) ?? [];
     expect(contentInputs.length).toBe(1);
   });
 
   it("the mobile surface consumes the SAME shared section (editor-view)", () => {
-    // The mobile bottom Sheet renders the shared component — never a
-    // second hand-typed copy of the TEXT controls.
-    expect(viewSource).toMatch(/import \{[^}]*TextSection[^}]*\} from "\.\/properties-panel";/);
-    expect(viewSource).toMatch(/<TextSection element=\{[^}]*\} update=\{[^}]*\} \/>/);
+    // The mobile bottom Sheet renders through the shared composition —
+    // never a second hand-typed copy of the TEXT controls.
+    expect(viewSource).toMatch(/import \{[^}]*PropertiesSections[^}]*\} from "\.\/properties-panel";/);
+    expect(viewSource).toMatch(/<PropertiesSections element=\{[^}]*\} update=\{[^}]*\} \/>/);
     // And the mobile surface carries no TEXT-control duplication of
     // its own (the Content input exists in exactly one editor file).
     expect(viewSource).not.toMatch(/aria-label="Text content"/);
