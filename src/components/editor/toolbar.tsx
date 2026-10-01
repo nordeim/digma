@@ -15,19 +15,25 @@ import {
 
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "./editor-store";
-import type { EditorTool } from "@/lib/editor";
+import { TOOL_SHORTCUTS, type EditorTool } from "@/lib/editor";
 
-const TOOLS: Array<{ id: EditorTool; label: string; icon: React.ComponentType<{ className?: string }>; shortcut: string }> = [
-  { id: "select", label: "Select", icon: MousePointer, shortcut: "V" },
-  { id: "hand", label: "Hand", icon: Move, shortcut: "H" },
-  { id: "frame", label: "Frame", icon: Frame, shortcut: "F" },
-  { id: "rectangle", label: "Rectangle", icon: Square, shortcut: "R" },
-  { id: "ellipse", label: "Ellipse", icon: Circle, shortcut: "O" },
-  { id: "line", label: "Line", icon: Minus, shortcut: "L" },
-  { id: "pen", label: "Pen Tool", icon: Pen, shortcut: "P" },
-  { id: "text", label: "Text", icon: Type, shortcut: "T" },
-  { id: "image", label: "Image", icon: ImageIcon, shortcut: "I" },
+// Labels + icons are presentation; the SHORTCUTS come from the single-source
+// seam in src/lib/editor.ts (session 48, S48-1 — the titles and the keyboard
+// handler consumed separate hand-maintained maps before, and the handler
+// wired only seven of the nine advertised shortcuts).
+const TOOL_META: Array<{ id: EditorTool; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  { id: "select", label: "Select", icon: MousePointer },
+  { id: "hand", label: "Hand", icon: Move },
+  { id: "frame", label: "Frame", icon: Frame },
+  { id: "rectangle", label: "Rectangle", icon: Square },
+  { id: "ellipse", label: "Ellipse", icon: Circle },
+  { id: "line", label: "Line", icon: Minus },
+  { id: "pen", label: "Pen Tool", icon: Pen },
+  { id: "text", label: "Text", icon: Type },
+  { id: "image", label: "Image", icon: ImageIcon },
 ];
+
+const SHORTCUT_FOR = new Map(TOOL_SHORTCUTS.map((entry) => [entry.id, entry.shortcut]));
 
 // The w-12 icon toolbar — measured from the reference: dark rail, 8px
 // buttons with titles (accessible names), active = bg-blue-600 text-white,
@@ -44,9 +50,10 @@ export function Toolbar() {
       aria-orientation="vertical"
     >
       <div className="flex flex-col gap-1 p-2">
-        {TOOLS.map((entry, index) => {
+        {TOOL_META.map((entry, index) => {
           const Icon = entry.icon;
           const isActive = tool === entry.id;
+          const shortcut = SHORTCUT_FOR.get(entry.id) ?? "";
           return (
             <React.Fragment key={entry.id}>
               {(entry.id === "frame" || entry.id === "pen") && (
@@ -54,7 +61,7 @@ export function Toolbar() {
               )}
               <button
                 type="button"
-                title={`${entry.label} (${entry.shortcut})`}
+                title={`${entry.label} (${shortcut})`}
                 aria-label={`${entry.label} tool`}
                 aria-pressed={isActive}
                 onClick={() => setTool(entry.id)}

@@ -35,6 +35,31 @@ export const ELEMENT_TOOLS: EditorTool[] = [
   "frame",
 ];
 
+// The single-source keyboard-shortcut map (session 48, S48-1). The toolbar
+// titles advertise `"{Tool} ({shortcut})"` and the keyboard handler resolves
+// keys — before this seam the two lived in separate hand-maintained lists
+// and the handler only wired seven of the nine advertised shortcuts ("Pen
+// Tool (P)" and "Image (I)" were fiction). Both surfaces consume THIS map;
+// the unit suite pins its completeness against the EditorTool vocabulary.
+export const TOOL_SHORTCUTS: ReadonlyArray<{ id: EditorTool; shortcut: string }> = [
+  { id: "select", shortcut: "V" },
+  { id: "hand", shortcut: "H" },
+  { id: "frame", shortcut: "F" },
+  { id: "rectangle", shortcut: "R" },
+  { id: "ellipse", shortcut: "O" },
+  { id: "line", shortcut: "L" },
+  { id: "pen", shortcut: "P" },
+  { id: "text", shortcut: "T" },
+  { id: "image", shortcut: "I" },
+];
+
+/** Resolve a keystroke to its tool (case-insensitive); null when unmapped. */
+export function toolForShortcut(key: string): EditorTool | null {
+  const normalized = key.toLowerCase();
+  const entry = TOOL_SHORTCUTS.find((tool) => tool.shortcut.toLowerCase() === normalized);
+  return entry ? entry.id : null;
+}
+
 export type DesignElementDTO = {
   id: string;
   projectId: string;

@@ -16,6 +16,8 @@ import {
   normalizeRect,
   parseGradient,
   removeGradientStop,
+  toolForShortcut,
+  TOOL_SHORTCUTS,
   type DesignElementDTO,
 } from "@/lib/editor";
 
@@ -499,5 +501,59 @@ describe("removeGradientStop (session 43, RA-55 — the min-2-guarded remove)", 
       { color: "#3b82f6", position: 0 },
       { color: "#ffffff", position: 50 },
     ]);
+  });
+});
+
+describe("TOOL_SHORTCUTS / toolForShortcut (session 48, S48-1 — the single-source shortcut map)", () => {
+  // The toolbar titles advertise "{Tool} ({shortcut})" for NINE tools,
+  // but the keyboard handler only wired seven (v/h/f/r/o/l/t) — the
+  // "Pen Tool (P)" and "Image (I)" titles were fiction. This seam is the
+  // ONE source of truth both surfaces consume; this suite pins its
+  // completeness so the two can never diverge again.
+  it("maps every tool in the vocabulary exactly once", () => {
+    const ids = TOOL_SHORTCUTS.map((entry) => entry.id);
+    expect(new Set(ids).size).toBe(TOOL_SHORTCUTS.length);
+    expect(ids.sort()).toEqual(
+      [
+        "ellipse",
+        "frame",
+        "hand",
+        "image",
+        "line",
+        "pen",
+        "rectangle",
+        "select",
+        "text",
+      ].sort(),
+    );
+  });
+
+  it("wires the two advertised-but-missing shortcuts: pen=P and image=I", () => {
+    expect(toolForShortcut("p")).toBe("pen");
+    expect(toolForShortcut("i")).toBe("image");
+  });
+
+  it("resolves the seven historical shortcuts", () => {
+    expect(toolForShortcut("v")).toBe("select");
+    expect(toolForShortcut("h")).toBe("hand");
+    expect(toolForShortcut("f")).toBe("frame");
+    expect(toolForShortcut("r")).toBe("rectangle");
+    expect(toolForShortcut("o")).toBe("ellipse");
+    expect(toolForShortcut("l")).toBe("line");
+    expect(toolForShortcut("t")).toBe("text");
+  });
+
+  it("normalizes case and rejects unmapped keys", () => {
+    expect(toolForShortcut("V")).toBe("select");
+    expect(toolForShortcut("P")).toBe("pen");
+    expect(toolForShortcut("x")).toBeNull();
+    expect(toolForShortcut("")).toBeNull();
+    expect(toolForShortcut("ctrl")).toBeNull();
+  });
+
+  it("gives every entry a single-letter A-Z shortcut (the title contract)", () => {
+    for (const entry of TOOL_SHORTCUTS) {
+      expect(entry.shortcut).toMatch(/^[A-Z]$/);
+    }
   });
 });

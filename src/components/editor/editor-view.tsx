@@ -14,7 +14,7 @@ import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO, canvasFontFamily, fillPaintFor } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily, fillPaintFor, toolForShortcut } from "@/lib/editor";
 
 // The Untitled editor state (ADR-009): loaded when the ?projectId is unknown
 // or missing — the reference app renders a fully working "Untitled" canvas
@@ -194,29 +194,13 @@ function useEditorShortcuts() {
         return;
       }
 
-      switch (event.key.toLowerCase()) {
-        case "v":
-          store.setTool("select");
-          break;
-        case "h":
-          store.setTool("hand");
-          break;
-        case "f":
-          store.setTool("frame");
-          break;
-        case "r":
-          store.setTool("rectangle");
-          break;
-        case "o":
-          store.setTool("ellipse");
-          break;
-        case "l":
-          store.setTool("line");
-          break;
-        case "t":
-          store.setTool("text");
-          break;
-      }
+      // The tool keys resolve through the SINGLE-SOURCE seam (session 48,
+      // S48-1): the toolbar titles advertise "{Tool} ({shortcut})" from the
+      // same TOOL_SHORTCUTS map — before this, the hand-rolled switch below
+      // wired only seven of the nine advertised shortcuts (P and I were
+      // fiction in the titles).
+      const tool = toolForShortcut(event.key);
+      if (tool) store.setTool(tool);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -452,9 +436,17 @@ export function EditorView({ user }: { user: HeaderUser }) {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#0d1117]">
-      {/* Top bar — measured: h-12, back, name, Saved badge, undo/redo, avatars, Share/Present. */}
-      <header className="flex h-12 flex-shrink-0 items-center justify-between border-b border-[#30363d] bg-[#161b22] px-4">
-        <div className="flex items-center gap-4">
+      {/* Top bar — measured: h-12, back, name, Saved badge, undo/redo, avatars, Share/Present.
+          Mobile wrap (session 48, S48-2): at <sm the right group wraps onto its
+          own row — pre-fix Share (L413) and Present (L493) rendered OFF-SCREEN
+          at 390×844 inside the root overflow-hidden, so a phone could neither
+          present nor share. At ≥sm the content fits one row inside the fixed
+          48px — pixel-identical to the pre-fix rendering (flex-wrap is inert
+          when everything fits). The reference's own header clips Share/Present
+          at 390 too (evidence ref-audit-s52/ref-02) — this is the clone's
+          documented mobile-editor improvement family (ADR-010, F34). */}
+      <header className="flex min-h-12 flex-shrink-0 flex-wrap items-center justify-between gap-y-1 border-b border-[#30363d] bg-[#161b22] px-4 py-1 sm:h-12 sm:py-0">
+        <div className="flex min-w-0 items-center gap-4">
           <button
             type="button"
             onClick={exit}
@@ -463,11 +455,11 @@ export function EditorView({ user }: { user: HeaderUser }) {
           >
             <ArrowLeft className="h-5 w-5" aria-hidden />
           </button>
-          <div className="flex items-center gap-3">
-            <h1 className="font-medium text-white">{loading ? "Loading…" : projectName}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <h1 className="min-w-0 truncate font-medium text-white">{loading ? "Loading…" : projectName}</h1>
             <span
               className={cn(
-                "rounded-full px-2 py-1 text-xs text-white",
+                "shrink-0 rounded-full px-2 py-1 text-xs text-white",
                 saveState === "saved" ? "bg-green-500" : saveState === "saving" ? "bg-amber-500" : "bg-gray-600",
               )}
               aria-live="polite"
@@ -477,7 +469,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex flex-shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={() => useEditorStore.getState().undo()}
@@ -496,7 +488,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
           >
             <Redo2 className="h-4 w-4" aria-hidden />
           </button>
-          <div className="mx-2 h-6 w-px bg-[#30363d]" role="separator" aria-hidden />
+          <div className="mx-2 hidden h-6 w-px bg-[#30363d] sm:block" role="separator" aria-hidden />
 
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
@@ -534,21 +526,29 @@ export function EditorView({ user }: { user: HeaderUser }) {
             </div>
           </div>
 
+          {/* Icon-only below sm (session 48, S48-2): the wrapped row must fit
+              390px — the labeled pair measures 95+107px and overflows the
+              wrapped row by 33px. Below sm the buttons render their lucide glyph
+              alone (aria-label keeps the accessible name — the F34
+              device-coherent-copy family); ≥sm restores the labeled pill
+              pixel-identical to the reference chrome. */}
           <button
             type="button"
             onClick={onShare}
-            className="ml-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            aria-label="Share"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
-            <Share2 className="mr-2 inline h-4 w-4" aria-hidden />
-            Share
+            <Share2 className="inline h-4 w-4" aria-hidden />
+            <span className="ml-2 hidden sm:inline">Share</span>
           </button>
           <button
             type="button"
             onClick={() => setPresenting(true)}
+            aria-label="Present"
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
           >
-            <Play className="mr-2 inline h-4 w-4" aria-hidden />
-            Present
+            <Play className="inline h-4 w-4" aria-hidden />
+            <span className="ml-2 hidden sm:inline">Present</span>
           </button>
         </div>
       </header>
