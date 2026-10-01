@@ -351,7 +351,7 @@ export function Canvas() {
             clone ships the working superset, and the whole contract must be
             coherent). */}
         {elements.filter((el) => el.visible).map((el) => (
-          <CanvasElement
+          <MemoizedCanvasElement
             key={el.id}
             element={el}
             selected={selectedIds.includes(el.id)}
@@ -580,3 +580,14 @@ function CanvasElement({
     </div>
   );
 }
+
+// Session 49 (S49-1): the memoization the zoom-prop comments always
+// described, now actually implemented. The store's updates are immutable
+// (unchanged elements keep their object identity), so React.memo's default
+// shallow compare gives the documented behavior: a drag re-renders only the
+// dragged element, a selection change only the members whose `selected`
+// flipped, a zoom change only frames (every other type receives `undefined`
+// zoom — the discrimination the comments above describe). The internal
+// useEditorStore tool subscription is NOT blocked by memo (store-driven
+// updates bypass it), so the cursor contract holds on tool changes.
+const MemoizedCanvasElement = React.memo(CanvasElement);

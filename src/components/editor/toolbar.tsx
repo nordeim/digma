@@ -17,22 +17,23 @@ import { cn } from "@/lib/utils";
 import { useEditorStore } from "./editor-store";
 import { TOOL_SHORTCUTS, type EditorTool } from "@/lib/editor";
 
-// Labels + icons are presentation; the SHORTCUTS come from the single-source
-// seam in src/lib/editor.ts (session 48, S48-1 — the titles and the keyboard
-// handler consumed separate hand-maintained maps before, and the handler
-// wired only seven of the nine advertised shortcuts).
-const TOOL_META: Array<{ id: EditorTool; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { id: "select", label: "Select", icon: MousePointer },
-  { id: "hand", label: "Hand", icon: Move },
-  { id: "frame", label: "Frame", icon: Frame },
-  { id: "rectangle", label: "Rectangle", icon: Square },
-  { id: "ellipse", label: "Ellipse", icon: Circle },
-  { id: "line", label: "Line", icon: Minus },
-  { id: "pen", label: "Pen Tool", icon: Pen },
-  { id: "text", label: "Text", icon: Type },
-  { id: "image", label: "Image", icon: ImageIcon },
+// Icons are presentation; the LABELS + SHORTCUTS come from the single-source
+// seam in src/lib/editor.ts (session 48 wired the shortcuts; session 49
+// moved the labels there too — the toolbar titles AND the shortcuts dialog
+// consume one source, the F35e lesson).
+const TOOL_META: Array<{ id: EditorTool; icon: React.ComponentType<{ className?: string }> }> = [
+  { id: "select", icon: MousePointer },
+  { id: "hand", icon: Move },
+  { id: "frame", icon: Frame },
+  { id: "rectangle", icon: Square },
+  { id: "ellipse", icon: Circle },
+  { id: "line", icon: Minus },
+  { id: "pen", icon: Pen },
+  { id: "text", icon: Type },
+  { id: "image", icon: ImageIcon },
 ];
 
+const LABEL_FOR = new Map(TOOL_SHORTCUTS.map((entry) => [entry.id, entry.label]));
 const SHORTCUT_FOR = new Map(TOOL_SHORTCUTS.map((entry) => [entry.id, entry.shortcut]));
 
 // The w-12 icon toolbar — measured from the reference: dark rail, 8px
@@ -53,6 +54,7 @@ export function Toolbar() {
         {TOOL_META.map((entry, index) => {
           const Icon = entry.icon;
           const isActive = tool === entry.id;
+          const label = LABEL_FOR.get(entry.id) ?? entry.id;
           const shortcut = SHORTCUT_FOR.get(entry.id) ?? "";
           return (
             <React.Fragment key={entry.id}>
@@ -61,8 +63,8 @@ export function Toolbar() {
               )}
               <button
                 type="button"
-                title={`${entry.label} (${shortcut})`}
-                aria-label={`${entry.label} tool`}
+                title={`${label} (${shortcut})`}
+                aria-label={`${label} tool`}
                 aria-pressed={isActive}
                 onClick={() => setTool(entry.id)}
                 className={cn(

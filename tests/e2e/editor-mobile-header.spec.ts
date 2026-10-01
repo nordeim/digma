@@ -124,3 +124,71 @@ test.describe("mobile editor header — desktop no-regression (1280)", () => {
     }
   });
 });
+
+test.describe("editor header — tablet geometry (600×844, the session-55 mid-range sweep)", () => {
+  // Session 49 (S49-3): the wrap's engagement at tablet width is
+  // CONTENT-DEPENDENT — the first e2e run caught this live: with the
+  // seeded 21-char project name the row overflows and the header wraps
+  // (77px, two rows, everything in-viewport); with a short name (the
+  // Untitled editor) the content fits and the header stays a single 48px
+  // row. BOTH states are correct — the contract is that NOTHING overflows
+  // the viewport and every control stays reachable at every mid-range
+  // width (567/600/640 verified live; 600 pinned here). These pins keep a
+  // future change from pushing the wrap's engagement somewhere that breaks
+  // reachability in the tablet band.
+  test.use({ viewport: { width: 600, height: 844 } });
+
+  test("Share and Present stay IN-VIEWPORT at 600 with a long project name (the wrap engages)", async ({
+    page,
+  }) => {
+    await openSeededEditor(page);
+
+    // The reachability geometry at the tablet width (the F35 rule: the
+    // box must sit inside the viewport) — with the seeded long name the
+    // row overflows and the wrap MUST engage to keep them reachable.
+    for (const label of ["Share", "Present"]) {
+      const box = await page.getByRole("button", { name: label, exact: true }).boundingBox();
+      expect(box, `${label} must report a bounding box`).toBeTruthy();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(600);
+    }
+
+    // The wrapped state: the header grows to its two-row height (77px —
+    // measured) instead of clipping; it never grows past the known pair
+    // (48 unwrapped / 77 wrapped).
+    const header = page.locator("header");
+    await expect(header).toBeVisible();
+    const headerBox = await header.boundingBox();
+    expect(Math.round(headerBox!.height)).toBe(77);
+  });
+
+  test("with a short name the header stays a SINGLE 48px row at 600 (the wrap is inert when content fits)", async ({
+    page,
+  }) => {
+    // The Untitled editor (no projectId) carries the short "Untitled"
+    // name — at 600 the content fits one row and the wrap must NOT
+    // engage: the header stays exactly h-12 (48px).
+    await page.goto("/Editor");
+    const header = page.locator("header");
+    await expect(header).toBeVisible();
+    const box = await header.boundingBox();
+    expect(Math.round(box!.height)).toBe(48);
+
+    for (const label of ["Share", "Present"]) {
+      const btn = page.getByRole("button", { name: label, exact: true });
+      await expect(btn).toBeVisible();
+      const btnBox = await btn.boundingBox();
+      expect(btnBox!.x).toBeGreaterThanOrEqual(0);
+      expect(btnBox!.x + btnBox!.width).toBeLessThanOrEqual(600);
+    }
+  });
+
+  test("the avatar cluster and counter stay visible at 600 (the RA-41 guard)", async ({ page }) => {
+    await openSeededEditor(page);
+    const counter = page.locator("header").getByText("2", { exact: true });
+    await expect(counter).toBeVisible();
+    const box = await counter.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(600);
+  });
+});

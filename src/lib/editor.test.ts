@@ -8,6 +8,7 @@ import {
   cornerRadiusMax,
   defaultElementFor,
   defaultGradient,
+  EDITOR_SHORTCUTS,
   elementToStyle,
   fillImageSizeFor,
   fillPaintFor,
@@ -555,5 +556,64 @@ describe("TOOL_SHORTCUTS / toolForShortcut (session 48, S48-1 — the single-sou
     for (const entry of TOOL_SHORTCUTS) {
       expect(entry.shortcut).toMatch(/^[A-Z]$/);
     }
+  });
+
+  it("carries a non-empty unique label per tool (session 49, S49-2)", () => {
+    // The labels moved OUT of toolbar.tsx's TOOL_META into the seam so the
+    // toolbar titles AND the shortcuts dialog consume ONE source (the F35e
+    // lesson: two maps of the same domain will diverge).
+    const labels = TOOL_SHORTCUTS.map((entry) => entry.label);
+    expect(labels.every((l) => typeof l === "string" && l.length > 0)).toBe(true);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+});
+
+describe("EDITOR_SHORTCUTS (session 49, S49-2 — the help-dialog inventory, single-sourced)", () => {
+  // The discoverability affordance: the toolbar titles are hover-only (and
+  // titles never render on touch devices at all). EDITOR_SHORTCUTS is the
+  // grouped inventory the shortcuts dialog renders — its Tools group
+  // DERIVES from TOOL_SHORTCUTS so the dialog can never advertise a
+  // shortcut the keyboard handler doesn't wire, and the View/Editing
+  // groups mirror the exact commands useEditorShortcuts implements.
+
+  it("renders as non-empty groups where every item carries a label and at least one key", () => {
+    expect(EDITOR_SHORTCUTS.length).toBeGreaterThanOrEqual(3);
+    for (const group of EDITOR_SHORTCUTS) {
+      expect(group.group.length).toBeGreaterThan(0);
+      expect(group.items.length).toBeGreaterThan(0);
+      for (const item of group.items) {
+        expect(item.label.length).toBeGreaterThan(0);
+        expect(item.keys.length).toBeGreaterThanOrEqual(1);
+        expect(item.keys.every((k) => k.length > 0)).toBe(true);
+      }
+    }
+  });
+
+  it("derives its Tools group one-to-one from TOOL_SHORTCUTS (never a fictional shortcut)", () => {
+    const toolsGroup = EDITOR_SHORTCUTS.find((g) => /tools/i.test(g.group));
+    expect(toolsGroup).toBeDefined();
+    expect(toolsGroup!.items.map((i) => i.label)).toEqual(
+      TOOL_SHORTCUTS.map((entry) => entry.label),
+    );
+    expect(toolsGroup!.items.map((i) => i.keys[0])).toEqual(
+      TOOL_SHORTCUTS.map((entry) => entry.shortcut),
+    );
+  });
+
+  it("covers the View family the handler wires (zoom, reset, pan)", () => {
+    const keys = EDITOR_SHORTCUTS.flatMap((g) => g.items.flatMap((i) => i.keys));
+    expect(keys).toContain("Ctrl+=");
+    expect(keys).toContain("Ctrl+-");
+    expect(keys).toContain("Ctrl+0");
+    expect(keys).toContain("Space");
+  });
+
+  it("covers the Editing family the handler wires (undo, redo, delete, deselect)", () => {
+    const keys = EDITOR_SHORTCUTS.flatMap((g) => g.items.flatMap((i) => i.keys));
+    expect(keys).toContain("Ctrl+Z");
+    expect(keys).toContain("Ctrl+Shift+Z");
+    expect(keys).toContain("Ctrl+Y");
+    expect(keys).toContain("Del");
+    expect(keys).toContain("Esc");
   });
 });

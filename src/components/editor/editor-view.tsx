@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Play, Redo2, Share2, Undo2, Users, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, Keyboard, Play, Redo2, Share2, Undo2, Users, ZoomIn, ZoomOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Toolbar } from "./toolbar";
 import { Canvas } from "./canvas";
 import { LayersPanel } from "./layers-panel";
@@ -14,7 +15,7 @@ import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO, canvasFontFamily, fillPaintFor, toolForShortcut } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, fillPaintFor, toolForShortcut } from "@/lib/editor";
 
 // The Untitled editor state (ADR-009): loaded when the ?projectId is unknown
 // or missing — the reference app renders a fully working "Untitled" canvas
@@ -138,12 +139,27 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
 }
 
-function useEditorShortcuts() {
+function useEditorShortcuts(onOpenShortcuts: () => void) {
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (isTypingTarget(event.target)) return;
+      // While ANY Radix dialog is open (the shortcuts dialog itself, a
+      // dropdown portal that renders a dialog, …) the editor's global
+      // shortcuts STAND DOWN — no accidental tool switches while reading
+      // the help, and Escape stays the dialog's own close (Radix handles
+      // it + returns focus to the trigger). The hand-rolled PresentOverlay
+      // carries no data-state and keeps its established behavior.
+      if (document.querySelector('[role="dialog"][data-state="open"]')) return;
       const store = useEditorStore.getState();
       const meta = event.ctrlKey || event.metaKey;
+
+      // Session 49 (S49-2): Shift+/ — the standard discoverability
+      // convention — opens the shortcut help from anywhere in the editor.
+      if (event.key === "?") {
+        event.preventDefault();
+        onOpenShortcuts();
+        return;
+      }
 
       if (meta && event.key.toLowerCase() === "z") {
         event.preventDefault();
@@ -204,7 +220,80 @@ function useEditorShortcuts() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [onOpenShortcuts]);
+}
+
+// ---------------------------------------------------------------------------
+// The keyboard-shortcuts help dialog (session 49, S49-2 — the discoverability
+// affordance). The toolbar titles are hover-only and never render on touch
+// devices; this dialog surfaces the FULL map. Its inventory comes from the
+// EDITOR_SHORTCUTS seam in src/lib/editor.ts (the Tools group derives from
+// TOOL_SHORTCUTS — the dialog can never advertise a shortcut the handler
+// doesn't wire). A pure clone-side superset: the reference carries NO
+// shortcut affordance anywhere (24th/25th audit datum). The chrome is the
+// editor's own dark panel family, not the light app chrome.
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border border-[#30363d] bg-[#0d1117] px-1.5 py-0.5 font-mono text-xs text-gray-300">
+      {children}
+    </kbd>
+  );
+}
+
+function ShortcutsDialog({
+  open,
+  onOpenChange,
+  triggerRef,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="max-h-[85vh] gap-0 overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white sm:max-w-[420px]"
+        aria-label="Keyboard shortcuts"
+        // The app's dialog convention (F34): focus returns to the trigger on
+        // close. Radix's default return targets the DialogTrigger — none
+        // exists here (the chip opens via controlled state), so the return
+        // is explicit.
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          triggerRef.current?.focus();
+        }}
+      >
+        <DialogTitle className="border-b border-[#30363d] px-5 py-4 text-lg font-semibold text-white">
+          Keyboard shortcuts
+        </DialogTitle>
+        <div className="space-y-5 px-5 py-4">
+          {EDITOR_SHORTCUTS.map((group) => (
+            <section key={group.group} aria-label={group.group}>
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                {group.group}
+              </h4>
+              <ul className="space-y-1.5">
+                {group.items.map((item) => (
+                  <li key={item.label} className="flex items-center justify-between gap-4">
+                    <span className="text-sm text-gray-300">{item.label}</span>
+                    <span className="flex flex-shrink-0 items-center gap-1">
+                      {item.keys.map((key) => (
+                        <Kbd key={key}>{key}</Kbd>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          <p className="text-xs text-gray-500">
+            Tip: press <Kbd>?</Kbd> anywhere in the editor to open this dialog.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -367,6 +456,9 @@ export function EditorView({ user }: { user: HeaderUser }) {
   // Panel visibility — INDEPENDENT toggles driven by the bottom-left chips
   // (measured from the reference: Layers and Components are separate w-60
   // columns that can both be open; Properties toggles the right panel).
+  const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
+  const shortcutsChipRef = React.useRef<HTMLButtonElement | null>(null);
+
   // Defaults mirror the reference: Layers on, Components off, Properties on.
   const [panels, setPanels] = React.useState({ layers: true, components: false, properties: true });
 
@@ -376,7 +468,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
   const past = useEditorStore((s) => s.past);
   const future = useEditorStore((s) => s.future);
 
-  useEditorShortcuts();
+  useEditorShortcuts(React.useCallback(() => setShortcutsOpen(true), []));
   useAutosave();
 
   // Load the project once — setState lands in the async continuation only.
@@ -589,26 +681,48 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 100% chip followed by lucide zoom-in and zoom-out MAGNIFIER
                 icon chips (in that order) — top-left, gap-2, one border/bg
                 pair per chip (no merged cluster, no Fit button; reset stays on
-                Ctrl/Cmd+0). */}
+                Ctrl/Cmd+0). The measured trio lives in its OWN wrapper so the
+                parity pin's DOM boundary (the pill's parent) stays exactly
+                the reference's — the Keyboard chip below is a SEPARATE
+                sibling cluster, never a fourth member of the measured one. */}
             <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
-              <div className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-1 text-sm text-gray-300" aria-live="polite">
-                {Math.round(zoom * 100)}%
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-1 text-sm text-gray-300" aria-live="polite">
+                  {Math.round(zoom * 100)}%
+                </div>
+                <button
+                  type="button"
+                  onClick={() => useEditorStore.getState().zoomIn()}
+                  aria-label="Zoom in"
+                  className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+                >
+                  <ZoomIn className="h-4 w-4" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => useEditorStore.getState().zoomOut()}
+                  aria-label="Zoom out"
+                  className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+                >
+                  <ZoomOut className="h-4 w-4" aria-hidden />
+                </button>
               </div>
+              {/* Session 49 (S49-2): the discoverability affordance — the
+                  toolbar titles are hover-only (and titles never render on
+                  touch devices at all). A pure clone-side superset: the
+                  reference carries NO shortcut affordance anywhere (24th/25th
+                  audit datum). Same chip chrome as the zoom pair, visible at
+                  every viewport — its own sibling cluster beside the
+                  reference-measured zoom trio. */}
               <button
                 type="button"
-                onClick={() => useEditorStore.getState().zoomIn()}
-                aria-label="Zoom in"
+                onClick={() => setShortcutsOpen(true)}
+                ref={shortcutsChipRef}
+                aria-label="Keyboard shortcuts"
+                title="Keyboard shortcuts (?)"
                 className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
               >
-                <ZoomIn className="h-4 w-4" aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={() => useEditorStore.getState().zoomOut()}
-                aria-label="Zoom out"
-                className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
-              >
-                <ZoomOut className="h-4 w-4" aria-hidden />
+                <Keyboard className="h-4 w-4" aria-hidden />
               </button>
             </div>
           </div>
@@ -662,6 +776,14 @@ export function EditorView({ user }: { user: HeaderUser }) {
       </div>
 
       {presenting && <PresentOverlay onExit={() => setPresenting(false)} />}
+
+      {/* Session 49 (S49-2): the shortcuts help dialog (opens via the
+          Keyboard chip in the zoom cluster or the ? key). */}
+      <ShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+        triggerRef={shortcutsChipRef}
+      />
     </div>
   );
 }

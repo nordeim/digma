@@ -41,16 +41,24 @@ export const ELEMENT_TOOLS: EditorTool[] = [
 // and the handler only wired seven of the nine advertised shortcuts ("Pen
 // Tool (P)" and "Image (I)" were fiction). Both surfaces consume THIS map;
 // the unit suite pins its completeness against the EditorTool vocabulary.
-export const TOOL_SHORTCUTS: ReadonlyArray<{ id: EditorTool; shortcut: string }> = [
-  { id: "select", shortcut: "V" },
-  { id: "hand", shortcut: "H" },
-  { id: "frame", shortcut: "F" },
-  { id: "rectangle", shortcut: "R" },
-  { id: "ellipse", shortcut: "O" },
-  { id: "line", shortcut: "L" },
-  { id: "pen", shortcut: "P" },
-  { id: "text", shortcut: "T" },
-  { id: "image", shortcut: "I" },
+// Session 49 (S49-2): the LABELS moved here too (out of toolbar.tsx's
+// TOOL_META, which keeps only the icons) so the toolbar titles AND the
+// shortcuts dialog consume one label source (the F35e lesson: two maps of
+// the same domain will diverge).
+export const TOOL_SHORTCUTS: ReadonlyArray<{
+  id: EditorTool;
+  label: string;
+  shortcut: string;
+}> = [
+  { id: "select", label: "Select", shortcut: "V" },
+  { id: "hand", label: "Hand", shortcut: "H" },
+  { id: "frame", label: "Frame", shortcut: "F" },
+  { id: "rectangle", label: "Rectangle", shortcut: "R" },
+  { id: "ellipse", label: "Ellipse", shortcut: "O" },
+  { id: "line", label: "Line", shortcut: "L" },
+  { id: "pen", label: "Pen Tool", shortcut: "P" },
+  { id: "text", label: "Text", shortcut: "T" },
+  { id: "image", label: "Image", shortcut: "I" },
 ];
 
 /** Resolve a keystroke to its tool (case-insensitive); null when unmapped. */
@@ -59,6 +67,43 @@ export function toolForShortcut(key: string): EditorTool | null {
   const entry = TOOL_SHORTCUTS.find((tool) => tool.shortcut.toLowerCase() === normalized);
   return entry ? entry.id : null;
 }
+
+// The help-dialog inventory (session 49, S49-2 — the discoverability
+// affordance). The toolbar titles are hover-only and never render on touch
+// devices; this grouped list is what the Keyboard-shortcuts dialog renders.
+// The Tools group DERIVES from TOOL_SHORTCUTS (the single source) so the
+// dialog can never advertise a shortcut the handler doesn't wire — the
+// View/Editing groups mirror the exact commands useEditorShortcuts
+// implements (Ctrl/Cmd = the meta modifier; Space is hold-to-pan).
+export type ShortcutHelpItem = { label: string; keys: string[] };
+
+export const EDITOR_SHORTCUTS: ReadonlyArray<{
+  group: string;
+  items: ReadonlyArray<ShortcutHelpItem>;
+}> = [
+  {
+    group: "Tools",
+    items: TOOL_SHORTCUTS.map((entry) => ({ label: entry.label, keys: [entry.shortcut] })),
+  },
+  {
+    group: "View",
+    items: [
+      { label: "Zoom in", keys: ["Ctrl+="] },
+      { label: "Zoom out", keys: ["Ctrl+-"] },
+      { label: "Reset view", keys: ["Ctrl+0"] },
+      { label: "Pan canvas", keys: ["Space"] },
+    ],
+  },
+  {
+    group: "Editing",
+    items: [
+      { label: "Undo", keys: ["Ctrl+Z"] },
+      { label: "Redo", keys: ["Ctrl+Shift+Z", "Ctrl+Y"] },
+      { label: "Delete selection", keys: ["Del"] },
+      { label: "Deselect", keys: ["Esc"] },
+    ],
+  },
+];
 
 export type DesignElementDTO = {
   id: string;
