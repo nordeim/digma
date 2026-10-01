@@ -465,6 +465,105 @@ function ImagePanel({
   );
 }
 
+// Session 50 (S50-1): the TEXT section as a SHARED, EXPORTED component —
+// the InlineProjectRename pattern. The desktop panel renders it inside
+// its `lg:flex` column; the mobile bottom Sheet (editor-view.tsx)
+// renders the SAME component, because below lg the panel does not
+// exist and a phone would have no way to edit a text element's content
+// (live-measured at 390×844: zero text-content inputs in the editor).
+// ONE source for the five controls (Content, Font Size, Color, Font
+// Family, Text Align) — the F35e lesson: two hand-maintained copies of
+// the same domain WILL diverge. The consumer passes the element and an
+// update patcher bound to its own selection scope.
+export function TextSection({
+  element,
+  update,
+}: {
+  element: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  return (
+    <section aria-label="Text" className="space-y-3">
+      <SectionHeading icon="text">Text</SectionHeading>
+      {/* Session 29 (RA-10) — the reference's measured TEXT controls:
+          Content (a single-line INPUT), Font Size, Color (picker +
+          hex row), Font Family (combobox), Text Align (segmented
+          lucide buttons). No Weight control (the model field and
+          the canvas rendering keep honoring it — the reference
+          exposes no weight UI). */}
+      <label className="block">
+        <span className="text-xs font-medium text-gray-300">Content</span>
+        <input
+          type="text"
+          value={element.text ?? ""}
+          onChange={(event) => update({ text: event.target.value })}
+          aria-label="Text content"
+          className="mt-1 h-8 w-full rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white shadow-sm focus:border-blue-500 focus:outline-none"
+        />
+      </label>
+      <NumberField
+        label="Font Size"
+        value={element.fontSize ?? 16}
+        onChange={(fontSize) => update({ fontSize: Math.max(fontSize, 1) })}
+        min={1}
+      />
+      <HexColorRow label="Color" value={element.fill} onChange={(fill) => fill && update({ fill })} />
+      <div>
+        <span className="text-xs font-medium text-gray-300">Font Family</span>
+        <Select
+          value={element.fontFamily ?? "Inter"}
+          onValueChange={(fontFamily) => update({ fontFamily })}
+        >
+          <SelectTrigger aria-label="Font Family" className="mt-1 h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FONT_FAMILIES.map((family) => (
+              <SelectItem key={family} value={family}>
+                {family}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <span className="text-xs font-medium text-gray-300">Text Align</span>
+        {/* The reference's segmented lucide button group (measured:
+            align-left/center/right icons on a flex gap-1 track —
+            both functional: picking center changed its canvas
+            text's computed text-align). */}
+        <div
+          role="group"
+          aria-label="Text Align"
+          className="mt-1 flex items-center gap-1"
+        >
+          {(["left", "center", "right"] as const).map((align) => {
+            const AlignIcon =
+              align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
+            const active = (element.textAlign ?? "left") === align;
+            return (
+              <button
+                key={align}
+                type="button"
+                aria-label={`Align ${align}`}
+                aria-pressed={active}
+                onClick={() => update({ textAlign: align })}
+                className={`inline-flex h-8 w-10 items-center justify-center rounded-md border border-[#30363d] transition-colors ${
+                  active
+                    ? "bg-white text-gray-900 shadow"
+                    : "bg-[#0d1117] text-gray-400 hover:text-white"
+                }`}
+              >
+                <AlignIcon className="h-4 w-4" aria-hidden />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function PropertiesPanel() {
   const elements = useEditorStore((s) => s.elements);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -615,86 +714,7 @@ export function PropertiesPanel() {
             </section>
             )}
 
-            {single.type === "text" && (
-              <section aria-label="Text" className="space-y-3">
-                <SectionHeading icon="text">Text</SectionHeading>
-                {/* Session 29 (RA-10) — the reference's measured TEXT controls:
-                    Content (a single-line INPUT), Font Size, Color (picker +
-                    hex row), Font Family (combobox), Text Align (segmented
-                    lucide buttons). No Weight control (the model field and
-                    the canvas rendering keep honoring it — the reference
-                    exposes no weight UI). */}
-                <label className="block">
-                  <span className="text-xs font-medium text-gray-300">Content</span>
-                  <input
-                    type="text"
-                    value={single.text ?? ""}
-                    onChange={(event) => update({ text: event.target.value })}
-                    aria-label="Text content"
-                    className="mt-1 h-8 w-full rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white shadow-sm focus:border-blue-500 focus:outline-none"
-                  />
-                </label>
-                <NumberField
-                  label="Font Size"
-                  value={single.fontSize ?? 16}
-                  onChange={(fontSize) => update({ fontSize: Math.max(fontSize, 1) })}
-                  min={1}
-                />
-                <HexColorRow label="Color" value={single.fill} onChange={(fill) => fill && update({ fill })} />
-                <div>
-                  <span className="text-xs font-medium text-gray-300">Font Family</span>
-                  <Select
-                    value={single.fontFamily ?? "Inter"}
-                    onValueChange={(fontFamily) => update({ fontFamily })}
-                  >
-                    <SelectTrigger aria-label="Font Family" className="mt-1 h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FONT_FAMILIES.map((family) => (
-                        <SelectItem key={family} value={family}>
-                          {family}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <span className="text-xs font-medium text-gray-300">Text Align</span>
-                  {/* The reference's segmented lucide button group (measured:
-                      align-left/center/right icons on a flex gap-1 track —
-                      both functional: picking center changed its canvas
-                      text's computed text-align). */}
-                  <div
-                    role="group"
-                    aria-label="Text Align"
-                    className="mt-1 flex items-center gap-1"
-                  >
-                    {(["left", "center", "right"] as const).map((align) => {
-                      const AlignIcon =
-                        align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
-                      const active = (single.textAlign ?? "left") === align;
-                      return (
-                        <button
-                          key={align}
-                          type="button"
-                          aria-label={`Align ${align}`}
-                          aria-pressed={active}
-                          onClick={() => update({ textAlign: align })}
-                          className={`inline-flex h-8 w-10 items-center justify-center rounded-md border border-[#30363d] transition-colors ${
-                            active
-                              ? "bg-white text-gray-900 shadow"
-                              : "bg-[#0d1117] text-gray-400 hover:text-white"
-                          }`}
-                        >
-                          <AlignIcon className="h-4 w-4" aria-hidden />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </section>
-            )}
+            {single.type === "text" && <TextSection element={single} update={update} />}
 
             <section aria-label="Transform">
               <SectionHeading>Transform</SectionHeading>
