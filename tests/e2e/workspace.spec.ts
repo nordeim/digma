@@ -91,6 +91,21 @@ test.describe("workspace shell (desktop)", () => {
     await expect(page.getByRole("heading", { name: "AI Assistant" })).toBeVisible();
   });
 
+  test("the bell popover closes on Escape (session 56, S56-I / L-5)", async ({ page }) => {
+    // The Mode C audit's L-5: the popover carries role="dialog" but had no
+    // Escape-close — a keyboard user could not dismiss it (the
+    // pointerdown-outside handler covers pointers only).
+    await page.goto("/");
+    await page.getByRole("button", { name: "Notifications" }).click();
+    const popover = page.getByRole("dialog", { name: "Notifications" });
+    await expect(popover).toBeVisible();
+    await expect(popover.getByText("You're all caught up")).toBeVisible();
+
+    // Escape dismisses it.
+    await page.keyboard.press("Escape");
+    await expect(popover).toBeHidden();
+  });
+
   test("the teams view renders the seeded team", async ({ page }) => {
     await page.goto("/Teams");
     await expect(page.getByRole("heading", { name: "Design Team" })).toBeVisible();

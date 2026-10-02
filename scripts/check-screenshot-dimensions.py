@@ -58,6 +58,21 @@ S65 = {
     "clone-06-editor-baseline-desktop": (1440, 900),
 }
 
+# Session 56 (the 32nd audit's evidence set): the reference's standing
+# failure datums (R3 mobile nav class A, the mobile editor header clipping,
+# the desktop editor baseline, the Teams dead chrome) + the clone's
+# mobile-nav fix evidence + the S56-build present overlay + baseline.
+S66 = {
+    "ref-00-teams-dead-chrome-390": (390, 844),
+    "ref-01-mobile-dashboard-390": (390, 844),
+    "ref-02-mobile-editor-header-390": (390, 844),
+    "ref-03-desktop-editor-1440": (1440, 900),
+    "clone-01-mobile-nav-390": (390, 844),
+    "clone-04-mobile-nav-open-390": (390, 844),
+    "clone-05-present-desktop": (1440, 900),
+    "clone-06-editor-baseline-desktop": (1440, 900),
+}
+
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -69,6 +84,8 @@ def png_size(path: Path):
 
 
 def expected_for(name: str):
+    if name.startswith("ref-audit-s66/"):
+        return S66.get(Path(name).stem)
     if name.startswith("ref-audit-s65/"):
         return S65.get(Path(name).stem)
     if name.startswith("ref-audit-s64/"):
@@ -90,6 +107,7 @@ def main():
         [p for p in ROOT.glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s64").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s65").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s66").glob("*.png")]
     )
     for p in shots:
         rel = str(p.relative_to(ROOT))

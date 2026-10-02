@@ -113,4 +113,66 @@ test.describe("present mode — desktop contract (1280)", () => {
     await expect(page.getByRole("dialog")).toBeHidden();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
   });
+
+  test("the editor's keyboard shortcuts STAND DOWN behind the overlay (session 56, S56-D)", async ({
+    page,
+  }) => {
+    // The Mode C audit's M-3: the stand-down guard matches only
+    // [role="dialog"][data-state="open"] — the hand-rolled overlay carried
+    // no data-state, so Delete deleted the (invisible) selection while
+    // presenting, tool keys switched tools, and ? opened the shortcuts
+    // dialog over the presentation. The fix puts data-state="open" on the
+    // overlay's dialog element (the SAME guard then covers it).
+    await openSeededEditor(page);
+
+    // Select the Accent Bar BEFORE presenting (a selection that stays
+    // live behind the pre-fix overlay). Selection goes through the LAYER
+    // ROW — order-independent against whatever geometry earlier specs in
+    // the same run left on the shared canvas (a scaled headline can
+    // intercept canvas clicks).
+    await page.getByRole("button", { name: "Layer Accent Bar", exact: true }).click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    await enterPresentation(page);
+
+    // Delete behind the overlay: the pre-fix canvas deleted the invisible
+    // selection (autosaved 800ms later — data loss behind the takeover).
+    await page.keyboard.press("Delete");
+    await page.waitForTimeout(300);
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    // A tool key must not switch tools either (V is the Select shortcut).
+    await page.keyboard.press("v");
+    await page.waitForTimeout(200);
+
+    // Exit and verify the selection SURVIVED both keystrokes.
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(page.locator("[data-element-id][aria-label='Accent Bar']")).toHaveCount(1);
+    // …and the tool stayed Select (V was absorbed by the stand-down).
+    await expect(page.getByRole("button", { name: "Select tool" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  test("Tab stays trapped on the exit affordance (the aria-modal contract, session 56, S56-D)", async ({
+    page,
+  }) => {
+    // The Mode C audit's L-4: the overlay declares aria-modal="true" but
+    // Tab used to escape into the background content. The exit pill is the
+    // only focusable — Tab routes focus back to it.
+    await openSeededEditor(page);
+    await enterPresentation(page);
+    const exit = page.getByRole("button", { name: /Exit presentation/ });
+    await expect(exit).toBeFocused();
+
+    await page.keyboard.press("Tab");
+    await expect(exit).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(exit).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+  });
 });

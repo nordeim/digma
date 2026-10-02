@@ -127,3 +127,33 @@ test.describe("tablet navigation (768)", () => {
     await expect(page.getByRole("button", { name: "Navigation menu" })).toBeHidden();
   });
 });
+
+test.describe("the drawer closes on the md crossing (session 56, S56-I / N-1)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("an OPEN drawer unmounts when the viewport reaches the desktop surface", async ({
+    page,
+  }) => {
+    // The S55-B contract extended to the NAV drawer at md: the trigger is
+    // md:hidden (it vanishes at 768) while the Sheet's portal renders at
+    // document.body — the pre-fix OPEN drawer survived the crossing,
+    // floating over the desktop layout where the desktop nav is the
+    // sanctioned surface.
+    await page.goto("/");
+
+    // Open the drawer (the Sheet dialog appears).
+    await page.getByRole("button", { name: "Navigation menu" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.locator("body")).toHaveAttribute("data-scroll-locked", "1");
+
+    // Cross the md boundary to the desktop surface.
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    // The drawer unmounts, the lock releases, and the desktop nav is the
+    // surface.
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator("body")).not.toHaveAttribute("data-scroll-locked", "1");
+    await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Dashboard", exact: true })).toBeVisible();
+  });
+});

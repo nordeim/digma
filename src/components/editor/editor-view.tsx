@@ -57,10 +57,30 @@ const UNTITLED_PROJECT: ProjectDTO = {
 // saves the canvas SILENTLY into the most-recent project (a data bug this
 // clone deliberately does not copy).
 
-function useAutosave() {
+function useAutosave(): () => void {
+  // Session 56 (S56-C — the M-2 fix): the hook exposes its flush so
+  // exit() sends pending edits through the SAME serialized machine —
+  // the full body (elements AND backgroundColor — the session-33 S33-3
+  // contract) and the Untitled-mode ensureProject flow (ADR-009 honored
+  // at the exit seam). The old exit() sent elements-only (a Background
+  // change followed by Back inside the debounce window was silently
+  // lost) and skipped Untitled mode entirely.
+  const flushRef = React.useRef<() => void>(() => {});
+
   React.useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let disposed = false;
+    // Session 56 (S56-B — the Mode C audit's H-2): flushes SERIALIZE. An
+    // in-flight guard plus a pending flag — a flush requested while one
+    // runs re-runs after it completes (no concurrent PUTs racing
+    // last-arrival-wins, no double POST /api/projects in Untitled mode).
+    let flushing = false;
+    let pending = false;
+    // Session 56 (S56-B — M-1): the failure paths reset saveState to
+    // "unsaved" so the subscriber re-arms the timer (an automatic
+    // retry); the toast fires on the FIRST consecutive failure only so
+    // an unreachable server cannot spam one toast per retry.
+    let consecutiveFailures = 0;
 
     async function ensureProject(): Promise<string | null> {
       const store = useEditorStore.getState();
@@ -85,13 +105,34 @@ function useAutosave() {
     }
 
     async function flush() {
+      if (flushing) {
+        pending = true;
+        return;
+      }
       const store = useEditorStore.getState();
-      if (store.saveState !== "unsaved") return;
+      // "saving" with no flush in flight (a pre-reset stuck state) is
+      // also flushable — exit() relies on this (it flushes whenever the
+      // state is not "saved").
+      if (store.saveState === "saved") return;
+      flushing = true;
+      // Session 56 (S56-B — H-2): the edit-during-flight guard. The
+      // elements ARRAY REFERENCE and the project identity are captured
+      // at body-build time; the store's immutable updates make ANY
+      // mutation a NEW reference, so a changed reference at response
+      // time means an edit landed mid-flight — the server list must NOT
+      // replace it (the old unconditional markSaved reverted the edit,
+      // marked it "saved", and the retry early-return swallowed it).
+      const capturedElements = store.elements;
+      const capturedProjectId = store.projectId;
       store.setSaving();
       try {
         const projectId = await ensureProject();
         if (!projectId) {
-          toast.error("Autosave failed", "The design file could not be created.");
+          consecutiveFailures += 1;
+          if (consecutiveFailures === 1) {
+            toast.error("Autosave failed", "The design file could not be created.");
+          }
+          useEditorStore.getState().setUnsaved();
           return;
         }
         const response = await fetch(`/api/projects/${projectId}/elements`, {
@@ -109,21 +150,67 @@ function useAutosave() {
         });
         const body = await response.json().catch(() => null);
         if (!response.ok || !body?.ok) {
-          toast.error("Autosave failed", body?.error?.message ?? "Your changes are not saved yet.");
+          consecutiveFailures += 1;
+          if (consecutiveFailures === 1) {
+            toast.error("Autosave failed", body?.error?.message ?? "Your changes are not saved yet.");
+          }
+          useEditorStore.getState().setUnsaved();
           return;
         }
+        consecutiveFailures = 0;
         const elements = body.data.elements as ProjectDTO["elements"];
-        const oldIds = useEditorStore.getState().elements.map((el) => el.id);
+        const now = useEditorStore.getState();
+        // A stale response never clobbers newer state. A swapped
+        // projectId (the user navigated to another project's editor
+        // mid-flight) drops the response entirely; the Untitled →
+        // created transition ("" → the fresh id) is NOT a swap — the
+        // flush itself created it and must adopt the server list.
+        if (capturedProjectId && now.projectId !== capturedProjectId) return;
+        if (now.elements !== capturedElements) {
+          // An edit landed mid-flight: keep it (markSaved would revert
+          // it to the older server list) and mark unsaved so the
+          // follow-up flush persists the newer state.
+          now.setUnsaved();
+          return;
+        }
+        // An ACTIVE canvas gesture holds FROZEN element ids in its drag
+        // state — adopting the server list now would remap the ids out
+        // from under the gesture and it would silently stop moving
+        // anything (the drag's moveElements matches nothing after the
+        // replace). Defer: mark unsaved; the follow-up flush (after the
+        // gesture ends) re-saves and adopts cleanly.
+        if (now.gestureSnapshot !== null) {
+          now.setUnsaved();
+          return;
+        }
+        const oldIds = now.elements.map((el) => el.id);
         const remap = new Map<string, string>();
         elements?.forEach((el, i) => {
           const old = oldIds[i];
           if (old) remap.set(old, el.id);
         });
-        useEditorStore.getState().markSaved(elements ?? [], remap);
+        now.markSaved(elements ?? [], remap);
       } catch {
-        toast.error("Network error", "Autosave could not reach the server.");
+        consecutiveFailures += 1;
+        if (consecutiveFailures === 1) {
+          toast.error("Network error", "Autosave could not reach the server.");
+        }
+        useEditorStore.getState().setUnsaved();
+      } finally {
+        flushing = false;
+        // The pending re-run is deliberately NOT disposed-gated: after
+        // exit() navigates away, running the follow-up flush is the SAFE
+        // direction (same project → an idempotent full-replace; another
+        // project → the swap guard drops it). The timer path stays
+        // disposed-gated — the subscriber itself is unsubscribed.
+        if (pending) {
+          pending = false;
+          flush();
+        }
       }
     }
+
+    flushRef.current = () => void flush();
 
     const unsubscribe = useEditorStore.subscribe((state) => {
       if (state.saveState === "unsaved" && !disposed) {
@@ -138,6 +225,9 @@ function useAutosave() {
       if (timer) clearTimeout(timer);
     };
   }, []);
+
+  // A stable flush handle for exit() — the effect owns the real function.
+  return React.useCallback(() => flushRef.current(), []);
 }
 
 // ---------------------------------------------------------------------------
@@ -342,6 +432,14 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
   React.useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") onExit();
+      // Session 56 (S56-D — the Mode C audit's L-4): the overlay declares
+      // aria-modal="true", so Tab must not escape into the background
+      // content. The exit affordance is the only focusable — route Tab
+      // back to it (a minimal trap honoring the aria-modal contract).
+      if (event.key === "Tab") {
+        event.preventDefault();
+        exitRef.current?.focus();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -378,6 +476,14 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-label="Presentation mode — press Escape to exit"
+      // Session 56 (S56-D — the Mode C audit's M-3): the Radix-style open
+      // state on the dialog element. The editor's global shortcut guard
+      // matches exactly [role="dialog"][data-state="open"] — carrying
+      // the attribute puts the overlay under the SAME stand-down contract
+      // as every Radix dialog (no Delete deleting the invisible selection,
+      // no tool switches, no `?` over the presentation) without a second
+      // guard path. Escape stays THIS component's own exit below.
+      data-state="open"
     >
       <div
         className="relative"
@@ -705,7 +811,8 @@ export function EditorView({ user }: { user: HeaderUser }) {
   const future = useEditorStore((s) => s.future);
 
   useEditorShortcuts(React.useCallback(() => setShortcutsOpen(true), []));
-  useAutosave();
+  // Session 56 (S56-C): the flush handle — exit() routes through it.
+  const flushNow = useAutosave();
 
   // Load the project once — setState lands in the async continuation only.
   // Unknown or missing projectId NEVER dead-ends: the editor opens in
@@ -782,18 +889,17 @@ export function EditorView({ user }: { user: HeaderUser }) {
   }
 
   function exit() {
-    // Flush pending edits before leaving. The store's projectId is
-    // authoritative (in Untitled mode it may be empty — nothing to flush;
-    // the 800ms autosave will have created the project by then in the
-    // common case).
-    const store = useEditorStore.getState();
-    if (store.saveState === "unsaved" && store.projectId) {
-      fetch(`/api/projects/${store.projectId}/elements`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ elements: store.elements }),
-      }).catch(() => null);
-    }
+    // Session 56 (S56-C — the Mode C audit's M-2): flush pending edits
+    // through the SAME serialized autosave machine before leaving. The
+    // old exit() fired its own elements-only PUT (a Background change
+    // followed by Back inside the debounce window was silently lost —
+    // the route treats an absent backgroundColor as "untouched") and
+    // skipped Untitled mode entirely (nothing was created on a fast
+    // exit). The machine carries the full body (elements + backgroundColor)
+    // and the Untitled-mode ensureProject flow (ADR-009); "saving" (a
+    // flush in flight) queues as pending and runs after it — the state
+    // machine owns the ordering.
+    flushNow();
     router.push("/Dashboard");
   }
 

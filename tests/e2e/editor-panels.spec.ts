@@ -307,6 +307,66 @@ test.describe("transform section: scale + rotation inputs (reference parity)", (
     await expect(page.getByTestId("scale-value")).toHaveText("1.0x");
   });
 
+  test("a scaled element's OUTER visual region is clickable (session 56, S56-G / M-7)", async ({
+    page,
+  }) => {
+    // The Mode C audit's M-7: the click hit-test used the UNSCALED rect
+    // while the render scales the footprint — an element at scale 2
+    // rendered 4x its hit area, so clicks on the outer visual region fell
+    // through to elements beneath (or deselected). The seeded Glow
+    // ellipse (480,140) 160x160 at scale 2 covers x∈[480,800],
+    // y∈[140,460] canvas-space; the click below lands at (660,380) —
+    // OUTSIDE the unscaled [480,640]x[140,300], INSIDE the visual.
+    await page.locator("[data-element-id][aria-label='Glow']").click();
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+
+    const slider = page.getByRole("slider", { name: "Scale" });
+    await slider.focus();
+    for (let i = 0; i < 10; i++) await page.keyboard.press("ArrowRight");
+    await expect(page.getByTestId("scale-value")).toHaveText("2.0x");
+
+    // Deselect first (a click while selected would START a move gesture,
+    // not re-hit-test). Click the canvas's empty spot — the slider holds
+    // focus and its input tag absorbs Escape (the typing-target guard),
+    // so the keyboard path cannot deselect here.
+    const canvas = page.getByRole("application", { name: "Design canvas" });
+    const rect = await canvas.boundingBox();
+    await page.mouse.click(rect!.x + 40, rect!.y + 100);
+    await expect(page.getByText("1 selected", { exact: true })).toBeHidden();
+
+    // The seeded Glow at scale 2 covers x∈[480,800], y∈[140,460]
+    // canvas-space; the click lands at (660,330) — OUTSIDE the unscaled
+    // [480,640]x[140,300] on BOTH axes, INSIDE the visual footprint, and
+    // within the canvas at EITHER default viewport height (the 720-high
+    // default clips the canvas at 352px — y=380 would land on the AI
+    // assistant, not the canvas).
+    await page.mouse.click(rect!.x + 660, rect!.y + 330);
+
+    // The pre-fix hit-test fell through (the click started a marquee and
+    // deselected); post-fix the visual footprint selects the Glow.
+    await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Layer Glow", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    // Cleanup: restore scale 1.0 before leaving (a failure must never
+    // leave the shared e2e DB mutated).
+    await slider.focus();
+    for (let i = 0; i < 10; i++) await page.keyboard.press("ArrowLeft");
+    await expect(page.getByTestId("scale-value")).toHaveText("1.0x");
+    await waitForSavedTransform(page);
+  });
+
+  async function waitForSavedTransform(page: import("@playwright/test").Page) {
+    await page.waitForResponse(
+      (response) =>
+        response.request().method() === "PUT" && response.url().includes("/elements"),
+      { timeout: 10_000 },
+    );
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
   test("scaling an element grows its visual footprint and persists", async ({ page }) => {
     const slider = page.getByRole("slider", { name: "Scale" });
     // Keyboard-driven slider steps (0.1 per step) reach 2.0 deterministically.
@@ -1724,6 +1784,35 @@ test.describe("fill tabs: the functional three-tab editor (session 41, RA-54)", 
     await page.getByRole("tab", { name: "Solid" }).click();
     await setSolidFill(page, "#3B82F6");
     await waitForSaved(page);
+  });
+
+  test("a NON-WHITELISTED image type is rejected at read time (session 56, S56-E / M-4)", async ({
+    page,
+  }) => {
+    // The Mode C audit's M-4: the client accepted any data:image/… URL
+    // while the server's clampFillImage whitelists only png/jpeg/jpg/gif/
+    // svg+xml/webp — a BMP fill painted client-side, then the first
+    // autosave PUT nulled it server-side and markSaved adopted the
+    // sanitized list: the fill silently vanished ~1s later with no toast.
+    // The fix rejects the read with the EXISTING "Unsupported image"
+    // toast — the visible, honest failure.
+    await openOnCta(page);
+    await page.getByRole("tab", { name: "Image" }).click();
+
+    // A BMP pick (the Windows file picker's default screenshot format).
+    await page
+      .locator("section[aria-label='Fill and stroke'] input[type=file]")
+      .setInputFiles({
+        name: "probe.bmp",
+        mimeType: "image/bmp",
+        buffer: Buffer.from("Qk06AAAAAAAAAAAAAAAAAAAAAA==", "base64"),
+      });
+
+    // The rejection toast…
+    await expect(page.getByText("Unsupported image", { exact: true })).toBeVisible();
+    // …and the fill NEVER changed (no data-URL background-image, no PUT).
+    await expect(page.locator(CTA)).toHaveCSS("background-image", "none");
+    await expect(page.getByText("Click to upload image")).toBeVisible();
   });
 
   test("the Image tab carries the reference's Background Size select and it paints (RA-61)", async ({ page }) => {

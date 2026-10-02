@@ -45,6 +45,12 @@ type EditorStore = {
   saveState: SaveState;
   past: Snapshot[];
   future: Snapshot[];
+  // Session 56 (S56-A — the Mode C audit's H-1): the transient
+  // PRE-gesture snapshot. beginGesture() captures it at pointer-down;
+  // endGesture() pushes it into `past` at pointer-up (one history entry
+  // per gesture, facing the RIGHT direction); cancelGesture() discards
+  // it (the zero-movement click pushes no history and wipes no redo).
+  gestureSnapshot: Snapshot | null;
 
   // lifecycle
   loadProject: (project: ProjectDTO) => void;
@@ -55,6 +61,11 @@ type EditorStore = {
   attachProject: (id: string) => void;
   setName: (name: string) => void;
   setSaving: () => void;
+  // Session 56 (S56-B — M-1): the failure-path reset — the subscriber
+  // re-arms the 800ms timer on the transition back to "unsaved" (an
+  // automatic retry instead of a stuck "saving" badge and a skipped
+  // exit flush).
+  setUnsaved: () => void;
   markSaved: (elements: DesignElementDTO[], remap: Map<string, string>) => void;
 
   // viewport
@@ -85,7 +96,15 @@ type EditorStore = {
   setBackgroundColor: (color: string) => void;
 
   // history
-  commit: () => void;
+  // Session 56 (S56-A): the gesture seam replaces the old commit().
+  // commit() pushed the POST-gesture state, so the first Ctrl+Z after a
+  // drag was a silent no-op — the pre-gesture layout was unreachable.
+  // The gesture snapshot is captured BEFORE the live mutations begin
+  // (pointer-down) and pushed when the gesture ends (pointer-up, only
+  // if it moved).
+  beginGesture: () => void;
+  endGesture: () => void;
+  cancelGesture: () => void;
   undo: () => void;
   redo: () => void;
   // The AI reply's Revert (session 27): restores a captured pre-message
@@ -120,6 +139,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   saveState: "saved",
   past: [],
   future: [],
+  gestureSnapshot: null,
 
   loadProject: (project) =>
     set({
@@ -139,6 +159,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   setName: (name) => set({ projectName: name, saveState: "unsaved" }),
 
   setSaving: () => set({ saveState: "saving" }),
+  setUnsaved: () => set({ saveState: "unsaved" }),
 
   markSaved: (elements, remap) =>
     set((state) => ({
@@ -288,12 +309,20 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     set((state) => ({
       elements: state.elements.map((el) => (el.id === id ? { ...el, visible: !el.visible } : el)),
       saveState: "unsaved",
+      // Session 56 (S56-A / L-3): an eye toggle is a real mutation — it
+      // joins the history-committed family (individually undoable;
+      // Ctrl+Z no longer jumps past it to an older action).
+      past: [...state.past, snapshotOf(state)].slice(-60),
+      future: [],
     })),
 
   toggleLock: (id) =>
     set((state) => ({
       elements: state.elements.map((el) => (el.id === id ? { ...el, locked: !el.locked } : el)),
       saveState: "unsaved",
+      // Session 56 (S56-A / L-3): the lock toggle too.
+      past: [...state.past, snapshotOf(state)].slice(-60),
+      future: [],
     })),
 
   setBackgroundColor: (color) =>
@@ -304,11 +333,18 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       future: [],
     })),
 
-  commit: () =>
-    set((state) => ({
-      past: [...state.past, snapshotOf(state)].slice(-60),
-      future: [],
-    })),
+  // Session 56 (S56-A): the gesture seam — see the type comment above.
+  beginGesture: () => set((state) => ({ gestureSnapshot: snapshotOf(state) })),
+  endGesture: () =>
+    set((state) =>
+      state.gestureSnapshot
+        ? {
+            past: [...state.past, state.gestureSnapshot].slice(-60),
+            future: [],
+            gestureSnapshot: null,
+          }
+        : {}),
+  cancelGesture: () => set({ gestureSnapshot: null }),
 
   undo: () =>
     set((state) => {

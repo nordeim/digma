@@ -49,6 +49,24 @@ function MobileNav() {
   // so navigation unmounts this sheet anyway. That keeps the React 19
   // set-state-in-effect contract clean.
 
+  // Session 56 (S56-I — this session's audit finding N-1): the drawer's
+  // md-crossing close — the S55-B pattern at the md boundary. The
+  // trigger is md:hidden (it vanishes at 768) while the Sheet's portal
+  // renders at document.body, so an OPEN drawer survived the crossing —
+  // floating over the desktop layout where the desktop nav is the
+  // sanctioned surface. The listener registers only while open and
+  // setOpen fires ONLY in the event callback (the app-header bell's
+  // outside-pointerdown pattern — never the effect body).
+  React.useEffect(() => {
+    if (!open) return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    function toDesktop() {
+      if (mq.matches) setOpen(false);
+    }
+    mq.addEventListener("change", toDesktop);
+    return () => mq.removeEventListener("change", toDesktop);
+  }, [open]);
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
@@ -131,6 +149,20 @@ export function AppHeader({ user }: { user: HeaderUser }) {
     }
     document.addEventListener("pointerdown", onDown);
     return () => document.removeEventListener("pointerdown", onDown);
+  }, [bellOpen]);
+
+  // Session 56 (S56-I — the Mode C audit's L-5): the bell popover carries
+  // role="dialog", so a keyboard user must be able to dismiss it with
+  // Escape — the pointerdown-outside handler covers pointers only. The
+  // same guarded-effect pattern (registered only while open, setState
+  // only in the event callback).
+  React.useEffect(() => {
+    if (!bellOpen) return;
+    function onBellKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setBellOpen(false);
+    }
+    window.addEventListener("keydown", onBellKey);
+    return () => window.removeEventListener("keydown", onBellKey);
   }, [bellOpen]);
 
   function onSearch(event: React.FormEvent) {

@@ -132,9 +132,19 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const backgroundColor =
     typeof body?.backgroundColor === "string" ? clampColor(body.backgroundColor, "") : "";
 
+  // Session 56 (S56-H — the Mode C audit's L-1): the type check runs as a
+  // PRE-VALIDATION loop returning the envelope failure. The old bare
+  // `throw new Error("invalid type at …")` inside the row map escaped
+  // the { ok, error } contract as an unstructured 500.
+  for (let index = 0; index < list.length; index += 1) {
+    const type = typeof list[index]?.type === "string" ? list[index].type : "";
+    if (!isElementType(type)) {
+      return fail("VALIDATION", `Invalid element type at index ${index}`, 400);
+    }
+  }
+
   const rows = list.map((raw: Record<string, unknown>, index: number) => {
     const type = typeof raw?.type === "string" ? raw.type : "";
-    if (!isElementType(type)) throw new Error(`invalid type at ${index}`);
     return {
       type,
       name: clampOptionalText(raw?.name, 80) ?? defaultNameFor(type as ElementType, index),
@@ -170,7 +180,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
     };
   });
 
-  await db.$transaction(async (tx) => {
+  // Session 56 (S56-H — L-2): the response read runs INSIDE the interactive
+  // transaction. The old outside-read could interleave with a concurrent
+  // PUT landing between this request's commit and its read — returning a
+  // list this request did not write.
+  const elements = await db.$transaction(async (tx) => {
     await tx.designElement.deleteMany({ where: { projectId: id } });
     if (rows.length > 0) {
       await tx.designElement.createMany({ data: rows.map((r) => ({ ...r, projectId: id })) });
@@ -179,11 +193,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
       where: { id },
       data: { updatedAt: new Date(), ...(backgroundColor ? { backgroundColor } : {}) },
     });
-  });
-
-  const elements = await db.designElement.findMany({
-    where: { projectId: id },
-    orderBy: { sortOrder: "asc" },
+    return tx.designElement.findMany({
+      where: { projectId: id },
+      orderBy: { sortOrder: "asc" },
+    });
   });
   return ok({ elements });
 }

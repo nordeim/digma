@@ -470,7 +470,14 @@ function ImagePanel({
     reader.onload = () => {
       const dataUrl = String(reader.result ?? "");
       setBusy(false);
-      if (dataUrl.startsWith("data:image/")) {
+      // Session 56 (S56-E — the Mode C audit's M-4): accept exactly the
+      // server's five families. The old bare startsWith("data:image/")
+      // let a BMP/AVIF/ICO fill paint client-side, then the first
+      // autosave PUT nulls it server-side (clampFillImage's whitelist)
+      // and markSaved adopts the sanitized list — the fill silently
+      // vanished ~1s later with no toast. Rejecting at read time gives
+      // the EXISTING "Unsupported image" toast instead.
+      if (/^data:image\/(png|jpe?g|gif|svg\+xml|webp);base64,/.test(dataUrl)) {
         update({ fillImage: dataUrl, fillGradient: null, fillImageFit: null });
       } else {
         toast.show({ title: "Unsupported image", description: "PNG, JPG, GIF, WebP, or SVG images are supported." });

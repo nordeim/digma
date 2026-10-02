@@ -16,8 +16,8 @@ import { boundsOf, canvasFontFamily, clampZoom, fillPaintFor, type DesignElement
 type DragState =
   | { kind: "none" }
   | { kind: "draw"; type: DesignElementDTO["type"]; startX: number; startY: number; x: number; y: number; w: number; h: number }
-  | { kind: "move"; startX: number; startY: number; lastX: number; lastY: number; ids: string[] }
-  | { kind: "resize"; handle: Handle; startBounds: { x: number; y: number; w: number; h: number }; el: DesignElementDTO }
+  | { kind: "move"; startX: number; startY: number; lastX: number; lastY: number; ids: string[]; moved?: boolean }
+  | { kind: "resize"; handle: Handle; startBounds: { x: number; y: number; w: number; h: number }; el: DesignElementDTO; moved?: boolean }
   | { kind: "marquee"; startX: number; startY: number; x: number; y: number; w: number; h: number }
   | { kind: "pan"; lastX: number; lastY: number };
 
@@ -41,19 +41,34 @@ const TOOL_TO_TYPE: Partial<Record<EditorTool, DesignElementDTO["type"]>> = {
   frame: "frame",
 };
 
-function elementIsPointInside(el: DesignElementDTO, px: number, py: number): boolean {
-  if (el.rotation !== 0) {
-    // Rotate the point into the element's local space.
-    const cx = el.x + el.width / 2;
-    const cy = el.y + el.height / 2;
-    const rad = (-el.rotation * Math.PI) / 180;
-    const dx = px - cx;
-    const dy = py - cy;
-    const rx = dx * Math.cos(rad) - dy * Math.sin(rad);
-    const ry = dx * Math.sin(rad) + dy * Math.cos(rad);
-    return Math.abs(rx) <= el.width / 2 && Math.abs(ry) <= el.height / 2;
+/**
+ * Is a canvas-space point inside the element's VISUAL footprint?
+ *
+ * Session 56 (S56-G — the Mode C audit's M-7): the test now INVERSE-MAPS
+ * the point through the render chain — translate(x,y) · scale(s) ·
+ * rotate(r) with transformOrigin 0px 0px (see CanvasElement's style
+ * below) — so `local = rotate(-r) · ((p − (x,y)) / s)` and the box test
+ * is 0 ≤ local ≤ (width, height). The pre-fix version tested the
+ * UNSCALED rect (an element at scale 2 rendered 4× its hit area — the
+ * outer visual region fell through to elements beneath) and rotated
+ * around the unscaled CENTER, which does not match the render's
+ * corner-anchored rotation. Exported for tests/hit-test.test.ts (a pure
+ * geometry seam).
+ */
+export function elementIsPointInside(el: DesignElementDTO, px: number, py: number): boolean {
+  const s = el.scale ?? 1;
+  // Undo the translate + uniform scale.
+  const dx = (px - el.x) / s;
+  const dy = (py - el.y) / s;
+  if (el.rotation === 0) {
+    return dx >= 0 && dx <= el.width && dy >= 0 && dy <= el.height;
   }
-  return px >= el.x && px <= el.x + el.width && py >= el.y && py <= el.y + el.height;
+  // Undo the corner-anchored rotation (the render's transformOrigin is
+  // 0px 0px, NOT the center).
+  const rad = (-el.rotation * Math.PI) / 180;
+  const rx = dx * Math.cos(rad) - dy * Math.sin(rad);
+  const ry = dx * Math.sin(rad) + dy * Math.cos(rad);
+  return rx >= 0 && rx <= el.width && ry >= 0 && ry <= el.height;
 }
 
 export function Canvas() {
@@ -146,6 +161,13 @@ export function Canvas() {
           ? selectedIds
           : [hit.id];
       useEditorStore.getState().select(nextIds);
+      // Session 56 (S56-A — the Mode C audit's H-1): capture the PRE-gesture
+      // snapshot at pointer-DOWN. The live mutations stay history-free (one
+      // entry per gesture); pointer-up pushes THIS snapshot — the old
+      // commit()-at-pointer-up pushed the POST-drag state, so the first
+      // Ctrl+Z after a drag was a silent no-op and the pre-drag layout was
+      // unreachable.
+      useEditorStore.getState().beginGesture();
       setDrag({ kind: "move", startX: point.x, startY: point.y, lastX: point.x, lastY: point.y, ids: nextIds });
     } else {
       if (!event.shiftKey) useEditorStore.getState().deselectAll();
@@ -189,7 +211,7 @@ export function Canvas() {
 
     if (drag.kind === "move") {
       store.moveElements(drag.ids, point.x - drag.lastX, point.y - drag.lastY);
-      setDrag({ ...drag, lastX: point.x, lastY: point.y });
+      setDrag({ ...drag, lastX: point.x, lastY: point.y, moved: true });
       return;
     }
 
@@ -223,6 +245,7 @@ export function Canvas() {
         { x, y, width: Math.max(w / s, 1), height: Math.max(h / s, el.type === "line" ? 0 : 1) },
         false,
       );
+      setDrag({ ...drag, moved: true });
     }
   }
 
@@ -259,22 +282,41 @@ export function Canvas() {
         if (inside.length > 0) store.select(inside.map((el) => el.id));
       }
     } else if (drag.kind === "move" || drag.kind === "resize") {
-      // The live edits avoided history pushes; snapshot now.
-      store.commit();
+      // The live edits avoided history pushes; push the PRE-gesture
+      // snapshot captured at pointer-down — but ONLY when the gesture
+      // actually moved. A plain click (kind "move", zero movement)
+      // cancels: no redundant snapshot, and the redo stack survives.
+      if (drag.moved) store.endGesture();
+      else store.cancelGesture();
     }
 
     setDrag({ kind: "none" });
   }
 
   // ---- wheel: pan by default, zoom with ctrl/meta -----------------------
-  function onWheel(event: React.WheelEvent) {
-    const store = useEditorStore.getState();
-    if (event.ctrlKey || event.metaKey) {
-      store.setZoom(clampZoom(store.zoom * (event.deltaY < 0 ? 1.1 : 0.9)));
-    } else {
-      store.panBy(-event.deltaX, -event.deltaY);
+  // Session 56 (S56-F — the Mode C audit's M-6): the wheel path is a
+  // NATIVE non-passive listener on the container. The old React onWheel
+  // prop never called preventDefault — and React 17+ registers root
+  // wheel listeners as PASSIVE, so a preventDefault inside a JSX handler
+  // would not work either. In a real browser ctrl+wheel (and trackpad
+  // pinch, delivered as ctrl+wheel) is NATIVE page zoom: without the
+  // preventDefault below the whole app zoomed AND the canvas zoomed
+  // simultaneously. The store actions (and their clamps) are unchanged.
+  React.useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    function onWheelNative(event: WheelEvent) {
+      const store = useEditorStore.getState();
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        store.setZoom(clampZoom(store.zoom * (event.deltaY < 0 ? 1.1 : 0.9)));
+      } else {
+        store.panBy(-event.deltaX, -event.deltaY);
+      }
     }
-  }
+    node.addEventListener("wheel", onWheelNative, { passive: false });
+    return () => node.removeEventListener("wheel", onWheelNative);
+  }, []);
 
   // ---- space-to-pan -------------------------------------------------------
   React.useEffect(() => {
@@ -314,7 +356,6 @@ export function Canvas() {
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
-      onWheel={onWheel}
       role="application"
       aria-label="Design canvas"
     >
@@ -388,6 +429,10 @@ export function Canvas() {
                   event.stopPropagation();
                   const el = selected[0]!;
                   (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+                  // Session 56 (S56-A): the resize gesture captures its
+                  // pre-gesture snapshot at the handle's pointer-down — the
+                  // same contract as the move branch above.
+                  useEditorStore.getState().beginGesture();
                   setDrag({
                     kind: "resize",
                     handle: handle.id,
