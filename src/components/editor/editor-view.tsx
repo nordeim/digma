@@ -564,9 +564,18 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                     : undefined,
                 borderRadius: el.type === "ellipse" ? "50%" : el.radius || undefined,
                 color: el.type === "text" ? el.fill ?? "#fff" : undefined,
-                fontSize: el.type === "text" ? (el.fontSize ?? undefined) : undefined,
-                fontWeight: el.type === "text" ? (el.fontWeight ?? undefined) : undefined,
+                // Session 58 (S58-E — the sixth audit's B-M-1): the text
+                // branch adopts the canvas seam's EXACT contract
+                // (canvasStyleFor): pre-wrap whitespace + clipped overflow +
+                // the 16/500 defaults. Pre-fix the present mode collapsed
+                // multi-line text to one overflowing line — the seeded
+                // Headline's own "Design faster,\ntogether." was the live
+                // datum.
+                fontSize: el.type === "text" ? el.fontSize ?? 16 : undefined,
+                fontWeight: el.type === "text" ? el.fontWeight ?? "500" : undefined,
                 fontFamily: el.type === "text" ? canvasFontFamily(el.fontFamily) : undefined,
+                whiteSpace: el.type === "text" ? "pre-wrap" : undefined,
+                overflow: el.type === "text" ? "hidden" : undefined,
                 display: el.type === "text" ? "flex" : undefined,
                 alignItems: el.type === "text" ? "center" : undefined,
                 textAlign: (el.type === "text" ? el.textAlign ?? "left" : undefined) as React.CSSProperties["textAlign"],
@@ -891,6 +900,19 @@ export function EditorView({ user }: { user: HeaderUser }) {
   }, [projectId]);
 
   function onShare() {
+    // Session 58 (S58-F — the sixth audit's B-L-7): Untitled mode has NO
+    // project id yet — window.location.href is /Editor (or a dead unknown
+    // id), a link that opens a fresh EMPTY Untitled editor for the
+    // recipient. The guard: an honest unavailable toast until the first
+    // autosave adopts the created id.
+    const store = useEditorStore.getState();
+    if (!store.projectId) {
+      toast.show({
+        title: "Share unavailable",
+        description: "This design hasn't been saved yet — give it a moment, then try again.",
+      });
+      return;
+    }
     const url = typeof window !== "undefined" ? window.location.href : "";
     navigator.clipboard
       ?.writeText(url)

@@ -207,7 +207,12 @@ export function parseFallbackCommand(
         radius: word === "button" || word === "buttons" ? 8 : 0,
       }));
       return {
-        reply: `Added ${count} ${fill.toLowerCase() === "#3b82f6" ? "" : ""}${word}${count > 1 && !word.endsWith("s") ? "s" : ""}.`,
+        // Session 58 (S58-F — the sixth audit's B-L-6): the dead color
+        // ternary removed (both branches were "" — the color-naming intent
+        // never fired). The reply string is UNCHANGED: "Added N squares." is
+        // the pinned contract across three test sites (the honest-count
+        // doctrine — describe what actually happened).
+        reply: `Added ${count} ${word}${count > 1 && !word.endsWith("s") ? "s" : ""}.`,
         operations: elements.map((element) => ({ op: "add" as const, element })),
       };
     }

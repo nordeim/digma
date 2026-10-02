@@ -6,6 +6,7 @@ import { ArrowLeft, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
 
 import { LogoMark } from "@/components/logo";
 import { toast } from "@/hooks/use-toast";
+import { safeFromUrl } from "@/lib/validation";
 
 // Session 43, RA-58/RA-59: the reference's auth card carries FIVE states —
 // sign-in / sign-up / forgot (the three measured in prior sessions) plus
@@ -28,7 +29,12 @@ type AuthMode = "signin" | "signup" | "forgot" | "verify" | "sent";
 export function LoginScreen() {
   const router = useRouter();
   const params = useSearchParams();
-  const fromUrl = params.get("from_url") || "/";
+  // Session 58 (S58-C — the sixth audit's A-M-3): the from_url target is
+  // validated site-local (a leading "/", never protocol-relative) — a
+  // crafted external from_url previously hard-navigated the user off-site
+  // right after authentication (CWE-601). Unknown/malformed values fall
+  // back to the app root.
+  const fromUrl = safeFromUrl(params.get("from_url"));
 
   const [mode, setMode] = React.useState<AuthMode>("signin");
   const [email, setEmail] = React.useState("");

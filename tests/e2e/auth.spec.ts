@@ -286,3 +286,58 @@ test.describe("signup weak-password validation (session 45, RA-63)", () => {
     await expect(page.locator("[data-sonner-toast], .toast")).toHaveCount(0);
   });
 });
+
+// -------------------------------------------------------------------------
+// Session 58 (S58-C — the sixth Mode C audit's A-M-3): the from_url
+// open-redirect guard. The login previously pushed the raw ?from_url
+// param verbatim into router.push after sign-in — Next 16's router
+// HARD-navigates external URLs (isExternalURL → location.assign), so a
+// crafted /login?from_url=https://attacker.example sent the victim
+// off-site immediately after authentication (CWE-601). The fix: the
+// safeFromUrl seam (src/lib/validation.ts) admits site-local targets
+// only (a leading "/" that is not protocol-relative "//").
+//
+// Budget note: this describe declares its own X-Forwarded-For header, so
+// its login attempt lands in a DEDICATED rate-limit bucket — the file's
+// shared 9/10 budget is untouched.
+// -------------------------------------------------------------------------
+test.describe("from_url open-redirect guard (session 58, S58-C / A-M-3)", () => {
+  test.use({ extraHTTPHeaders: { "X-Forwarded-For": "198.51.100.58" } });
+
+  test("an external from_url NEVER leaves the app after sign-in", async ({ page }) => {
+    // Block any request to the attacker ORIGIN (the exact-URL pattern — a
+    // regex would also match the /login?from_url=… query string itself)
+    // so a pre-fix hard navigation fails FAST instead of hanging the test
+    // on a network round-trip.
+    let leftTheApp = false;
+    await page.route("https://attacker.example/**", (route) => {
+      leftTheApp = true;
+      void route.abort();
+    });
+
+    await page.goto("/login?from_url=https://attacker.example");
+    await page.getByLabel("Email").fill("demo@digma.app");
+    await page.getByLabel("Password").fill("Digma1234!");
+    await page.getByRole("button", { name: "Sign in" }).click();
+
+    // THE RED PIN: pre-fix the router hard-navigated to the attacker
+    // origin right after the session opened. Post-fix the guard falls
+    // back to the app root — the workspace greeting renders.
+    await expect(page).toHaveURL(/localhost:3100\/$/, { timeout: 15_000 });
+    await expect(
+      page.getByRole("heading", { level: 1 }).filter({ hasText: /Good (morning|afternoon|evening)/ })
+    ).toBeVisible();
+    expect(leftTheApp).toBe(false);
+  });
+
+  test("a site-local from_url still round-trips after sign-in", async ({ page }) => {
+    // The legitimate contract preserved: /login?from_url=/Teams lands on
+    // /Teams (the session-expiry bounce's destination).
+    await page.goto("/login?from_url=/Teams");
+    await page.getByLabel("Email").fill("demo@digma.app");
+    await page.getByLabel("Password").fill("Digma1234!");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/Teams$/, { timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Teams" })).toBeVisible();
+  });
+});

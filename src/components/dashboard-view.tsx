@@ -202,7 +202,15 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       key={project.id}
                       project={project}
                       onRenamed={() => refresh()}
-                      onDeleted={(id) => setProjects((prev) => prev.filter((p) => p.id !== id))}
+                      onDeleted={(id) => {
+                        // Session 58 (S58-F — the sixth audit's A-L-3): the
+                        // stats refresh beside the list filter — the hero's
+                        // counts previously kept the pre-delete values until
+                        // the next navigation (the create path already
+                        // refreshed).
+                        setProjects((prev) => prev.filter((p) => p.id !== id));
+                        void refresh();
+                      }}
                     />
                   ))}
                 </div>
@@ -304,7 +312,15 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       key={project.id}
                       project={project}
                       onRenamed={() => refresh()}
-                      onDeleted={(id) => setProjects((prev) => prev.filter((p) => p.id !== id))}
+                      onDeleted={(id) => {
+                        // Session 58 (S58-F — the sixth audit's A-L-3): the
+                        // stats refresh beside the list filter — the hero's
+                        // counts previously kept the pre-delete values until
+                        // the next navigation (the create path already
+                        // refreshed).
+                        setProjects((prev) => prev.filter((p) => p.id !== id));
+                        void refresh();
+                      }}
                     />
                   ))}
                 </div>

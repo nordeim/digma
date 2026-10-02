@@ -256,7 +256,21 @@ export function RecentView({ user }: { user: HeaderUser }) {
   const params = useSearchParams();
   const [projects, setProjects] = React.useState<ProjectDTO[]>([]);
   const [loading, setLoading] = React.useState(true);
+  // Session 58 (S58-D — the sixth audit's A-M-4): the search seeds from the
+  // ?search param and RE-DERIVES on same-route param changes through the
+  // render-time compare-and-adjust pattern (the S53-A GuardedNumberInput
+  // family — no effect). Pre-fix the initializer-only state made the
+  // app-header's search a visible no-op when the user was already on
+  // /Recent: the URL updated but the filter (and the page's own search
+  // box) never changed. The SORT deliberately stays fresh-load-only — the
+  // RA-45 "resets on every fresh load" contract; a param change is not a
+  // fresh load.
+  const [paramsKey, setParamsKey] = React.useState(params.toString());
   const [search, setSearch] = React.useState(params.get("search") ?? "");
+  if (params.toString() !== paramsKey) {
+    setParamsKey(params.toString());
+    setSearch(params.get("search") ?? "");
+  }
   const [sort, setSort] = React.useState<SortKey>("last_accessed");
   const [view, setView] = React.useState<"grid" | "list">("grid");
 
@@ -383,7 +397,9 @@ export function RecentView({ user }: { user: HeaderUser }) {
                     <ProjectCard
                       key={project.id}
                       project={project}
-                      onRenamed={() => setProjects((prev) => prev.map((p) => (p.id === project.id ? project : p)))}
+                      onRenamed={(updated) =>
+                        setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+                      }
                       onDeleted={(id) => setProjects((prev) => prev.filter((p) => p.id !== id))}
                     />
                   ))}

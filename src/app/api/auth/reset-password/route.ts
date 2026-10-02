@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
@@ -18,7 +18,13 @@ const INVALID_TOKEN_MESSAGE = "Invalid or expired reset token";
 export async function POST(request: NextRequest) {
   const limit = authRateLimit(clientIpOf(request.headers));
   if (!limit.allowed) {
-    return fail("RATE_LIMITED", "Too many attempts. Try again later.", 429);
+    // Session 58 (S58-F — the sixth audit's B-L-2): the Retry-After header
+    // the five sibling auth routes already carry — the raw-envelope pattern
+    // (the documented limiter contract: "429 RATE_LIMITED + Retry-After").
+    return NextResponse.json(
+      { ok: false as const, error: { code: "RATE_LIMITED", message: "Too many attempts. Try again later." } },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
   }
 
   const body = await request.json().catch(() => null);

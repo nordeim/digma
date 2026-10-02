@@ -382,7 +382,17 @@ export function ProjectCard({
           <h3 className="flex-1 truncate pr-2 text-sm font-semibold leading-tight text-gray-800">
             {project.name}
           </h3>
-          <div onClick={(event) => event.stopPropagation()}>
+          {/* Session 58 (S58-B — the sixth audit's A-M-2): the ellipsis
+              wrapper stops keydown as well as click — the file's own
+              convention (the rename row + the delete dialog). Without the
+              keydown stop, Enter/Space on the Radix trigger (whose handlers
+              never stopPropagation) bubbled to the card root's onKeyDown,
+              navigating to the editor and unmounting the menu — keyboard
+              users could not Rename/Delete from a grid card. */}
+          <div
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

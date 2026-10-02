@@ -103,3 +103,21 @@ export function resetTokenAlive(
   if (!Number.isFinite(expiry)) return false;
   return expiry > now;
 }
+
+// Session 58 (S58-C — the sixth audit's A-M-3): the login's ?from_url
+// target must be SITE-LOCAL. The raw param was previously pushed verbatim
+// into router.push after sign-in/verify — Next 16's router hard-navigates
+// external URLs (isExternalURL -> location.assign), so a crafted
+// /login?from_url=https://attacker.example sent the victim off-site
+// immediately after authentication (CWE-601). The guard: a leading "/"
+// that is NOT protocol-relative "//" (the browser parses //host as a
+// scheme-relative origin); backslashes are rejected the same way (some
+// browsers normalize them); everything else falls back to the app root.
+export function safeFromUrl(raw: string | null | undefined): string {
+  if (typeof raw !== "string") return "/";
+  const value = raw.trim();
+  if (value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\")) {
+    return value;
+  }
+  return "/";
+}

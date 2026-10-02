@@ -91,6 +91,24 @@ S67 = {
 }
 
 
+# Session 58 (the 34th audit's evidence set): the reference's standing
+# failure datums (R3 mobile nav class A, the mobile editor header clipping,
+# the desktop editor + dashboard baselines) + the clone's mobile-nav fix
+# evidence + the S58-build present overlay + baseline + the S58-E
+# multi-line-present fix evidence.
+S68 = {
+    "ref-00-desktop-dashboard-1440": (1440, 900),
+    "ref-01-mobile-dashboard-390": (390, 844),
+    "ref-02-mobile-editor-header-390": (390, 844),
+    "ref-03-desktop-editor-1440": (1440, 900),
+    "clone-01-mobile-nav-390": (390, 844),
+    "clone-04-mobile-nav-open-390": (390, 844),
+    "clone-05-present-desktop": (1440, 900),
+    "clone-06-editor-baseline-desktop": (1440, 900),
+    "clone-07-present-multiline-desktop": (1440, 900),
+}
+
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -101,6 +119,8 @@ def png_size(path: Path):
 
 
 def expected_for(name: str):
+    if name.startswith("ref-audit-s68/"):
+        return S68.get(Path(name).stem)
     if name.startswith("ref-audit-s67/"):
         return S67.get(Path(name).stem)
     if name.startswith("ref-audit-s66/"):
@@ -127,6 +147,8 @@ def main():
         + [p for p in (ROOT / "ref-audit-s64").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s65").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s66").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s67").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s68").glob("*.png")]
     )
     for p in shots:
         rel = str(p.relative_to(ROOT))

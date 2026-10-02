@@ -190,13 +190,21 @@ function TeamCard({
   onMemberAdded: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  // Session 58 (S58-F — the sixth audit's A-L-1): the in-flight guard the
+  // project-card delete dialogs already carry (disabled={deleting}) — a
+  // double-click previously fired two DELETEs, the loser 404ing into a
+  // spurious destructive toast after a successful delete.
+  const [deleting, setDeleting] = React.useState(false);
 
   async function deleteTeam() {
+    if (deleting) return;
+    setDeleting(true);
     const data = await call<{ deleted: boolean }>(`/api/teams/${team.id}`, { method: "DELETE" });
     if (data) {
       onDeleted(team.id);
       toast.success("Team deleted", team.name);
     }
+    setDeleting(false);
   }
 
   const shown = team.members.slice(0, 5);
@@ -225,7 +233,7 @@ function TeamCard({
         {confirmDelete ? (
           <div className="flex items-center gap-2 text-xs">
             <span className="text-gray-500">Delete team?</span>
-            <Button variant="destructive" size="sm" onClick={deleteTeam}>
+            <Button variant="destructive" size="sm" disabled={deleting} onClick={deleteTeam}>
               Yes, Delete
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
