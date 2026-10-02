@@ -346,3 +346,21 @@ Work Log:
 
 Stage Summary:
 - Session 54 (the 30th parity audit) delivered: the SVG export format (the format menu + the downloadSvg vector seam + the shared triggerBlobDownload anchor) + the SheetDescription completeness pass on the three mobile Sheets; gate green at 180 unit / 56 smoke / 175 e2e; docs at PAD v1.33.0 / digma_SKILL v1.32.0 (lesson F41 — the exact:true renamed-control pin rule + the self-describing artifact rule); the reference audit found no reference-side gaps (the 30th); the second Mode C code audit opened with zero new findings above Low; the clone's mobile nav green the 30th consecutive session
+
+---
+Task ID: session-55
+Agent: main agent (Super Z)
+Task: The operator's session-67/68 directive — the 31st parity audit + the TDD remediation of the deferred backlog findings (F-3 + F-4 edge 2)
+
+Work Log:
+- Fresh clone (the sandbox reset); the parent-shell exported out-of-repo DATABASE_URL trap neutralized at the source (.env.stale-trap-disabled) + the unset discipline on every server/db command; bun install; .env from .env.example with DATABASE_URL="file:../db/custom.db"; db/ at the repo root; prisma generate + db push + seed (the pristine contract); the [db] anchor line verified at every server start.
+- The mandated docs re-internalized (AGENTS, CLAUDE, README, PAD v1.33.0, digma_SKILL v1.32.0, session_67/68, remediation-plan-session54, the worklog tail) and validated against the codebase — the full baseline gate re-proven green BEFORE any change: lint, typecheck, 180/180 unit, build 23 routes, 56/56 smoke, 175/175 e2e.
+- 31st live reference audit (agent-browser, 1440x900 + 390x844): no drift — R3 mobile nav failure class A the 31st (nav display:none, links 0x0, no hamburger, the dead 36px bell; evidence ref-audit-s65/ref-01); the Create-Team dead chrome the 31st (2 clicks, 0 dialogs); Share L385-R458 / Present L466-R551 clipping at 390 (ref-02); the chip-bar datum; zero kbd; Quick Stats 1/0/1/Pro; Recent "Last Opened"; the board at 9 layers "Test Project One"; the greeting with the populated name (the morning bucket — time-of-day, not drift).
+- The clone's mobile nav verified live end-to-end at 390x844 the 31st consecutive session: the 44x44 hamburger at [16,10] with the aria contract, the Sheet dialog + scroll lock + focus trap + 44px links, Escape close with focus return + lock release, navigate-and-dismiss (the exact-match pill), the 768 boundary — all green; the Tailwind v4 failure class A NOT present.
+- Third Mode C code audit of the session-54 delivery (the code-review-checklist scan): clean — 0 Critical / 0 High / 0 Medium / 0 new Low; the downloadSvg seam, the triggerBlobDownload single-source, the format menu, and the three SheetDescription sites all verified.
+- TDD: unit RED 5/5 at the absent seams (tests/present-overlay.test.ts + tests/sheet-lifecycle.test.ts) → the two seams (the PresentOverlay useLayoutEffect measure-before-paint; the two Sheets' matchMedia lg-crossing close listeners) → unit GREEN 185 = 180 + 5; e2e RED 2/2 honestly reproduced against the pre-fix build (the dialog-still-mounted assertion) → rebuild → e2e GREEN 177 = 175 + 2; full gate green with zero regressions.
+- Live verification + screenshots: both Sheets close on the live 390-to-1280 crossing (lock release + the panel the surface); the Present overlay fitted at scale(0.39); the standard 32 re-captured + the ref-audit-s65 evidence set — 47/47 dimension-checked, key shots VLM-verified; lesson F42 distilled (the accessible-name no-separator trap + the evidence-shot state-verification rule); the DB re-seeded after the capture session.
+- Docs aligned: PAD v1.34.0, digma_SKILL v1.33.0 (F42), AGENTS/CLAUDE/README counts + rows, remediation-plan-session55, session_69.md, this entry; .env.example verified unchanged (no new env vars).
+
+Stage Summary:
+- Session 55 (the 31st parity audit) delivered: the PresentOverlay measure-before-paint seam (S55-A, F-3) + the mobile Sheets' lg-crossing close (S55-B, F-4 edge 2) — the actionable backlog is now CLEAR (only Info-level notes remain: F-6, F-7; F-8 verified resolved; F-4 edge 1 re-deferred with the documented rationale). Gate: 185 unit / 56 smoke / 177 e2e / build 23 routes. Reference: no drift the 31st. Clone mobile nav: green the 31st.

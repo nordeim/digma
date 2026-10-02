@@ -576,6 +576,75 @@ test.describe("the lg boundary — desktop keeps the panel, never the chip (1280
 // and the name-sort discriminator — a leaked project breaks them).
 // This afterAll deletes EVERY fixture-name project, authenticated via
 // the same storageState the setup project wrote.
+
+// Session 55 (S55-B — the session-53 audit's deferred F-4, edge 2):
+// the Sheets' portals render at document.body, so the lg:hidden CHIP
+// vanishes at the 1024px boundary but an OPEN Sheet used to survive
+// the crossing — floating over the desktop editor where the panel is
+// the sanctioned surface. Each Sheet now closes on the crossing
+// (the matchMedia lg listener, the app-header bell's pattern). The
+// two pins extend the "at lg the chip is ABSENT" contract to the
+// OPEN sheet: an open dialog unmounts when the viewport grows.
+test.describe("the mobile Sheets close on the lg crossing (session 55, S55-B / F-4 edge 2)", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test("an OPEN element Sheet closes when the viewport crosses to the desktop surface", async ({
+    page,
+  }) => {
+    const fixture = await openFixtureEditor(page);
+    try {
+      // Select the headline text -> the Edit-properties chip -> open.
+      await page.getByText("Fixture headline").first().click();
+      const chip = page.getByRole("button", { name: "Edit properties" });
+      await expect(chip).toBeVisible();
+      await chip.click();
+      const sheet = page.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+      await expect(sheet).toHaveAccessibleName(/edit properties/i);
+      // The Sheet carries the shared TEXT section (the selection is
+      // the headline text) — the mobile surface is live.
+      await expect(sheet.getByLabel("Text content")).toBeVisible();
+
+      // Cross to the desktop surface: the dialog must UNMOUNT (the
+      // portal no longer floats over the panel) and the desktop
+      // panel's TEXT section is the surface.
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Edit properties" })).toHaveCount(0);
+      await expect(page.getByLabel("Text content")).toBeVisible();
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
+
+  test("an OPEN canvas Sheet closes when the viewport crosses to the desktop surface", async ({
+    page,
+  }) => {
+    const fixture = await openFixtureEditor(page);
+    try {
+      // Nothing selected (a fresh fixture editor) -> the
+      // Edit-canvas-properties chip -> open.
+      const chip = page.getByRole("button", { name: "Edit canvas properties" });
+      await expect(chip).toBeVisible();
+      await chip.click();
+      const sheet = page.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+      await expect(sheet).toHaveAccessibleName(/canvas properties/i);
+      // The Sheet carries the shared Background color section.
+      await expect(sheet.getByRole("region", { name: "Background color" })).toBeVisible();
+
+      // Cross to the desktop surface: the dialog unmounts and the
+      // panel's Canvas Properties branch is the surface.
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Edit canvas properties" })).toHaveCount(0);
+      await expect(page.getByRole("region", { name: "Background color" })).toBeVisible();
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
+});
+
 test.afterAll(async () => {
   const ctx = await request.newContext({
     storageState: "tests/e2e/.auth/user.json",

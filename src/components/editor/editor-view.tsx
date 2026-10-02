@@ -317,7 +317,17 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
   const exitRef = React.useRef<HTMLButtonElement>(null);
   const [scale, setScale] = React.useState(1);
 
-  React.useEffect(() => {
+  // Session 55 (S55-A — the session-53 audit's deferred F-3): the fit
+  // measures BEFORE paint. useLayoutEffect is React's sanctioned
+  // measure-before-paint hook — the layout-phase setScale re-renders
+  // synchronously before the browser paints, so the FIRST painted
+  // frame carries the fitted scale. (The passive effect it replaces
+  // committed a second render after mount and could flash one
+  // full-screen frame at scale(1) before the viewport fit landed.)
+  // The resize subscription follows the measurement into the same
+  // block — registration timing is inert; the setState-before-paint
+  // is the contract.
+  React.useLayoutEffect(() => {
     function compute() {
       if (!canvasRef.current) return;
       const { width, height } = canvasRef.current.getBoundingClientRect();
@@ -511,6 +521,24 @@ function MobilePropertiesEditor() {
     if (!hasSelection) setOpen(false);
   }
 
+  // Session 55 (S55-B — the session-53 audit's deferred F-4, edge 2):
+  // the Sheet's PORTAL renders at document.body, so the lg:hidden chip
+  // vanishes at the 1024px boundary but an OPEN Sheet would survive
+  // the crossing — floating over the desktop editor where the desktop
+  // properties panel is the sanctioned surface. Close on the crossing
+  // (the app-header bell's outside-pointerdown pattern: setState ONLY
+  // in the event callback, never the effect body; the listener exists
+  // only while open).
+  React.useEffect(() => {
+    if (!open) return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    function toDesktop() {
+      if (mq.matches) setOpen(false);
+    }
+    mq.addEventListener("change", toDesktop);
+    return () => mq.removeEventListener("change", toDesktop);
+  }, [open]);
+
   // Reads the store at CALL time (never a stale closure) and re-derives
   // the same single-selection guard — the same updateElements path
   // the desktop panel uses, so autosave, undo/redo, and the Unsaved
@@ -592,6 +620,22 @@ function MobileCanvasProperties() {
     setPrevNoSelection(noSelection);
     if (!noSelection) setOpen(false);
   }
+
+  // Session 55 (S55-B — F-4 edge 2): the canvas Sheet holds the same
+  // lg-crossing contract — the portal outlives the lg:hidden chip at
+  // the boundary, so an OPEN Sheet closes when the viewport reaches
+  // the desktop surface where the panel's Canvas Properties branch is
+  // the content (the app-header bell's listener pattern, registered
+  // only while open).
+  React.useEffect(() => {
+    if (!open) return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    function toDesktop() {
+      if (mq.matches) setOpen(false);
+    }
+    mq.addEventListener("change", toDesktop);
+    return () => mq.removeEventListener("change", toDesktop);
+  }, [open]);
 
   // Reads the store at CALL time (never a stale closure) — the same
   // setBackgroundColor action the desktop panel calls.
