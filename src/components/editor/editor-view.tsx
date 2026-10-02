@@ -97,10 +97,24 @@ function useAutosave(): () => void {
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok) return null;
       const id = body.data.project.id as string;
-      useEditorStore.getState().attachProject(id);
-      // Adopt the new id in the URL without a navigation entry (a reload
-      // now opens the real project; the back button still leaves the page).
-      window.history.replaceState(null, "", `/Editor?projectId=${id}`);
+      // Session 57 (S57-B — the fifth Mode C audit's M-2): the adoption
+      // guard. A stale continuation (the user hit Back during this POST
+      // and opened another project) must NOT clobber the newer store
+      // identity (attachProject) or rewrite the CURRENT history entry
+      // (replaceState) — the old unconditional adoption wrote project
+      // X's elements into the freshly created project on the subsequent
+      // PUT (a cross-project duplication). The id is still RETURNED so
+      // the exit PUT persists the untitled content server-side.
+      if (!disposed) {
+        const current = useEditorStore.getState();
+        if (current.projectId === "") {
+          current.attachProject(id);
+          // Adopt the new id in the URL without a navigation entry (a
+          // reload now opens the real project; the back button still
+          // leaves the page).
+          window.history.replaceState(null, "", `/Editor?projectId=${id}`);
+        }
+      }
       return id;
     }
 
@@ -124,6 +138,14 @@ function useAutosave(): () => void {
       // marked it "saved", and the retry early-return swallowed it).
       const capturedElements = store.elements;
       const capturedProjectId = store.projectId;
+      // Session 57 (S57-B — the M-2 family): the body is built from the
+      // CAPTURED state, not a live re-read. The ensureProject await
+      // (Untitled mode) opens a window in which the store can swap to
+      // ANOTHER project (the user exits and opens one) — the live read
+      // then wrote project X's elements into the freshly created project
+      // (the untitled content was silently lost). The flush persists the
+      // state it captured; a newer state re-arms via the reference guard.
+      const capturedBackgroundColor = store.backgroundColor;
       store.setSaving();
       try {
         const projectId = await ensureProject();
@@ -132,7 +154,10 @@ function useAutosave(): () => void {
           if (consecutiveFailures === 1) {
             toast.error("Autosave failed", "The design file could not be created.");
           }
-          useEditorStore.getState().setUnsaved();
+          // Session 57 (S57-B — M-1): the retry-arm is live-instance
+          // only — a disposed instance must not mark the NEXT editor's
+          // just-loaded state unsaved (the spurious-PUT cycle).
+          if (!disposed) useEditorStore.getState().setUnsaved();
           return;
         }
         const response = await fetch(`/api/projects/${projectId}/elements`, {
@@ -144,8 +169,8 @@ function useAutosave(): () => void {
           // fired this PUT, and silently reverted on reload (the store's
           // setBackgroundColor was already wired; the seam was the body).
           body: JSON.stringify({
-            elements: useEditorStore.getState().elements,
-            backgroundColor: useEditorStore.getState().backgroundColor,
+            elements: capturedElements,
+            backgroundColor: capturedBackgroundColor,
           }),
         });
         const body = await response.json().catch(() => null);
@@ -154,10 +179,18 @@ function useAutosave(): () => void {
           if (consecutiveFailures === 1) {
             toast.error("Autosave failed", body?.error?.message ?? "Your changes are not saved yet.");
           }
-          useEditorStore.getState().setUnsaved();
+          // Session 57 (S57-B — M-1): live-instance retry only (the
+          // toast stays honest — the toast system is global).
+          if (!disposed) useEditorStore.getState().setUnsaved();
           return;
         }
         consecutiveFailures = 0;
+        // Session 57 (S57-B — M-1): a disposed instance performs NO
+        // further store mutation — the success handling below (the
+        // reference guard's setUnsaved, the gesture deferral's
+        // setUnsaved, markSaved) must never land over the NEXT editor's
+        // just-loaded state.
+        if (disposed) return;
         const elements = body.data.elements as ProjectDTO["elements"];
         const now = useEditorStore.getState();
         // A stale response never clobbers newer state. A swapped
@@ -195,7 +228,8 @@ function useAutosave(): () => void {
         if (consecutiveFailures === 1) {
           toast.error("Network error", "Autosave could not reach the server.");
         }
-        useEditorStore.getState().setUnsaved();
+        // Session 57 (S57-B — M-1): live-instance retry only.
+        if (!disposed) useEditorStore.getState().setUnsaved();
       } finally {
         flushing = false;
         // The pending re-run is deliberately NOT disposed-gated: after
@@ -249,8 +283,19 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
       // shortcuts STAND DOWN — no accidental tool switches while reading
       // the help, and Escape stays the dialog's own close (Radix handles
       // it + returns focus to the trigger). The hand-rolled PresentOverlay
-      // carries no data-state and keeps its established behavior.
-      if (document.querySelector('[role="dialog"][data-state="open"]')) return;
+      // carries data-state="open" since session 56 (S56-D) and is covered
+      // by the same selector.
+      // Session 57 (S57-C — the fifth Mode C audit's M-3): the guard also
+      // stands down behind an open MENU — the Download format menu renders
+      // role="menu" with data-state="open" (one role short of the dialog
+      // match the session-56 M-3 fix relied on), so tool keys switched
+      // tools behind the menu, Delete deleted the invisible selection, ?
+      // stacked the shortcuts dialog over it, and Escape double-actioned.
+      if (
+        document.querySelector('[role="dialog"][data-state="open"], [role="menu"][data-state="open"]')
+      ) {
+        return;
+      }
       const store = useEditorStore.getState();
       const meta = event.ctrlKey || event.metaKey;
 

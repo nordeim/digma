@@ -152,6 +152,12 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       past: [],
       future: [],
       saveState: "saved",
+      // Session 57 (S57-A — the fifth Mode C audit's H-1): a gesture whose
+      // pointerdown never got its pointerup/leave pair (an unmount
+      // mid-drag, a pointercancel) must NOT leak into the next editor
+      // session — the autosave machine's gesture-deferral would otherwise
+      // loop forever on the stale snapshot (PUT → setUnsaved → 800ms → …).
+      gestureSnapshot: null,
     }),
 
   attachProject: (id) => set({ projectId: id }),

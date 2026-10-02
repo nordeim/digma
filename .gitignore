@@ -49,3 +49,5 @@ tests/e2e/.auth/
 # playwright
 test-results/
 playwright-report/
+# vitest cache (the JSON reporter scratch)
+.vitest/

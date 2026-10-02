@@ -54,7 +54,16 @@ export function LayersPanel() {
             type="button"
             onClick={() => {
               const store = useEditorStore.getState();
-              if (selectedIds.length === elements.length) {
+              // Session 57 (S57-F / L-1 — the fifth Mode C audit): the flip
+              // condition is visible-elements-aware. selectAll selects the
+              // VISIBLE family only — comparing against elements.length
+              // meant the label could never flip while any layer was
+              // hidden (every click re-ran selectAll, a no-op).
+              const visible = elements.filter((el) => el.visible);
+              const allVisibleSelected =
+                elements.length === 0 ||
+                (visible.length > 0 && visible.every((el) => selectedIds.includes(el.id)));
+              if (allVisibleSelected) {
                 store.deselectAll();
               } else {
                 store.selectAll();
@@ -62,7 +71,13 @@ export function LayersPanel() {
             }}
             className="text-xs text-gray-400 transition-colors hover:text-white"
           >
-            {selectedIds.length === elements.length ? "Deselect All" : "Select All"}
+            {(() => {
+              const visible = elements.filter((el) => el.visible);
+              return elements.length === 0 ||
+                (visible.length > 0 && visible.every((el) => selectedIds.includes(el.id)))
+                ? "Deselect All"
+                : "Select All";
+            })()}
           </button>
         </div>
         <div className="text-xs text-gray-400">
@@ -129,7 +144,12 @@ export function LayersPanel() {
                   aria-label={`Layer ${el.name ?? el.type}`}
                   tabIndex={0}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") onRowClick(el.id, event as unknown as React.MouseEvent);
+                    // Session 57 (S57-F / L-3): the WAI-ARIA button pattern —
+                    // Space activates as well as Enter.
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onRowClick(el.id, event as unknown as React.MouseEvent);
+                    }
                   }}
                 >
                   <Icon className="h-4 w-4 flex-shrink-0" aria-hidden />
@@ -173,7 +193,7 @@ export function LayersPanel() {
                         event.stopPropagation();
                         useEditorStore.getState().toggleVisibility(el.id);
                       }}
-                      className="rounded p-1 opacity-0 transition-colors hover:bg-white/10 group-hover:opacity-100 aria-hidden:focus:opacity-100"
+                      className="rounded p-1 opacity-0 transition-colors hover:bg-white/10 group-hover:opacity-100 focus:opacity-100"
                     >
                       {/* Session-19 (S19-4): lucide-react components, not
                           hand-inlined SVGs — the reference's DOM carries

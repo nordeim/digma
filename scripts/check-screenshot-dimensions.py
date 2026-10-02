@@ -74,6 +74,23 @@ S66 = {
 }
 
 
+
+# Session 57 (the 33rd audit's evidence set): the reference's standing
+# failure datums (R3 mobile nav class A, the mobile editor header clipping,
+# the desktop editor + dashboard baselines) + the clone's mobile-nav fix
+# evidence + the S57-build present overlay + baseline.
+S67 = {
+    "ref-00-desktop-dashboard-1440": (1440, 900),
+    "ref-01-mobile-dashboard-390": (390, 844),
+    "ref-02-mobile-editor-header-390": (390, 844),
+    "ref-03-desktop-editor-1440": (1440, 900),
+    "clone-01-mobile-nav-390": (390, 844),
+    "clone-04-mobile-nav-open-390": (390, 844),
+    "clone-05-present-desktop": (1440, 900),
+    "clone-06-editor-baseline-desktop": (1440, 900),
+}
+
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -84,6 +101,8 @@ def png_size(path: Path):
 
 
 def expected_for(name: str):
+    if name.startswith("ref-audit-s67/"):
+        return S67.get(Path(name).stem)
     if name.startswith("ref-audit-s66/"):
         return S66.get(Path(name).stem)
     if name.startswith("ref-audit-s65/"):

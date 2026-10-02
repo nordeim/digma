@@ -89,15 +89,22 @@ export function AiAssistant() {
         if (operation.patch.width !== undefined && operation.patch.width !== null) patch.width = operation.patch.width;
         if (operation.patch.height !== undefined && operation.patch.height !== null) patch.height = operation.patch.height;
         if (operation.patch.text !== undefined) patch.text = operation.patch.text;
+        // Session 57 (S57-E — the fifth Mode C audit's M-6): the scale no
+        // longer swallows its sibling fields. The old branch ended in
+        // `continue` — any fill/opacity/width/height/text built into the
+        // SAME patch was silently discarded ("make the button red and 25%
+        // bigger" applied only the scale). Both halves now apply, and the
+        // operation counts once (the honest-count doctrine).
+        let did = false;
         if (operation.patch.scale !== undefined) {
           store.scaleElements(targets, operation.patch.scale);
-          applied += 1;
-          continue;
+          did = true;
         }
         if (Object.keys(patch).length > 0) {
           store.updateElements(targets, patch as never);
-          applied += 1;
+          did = true;
         }
+        if (did) applied += 1;
       } else if (operation.op === "delete") {
         // The wall's AI contract (S27-1): locked elements never ride along
         // with an instruction-level delete — the same guard the keyboard

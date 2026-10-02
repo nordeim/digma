@@ -177,6 +177,16 @@ export function Canvas() {
 
   function onPointerMove(event: React.PointerEvent) {
     if (drag.kind === "none") return;
+    // Session 57 (S57-A — the fifth Mode C audit's M-4): the ghost-movement
+    // guard. A hover pointermove carries buttons === 0 — the button was
+    // released (or the pointer stream canceled) without a pointerup/leave
+    // reaching this handler. Routing it to the end path prevents a stuck
+    // drag from mutating elements on plain hover (and ends the leaked
+    // gesture cleanly through the same end/cancel contract).
+    if (event.buttons === 0) {
+      onPointerUp();
+      return;
+    }
     const store = useEditorStore.getState();
 
     if (drag.kind === "pan") {
@@ -321,7 +331,11 @@ export function Canvas() {
   // ---- space-to-pan -------------------------------------------------------
   React.useEffect(() => {
     function down(event: KeyboardEvent) {
-      if (event.code === "Space" && !isTypingTarget(event.target)) {
+      if (
+        event.code === "Space" &&
+        !isTypingTarget(event.target) &&
+        !isSpaceActivationTarget(event.target)
+      ) {
         event.preventDefault();
         setSpaceDown(true);
       }
@@ -356,6 +370,7 @@ export function Canvas() {
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
+      onPointerCancel={onPointerUp}
       role="application"
       aria-label="Design canvas"
     >
@@ -491,6 +506,29 @@ function isTypingTarget(target: EventTarget | null): boolean {
   if (!el) return false;
   const tag = el.tagName?.toLowerCase();
   return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
+}
+
+// Session 57 (S57-D — the fifth Mode C audit's M-5): Space is a standard
+// ACTIVATION key for the interactive family (buttons, links, ARIA
+// widgets). The space-to-pan keydown must not swallow it — with focus on
+// any editor control, Space activates the control instead of engaging
+// the pan (typing targets keep their existing exemption — they type the
+// space). Without this guard the preventDefault() canceled the control's
+// Space activation for EVERY button on the editor page.
+function isSpaceActivationTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName?.toLowerCase();
+  if (tag === "button" || tag === "a" || tag === "input" || tag === "select" || tag === "textarea") {
+    return true;
+  }
+  const role = el.getAttribute?.("role");
+  if (role === "button" || role === "slider" || role === "tab" || role === "menuitem" || role === "option" || role === "checkbox" || role === "radio" || role === "switch") {
+    return true;
+  }
+  // Interactive widgets delegated to an ancestor (a row button inside a
+  // panel, a menu item inside a portal).
+  return !!el.closest?.('[role="button"], [role="slider"], [role="tab"], [role="menuitem"], [role="option"], button, a');
 }
 
 // ---------------------------------------------------------------------------

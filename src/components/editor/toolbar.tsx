@@ -76,7 +76,10 @@ export function Toolbar() {
               >
                 <Icon className="h-4 w-4" aria-hidden />
               </button>
-              {index === 1 && <div className="my-1 h-px w-full bg-[#30363d]" role="separator" aria-hidden />}
+              {/* Session 57 (S57-F / L-5): the duplicate index === 1 divider
+                  is gone — the frame/pen conditions above carry the grouping
+                  alone (the old double divider stacked two 1px separators
+                  at the hand→frame boundary). */}
             </React.Fragment>
           );
         })}

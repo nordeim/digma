@@ -1,14 +1,27 @@
-# Digma — Master Project Architecture Document (PAD) v1.35.0
+# Digma — Master Project Architecture Document (PAD) v1.36.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-10-02 (v1.35.0 — the interaction/persistence integrity pass: the gesture undo direction + the serialized autosave state machine + the present-mode integrity + the render-consistent hit test + the nav drawer's md-crossing close: the thirty-second audit re-verified the reference's standing surfaces (the Create-Team dead chrome 32nd — both buttons still open zero dialogs; R3 mobile nav failure class A the 32nd — nav display:none, links 0×0, no hamburger, only the dead 36px bell, evidence ref-audit-s66/ref-01; the greeting “Good morning, sepnetflix2023 ✨” — the name still populated; Quick Stats 1/0/1/Pro; the Recent sort “Last Opened”; the board still at 9 layers — still “Test Project One”; zero kbd affordances; the mobile editor header still clipping Share/Present at 390 — Share L385–R458, Present L466–R551, evidence ref-audit-s66/ref-02) — no drift; the clone's mobile nav verified live end-to-end at 390×844 the 32nd consecutive session (all green, the Tailwind v4 failure class A NOT present); the FOURTH Mode C code audit run DEEPER — an independent full-file review of the editor's state/persistence/interaction seams found 2 High / 7 Medium / 6 Low / 2 Informational, every finding individually re-verified in source before the plan; the session executed all nine chosen slices S56-A..S56-I via TDD: unit RED 26 new pins → 212 = 185 + 27, e2e RED 10 honestly reproduced against the pre-fix build → 187 = 177 + 10, 56 smoke, build 23 routes, zero regressions; lesson F43 distilled — the agent-browser name locator carries NO /regex/ syntax (the literal-slash form silently matches nothing) + the evidence-shot state check hardened INTO the capture script) **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
+**Last Updated:** 2026-10-02 (v1.36.0 — the editor-integrity hardening pass: the gesture lifecycle (loadProject resets gestureSnapshot + onPointercancel + the buttons-pressed hover guard) + the autosave identity guards (the disposed gates + the ensureProject adoption guard + the captured PUT body) + the menu stand-down + the space-pan exemption + the AI patch scale siblings + the Low a11y batch: the thirty-third audit re-verified the reference's standing surfaces (the Create-Team dead chrome 33rd — both buttons still open zero dialogs; R3 mobile nav failure class A the 33rd — nav display:none, links 0×0, no hamburger, only the dead 36px bell, evidence ref-audit-s67/ref-01; the greeting “Good morning, sepnetflix2023 ✨” — the name still populated; Quick Stats 1/0/1/Pro; the Recent sort “Last Opened” / “1 file found”; the board still at 9 layers — still “Test Project One”; zero kbd affordances; the mobile editor header still clipping Share/Present at 390 — Share L385–R458, Present L466–R551, evidence ref-audit-s67/ref-02) — no drift; the clone’s mobile nav verified live end-to-end at 390×844 the 33rd consecutive session (all green, the Tailwind v4 failure class A NOT present); the FIFTH Mode C code audit — a fresh-eyes independent full-file review of the never-independently-reviewed editor files (layers-panel, toolbar, components-panel, ai-assistant, the shortcuts/AI/present regions of editor-view, a fresh pass over canvas) found 1 High / 6 Medium / 8 Low / 7 Informational, every chosen finding individually re-verified in source or live DOM before the plan; the session executed all six chosen slices S57-A..S57-F via TDD: unit RED 19 new pins → 231 = 212 + 19, e2e RED 5/5 honestly reproduced against the pre-fix build → 192 = 187 + 5, 56 smoke, build 23 routes, zero regressions; lesson F44 distilled — a verification script that needs a live server boots the server INSIDE the same tool call (the sandbox reaps background processes at call boundaries), and a VLM FAIL on an evidence shot is adjudicated by programmatic geometry, never by re-prompting alone) **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
 
 Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+#### Revision Block — v1.36.0 (Tracked Changes)
+
+- `[SR]` **The editor-integrity hardening pass — six slices (S57-A through S57-F) — the fifth Mode C audit's chosen work:**
+  1. **S57-A (H-1 + M-4 — the gesture lifecycle hardening):** `loadProject` resets `gestureSnapshot` (a leaked gesture — an unmount mid-drag or a pointercancel — can no longer cross an editor session boundary, where the autosave machine's gesture-deferral looped forever: PUT → setUnsaved → 800ms → PUT → …, saveState never reaching "saved"); the canvas container wires `onPointerCancel` to the pointer-up end path; `onPointerMove` gains a buttons-pressed guard (a hover move with `buttons === 0` routes to the end path — no ghost movement from a stuck drag).
+  2. **S57-B (M-1 + M-2 — the autosave identity guards):** every response path gains a `disposed` gate — an unmounted instance performs NO store mutation (no spurious unsaved over the next project's just-loaded state, no spurious PUT cycle); `ensureProject` adopts the created id (`attachProject` + the URL `replaceState`) ONLY while live and still Untitled (the stale continuation could clobber project X's store identity + URL and write X's elements into the created project); the PUT body is built from the CAPTURED state — `capturedElements` + `capturedBackgroundColor` at flush start — never a live re-read across the ensureProject await.
+  3. **S57-C (M-3 — the menu stand-down):** the shortcuts guard's selector extends to `[role="menu"][data-state="open"]` — the Download format menu joins the Radix dialogs and the PresentOverlay under the stand-down contract (no tool switches, no Delete, no `?` behind an open menu; no Escape double-action).
+  4. **S57-D (M-5 — the space-pan exemption):** the space-to-pan keydown exempts space-ACTIVATION targets (`isSpaceActivationTarget`: buttons, links, ARIA widgets) — Space activates the focused control instead of being swallowed by the pan's `preventDefault` (which had canceled button activation across the whole editor).
+  5. **S57-E (M-6 — the AI patch scale siblings):** an update op carrying `scale` no longer drops its sibling patch fields (fill/opacity/width/height/text) — the `continue` is gone; both halves apply and the operation counts once (the honest-count doctrine).
+  6. **S57-F (L-1 + L-2 + L-3 + L-5 — the Low a11y batch):** the layers eye button's focus reveal uses the working `focus:opacity-100` variant (the broken `aria-hidden:focus:` string never matched — the button never carries aria-hidden); the Select All / Deselect All flip condition is visible-elements-aware (the label flips with hidden layers; the empty-canvas "Deselect All" reference quirk preserved); the layers row activates on Space as well as Enter; the toolbar's duplicate hand-frame separator is gone.
+- `[T]` Unit +19 pins across six new spec files (`tests/gesture-lifecycle.test.ts` 4, `tests/autosave-identity.test.ts` 5, `tests/menu-standdown.test.ts` 2, `tests/space-pan.test.ts` 2, `tests/ai-patch.test.ts` 2, `tests/layers-a11y.test.ts` 4) → **231 = 212 + 19**; e2e +5 (`tests/e2e/editor-integrity.spec.ts` — the pointercancel recovery, the exit-flight identity, the menu stand-down, the space activation, the select-all flip; RED 5/5 honestly reproduced against the pre-fix build, the exit-flight URL-rewrite live-reproducing the M-2 clobber) → **192 = 187 + 5**; smoke 56; build 23 routes — zero regressions.
+- `[D]` The audit's deferred set documented with rationale in `docs/remediation-plan-session57.md` (pointer capture for move/draw/marquee, zoom-to-cursor, the AI chat's aria-live, the loading reset, the applyOperations stale snapshot, the layers-row ARIA nesting, the informational set).
+- `[L]` Lesson F44 distilled (see digma_SKILL §12): the single-call server discipline + the numeric-geometry VLM adjudication rule.
 
 #### Revision Block — v1.35.0 (Tracked Changes)
 
@@ -1075,7 +1088,13 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — render-consistent hit test (S56-G) | `tests/hit-test.test.ts` | 3 | tests | Vitest |
 | Unit — elements route envelope (S56-H) | `tests/route-envelope.test.ts` | 2 | tests | Vitest |
 | Unit — nav md-crossing + bell Escape (S56-I) | `tests/nav-crossing.test.ts` | 2 | tests | Vitest |
-| **Unit total** | **27 files** | **212** | | Vitest |
+| Unit — gesture lifecycle (S57-A) | `tests/gesture-lifecycle.test.ts` | 4 | tests | Vitest |
+| Unit — autosave identity guards (S57-B) | `tests/autosave-identity.test.ts` | 5 | tests | Vitest |
+| Unit — menu stand-down (S57-C) | `tests/menu-standdown.test.ts` | 2 | tests | Vitest |
+| Unit — space-pan exemption (S57-D) | `tests/space-pan.test.ts` | 2 | tests | Vitest |
+| Unit — AI patch scale siblings (S57-E) | `tests/ai-patch.test.ts` | 2 | tests | Vitest |
+| Unit — Low a11y batch (S57-F) | `tests/layers-a11y.test.ts` | 4 | tests | Vitest |
+| **Unit total** | **33 files** | **231** | | Vitest |
 | E2E — auth journeys + card states | `tests/e2e/auth.spec.ts` | 14 | tests/e2e | Playwright |
 | E2E — reset-password journeys | `tests/e2e/reset-password.spec.ts` | 7 | tests/e2e | Playwright |
 | E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |
@@ -1091,7 +1110,8 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | E2E — PNG export round-trips | `tests/e2e/export-png.spec.ts` | 6 | tests/e2e | Playwright |
 | E2E — gesture undo (S56-A) | `tests/e2e/gesture-undo.spec.ts` | 2 | tests/e2e | Playwright |
 | E2E — autosave race (S56-B) | `tests/e2e/autosave-race.spec.ts` | 2 | tests/e2e | Playwright |
-| **E2E total** | **15 files** | **187** | | Playwright |
+| E2E — editor integrity (S57) | `tests/e2e/editor-integrity.spec.ts` | 5 | tests/e2e | Playwright |
+| **E2E total** | **16 files** | **192** | | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 56 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns
