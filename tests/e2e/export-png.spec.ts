@@ -1,15 +1,21 @@
 import { expect, request, test } from "@playwright/test";
 import * as fs from "node:fs";
 
-// THE canvas PNG export suite (session 51, S51-2 — a pure clone superset;
+// THE canvas export suite (session 51, S51-2 — a pure clone superset;
 // the reference has no export anywhere, Present is its only output
-// surface). The contract under test: a "Download PNG" chip in the zoom
-// cluster (the Keyboard chip's S49-2 sibling convention — NOT in the
-// header, where it would break the pinned tablet single-row geometry)
-// that serializes the 1000×700 board through the pure seam and produces
-// a real PNG download: the Playwright download event fires, the
-// suggested filename ends .png, the file starts with the PNG magic
-// bytes, and the IHDR carries the 2× raster dimensions (2000×1400).
+// surface; session 54, S54-A added the SVG twin). The contract under
+// test: a "Download" chip in the zoom cluster (the Keyboard chip's
+// S49-2 sibling convention — NOT in the header, where it would break
+// the pinned tablet single-row geometry) that opens a FORMAT MENU with
+// two items: "Download PNG" (the session-51 2× raster path — the
+// Playwright download event fires, the suggested filename ends .png,
+// the file starts with the PNG magic bytes, and the IHDR carries the
+// 2000×1400 raster dimensions) and "Download SVG" (the serializer's
+// own document — the TRUE vector artifact: the .svg suggested
+// filename, the `<?xml`/`<svg` scaffold, the 1000×700 viewBox, and
+// the background fill; no rasterization, no webfont fidelity limit).
+// The trigger's label is honestly "Download" (F39 — the chip opens a
+// menu of formats; a label naming one format would oversell).
 //
 // The F35 lesson applies to the trigger: reachability is pinned as
 // GEOMETRY (the bounding box inside the viewport) at 390×844, and the
@@ -93,13 +99,48 @@ async function readPng(download: import("@playwright/test").Download): Promise<B
   return buf;
 }
 
-test.describe("canvas PNG export — desktop (1280×800)", () => {
+/** Read + validate the downloaded SVG: the scaffold + the board + paint. */
+async function readSvg(download: import("@playwright/test").Download): Promise<string> {
+  const path = await download.path();
+  expect(path, "the download must land on disk").toBeTruthy();
+  const svg = fs.readFileSync(path!, "utf8");
+  expect(svg.length, "the SVG must not be empty").toBeGreaterThan(100);
+  // The document scaffold — the serializer's own output, verbatim.
+  expect(svg.startsWith("<?xml"), "the SVG document opens with the XML declaration").toBe(true);
+  expect(svg).toContain("<svg");
+  // The 1000×700 board contract — the vector format carries the TRUE
+  // dimensions (no 2× raster scale).
+  expect(svg).toContain('width="1000"');
+  expect(svg).toContain('height="700"');
+  expect(svg).toContain('viewBox="0 0 1000 700"');
+  // The fixture's paint actually serialized (the pure seam's output —
+  // the same mapping rules the PNG raster consumes).
+  expect(svg).toContain("#3B82F6");
+  expect(svg).toContain("Fixture headline");
+  return svg;
+}
+
+/** Open the format menu from the Download trigger; returns the item locator. */
+async function openExportMenu(page: import("@playwright/test").Page, item: "Download PNG" | "Download SVG") {
+  // exact: true — the honest-label pin (F39): the trigger's accessible
+  // name is EXACTLY "Download" (it opens a menu of formats). Without
+  // the exact match, the locator substring-hits the pre-fix
+  // "Download PNG" trigger and the label contract goes unpinned.
+  await page.getByRole("button", { name: "Download", exact: true }).click();
+  const menuItem = page.getByRole("menuitem", { name: new RegExp(`^${item}`) });
+  await expect(menuItem).toBeVisible();
+  return menuItem;
+}
+
+test.describe("canvas export — desktop (1280×800)", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("the Download PNG chip renders in the zoom cluster beside the Keyboard chip", async ({ page }) => {
+  test("the Download chip renders in the zoom cluster beside the Keyboard chip, honestly labeled", async ({ page }) => {
     const fixture = await openFixtureEditor(page);
     try {
-      const chip = page.getByRole("button", { name: "Download PNG" });
+      // The honest label (F39): the chip opens a MENU of formats —
+      // "Download", never a single format's name.
+      const chip = page.getByRole("button", { name: "Download", exact: true });
       await expect(chip).toBeVisible();
       // The cluster guard: the reference-measured zoom trio keeps its own
       // inner wrapper (the parity pin's DOM boundary) — the Download chip
@@ -123,13 +164,16 @@ test.describe("canvas PNG export — desktop (1280×800)", () => {
     }
   });
 
-  test("clicking the chip produces a 2000×1400 PNG download (magic bytes + IHDR)", async ({ page }) => {
+  test("the menu offers BOTH formats and the PNG item produces a 2000×1400 PNG download", async ({ page }) => {
     const fixture = await openFixtureEditor(page);
     try {
-      const chip = page.getByRole("button", { name: "Download PNG" });
+      const pngItem = await openExportMenu(page, "Download PNG");
+      // Both formats live in the menu — the SVG twin is a first-class
+      // item, not a hidden path.
+      await expect(page.getByRole("menuitem", { name: /^Download SVG/ })).toBeVisible();
       const [download] = await Promise.all([
         page.waitForEvent("download"),
-        chip.click(),
+        pngItem.click(),
       ]);
       expect(download.suggestedFilename()).toBe(`${FIXTURE_NAME}.png`);
       await readPng(download);
@@ -138,29 +182,52 @@ test.describe("canvas PNG export — desktop (1280×800)", () => {
     }
   });
 
-  test("the success toast confirms the export", async ({ page }) => {
+  test("the SVG item produces the .svg vector document (scaffold + viewBox + paint)", async ({ page }) => {
     const fixture = await openFixtureEditor(page);
     try {
-      const chip = page.getByRole("button", { name: "Download PNG" });
+      const svgItem = await openExportMenu(page, "Download SVG");
       const [download] = await Promise.all([
         page.waitForEvent("download"),
-        chip.click(),
+        svgItem.click(),
       ]);
-      await readPng(download);
+      expect(download.suggestedFilename()).toBe(`${FIXTURE_NAME}.svg`);
+      await readSvg(download);
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
+
+  test("the success toasts confirm each export format", async ({ page }) => {
+    const fixture = await openFixtureEditor(page);
+    try {
+      const pngItem = await openExportMenu(page, "Download PNG");
+      const [pngDownload] = await Promise.all([
+        page.waitForEvent("download"),
+        pngItem.click(),
+      ]);
+      await readPng(pngDownload);
       await expect(page.getByText("PNG downloaded")).toBeVisible();
+
+      const svgItem = await openExportMenu(page, "Download SVG");
+      const [svgDownload] = await Promise.all([
+        page.waitForEvent("download"),
+        svgItem.click(),
+      ]);
+      await readSvg(svgDownload);
+      await expect(page.getByText("SVG downloaded")).toBeVisible();
     } finally {
       await deleteFixture(page, fixture.id);
     }
   });
 });
 
-test.describe("canvas PNG export — mobile reachability (390×844)", () => {
+test.describe("canvas export — mobile reachability (390×844)", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test("the Download PNG chip is IN-VIEWPORT and a TAP produces the PNG", async ({ page }) => {
+  test("the Download trigger is IN-VIEWPORT and a TAP produces the PNG", async ({ page }) => {
     const fixture = await openFixtureEditor(page);
     try {
-      const chip = page.getByRole("button", { name: "Download PNG" });
+      const chip = page.getByRole("button", { name: "Download", exact: true });
       // THE F35 GEOMETRY PIN: a control a finger cannot reach is not a
       // control (Playwright's synthetic taps dispatch to off-viewport
       // elements too — reachability is pinned HERE, as the box inside
@@ -172,13 +239,35 @@ test.describe("canvas PNG export — mobile reachability (390×844)", () => {
       expect(box!.y).toBeGreaterThanOrEqual(0);
       expect(box!.y + box!.height).toBeLessThanOrEqual(844);
 
-      // The BEHAVIOR pin: the tap fires the same export round-trip.
+      // The BEHAVIOR pin: the tap opens the menu; the item fires the
+      // same export round-trip.
+      await chip.tap();
+      const pngItem = page.getByRole("menuitem", { name: /^Download PNG/ });
+      await expect(pngItem).toBeVisible();
       const [download] = await Promise.all([
         page.waitForEvent("download"),
-        chip.tap(),
+        pngItem.tap(),
       ]);
       expect(download.suggestedFilename()).toBe(`${FIXTURE_NAME}.png`);
       await readPng(download);
+    } finally {
+      await deleteFixture(page, fixture.id);
+    }
+  });
+
+  test("the SVG download round-trips at mobile too", async ({ page }) => {
+    const fixture = await openFixtureEditor(page);
+    try {
+      const chip = page.getByRole("button", { name: "Download", exact: true });
+      await chip.tap();
+      const svgItem = page.getByRole("menuitem", { name: /^Download SVG/ });
+      await expect(svgItem).toBeVisible();
+      const [download] = await Promise.all([
+        page.waitForEvent("download"),
+        svgItem.tap(),
+      ]);
+      expect(download.suggestedFilename()).toBe(`${FIXTURE_NAME}.svg`);
+      await readSvg(download);
     } finally {
       await deleteFixture(page, fixture.id);
     }

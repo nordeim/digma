@@ -7,7 +7,7 @@ import { Bell, FileText, House, Menu, Search, User, Users, X } from "lucide-reac
 
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/logo";
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "@/hooks/use-toast";
 
 export type HeaderUser = {
@@ -70,6 +70,14 @@ function MobileNav() {
             <LogoMark stretch className="h-8 w-8" />
             <SheetTitle className="text-xl font-bold text-gray-900">Digma</SheetTitle>
           </div>
+          {/* Session 54 (S54-B — the session-53 audit's deferred F-5): the
+              drawer's PURPOSE for screen readers, wired by Radix into the
+              dialog's aria-describedby (the vendored SheetDescription that no
+              consumer used). Visually sr-only — the drawer's chrome is
+              pixel-identical. */}
+          <SheetDescription className="sr-only">
+            Navigate between Digma's main pages.
+          </SheetDescription>
         </SheetHeader>
         <nav aria-label="Mobile" className="flex flex-col gap-1 p-3">
           {NAV_LINKS.map((link) => {

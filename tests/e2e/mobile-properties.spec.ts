@@ -316,6 +316,13 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
       const sheet = page.getByRole("dialog");
       await expect(sheet).toBeVisible();
       await expect(page.locator("body")).toHaveAttribute("data-scroll-locked", "1");
+      // Session 54 (S54-B): the element Sheet announces its purpose —
+      // the aria-describedby resolves to the SheetDescription text.
+      const describedBy = await sheet.getAttribute("aria-describedby");
+      expect(describedBy, "the element Sheet must carry aria-describedby").toBeTruthy();
+      await expect(page.locator(`[id="${describedBy}"]`)).toHaveText(
+        "Edit the selected element's properties.",
+      );
 
       await page.keyboard.press("Escape");
       await expect(sheet).toHaveCount(0);
@@ -500,6 +507,13 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
       const sheet = page.getByRole("dialog");
       await expect(sheet).toBeVisible();
       await expect(page.locator("body")).toHaveAttribute("data-scroll-locked", "1");
+      // Session 54 (S54-B): the canvas Sheet announces its purpose — the
+      // same aria-describedby contract as the element Sheet.
+      const describedBy = await sheet.getAttribute("aria-describedby");
+      expect(describedBy, "the canvas Sheet must carry aria-describedby").toBeTruthy();
+      await expect(page.locator(`[id="${describedBy}"]`)).toHaveText(
+        "Edit the canvas background color.",
+      );
 
       await page.keyboard.press("Escape");
       await expect(sheet).toHaveCount(0);

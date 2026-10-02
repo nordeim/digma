@@ -311,8 +311,15 @@ export async function svgToPngBlob(
   }
 }
 
-/** Trigger the browser download of a PNG Blob. */
-export function downloadPng(blob: Blob, filename: string): void {
+/**
+ * Trigger the browser download of a Blob through the anchor dance
+ * (session 54, S54-A): createObjectURL → a hidden <a download> → click
+ * → remove → a delayed revoke. ONE copy of the mechanics, consumed by
+ * BOTH downloadPng and downloadSvg (the F35e single-source rule — the
+ * 5s revoke grace is the established pattern; an immediate revoke can
+ * cancel a not-yet-started fetch in some engines).
+ */
+function triggerBlobDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -320,8 +327,28 @@ export function downloadPng(blob: Blob, filename: string): void {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  // Give the download a tick to start before revoking (the established
-  // pattern — an immediate revoke can cancel a not-yet-started fetch in
-  // some engines).
   setTimeout(() => URL.revokeObjectURL(url), 5_000);
+}
+
+/** Trigger the browser download of a PNG Blob. */
+export function downloadPng(blob: Blob, filename: string): void {
+  triggerBlobDownload(blob, filename);
+}
+
+/**
+ * Trigger the browser download of the SVG document itself (session 54,
+ * S54-A — the session-65 suggestion #2). The serializer's output IS a
+ * standalone SVG of the 1000×700 board, so the vector format costs a
+ * Blob wrap, not a new serialization seam: no rasterization, no 2×
+ * scale, and no webfont fidelity limit — the document names the font
+ * family and any viewer with the font installed renders it exactly
+ * (the documented PNG limitation does not apply). The XML declaration
+ * is prepended when absent: a saved .svg file carries no HTTP charset
+ * header, so the in-file `encoding="UTF-8"` declaration is what makes
+ * the artifact self-describing (the serializer itself stays pure — its
+ * <img>-rasterization consumers don't need it).
+ */
+export function downloadSvg(svg: string, filename: string): void {
+  const document_ = svg.startsWith("<?xml") ? svg : `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`;
+  triggerBlobDownload(new Blob([document_], { type: "image/svg+xml;charset=utf-8" }), filename);
 }

@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Download, Keyboard, Palette, Play, Redo2, Share2, SlidersHorizontal, Undo2, Users, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, Download, FileCode2, Image as ImageIcon, Keyboard, Palette, Play, Redo2, Share2, SlidersHorizontal, Undo2, Users, ZoomIn, ZoomOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Toolbar } from "./toolbar";
 import { Canvas } from "./canvas";
 import { LayersPanel } from "./layers-panel";
@@ -21,6 +22,7 @@ import {
   EXPORT_BOARD_HEIGHT,
   EXPORT_BOARD_WIDTH,
   downloadPng,
+  downloadSvg,
   elementsToSvg,
   exportFilename,
   svgToPngBlob,
@@ -541,6 +543,13 @@ function MobilePropertiesEditor() {
         >
           <SheetHeader className="border-b border-[#30363d] px-4 py-3">
             <SheetTitle className="text-left text-sm font-medium text-white">Edit properties</SheetTitle>
+            {/* Session 54 (S54-B — the session-53 audit's deferred F-5):
+                the dialog's PURPOSE for screen readers, wired by Radix
+                into the dialog's aria-describedby. Visually sr-only —
+                the Sheet's chrome is pixel-identical. */}
+            <SheetDescription className="sr-only text-left">
+              Edit the selected element's properties.
+            </SheetDescription>
           </SheetHeader>
           <div className="p-4">
             {selectedElement && <PropertiesSections element={selectedElement} update={update} />}
@@ -610,6 +619,11 @@ function MobileCanvasProperties() {
         >
           <SheetHeader className="border-b border-[#30363d] px-4 py-3">
             <SheetTitle className="text-left text-sm font-medium text-white">Canvas properties</SheetTitle>
+            {/* Session 54 (S54-B): the same aria-describedby contract as
+                the element Sheet — the canvas Sheet's purpose. */}
+            <SheetDescription className="sr-only text-left">
+              Edit the canvas background color.
+            </SheetDescription>
           </SheetHeader>
           <div className="p-4">
             <CanvasBackgroundSection backgroundColor={backgroundColor} onChange={update} />
@@ -704,6 +718,22 @@ export function EditorView({ user }: { user: HeaderUser }) {
       toast.success("PNG downloaded", filename);
     } catch {
       toast.error("Export failed", "The canvas could not be exported as PNG.");
+    }
+  }
+
+  // Session 54 (S54-A): the SVG twin — the serializer's own document
+  // downloaded as the vector artifact (no rasterization, no 2× scale,
+  // no webfont fidelity limit — the 1000×700 viewBox is the contract).
+  // The same read-at-call-time + degrade-to-toast discipline.
+  function onDownloadSvg() {
+    try {
+      const store = useEditorStore.getState();
+      const svg = elementsToSvg(store.elements, { backgroundColor: store.backgroundColor });
+      const filename = `${exportFilename(store.projectName || "design")}.svg`;
+      downloadSvg(svg, filename);
+      toast.success("SVG downloaded", filename);
+    } catch {
+      toast.error("Export failed", "The canvas could not be exported as SVG.");
     }
   }
 
@@ -930,15 +960,48 @@ export function EditorView({ user }: { user: HeaderUser }) {
                   viewport (the F37 rule), and the export is a canvas
                   action. The chip chrome is the cluster family
                   (reference-measured 36px, like the Keyboard chip). */}
-              <button
-                type="button"
-                onClick={onDownloadPng}
-                aria-label="Download PNG"
-                title="Download PNG"
-                className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
-              >
-                <Download className="h-4 w-4" aria-hidden />
-              </button>
+              {/* Session 54 (S54-A): the Download chip became a FORMAT
+                  MENU — the session-65 suggestion ("a second download
+                  option would be a menu, not a new seam"). The trigger
+                  keeps the single chip's EXACT chrome and position (the
+                  F38g placement study holds trivially — the footprint
+                  is identical, the trio DOM-boundary guard reads the
+                  pill's parent, and this stays its SIBLING); the honest
+                  label (F39) is "Download" — the chip opens a menu of
+                  formats, and a label naming one format would oversell.
+                  The PNG item keeps the session-51 2× raster path; the
+                  SVG item is the serializer's own document (the TRUE
+                  vector artifact — no rasterization, no webfont
+                  fidelity limit). The vendored DropdownMenu is the
+                  project-card-ellipsis convention. */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  asChild
+                  className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <button type="button" aria-label="Download" title="Download">
+                    <Download className="h-4 w-4" aria-hidden />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44 border-[#30363d] bg-[#161b22] text-gray-200">
+                  <DropdownMenuItem
+                    onSelect={onDownloadPng}
+                    className="gap-2 focus:bg-[#30363d] focus:text-white"
+                  >
+                    <ImageIcon className="h-4 w-4" aria-hidden />
+                    Download PNG
+                    <span className="ml-auto text-xs text-gray-500">2× raster</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={onDownloadSvg}
+                    className="gap-2 focus:bg-[#30363d] focus:text-white"
+                  >
+                    <FileCode2 className="h-4 w-4" aria-hidden />
+                    Download SVG
+                    <span className="ml-auto text-xs text-gray-500">vector</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             {/* Session 50 (S50-2) → session 52 (S52-2): the mobile
                 properties surface — the bottom-right mirror of the zoom

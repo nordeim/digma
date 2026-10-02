@@ -44,6 +44,16 @@ test.describe("mobile navigation (390×844)", () => {
     // see it — assert on the CSS selector instead.
     const triggerById = page.locator('button[aria-controls="mobile-nav-sheet"]');
     await expect(triggerById).toHaveAttribute("aria-expanded", "true");
+    // Session 54 (S54-B — the session-53 audit's deferred F-5): the
+    // drawer announces its PURPOSE. Radix wires the SheetDescription
+    // into the dialog's aria-describedby; the attribute must resolve to
+    // a real element carrying the purpose text (screen readers get the
+    // announcement structurally, not hand-rolled).
+    const describedBy = await dialog.getAttribute("aria-describedby");
+    expect(describedBy, "the drawer must carry aria-describedby").toBeTruthy();
+    await expect(page.locator(`[id="${describedBy}"]`)).toHaveText(
+      "Navigate between Digma's main pages.",
+    );
   });
 
   test("tapping a link navigates AND closes the drawer", async ({ page }) => {
