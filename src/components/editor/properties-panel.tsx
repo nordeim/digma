@@ -1012,7 +1012,13 @@ export function PropertiesPanel() {
             <HexColorRow
               label="Fill Color"
               value={selected[0]?.fill ?? null}
-              onChange={(fill) => fill && update({ fill })}
+              // Session 59 (S59-E — the seventh audit's A-L-3): the value
+              // commits AS-IS — null CLEARS the fill across the selection
+              // (the Stroke row's own contract, the single-selection Solid
+              // tab's too). The old truthiness guard silently dropped the
+              // clear: the field showed the "transparent" placeholder,
+              // then visibly snapped back on the next resync.
+              onChange={(fill) => update({ fill })}
             />
             <HexColorRow label="Stroke" value={selected[0]?.stroke ?? null} onChange={(stroke) => update({ stroke })} />
           </section>

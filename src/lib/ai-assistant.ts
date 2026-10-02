@@ -80,8 +80,13 @@ const SHAPES: Record<string, "rectangle" | "ellipse"> = {
 
 function colorFor(text: string): string | null {
   const lowered = text.toLowerCase();
+  // Session 59 (S59-B — the seventh audit's B-L-1): the \b word boundary,
+  // the SHAPES matcher's own convention two branches below. The plain
+  // substring match made "colored" resolve to RED (its last three
+  // letters) — the panel's first advertised suggestion "Add 3 colored
+  // circles" deterministically created red circles.
   for (const [word, hex] of Object.entries(COLORS)) {
-    if (lowered.includes(word)) return hex;
+    if (new RegExp(`\\b${word}\\b`).test(lowered)) return hex;
   }
   const hexMatch = lowered.match(/#([0-9a-f]{6}|[0-9a-f]{3})\b/);
   return hexMatch ? hexMatch[0] : null;
@@ -264,7 +269,15 @@ export function sanitizeLlmOperations(
         y: clamp(el.y, -50000, 50000, 200),
         width: clamp(el.width, 1, 20000, 120),
         height: clamp(el.height, 0, 20000, 120),
-        fill: typeof el.fill === "string" && /^#[0-9a-fA-F]{3,6}$/.test(el.fill) ? el.fill : null,
+        // Session 59 (S59-C — the seventh audit's B-L-2): the exactly-3-or-6
+        // contract (validation.ts's HEX_COLOR shape, the clampColor
+        // doctrine). The lax {3,6} accepted 4/5-digit hex the browser drops
+        // locally — then the elements PUT's clampColor silently rewrote it
+        // to the #3B82F6 fallback after save.
+        fill:
+          typeof el.fill === "string" && /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$/.test(el.fill)
+            ? el.fill
+            : null,
         text: typeof el.text === "string" ? el.text.slice(0, 500) : null,
         fontSize: clamp(el.fontSize, 1, 200, 16),
         radius: clamp(el.radius, 0, 500, 0),
@@ -281,7 +294,11 @@ export function sanitizeLlmOperations(
       } else {
         const patchRaw = (item as LlmOperation).patch ?? {};
         const patch: Record<string, unknown> = {};
-        if (typeof patchRaw.fill === "string" && /^#[0-9a-fA-F]{3,6}$/.test(patchRaw.fill)) patch.fill = patchRaw.fill;
+        if (
+          typeof patchRaw.fill === "string" &&
+          /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$/.test(patchRaw.fill)
+        )
+          patch.fill = patchRaw.fill;
         if (typeof patchRaw.opacity === "number") patch.opacity = clamp(patchRaw.opacity, 0, 1, 1);
         if (typeof patchRaw.width === "number") patch.width = clamp(patchRaw.width, 1, 20000, 100);
         if (typeof patchRaw.height === "number") patch.height = clamp(patchRaw.height, 0, 20000, 100);

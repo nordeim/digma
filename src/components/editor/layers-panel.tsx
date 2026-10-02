@@ -144,6 +144,16 @@ export function LayersPanel() {
                   aria-label={`Layer ${el.name ?? el.type}`}
                   tabIndex={0}
                   onKeyDown={(event) => {
+                    // Session 59 (S59-A — the seventh audit's B-M-1): the
+                    // nested-control exemption FIRST. Events whose target
+                    // resolves inside a button or input (the rename field,
+                    // the eye/lock/trash trio) return untouched — a Space
+                    // typed in the rename input inserts the character, and
+                    // Enter/Space on a focused action button activates it
+                    // natively. Pre-fix the unconditional branch below
+                    // canceled BOTH (multi-word layer names were untypeable,
+                    // the S57-F keyboard-reachable buttons inoperable).
+                    if ((event.target as HTMLElement).closest("button, input")) return;
                     // Session 57 (S57-F / L-3): the WAI-ARIA button pattern —
                     // Space activates as well as Enter.
                     if (event.key === "Enter" || event.key === " ") {

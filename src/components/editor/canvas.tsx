@@ -343,11 +343,21 @@ export function Canvas() {
     function up(event: KeyboardEvent) {
       if (event.code === "Space") setSpaceDown(false);
     }
+    // Session 59 (S59-F — the seventh audit's A-L-2): a window blur while
+    // Space is held (alt-tab, an OS dialog) means the keyup NEVER arrives
+    // — spaceDown stranded true and the canvas silently locked into pan
+    // mode (left-clicks panned instead of selecting) until the user
+    // happened to tap Space again. The blur reset clears the stranded mode.
+    function onBlur() {
+      setSpaceDown(false);
+    }
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
+    window.addEventListener("blur", onBlur);
     return () => {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", onBlur);
     };
   }, []);
 
@@ -455,8 +465,22 @@ export function Canvas() {
                     el,
                   });
                 }}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
+                // Session 59 (S59-G — the seventh audit's A-L-1): the
+                // handle's move/up wrappers stop propagation — mirroring
+                // the pointerDown seam directly above. With pointer
+                // capture on the handle, every pointermove/up previously
+                // dispatched TWICE (the handle's handler + the bubbled
+                // container copy): benign while the resize patch is
+                // idempotent, but a latent trap for any future
+                // non-idempotent drag logic. One dispatch per event now.
+                onPointerMove={(event) => {
+                  event.stopPropagation();
+                  onPointerMove(event);
+                }}
+                onPointerUp={(event) => {
+                  event.stopPropagation();
+                  onPointerUp();
+                }}
               />
             ))}
           </div>

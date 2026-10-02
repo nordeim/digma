@@ -108,6 +108,23 @@ S68 = {
     "clone-07-present-multiline-desktop": (1440, 900),
 }
 
+# Session 59 (the 35th audit's evidence set): the reference's standing
+# failure datums + the clone's mobile-nav fix evidence + the fitted
+# present overlay + the editor baseline + the S59-B colored-circles
+# default-blue fix evidence.
+S69 = {
+    "ref-00-desktop-dashboard-1440": (1440, 900),
+    "ref-01-mobile-dashboard-390": (390, 844),
+    "ref-02-mobile-editor-390": (390, 844),
+    "ref-03-desktop-recent-1440": (1440, 900),
+    "clone-01-mobile-nav-390": (390, 844),
+    "clone-04-mobile-nav-open-390": (390, 844),
+    "clone-05-present-desktop": (1440, 900),
+    "clone-06-editor-baseline-desktop": (1440, 900),
+    "clone-07-present-multiline-desktop": (1440, 900),
+    "clone-08-ai-colored-circles-default": (1440, 900),
+}
+
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -119,6 +136,8 @@ def png_size(path: Path):
 
 
 def expected_for(name: str):
+    if name.startswith("ref-audit-s69/"):
+        return S69.get(Path(name).stem)
     if name.startswith("ref-audit-s68/"):
         return S68.get(Path(name).stem)
     if name.startswith("ref-audit-s67/"):

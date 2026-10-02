@@ -6,6 +6,7 @@ import { Bot, RotateCcw, Send, WandSparkles } from "lucide-react";
 import { useEditorStore, type EditorSnapshot } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { AiOperation } from "@/lib/ai-assistant";
+import type { DesignElementDTO } from "@/lib/editor";
 
 type ChatMessage = {
   id: string;
@@ -66,19 +67,32 @@ export function AiAssistant() {
     let applied = 0;
     for (const operation of operations) {
       if (operation.op === "add") {
-        store.addElements([
-          {
-            type: operation.element.type,
-            x: operation.element.x,
-            y: operation.element.y,
-            width: operation.element.width,
-            height: operation.element.height,
-            fill: operation.element.fill ?? undefined,
-            text: operation.element.text ?? undefined,
-            fontSize: operation.element.fontSize ?? undefined,
-            radius: operation.element.radius || undefined,
-          },
-        ]);
+        // Session 59 (S59-D — the seventh audit's B-L-3): the partial
+        // carries a key ONLY when its value is defined. The always-present
+        // `?? undefined` keys OVERWROTE defaultElementFor's type defaults
+        // in the {...draft, ...partial} spread — an LLM text-add without
+        // text lost "Type here..." and rendered invisible, and fill:
+        // undefined clobbered the text default #FFFFFF in memory.
+        const partial: Partial<DesignElementDTO> & { type: typeof operation.element.type } = {
+          type: operation.element.type,
+          x: operation.element.x,
+          y: operation.element.y,
+          width: operation.element.width,
+          height: operation.element.height,
+        };
+        if (operation.element.fill !== null && operation.element.fill !== undefined) {
+          partial.fill = operation.element.fill;
+        }
+        if (operation.element.text !== null && operation.element.text !== undefined) {
+          partial.text = operation.element.text;
+        }
+        if (operation.element.fontSize !== null && operation.element.fontSize !== undefined) {
+          partial.fontSize = operation.element.fontSize;
+        }
+        if (operation.element.radius) {
+          partial.radius = operation.element.radius;
+        }
+        store.addElements([partial]);
         applied += 1;
       } else if (operation.op === "update") {
         const targets = operation.ids.filter((id) => store.elements.some((el) => el.id === id));
@@ -170,6 +184,15 @@ export function AiAssistant() {
       const response = await fetch("/api/ai-assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // Session 59 (S59-H — the seventh audit's B-L-4): the abort
+        // timeout. A hung SDK call never rejects (the route's maxDuration
+        // is a serverless hint the self-hosted standalone server doesn't
+        // enforce), so `sending` stranded true — "Working on it…"
+        // forever and every later submit dead-early-returned by the
+        // sending guard. At 30s the signal aborts, the existing catch
+        // degrades to the toast family, and the panel recovers. (Above
+        // the route's own LLM budget, below human patience for a reply.)
+        signal: AbortSignal.timeout(30_000),
         body: JSON.stringify({
           message,
           targetIds: state.selectedIds,
