@@ -30,17 +30,29 @@ export async function POST(request: NextRequest) {
   const description = clampOptionalText(body?.description, 300);
   const color = clampColor(String(body?.color ?? "#8B5CF6"), "#8B5CF6");
 
+  // Session 60 (S60-C — the eighth audit's B-L-1): the inline first-member
+  // invitation validates the email with the SAME contract the members
+  // route enforces. Pre-fix the raw truthy gate wrote
+  // clampOptionalText(memberEmail) with NO format check, so "abc" in the
+  // Create Team dialog silently created a garbage member while the same
+  // input in the Invite Member dialog 400'd with "Enter a valid email
+  // address" — the two invite paths must answer identically.
+  const memberEmail = clampOptionalText(body?.memberEmail, 200);
+  if (memberEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(memberEmail)) {
+    return fail("VALIDATION", "Enter a valid email address", 400);
+  }
+
   const team = await db.team.create({
     data: {
       name,
       description,
       color,
-      ...(body?.memberEmail
+      ...(memberEmail
         ? {
             members: {
               create: {
-                name: memberDisplayFor(String(body.memberEmail)),
-                email: clampOptionalText(body.memberEmail, 200),
+                name: memberDisplayFor(memberEmail),
+                email: memberEmail,
                 role: clampOptionalText(body?.memberRole, 80),
                 avatarColor: "#3B82F6",
               },

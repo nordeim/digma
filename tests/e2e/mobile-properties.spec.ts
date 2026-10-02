@@ -12,7 +12,11 @@ import { expect, request, test } from "@playwright/test";
 // PropertiesSections composition (S52-1) — the SAME type-conditional
 // section stack the desktop panel renders (Position & Size, Corner
 // Radius unless line/ellipse/text, Fill & Stroke unless text, TEXT for
-// text, Transform, Opacity). Session 53 adds the two completion pins:
+// text, Transform, Opacity). Session 60 (S60-H) widened the chip's
+// guard from the single-selection to ANY non-empty selection: a
+// marquee multi-selection now surfaces the SAME chip and the Sheet
+// carries the shared MultiSelectionSection (the deep contract is
+// pinned in session60-fixes.spec.ts). Session 53 adds the two completion pins:
 // the empty-draft regression (S53-A — the Opacity value input's
 // never-commit-0 guard, the trap that VANISHED a mid-edit element) and
 // the canvas-properties counterpart (S53-C — the Edit-canvas-properties
@@ -226,14 +230,18 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
     }
   });
 
-  test("a MARQUEE multi-selection renders NO chip (the single-selection guard)", async ({
+  test("a MARQUEE multi-selection surfaces the chip (the S60-H any-selection contract)", async ({
     page,
   }) => {
     // A marquee over the fixture's button rectangle + its label selects
-    // BOTH (the containment rect fully covers each) — a multi-selection
-    // renders no chip. The drag starts on EMPTY canvas below the
-    // elements (shift-click is NOT a mobile tool: click() modifiers do
-    // not survive the touch pipeline of a hasTouch context).
+    // BOTH (the containment rect fully covers each). Session 60 (S60-H —
+    // the eighth audit's A-7) widened the chip from
+    // selectedIds.length === 1 to ANY non-empty selection — pre-fix a
+    // multi-selection rendered NO properties surface of any kind below
+    // lg (the canvas chip needs === 0), while the desktop panel carried
+    // the multi-selection branch. The drag starts on EMPTY canvas below
+    // the elements (shift-click is NOT a mobile tool: click() modifiers
+    // do not survive the touch pipeline of a hasTouch context).
     const fixture = await openFixtureEditor(page);
     try {
       await page.mouse.move(200, 500);
@@ -242,9 +250,9 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
       await page.mouse.up();
       // The marquee covered exactly the button+label pair (the headline
       // lies outside the rect) — verify the multi-selection took, then
-      // the chip's absence is meaningful (not a vacuous pass).
+      // the chip's presence is meaningful (not a vacuous pass).
       await expect(page.getByText("2 selected", { exact: true })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Edit properties" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Edit properties" })).toBeVisible();
     } finally {
       await deleteFixture(page, fixture.id);
     }

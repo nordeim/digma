@@ -139,9 +139,17 @@ describe("PropertiesSections — the single-source section architecture (session
     expect(viewSource).toMatch(/aria-label="Edit properties"/);
     expect(viewSource).toMatch(/>Edit properties<\/SheetTitle>/);
     // The old text-only guard is gone from the selector + the patcher:
-    // the mobile surface selects/updates ANY single element.
-    const selector = viewSource.match(/const selected\w* = useEditorStore\(\(s\) => \{[\s\S]*?\}\);/);
+    // the mobile surface selects/updates ANY single element — and since
+    // session 60's S60-H, ANY non-empty selection (the FIRST member
+    // drives the identity-stable subscription; the count drives the
+    // single/multi branch of the Sheet body).
+    const editorBlock = viewSource.slice(
+      viewSource.indexOf("function MobilePropertiesEditor"),
+      viewSource.indexOf("function MobileCanvasProperties"),
+    );
+    const selector = editorBlock.match(/const \w+ = useEditorStore\(\(s\) => \{[\s\S]*?\}\);/);
     expect(selector, "the mobile selector exists").toBeTruthy();
     expect(selector![0]).not.toMatch(/=== "text"/);
+    expect(selector![0]).not.toMatch(/length !== 1/);
   });
 });

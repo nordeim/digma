@@ -153,10 +153,20 @@ describe("sanitizeLlmOperations", () => {
     }
   });
 
-  it("returns null when the reply or operations are missing", () => {
+  it("returns null when the reply is missing; a zero-op reply passes through (session 60, S60-E)", () => {
     expect(sanitizeLlmOperations({ operations: [] }, [])).toBeNull();
     expect(sanitizeLlmOperations(null, [])).toBeNull();
-    expect(sanitizeLlmOperations({ reply: "hi" }, [])).toBeNull();
+    // Session 60 (S60-E — the eighth audit's B-L-3): the guard split.
+    // Pre-fix `!reply || operations.length === 0` rejected a well-formed
+    // reply carrying zero operations, so with the LLM enabled any
+    // conversational answer with no operations was thrown away and the
+    // user always saw the canned fallback reply. Now only an
+    // empty/missing reply rejects — the client handles operations: []
+    // safely (applied = 0).
+    expect(sanitizeLlmOperations({ reply: "hi" }, [])).toEqual({
+      reply: "hi",
+      operations: [],
+    });
   });
 
   it("keeps valid update patches and validates fill hexes", () => {

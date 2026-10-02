@@ -12,7 +12,7 @@ import { Toolbar } from "./toolbar";
 import { Canvas } from "./canvas";
 import { LayersPanel } from "./layers-panel";
 import { ComponentsPanel } from "./components-panel";
-import { CanvasBackgroundSection, PropertiesPanel, PropertiesSections } from "./properties-panel";
+import { CanvasBackgroundSection, MultiSelectionSection, PropertiesPanel, PropertiesSections } from "./properties-panel";
 import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
@@ -206,6 +206,20 @@ function useAutosave(): () => void {
           now.setUnsaved();
           return;
         }
+        // Session 60 (S60-A — the eighth audit's A-1): the guard's
+        // background half. setBackgroundColor flips saveState to
+        // "unsaved" WITHOUT touching the elements array reference, so a
+        // Background Color change landing mid-flight passed the elements
+        // compare, markSaved stamped "saved", and the armed retry timer
+        // early-returned on "saved" — the new color was silently never
+        // PUT and reverted on reload while the badge read "Saved". The
+        // same keep-the-newer-state doctrine, closing the body's other
+        // half (the PUT body has carried the captured background since
+        // S57-B; the response-time compare was simply missing).
+        if (now.backgroundColor !== capturedBackgroundColor) {
+          now.setUnsaved();
+          return;
+        }
         // An ACTIVE canvas gesture holds FROZEN element ids in its drag
         // state — adopting the server list now would remap the ids out
         // from under the gesture and it would silently stop moving
@@ -356,6 +370,16 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
         return;
       }
 
+      // Session 60 (S60-B — the eighth audit's A-2): modifier chords
+      // stand down BEFORE the tool dispatch. The meta branches above
+      // intercept the editor's own chord actions (z/y/=/-/0) and return;
+      // every OTHER chord reaching this point is a browser/OS action
+      // (Ctrl+F find, Ctrl+P print, Ctrl+O open, Cmd+V paste…) — pre-fix
+      // they fell through to toolForShortcut(event.key), so the browser
+      // performed its native action AND the editor silently switched to
+      // Frame/Pen/Ellipse/Select behind the user's back. Tool keys are
+      // single-key shortcuts by contract (the toolbar's "(V)" titles).
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       // The tool keys resolve through the SINGLE-SOURCE seam (session 48,
       // S48-1): the toolbar titles advertise "{Tool} ({shortcut})" from the
       // same TOOL_SHORTCUTS map — before this, the hand-rolled switch below
@@ -659,22 +683,34 @@ function MobilePropertiesEditor() {
   // this component re-renders only when the selected element itself
   // changes — EditorView stays free of elements/selection subscriptions
   // (the shell deliberately subscribes only to projectName/saveState/
-  // zoom/past/future). ANY single selection surfaces the chip (session
-  // 52 — the surface carries every section, not just TEXT).
-  const selectedElement = useEditorStore((s) => {
-    if (s.selectedIds.length !== 1) return null;
+  // zoom/past/future). ANY non-empty selection surfaces the chip
+  // (session 52 — the single-selection surface; session 60's S60-H —
+  // the eighth audit's A-7 — widened it: a marquee MULTI-selection on a
+  // phone previously rendered NEITHER bottom-right chip (the canvas chip
+  // needs an EMPTY selection) while the desktop panel carries the
+  // multi-selection Fill/Stroke branch — no properties surface at all).
+  // The selector still returns a STABLE object identity (the store's
+  // immutable updates keep unrelated elements' identity — the FIRST
+  // selected element here), so this component re-renders only when that
+  // element or the selection COUNT changes.
+  const firstSelected = useEditorStore((s) => {
+    if (s.selectedIds.length === 0) return null;
     const el = s.elements.find((e) => e.id === s.selectedIds[0]);
     return el ?? null;
   });
+  const selectedCount = useEditorStore((s) => s.selectedIds.length);
 
   const [open, setOpen] = React.useState(false);
-  const hasSelection = selectedElement !== null;
+  const hasSelection = firstSelected !== null;
+  const single = selectedCount === 1 ? firstSelected : null;
   // The sanctioned render-time compare-and-adjust (React 19's
-  // set-state-in-render form): if the selection stops being a single
-  // element while the Sheet is open (delete/deselect — the modal
-  // scrim makes this rare, but the autosave's id remap and any store
-  // mutation can land between frames), the Sheet closes so a later
-  // re-selection never re-opens it spontaneously.
+  // set-state-in-render form): if the selection EMPTIES while the Sheet
+  // is open (delete/deselect — the modal scrim makes this rare, but the
+  // autosave's id remap and any store mutation can land between frames),
+  // the Sheet closes so a later re-selection never re-opens it
+  // spontaneously. A 1↔N transition KEEPS the Sheet open — the body
+  // re-renders to the matching branch (single sections ↔ the shared
+  // multi-selection section).
   const [prevHasSelection, setPrevHasSelection] = React.useState(hasSelection);
   if (prevHasSelection !== hasSelection) {
     setPrevHasSelection(hasSelection);
@@ -699,16 +735,15 @@ function MobilePropertiesEditor() {
     return () => mq.removeEventListener("change", toDesktop);
   }, [open]);
 
-  // Reads the store at CALL time (never a stale closure) and re-derives
-  // the same single-selection guard — the same updateElements path
-  // the desktop panel uses, so autosave, undo/redo, and the Unsaved
-  // badge all flow unchanged.
+  // Reads the store at CALL time (never a stale closure) — the same
+  // updateElements path the desktop panel uses, applied to EVERY
+  // selected id (the multi-selection contract — a single selection
+  // carries one member, so the single case is unchanged), so autosave,
+  // undo/redo, and the Unsaved badge all flow unchanged.
   const update = React.useCallback((patch: Partial<DesignElementDTO>) => {
     const s = useEditorStore.getState();
-    if (s.selectedIds.length !== 1) return;
-    const el = s.elements.find((e) => e.id === s.selectedIds[0]);
-    if (!el) return;
-    s.updateElements([el.id], patch);
+    if (s.selectedIds.length === 0) return;
+    s.updateElements(s.selectedIds, patch);
   }, []);
 
   if (!hasSelection) return null;
@@ -727,8 +762,12 @@ function MobilePropertiesEditor() {
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="max-h-[80vh] overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white"
+          className="max-h-[80vh] overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white [&>button]:h-11 [&>button]:w-11"
         >
+          {/* Session 60 (S60-F — the eighth audit's A-4): the built-in
+              Close X meets the 44px touch floor — the MobileNav's own fix
+              for the SAME vendored component, applied to both editor
+              Sheets so every Radix Sheet in the app agrees. */}
           <SheetHeader className="border-b border-[#30363d] px-4 py-3">
             <SheetTitle className="text-left text-sm font-medium text-white">Edit properties</SheetTitle>
             {/* Session 54 (S54-B — the session-53 audit's deferred F-5):
@@ -740,7 +779,17 @@ function MobilePropertiesEditor() {
             </SheetDescription>
           </SheetHeader>
           <div className="p-4">
-            {selectedElement && <PropertiesSections element={selectedElement} update={update} />}
+            {/* Session 60 (S60-H — the eighth audit's A-7): the Sheet body
+                mirrors the desktop panel's branch exactly — the full
+                section family for a single element, the shared
+                MultiSelectionSection (the S59-E Fill/Stroke pair) for a
+                marquee multi-selection. The two surfaces consume the SAME
+                exported components, so they can never drift. */}
+            {single ? (
+              <PropertiesSections element={single} update={update} />
+            ) : (
+              firstSelected && <MultiSelectionSection first={firstSelected} update={update} />
+            )}
           </div>
         </SheetContent>
       </Sheet>
@@ -819,7 +868,7 @@ function MobileCanvasProperties() {
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="max-h-[80vh] overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white"
+          className="max-h-[80vh] overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white [&>button]:h-11 [&>button]:w-11"
         >
           <SheetHeader className="border-b border-[#30363d] px-4 py-3">
             <SheetTitle className="text-left text-sm font-medium text-white">Canvas properties</SheetTitle>
@@ -914,10 +963,21 @@ export function EditorView({ user }: { user: HeaderUser }) {
       return;
     }
     const url = typeof window !== "undefined" ? window.location.href : "";
-    navigator.clipboard
-      ?.writeText(url)
-      .then(() => toast.success("Share link copied", url))
-      .catch(() => toast.show({ title: "Share this project", description: url }));
+    // Session 60 (S60-G — the eighth audit's A-5): branch on clipboard
+    // presence. Pre-fix the single optional chain
+    // (navigator.clipboard?.writeText(url).then(…).catch(…)) silently
+    // short-circuited to undefined when clipboard was ABSENT (an
+    // insecure-context deployment) — neither the success toast nor the
+    // fallback toast ever fired, so the Share button no-opped with zero
+    // feedback. The fallback toast now fires DIRECTLY on the absent path.
+    if (navigator.clipboard) {
+      navigator.clipboard
+        .writeText(url)
+        .then(() => toast.success("Share link copied", url))
+        .catch(() => toast.show({ title: "Share this project", description: url }));
+    } else {
+      toast.show({ title: "Share this project", description: url });
+    }
   }
 
   // Session 51 (S51-2): the canvas PNG export — a pure clone superset

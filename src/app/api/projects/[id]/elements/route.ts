@@ -65,6 +65,15 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (!isElementType(type)) return fail("VALIDATION", "Unknown element type", 400);
 
   const count = await db.designElement.count({ where: { projectId: id } });
+  // Session 60 (S60-D — the eighth audit's B-L-2): the POST enforces the
+  // SAME ceiling the PUT carries. Pre-fix the count fed only the sortOrder
+  // default — the single-element route (and the client add paths through
+  // it) could push a project PAST 2000, after which every autosave PUT
+  // failed with the "Too many elements (max 2000)" 400 toast and the
+  // design was unsavable until the user deleted back below the cap.
+  if (count >= 2000) {
+    return fail("VALIDATION", "Too many elements (max 2000)", 400);
+  }
   const sortOrder = clampNumber(body?.sortOrder, 0, 999, count);
 
   const element = await db.designElement.create({

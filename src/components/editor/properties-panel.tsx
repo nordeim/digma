@@ -984,6 +984,40 @@ export function CanvasBackgroundSection({
   );
 }
 
+// The MULTI-SELECTION seam — session 60 (S60-H — the eighth audit's
+// A-7). The multi-selection Fill/Stroke branch (born session 59's
+// S59-E) extracts into ONE exported component the way
+// CanvasBackgroundSection did: below lg the panel does not exist, and
+// the mobile Edit-properties chip rendered ONLY for a single selection
+// — a marquee multi-selection on a phone had NO properties surface at
+// all (the canvas chip needs an EMPTY selection). The desktop panel AND
+// the mobile Sheet (editor-view.tsx's MobilePropertiesEditor) consume
+// this SAME component, so the two surfaces can never drift.
+export function MultiSelectionSection({
+  first,
+  update,
+}: {
+  first: DesignElementDTO;
+  update: (patch: Partial<DesignElementDTO>) => void;
+}) {
+  return (
+    <section aria-label="Multiple selection" className="space-y-3">
+      <HexColorRow
+        label="Fill Color"
+        value={first.fill ?? null}
+        // Session 59 (S59-E — the seventh audit's A-L-3): the value
+        // commits AS-IS — null CLEARS the fill across the selection
+        // (the Stroke row's own contract, the single-selection Solid
+        // tab's too). The old truthiness guard silently dropped the
+        // clear: the field showed the "transparent" placeholder,
+        // then visibly snapped back on the next resync.
+        onChange={(fill) => update({ fill })}
+      />
+      <HexColorRow label="Stroke" value={first.stroke ?? null} onChange={(stroke) => update({ stroke })} />
+    </section>
+  );
+}
+
 export function PropertiesPanel() {
   const elements = useEditorStore((s) => s.elements);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -1008,20 +1042,7 @@ export function PropertiesPanel() {
         {single ? (
           <PropertiesSections element={single} update={update} />
         ) : selected.length > 1 ? (
-          <section aria-label="Multiple selection" className="space-y-3">
-            <HexColorRow
-              label="Fill Color"
-              value={selected[0]?.fill ?? null}
-              // Session 59 (S59-E — the seventh audit's A-L-3): the value
-              // commits AS-IS — null CLEARS the fill across the selection
-              // (the Stroke row's own contract, the single-selection Solid
-              // tab's too). The old truthiness guard silently dropped the
-              // clear: the field showed the "transparent" placeholder,
-              // then visibly snapped back on the next resync.
-              onChange={(fill) => update({ fill })}
-            />
-            <HexColorRow label="Stroke" value={selected[0]?.stroke ?? null} onChange={(stroke) => update({ stroke })} />
-          </section>
+          <MultiSelectionSection first={selected[0]} update={update} />
         ) : (
           <CanvasBackgroundSection backgroundColor={backgroundColor} onChange={setBackgroundColor} />
         )}

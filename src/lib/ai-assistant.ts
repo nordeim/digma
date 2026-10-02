@@ -310,7 +310,15 @@ export function sanitizeLlmOperations(
     }
   }
 
-  if (!reply || operations.length === 0) return null;
+  // Session 60 (S60-E — the eighth audit's B-L-3): the guard splits.
+  // Pre-fix `!reply || operations.length === 0` rejected a well-formed
+  // NON-EMPTY reply carrying zero operations, so the route kept the
+  // deterministic fallback — with the LLM enabled (the production
+  // default), any conversational model answer with no operations was
+  // thrown away and the user always saw the canned "I can add shapes…"
+  // reply. The client already handles empty operations[] safely
+  // (applied = 0); only an empty/missing reply still rejects.
+  if (!reply) return null;
   return { reply, operations };
 }
 
