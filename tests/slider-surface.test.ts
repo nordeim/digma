@@ -65,7 +65,7 @@ describe("the surface-aware sliderGesture (session 64, S64-B / A-2)", () => {
     expect(body).toMatch(/return;/);
   });
 
-  it("the textTick path carries the text surface (the idle-coalesced burst keeps its owner)", () => {
+  it("the textTick path carries the owning surface (the idle-coalesced burst keeps its owner)", () => {
     // The text variant's begin-on-demand + idle re-arm must carry the
     // same owner token so a superseding slider's flush and the
     // eventual idle/blur finish resolve against the right surface.
@@ -73,25 +73,41 @@ describe("the surface-aware sliderGesture (session 64, S64-B / A-2)", () => {
     // surface owns the gesture — the number fields feed this same tick
     // under their own "field" token, and a hardcoded text label made
     // the idle a NO-OP for them (the gesture never ended; the autosave
-    // deferral looped forever). The surface is captured at ARM time
-    // (`activeSurface ?? "text"` — the demand-begin default stays the
-    // text surface), and the finish's ownership guard keeps a
-    // canvas-superseded burst from touching the store.
-    const start = panelSource.indexOf("textTick: () => {");
+    // deferral looped forever). The surface is captured at ARM time,
+    // and the finish's ownership guard keeps a canvas-superseded burst
+    // from touching the store.
+    // Session 66 (S66-A, en-route — a legitimate contract update): the
+    // surface became the tick's PARAMETER (defaulting to the text
+    // surface) instead of a hardcoded arm label — the field surfaces
+    // pass their own token so their blur terminals end their bursts
+    // immediately (the hardcoded label made the field blur a no-op
+    // once the focus arm retired; the gesture outlived the blur by the
+    // full idle and a Ctrl+Z in that window no-opped).
+    const start = panelSource.indexOf('textTick: (surface: string = "text") => {');
     expect(start).toBeGreaterThan(-1);
     const end = panelSource.indexOf("},", start);
     const body = panelSource.slice(start, end);
-    expect(body).toMatch(/activeSurface = "text"/);
-    expect(body).toMatch(/const surface = activeSurface \?\? "text"/);
-    expect(body).toMatch(/finish\(surface\)/);
+    expect(body).toMatch(/activeSurface = surface/);
+    expect(body).toMatch(/const idleSurface = activeSurface \?\? surface/);
+    expect(body).toMatch(/finish\(idleSurface\)/);
   });
 
   it("the SliderRow and Content wiring pass their surface tokens (the consumers)", () => {
     // The slider inputs begin/finish with the slider surface; the
-    // Content input's focus/blur pair carries the text surface.
+    // Content input's blur terminal carries the text surface.
+    // Session 66 (S66-A / A-4 — a legitimate contract update): the
+    // text surface's ARM moved off the focus event (the held-focus
+    // autosave loop) into textTick's begin-on-demand branch — the
+    // arm-on-demand line below is the text surface's arm now. The
+    // slider's pointerdown pair is unchanged.
     expect(panelSource).toMatch(/sliderGesture\.begin\("slider"\)/);
     expect(panelSource).toMatch(/sliderGesture\.finish\("slider"\)/);
-    expect(panelSource).toMatch(/sliderGesture\.begin\("text"\)/);
+    // Session 66 (S66-A, en-route): the text surface's arm is the
+    // tick's DEFAULT parameter — the swatches and the Content input
+    // arm under "text" (their blur terminals match), the number fields
+    // pass "field" explicitly.
+    expect(panelSource).toMatch(/textTick: \(surface: string = "text"\) => \{/);
+    expect(panelSource).toMatch(/sliderGesture\.textTick\("field"\)/);
     expect(panelSource).toMatch(/sliderGesture\.finish\("text"\)/);
   });
 

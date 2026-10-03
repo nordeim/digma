@@ -1,15 +1,137 @@
-# Digma — Master Project Architecture Document (PAD) v1.44.0
+# Digma — Master Project Architecture Document (PAD) v1.45.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-10-03 (v1.44.0 — the thumbnail-parent-fit/gesture-ownership/number-coalescing pass: the card thumbnail's fixed 320x200 painted space now SCALES to its rendered slot (the pure `thumbnailFit` min-fit + centering seam consumed by a measured ResizeObserver wrapper transform — the files-list's 40x40 slot previously showed a corner sliver with the seeded elements at ZERO visible area, and the grid's ratio-locked slot cropped up to ~28% of the fitted content at laptop widths; the PAD's own RA-48 decode documents the reference's list thumbnail as the mini-canvas SCALED INSIDE — the implementation had drifted from the documented contract the day it was ported) + the sliderGesture unmount reset seam (a slider drag alive at the moment the mobile Sheet closes never received its terminal pointer event on the detached element — the closure and the store's armed snapshot leaked, the autosave's saved-marking deferred forever with ~1 PUT/s, and every subsequent panel edit silently stopped pushing undo history; the reset terminal is consumed at the SHARED section bodies' unmount — the Sheet CONTENT unmounts on every close path while the host does not — plus the loadProject heal, plus OWNERSHIP verification on every terminal: the closure captures the snapshot it armed, and a canvas gesture that replaces it mid-flight passes through untouched, closing the en-route defect where the idle fired mid-canvas-drag, pushed the MID-DRAG state into history, and broke the canceled-drag undo) + the number-input burst coalescing (every DIGIT of a typed value previously pushed a full 60-deep snapshot — NumberField and GuardedNumberInput now carry the Content input's idle-coalesced field gesture, one history entry per typing burst; the textTick idle ends WHICHEVER surface owns the gesture) + the low batch (the greeting h1's suppressHydrationWarning for the bucket-boundary SSR/hydration text mismatch; the bell glyph gray-500 — the S61-B AA family; redactDatabaseUrl splits the authority at the LAST @ so a password containing the separator redacts whole; the dashed image dropzone wires real onDragOver/onDrop so a drop uploads instead of navigating the tab to the blob; the six DialogContent sites carry the S60-F 44px Close-X form) + the ONE shared client call() seam in src/lib/call.ts (the files view's GET-only local copy had already lost the init parameter — the drift the audit predicted had happened)): the 41st audit re-verified the reference's standing surfaces (the desktop nav 124/96/92 x 36; the greeting "Good morning, sepnetflix2023" with the name; Quick Stats 1/0/Pro; the Recent sort last_accessed / "1 file found"; zero kbd; the Create-Team dead chrome the 41st — 2 clicks, 0 dialogs; R3 mobile nav failure class A the 41st — nav display:none, links 0x0, no hamburger, evidence ref-audit-s75/ref-01; the mobile editor header clipping Share L385-R458 / Present L466-R551 at 390 re-measured EXACTLY, evidence ref-audit-s75/ref-02; the board at exactly 9 layers, opened through the project-card ANCHOR whose own text is "Type here..." — the same first-attempt miss as sessions 62/63/64) — no drift, no new gaps; the clone's mobile nav verified live end-to-end at 390x844 the 42nd consecutive session AND re-verified on the S65 build after the code changes (9/9 — the Tailwind v4 failure class A NOT present); the THIRTEENTH Mode C code audit — TWO fresh-eyes independent full-file reviews (auditor A over the client view layer — dashboard/recent/teams/project-card/app-header/login-screen/reset-password-screen/logo/use-toast/layout+globals+every page, last independently reviewed session 63; auditor B over the lib/ui/config/infra side — the 11 pure lib seams, the 10 vendored ui primitives, the 4 editor panel components, the test infra, the 6 configs + proxy, the prisma schema + seed, and the seven session-64 spec files, last independently reviewed session 63) found 0 Critical / 2 High / 1 Medium / 8 Low / 11 Informational, every chosen finding individually re-verified by the lead in source (the A-1 High verified against the PAD's own RA-48 decode); the session executed all five chosen slices S65-A..S65-E via TDD: unit RED 26 defect pins + 5 preservation pins across five new spec files -> unit GREEN 426 = 396 + 30; e2e RED honestly reproduced against the pre-fix standalone build at exactly the defect assertions (the list-slot thumbnails at "root 40x40 child 0,0 320x200" x5; the mid-drag Sheet close leaving the badge unconverged at count 0 after 10s; the number-field undo stepping to 25, expected 160) -> e2e GREEN 221 = 218 + 3; FULL GATE GREEN: lint - typecheck - 426 unit / 82 files - build 23 routes - 56 smoke - 221 e2e — zero regressions; the live verification on the S65 build (the mobile nav contract 9/9 re-verified); the screenshot capture — the standard 32 re-captured + the ref-audit-s75 evidence set (ref-00/01/02/03/04/05 from the 41st audit + clone-01/04/05/06 + the standing clone-07 44px-bell (now gray-500, inline-checked) and clone-08 AA-destructive evidence + clone-13 the S65-B mid-drag convergence evidence captured BY the e2e pin at the verified-assertion moment + clone-14 the S65-A list-thumbnail fit evidence with the inline containment check) — dimension-checked 152/152 across the standing sets (the checker extended with the S75 mapping), VLM content-verified 17/17 (clone-04's "side sheet" reading the standing F44b confirming-description class — the drawer IS open), the DB re-seeded to the pristine contract after every mutating phase; .env.example verified unchanged — the source's five process.env reads all covered, the five slices add no env vars) **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
+**Last Updated:** 2026-10-03 (v1.45.0 — the gesture-arm-interleaving/color-picker-coalescing/low-batch pass: the one gesture seam's OWNERSHIP doctrine reaches the two directions it missed (the canvas's pointerdown now FLUSHES the panel closure's live typing burst BEFORE its own unconditional store arm — a burst alive inside its 150ms idle window previously lost its armed pre-typing snapshot and with it its undo entry, and the store's beginGesture is an unconditional overwrite; and the closure's begin() now carries textTick's FOREIGN-RIDE guard — a second finger focusing a panel field mid-canvas-drag previously clobbered the live canvas gesture, corrupting or deleting the drag's history entry) + the redundant focus-begins RETIRED from all three text/field surfaces (a bare read-only focus previously armed a store gesture with NO idle escape — the autosave's saved-marking looped at ~1 PUT/s while the field held focus; the arm now belongs to the first COMMITTING event alone, and the tick's surface became a PARAMETER so a field burst arms under its own token and its blur terminal actually ends it) + the color-picker per-event history flood closed (the Fill/Stroke/Text/Background swatches and the gradient stop colors ride the idle-coalesced burst — one history entry per picker drag instead of one full snapshot per intermediate popup color; setBackgroundColor's history push became gesture-aware, matching updateElements' commit form) + the low batch (the five uncapped auth routes gain the register-family length caps — unbounded passwords previously reached scryptSync and the SQLite lookups verbatim; redactDatabaseUrl fails closed on the malformed family — a password containing a raw path delimiter previously printed verbatim against the seam's own contract; the AUTH_SECRET insecure fallback now WARNS once per process instead of minting forgeable tokens in silence; the editor mounts a window-level dragover+drop guard so a drop outside the dashed dropzone no longer navigates the tab to the blob; the image upload's label is now keyboard-reachable — focusable, role=button, Enter/Space activation over the display:none input)): the 42nd audit re-verified the reference's standing surfaces (the desktop nav 124/96/92 x 36; the greeting "Good morning, sepnetflix2023" with the name; Quick Stats 1/0/Pro; the Recent sort last_accessed / "1 file found"; zero kbd; the Create-Team dead chrome the 42nd — 2 clicks, 0 dialogs; R3 mobile nav failure class A the 42nd — nav display:none, links 0x0, no hamburger, evidence ref-audit-s76/ref-01; the mobile editor header clipping Share L385-R458 / Present L466-R551 at 390 re-measured EXACTLY, evidence ref-audit-s76/ref-02; the board at exactly 9 layers, opened through the project-card ANCHOR whose own text is "Type here..." — the same first-attempt miss as sessions 62/63/64/65) — no drift, no new gaps; the clone's mobile nav verified live end-to-end at 390x844 the 43rd consecutive session AND re-verified on the S66 build after the code changes (9/9 — the Tailwind v4 failure class A NOT present); the FOURTEENTH Mode C code audit — TWO fresh-eyes independent full-file reviews (auditor A over the editor core — editor-view/editor-store/canvas/properties-panel/toolbar/layers/components/AI panel/lib/editor/lib/ai-assistant/call, the interleaving findings verified empirically with a scratch simulation replicating the exact store + closure semantics; auditor B over the server + lib/config/infra side — all 18 API route files, the 11 pure lib seams, proxy, prisma schema + seed, the test infra, the 6 configs, both auth screens, the redaction re-derivation executed as a 17-form probe; both last independently reviewed session 64) found 0 Critical / 0 High / 7 Medium / 6 Low / 9 Informational (the session-65 delivery itself clean — no new defects; the findings are pre-existing classes three of which S65-C widened), every chosen finding individually re-verified by the lead in source; the session executed all three chosen slices S66-A..S66-C via TDD: unit RED 20 defect pins + 7 preservation pins across three new spec files -> unit GREEN 453 = 426 + 27; e2e RED honestly reproduced against the pre-fix standalone build at exactly the defect assertions (the second undo after type-then-drag restoring the TYPED text instead of the pre-typing text; the bare-focus badge count 0 after the 10s poll; the picker's first undo restoring #dd0033 — one intermediate color deep) -> e2e GREEN 224 = 221 + 3; FULL GATE GREEN: lint - typecheck - 453 unit / 85 files - build 23 routes - 56 smoke - 224 e2e — zero regressions; the live verification on the S66 build (the mobile nav contract 9/9 re-verified); the screenshot capture — the standard 32 re-captured + the ref-audit-s76 evidence set (ref-00/01/02/03/04 from the 42nd audit + clone-01/04/05/06 + the standing clone-07 44px-bell and clone-08 AA-destructive evidence + clone-14 the standing list-thumbnail fit + clone-15 the S66-A bare-focus convergence evidence captured BY the e2e pin at the verified-assertion moment + clone-16 the S66-B picker one-undo evidence with the inline seeded-restore check + clone-17 the S66-C upload keyboard-path evidence with the inline focusability check) — dimension-checked 167/167 across the standing sets (the checker extended with the S76 mapping), VLM content-verified 19/19 (clone-04's "side sheet" reading the standing F44b confirming-description class — the drawer IS open), the DB re-seeded to the pristine contract after every mutating phase; .env.example verified unchanged — the source's five process.env reads all covered, the three slices add no env vars) **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
 
 Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+#### Revision Block — v1.45.0 (Tracked Changes)
+
+- `[SR]` **The gesture-arm-interleaving/color-picker-coalescing/low-batch
+  pass — three slices (S66-A through S66-C) — the fourteenth Mode C
+  audit's chosen work:**
+  1. **S66-A (A-1 + A-2 + A-4 — the Medium set): the gesture seam's
+     ownership doctrine reaches the ARM path and the canvas's own
+     begin.** (a) The canvas flush-foreign-first: `resetSliderGesture()`
+     runs BEFORE `beginGesture()` at both canvas arm sites (the move
+     branch and the resize handle branch) — the closure's CHANGED
+     typing burst flushes its one entry (the typed change keeps its
+     undo step), an unchanged one cancels, and a canvas-foreign
+     gesture passes untouched; the store's arm then lands fresh with
+     BOTH entries in history (pre-typing AND pre-drag). Pre-fix the
+     canvas's unconditional store overwrite silently dropped a burst
+     alive inside its 150ms idle window (the field's blur terminal
+     no-ops on the ownership check). (b) The begin foreign-ride guard:
+     `begin(surface)` re-reads the LIVE store state (after any flush —
+     the captured snapshot predates it) and RIDES UNDER a foreign
+     gesture instead of arming over it — textTick's `:401-405` doctrine
+     reaching the arm path it missed. Pre-fix a second finger's
+     field-focus mid-canvas-drag clobbered the live canvas gesture:
+     the drag's end pushed a MID-DRAG state, or the field's blur then
+     OWNED the mid-drag snapshot, cancelled it, and the canvas's own
+     pointerup pushed nothing. (c) The focus-begin retirement:
+     `NumberField`, `GuardedNumberInput`, and the Content input lose
+     their `onFocus` arms — textTick's begin-on-demand covers burst
+     starts and a read-only focus arms NOTHING (the pre-fix bare focus
+     looped the autosave's saved-marking at ~1 PUT/s while the field
+     held focus, the badge oscillating Saving…/Unsaved). The blur
+     terminals stay (the early end of a live burst; a no-op when
+     nothing is armed). Pinned by `tests/gesture-arm-s66.test.ts` +
+     the two e2e pins in `tests/e2e/session66-fixes.spec.ts`.
+  2. **S66-B (A-3 — the Medium): the color-picker surfaces ride the
+     idle-coalesced burst.** `HexColorRow`'s `type="color"` swatch (the
+     Fill, Stroke, Text Color, and Background rows) and the gradient
+     stop-color swatches commit through `sliderGesture.textTick()`
+     FIRST + a blur `finish` — Chrome's picker fires continuous input
+     events while dragging in the popup, and the pre-fix path pushed a
+     full 60-deep snapshot per intermediate color (one picker drag
+     flooded the history stack and evicted earlier work). The hex TEXT
+     input stays a discrete keyboard commit (the S62-A doctrine —
+     keyboard-only changes are discrete intent). `setBackgroundColor`
+     gains the gesture-aware conditional history push, matching
+     `updateElements`' commit form (the swatch's armed burst commits
+     history-free; the terminal endGesture pushes the ONE pre-picker
+     snapshot). Pinned by `tests/color-coalesce-s66.test.ts` + the
+     picker one-undo e2e pin.
+  3. **S66-C (B-4 + B-7 + B-8 + A-5 + A-6 — the Low batch):** the five
+     uncapped auth routes gain the register-family length caps (login
+     email/password 200/200, verify-otp email 200 + code 32,
+     resend-otp email 200, forgot-password email 200, reset-password
+     token 200 — App Router handlers ship no default body-size cap, so
+     unbounded strings reached scryptSync and the SQLite lookups
+     verbatim; register capped since S62-G while its siblings did
+     not); `redactDatabaseUrl` fails closed (a raw path/query/hash
+     delimiter inside the password truncated the strict authority
+     parse before the separator — `postgres://user:pa/ss@host/db`
+     printed its credential verbatim; the span from the scheme to the
+     LAST separator now collapses to `***`, over-redaction the
+     documented safe direction); the `AUTH_SECRET` insecure fallback
+     fires a ONE-TIME `console.warn` per process (a production deploy
+     that forgot the variable previously minted forgeable tokens in
+     complete silence); the editor mounts a window-level
+     dragover+drop preventDefault pair with cleanup (a file dropped
+     outside the dashed dropzone previously navigated the tab to the
+     blob and lost the session); the image upload's label becomes
+     keyboard-reachable (`tabIndex={0}` + `role="button"` + an
+     Enter/Space keydown that clicks it — the label's activation
+     behavior forwards to the display:none input via htmlFor — plus a
+     visible focus ring). Pinned by `tests/low-batch-s66.test.ts`.
+- `[SR]` **Counts:** unit 453 = 426 + 27 across 85 files (three new
+  spec files: gesture-arm-s66 7, color-coalesce-s66 6, low-batch-s66
+  14); e2e 224 = 221 + 3 (`tests/e2e/session66-fixes.spec.ts`); smoke
+  56 (unchanged); build 23 routes (unchanged). Four standing pins
+  legitimately re-anchored onto the retired-focus-arm contract forms
+  (the number-coalesce pair, the slider-gesture Content-input pin, and
+  the slider-surface consumer pin — each with the contract-change
+  comment).
+- `[SR]` **The en-route work (lesson F53):** (1) the session-65
+  number-field e2e pin failed POST-fix — the S65-C `textTick`
+  HARDCODED its arm under the text surface label while the field's
+  blur terminal says `finish("field")`; the mismatch was masked in
+  session 65 (the focus-begin had already armed the field surface and
+  the tick rode under it), but with the focus arm retired the field
+  bursts armed under the wrong label, the field's blur no-opped, and
+  the gesture outlived the blur by the full 150ms idle — a Ctrl+Z in
+  that window hit the still-armed snapshot and no-opped. The tick's
+  surface became a PARAMETER (text default; the fields pass "field"),
+  exactly what the S65-C documentation SAID but the implementation
+  never did; (2) the capture script's picker check initially used a
+  synthetic canvas click (pointerdown + pointerup in ONE eval) — React
+  only flushes the pointerdown's setDrag between macrotasks, so the
+  same-eval pointerup saw `drag === null`, skipped the plain-click
+  CANCEL path, and left the canvas gesture armed; the check moved onto
+  the Background Color row (no canvas click, no drag state machine);
+  (3) the login route initially missed the `fail` import — the
+  typecheck gate caught it before any push (the piped-tail gate chain
+  still ran the later gates, a discipline note for future sessions).
+- `[SR]` **Docs aligned:** this revision block + the §7.1 table to the
+  85-file/453-unit + 25-file/224-e2e reality; AGENTS.md (the counts +
+  the session-66 seam bullet); CLAUDE.md (the counts); README.md (the
+  counts + the gesture-seam feature row); digma_SKILL.md v1.44.0
+  (lesson F53 — the synthetic-event state-flush trap, the
+  hardcoded-arm-label/blur-terminal mismatch family, the piped-tail
+  gate-chain hazard, the color-input lowercase normalization);
+  remediation-plan-session66 execution status; session_91.md; the
+  worklog entry.
+- `[D]` The audit's deferred set documented with rationale in
+  `docs/remediation-plan-session66.md` (B-5 the stateless-session
+  revocation gap — sharpened: password reset does not evict live
+  tokens; B-15 the AI route rate limit; the enumeration oracles; the
+  single-tenant ownership posture; the elements POST/PUT row-builder
+  drift; the dead schema columns; the list-payload perf; the
+  informational batch); the 42nd reference audit's evidence at
+  `docs/screenshots/ref-audit-s76/` (ref-00/01/02/03/04 +
+  clone-01/04/05/06/07/08/14 + clone-15 the bare-focus convergence
+  evidence captured BY the e2e pin at the verified-assertion moment +
+  clone-16 the picker one-undo evidence + clone-17 the upload
+  keyboard-path evidence); dimension-checked 167/167 (the checker
+  extended with the S76 mapping); VLM content-verified 19/19.
 
 #### Revision Block — v1.44.0 (Tracked Changes)
 
@@ -1496,7 +1618,10 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — number-input burst coalescing (S65-C) | `tests/number-coalesce.test.ts` | 6 | tests | Vitest |
 | Unit — low batch: multi-@ redaction + hydration + bell + dropzone + dialog close (S65-D) | `tests/low-batch-s65.test.ts` | 8 | tests | Vitest |
 | Unit — the shared call() seam (S65-E) | `tests/call-seam.test.ts` | 3 | tests | Vitest |
-| **Unit total** | **82 files** | **426** | | Vitest |
+| Unit — gesture-arm interleaving family (S66-A) | `tests/gesture-arm-s66.test.ts` | 7 | tests | Vitest |
+| Unit — color-picker burst coalescing (S66-B) | `tests/color-coalesce-s66.test.ts` | 6 | tests | Vitest |
+| Unit — low batch: auth caps + fail-closed redaction + secret warn + drop guard + upload keyboard (S66-C) | `tests/low-batch-s66.test.ts` | 14 | tests | Vitest |
+| **Unit total** | **85 files** | **453** | | Vitest |
 | E2E — auth journeys + card states + from_url guard | `tests/e2e/auth.spec.ts` | 16 | tests/e2e | Playwright |
 | E2E — reset-password journeys | `tests/e2e/reset-password.spec.ts` | 7 | tests/e2e | Playwright |
 | E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |
@@ -1521,7 +1646,8 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | E2E — session 63 fixes: the painted-thumbnail pixel probes (S63-A) | `tests/e2e/session63-fixes.spec.ts` | 2 | tests/e2e | Playwright |
 | E2E — session 64 fixes: the mobile Sheet slider one-undo gesture (S64-A) | `tests/e2e/session64-fixes.spec.ts` | 1 | tests/e2e | Playwright |
 | E2E — session 65 fixes: the list-thumbnail containment + the mid-drag Sheet-close convergence + the number-field one-undo-per-burst (S65-A/B/C) | `tests/e2e/session65-fixes.spec.ts` | 3 | tests/e2e | Playwright |
-| **E2E total** | **24 files** | **221** | | Playwright |
+| E2E — session 66 fixes: the type-then-drag two-undo + the bare-focus convergence + the picker-drag one-undo (S66-A/B) | `tests/e2e/session66-fixes.spec.ts` | 3 | tests/e2e | Playwright |
+| **E2E total** | **25 files** | **224** | | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 56 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns

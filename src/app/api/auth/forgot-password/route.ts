@@ -28,6 +28,13 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
 
+  // Session 66 (S66-C — the fourteenth audit's B-4): the S62-G caps family
+  // reaches the sibling public routes (no default body-size cap in App
+  // Router handlers — unbounded strings reached the SQLite lookups).
+  if (email.length > 200) {
+    return fail("VALIDATION", "Email must be reasonably sized", 400);
+  }
+
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return fail("VALIDATION", "Enter a valid email address", 400);
   }

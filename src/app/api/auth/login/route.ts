@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { generateVerifyCode, setSessionCookie, verifyPassword } from "@/lib/auth";
-import { ok } from "@/lib/api";
+import { ok, fail } from "@/lib/api";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,15 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
+
+  // Session 66 (S66-C — the fourteenth audit's B-4): the S62-G caps family
+  // reaches the sibling public routes — App Router handlers ship no default
+  // body-size cap, so an unbounded password reached scryptSync and the
+  // SQLite equality lookup verbatim. scrypt cost is length-independent;
+  // the cap is hygiene, but register capping while login does not is drift.
+  if (email.length > 200 || password.length > 200) {
+    return fail("VALIDATION", "Email and password must be reasonably sized", 400);
+  }
 
   const user = await db.user.findUnique({ where: { email } });
   if (!user || !verifyPassword(password, user.passwordHash)) {

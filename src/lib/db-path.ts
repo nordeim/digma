@@ -128,7 +128,25 @@ export function redactDatabaseUrl(url: string): string {
   if (!m) return url;
   const [, scheme, authority] = m;
   const at = authority.lastIndexOf("@");
-  if (at === -1) return url;
+  if (at === -1) {
+    // Session 66 (S66-C — the fourteenth audit's B-7): fail-closed for
+    // the malformed family. A password containing a RAW path/query/hash
+    // delimiter truncates the strict authority parse BEFORE the @ lands
+    // inside it (postgres://user:pa/ss@host parsed "user:pa" as the whole
+    // authority, found no @, and printed the credential verbatim —
+    // against this seam's own "the secret never prints" contract). When
+    // the strict parse found no separator but a LATER one exists in the
+    // string, the whole span from the scheme to that LAST separator
+    // collapses to *** — over-redaction is the documented safe
+    // direction, and the host tail after the separator survives for
+    // diagnostics. The schemeless non-URL (no scheme:// prefix) is out
+    // of contract entirely and passes verbatim.
+    const looseAt = url.lastIndexOf("@");
+    if (looseAt > scheme.length) {
+      return `${scheme}***${url.slice(looseAt)}`;
+    }
+    return url;
+  }
   const userinfo = authority.slice(0, at);
   const colon = userinfo.indexOf(":");
   if (colon === -1) return url;

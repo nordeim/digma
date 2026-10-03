@@ -5,6 +5,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useEditorStore } from "./editor-store";
+import { resetSliderGesture } from "./properties-panel";
 import { boundsOf, canvasFontFamily, clampZoom, ELEMENT_LIMIT, fillPaintFor, isTypingTarget, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
 // ---------------------------------------------------------------------------
@@ -178,6 +179,16 @@ export function Canvas() {
       // commit()-at-pointer-up pushed the POST-drag state, so the first
       // Ctrl+Z after a drag was a silent no-op and the pre-drag layout was
       // unreachable.
+      // Session 66 (S66-A — the fourteenth audit's A-1): flush the panel
+      // closure's live burst FIRST. The store's arm below is an
+      // unconditional overwrite — a typing burst alive inside its 150ms
+      // idle window lost its armed pre-burst snapshot here and with it
+      // its undo entry (the burst's blur terminal then no-ops on the
+      // ownership check). The reset flushes a CHANGED burst's one entry,
+      // cancels an unchanged one, and passes a canvas-foreign gesture
+      // through untouched — both entries land in history: pre-typing
+      // AND pre-drag. The S64-B flush-first doctrine, mirrored.
+      resetSliderGesture();
       useEditorStore.getState().beginGesture();
       // Session 64 (S64-G / A-5): same container capture as the draw
       // branch — the element keeps following the pointer across the
@@ -481,6 +492,9 @@ export function Canvas() {
                   // Session 56 (S56-A): the resize gesture captures its
                   // pre-gesture snapshot at the handle's pointer-down — the
                   // same contract as the move branch above.
+                  // Session 66 (S66-A / A-1): the same flush-first — the
+                  // resize arm is the second unconditional overwrite site.
+                  resetSliderGesture();
                   useEditorStore.getState().beginGesture();
                   setDrag({
                     kind: "resize",

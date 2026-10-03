@@ -101,7 +101,6 @@ function NumberField({
         min={min}
         max={max}
         step={step}
-        onFocus={() => sliderGesture.begin("field")}
         onChange={(event) => {
           setDraft(event.target.value);
           // Session-21 fix (S21-2): an EMPTY draft is the user mid-edit, not
@@ -118,8 +117,16 @@ function NumberField({
           // one full snapshot per DIGIT (typing a three-digit value into a
           // position field produced three undo entries; a focused session
           // across the numeric fields flooded the 60-deep stack).
+          // Session 66 (S66-A — the fourteenth audit's A-4): the arm
+          // belongs to the first COMMITTING event alone — a read-only
+          // focus arms nothing, so the autosave's saved-marking can no
+          // longer loop on a held focus with nothing typed.
+          // Session 66 (S66-A, en-route): the tick carries the FIELD
+          // surface token — the arm lands under "field", so this
+          // input's blur terminal (finish("field")) ends the burst
+          // immediately instead of waiting out the idle.
           if (Number.isFinite(parsed)) {
-            sliderGesture.textTick();
+            sliderGesture.textTick("field");
             onChange(parsed);
           }
         }}
@@ -193,7 +200,6 @@ function GuardedNumberInput({
       max={max}
       step={step}
       value={draft}
-      onFocus={() => sliderGesture.begin("field")}
       onChange={(event) => {
         setDraft(event.target.value);
         // An EMPTY draft is the user mid-edit, not a request for 0 —
@@ -206,8 +212,13 @@ function GuardedNumberInput({
         // per typing burst, not one full snapshot per digit — the
         // Rotation/Opacity values and the gradient stop positions were
         // the flooding surface).
+        // Session 66 (S66-A / A-4): the arm belongs to the first COMMITTING
+        // event alone — a read-only focus arms nothing (the held-focus
+        // autosave loop the audit found).
         if (Number.isFinite(parsed)) {
-          sliderGesture.textTick();
+          // Session 66 (S66-A, en-route): the FIELD surface token —
+          // the blur terminal matches the arm's surface.
+          sliderGesture.textTick("field");
           onChange(parsed);
         }
       }}
@@ -257,7 +268,18 @@ function HexColorRow({
           type="color"
           aria-label={`${label ?? "Color"} swatch`}
           value={value ?? "#000000"}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            // Session 66 (S66-B — the fourteenth audit's A-3): the
+            // picker's continuous input events ride the idle-coalesced
+            // burst — the FIRST event arms on demand, each subsequent
+            // event re-arms the 150ms idle, and the burst ends with its
+            // ONE history entry (the pre-fix path pushed a full snapshot
+            // per intermediate color — one picker drag flooded the
+            // 60-deep stack and evicted earlier work).
+            sliderGesture.textTick();
+            onChange(event.target.value);
+          }}
+          onBlur={() => sliderGesture.finish("text")}
           className="h-8 w-8 rounded border border-[#30363d] bg-transparent"
         />
         <input
@@ -371,9 +393,28 @@ const sliderGesture = (() => {
       if (activeSurface !== null && activeSurface !== surface && changed && ownsCurrentGesture()) {
         store.endGesture();
       }
-      if (activeSurface === null || activeSurface !== surface) {
-        store.beginGesture();
+      // Session 66 (S66-A — the fourteenth audit's A-2): the
+      // FOREIGN-RIDE guard, textTick's doctrine reaching the arm
+      // path. Re-read the LIVE state (the captured snapshot above
+      // predates the flush's own endGesture): when the store carries a
+      // gesture this closure did NOT arm (a live CANVAS drag — the
+      // canvas arms through the store directly, never this closure),
+      // a panel surface's begin RIDES UNDER it instead of clobbering
+      // the snapshot mid-drag. The pre-fix unconditional arm let a
+      // second finger's field focus overwrite finger one's canvas
+      // gesture — the drag's history entry corrupted (the end pushed
+      // a mid-drag state) or deleted outright (the field's blur then
+      // OWNED the mid-drag snapshot, cancelled it, and the canvas's
+      // own pointerup pushed nothing).
+      const live = useEditorStore.getState();
+      if ((activeSurface === null || activeSurface !== surface) && live.gestureSnapshot === null) {
+        live.beginGesture();
         armed = useEditorStore.getState().gestureSnapshot;
+      } else if (live.gestureSnapshot !== null && live.gestureSnapshot !== armed) {
+        // a foreign gesture owns the store — this surface rides under
+        // it and never ends it (the ownership guard in finish keeps
+        // the bookkeeping clear without touching the store)
+        armed = null;
       }
       changed = false;
       activeSurface = surface;
@@ -392,21 +433,33 @@ const sliderGesture = (() => {
     // begin/finish clears the idle, so a stale fire cannot land on a
     // foreign gesture), and the ownership guard inside finish keeps a
     // canvas-superseded burst from touching the store.
-    textTick: () => {
+    // Session 66 (S66-A, en-route — the F53 lesson): the arm now takes
+    // the CALLING surface as the parameter instead of hardcoding the
+    // text label. The hardcoded form was masked in session 65 (the
+    // focus-begin had already armed the field surface, and this tick
+    // rode under it); with the focus-begin retired the field bursts
+    // armed under the text label, the FIELD's blur terminal
+    // (finish("field")) no-opped against the wrong label, and the
+    // gesture outlived the blur by the full 150ms idle — a Ctrl+Z in
+    // that window hit the still-armed snapshot and no-opped (the
+    // session-65 number-field pin caught it). The field surfaces now
+    // pass their own token; the text default preserves the Content
+    // input's and the swatches' calls.
+    textTick: (surface: string = "text") => {
       const store = useEditorStore.getState();
       if (store.gestureSnapshot === null) {
         store.beginGesture();
-        activeSurface = "text";
+        activeSurface = surface;
         armed = useEditorStore.getState().gestureSnapshot;
       } else if (store.gestureSnapshot !== armed) {
         // A foreign gesture owns the store — this burst rides under it
         // and never ends it.
         armed = null;
       }
-      const surface = activeSurface ?? "text";
+      const idleSurface = activeSurface ?? surface;
       changed = true;
       clearIdle();
-      idleTimer = setTimeout(() => finish(surface), 150);
+      idleTimer = setTimeout(() => finish(idleSurface), 150);
     },
     finish,
     // Session 65 (S65-B — the thirteenth audit's B-1): the unmount
@@ -597,7 +650,14 @@ function GradientPanel({
                 type="color"
                 aria-label={`Stop ${index + 1} color`}
                 value={stop.color}
-                onChange={(event) => setStop(index, { color: event.target.value })}
+                onChange={(event) => {
+                  // Session 66 (S66-B / A-3): the stop-color swatch rides
+                  // the same idle-coalesced burst (the pre-fix per-event
+                  // commit flooded history exactly like the fill swatch).
+                  sliderGesture.textTick();
+                  setStop(index, { color: event.target.value });
+                }}
+                onBlur={() => sliderGesture.finish("text")}
                 className="h-6 w-6 rounded border border-[#30363d] bg-transparent"
               />
               <GuardedNumberInput
@@ -724,7 +784,27 @@ function ImagePanel({
               event.target.value = "";
             }}
           />
-          <label htmlFor={inputId} className="flex cursor-pointer flex-col items-center gap-2">
+          <label
+            htmlFor={inputId}
+            // Session 66 (S66-C — the fourteenth audit's A-6): the keyboard
+            // path. The file input itself is display:none (out of the tab
+            // order and the a11y tree), so the label WAS the only affordance
+            // — and it was not focusable: keyboard and screen-reader users
+            // had no path to the picker at all. The label now carries the
+            // button role, joins the tab order, activates on Enter/Space
+            // (the label's activation behavior forwards the click to the
+            // hidden input via htmlFor), and shows a visible focus ring.
+            // The visible text stays the accessible name.
+            tabIndex={0}
+            role="button"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.currentTarget.click();
+              }
+            }}
+            className="flex cursor-pointer flex-col items-center gap-2 rounded-lg outline-offset-2 focus-visible:outline-2 focus-visible:outline-blue-500"
+          >
             <ImageIcon className="h-8 w-8 text-gray-400" aria-hidden />
             <span className="text-sm text-gray-400">{busy ? "Reading image…" : "Click to upload image"}</span>
             <span className="text-xs text-gray-500">PNG, JPG, SVG</span>
@@ -791,7 +871,6 @@ export function TextSection({
         <input
           type="text"
           value={element.text ?? ""}
-          onFocus={() => sliderGesture.begin("text")}
           onBlur={() => sliderGesture.finish("text")}
           onChange={(event) => {
             sliderGesture.textTick();

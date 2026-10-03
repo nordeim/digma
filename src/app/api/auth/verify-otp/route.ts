@@ -29,6 +29,12 @@ export async function POST(request: NextRequest) {
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const code = typeof body?.code === "string" ? body.code.trim() : "";
 
+  // Session 66 (S66-C — the fourteenth audit's B-4): the S62-G caps family
+  // reaches the sibling public routes (no default body-size cap in App
+  // Router handlers — unbounded strings reached the SQLite lookups).
+  if (email.length > 200 || code.length > 32) {
+    return fail("VALIDATION", "Email and code must be reasonably sized", 400);
+  }
   if (!email || !/^\d{6}$/.test(code)) {
     return fail("VALIDATION", "Enter the 6-digit code from your email", 400);
   }

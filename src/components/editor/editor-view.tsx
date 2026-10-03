@@ -360,6 +360,32 @@ function useAutosave(): () => void {
 
 function useEditorShortcuts(onOpenShortcuts: () => void) {
   React.useEffect(() => {
+    // Session 66 (S66-C — the fourteenth audit's A-5): the window-level
+    // drop guard. The S65-D dropzone wired the DASHED zone itself, but a
+    // file dropped anywhere else in the editor (the canvas, the panel
+    // chrome) still fell through to the browser default — the tab
+    // NAVIGATED to the dropped file's blob URL and the session was lost
+    // (the pagehide keepalive flush bounded the data loss, not the loss
+    // of the session). preventDefault on the pair at the window level
+    // kills the navigation default everywhere; the dropzone's own
+    // target handlers run FIRST and are unaffected (they preventDefault
+    // themselves — a second preventDefault at the window is a no-op).
+    // The layers rows' drop handlers likewise run at the target first.
+    function onWindowDragOver(event: DragEvent) {
+      event.preventDefault();
+    }
+    function onWindowDrop(event: DragEvent) {
+      event.preventDefault();
+    }
+    window.addEventListener("dragover", onWindowDragOver);
+    window.addEventListener("drop", onWindowDrop);
+    return () => {
+      window.removeEventListener("dragover", onWindowDragOver);
+      window.removeEventListener("drop", onWindowDrop);
+    };
+  }, []);
+
+  React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (isTypingTarget(event.target)) return;
       // While ANY Radix dialog is open (the shortcuts dialog itself, a

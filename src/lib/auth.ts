@@ -15,8 +15,23 @@ const KEY_LENGTH = 64;
 // Dev-only fallback when AUTH_SECRET is unset — loudly documented. Production
 // MUST set AUTH_SECRET (openssl rand -hex 32); rotating it invalidates every
 // session (documented in README troubleshooting).
+// Session 66 (S66-C — the fourteenth audit's B-8): the fallback now WARNS,
+// once per process — a production deploy that forgot the variable used to
+// mint forgeable tokens in complete silence (the only prior signal was this
+// comment). The once-guard keeps the per-token-mint seam from spamming the
+// log; the message names the fix.
+let warnedInsecureSecret = false;
 function secret(): string {
-  return process.env.AUTH_SECRET || "digma-dev-only-insecure-secret";
+  const from = process.env.AUTH_SECRET;
+  if (!from && !warnedInsecureSecret) {
+    warnedInsecureSecret = true;
+    console.warn(
+      "[auth] AUTH_SECRET is not set — falling back to the INSECURE dev-only constant. " +
+        "Session tokens are forgeable by anyone who reads the repo. " +
+        "Generate a real secret: openssl rand -hex 32",
+    );
+  }
+  return from || "digma-dev-only-insecure-secret";
 }
 
 export function hashPassword(password: string): string {

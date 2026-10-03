@@ -366,8 +366,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     set((state) => ({
       backgroundColor: color,
       saveState: "unsaved",
-      past: [...state.past, snapshotOf(state)].slice(-60),
-      future: [],
+      // Session 66 (S66-B — the fourteenth audit's A-3): the
+      // gesture-aware commit, updateElements' form. The swatch's
+      // textTick-armed burst commits history-free here — the armed
+      // gesture's terminal endGesture pushes the ONE pre-picker
+      // snapshot. The pre-fix unconditional push meant every
+      // intermediate popup color landed a full history entry.
+      ...(state.gestureSnapshot
+        ? {}
+        : { past: [...state.past, snapshotOf(state)].slice(-60), future: [] }),
     })),
 
   // Session 56 (S56-A): the gesture seam — see the type comment above.

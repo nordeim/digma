@@ -127,7 +127,13 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     // Session 64 (S64-B — a legitimate contract update): the focus/blur
     // pair became surface-token arrow wrappers (the interleaving fix);
     // the idle-coalesced seam itself is unchanged.
-    expect(input).toMatch(/onFocus=\{\(\) => sliderGesture\.begin\("text"\)\}/);
+    // Session 66 (S66-A / A-4 — a legitimate contract update): the
+    // FOCUS arm retired — a held focus (fill(), the mobile Sheet)
+    // armed a gesture with no idle escape and looped the autosave's
+    // saved-marking; the burst arms at the first committing textTick
+    // instead. The blur terminal stays (the early end of a live
+    // burst; a no-op when nothing is armed).
+    expect(input).not.toMatch(/onFocus=\{\(\) => sliderGesture\.begin/);
     expect(input).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\("text"\)\}/);
     expect(input).toMatch(/sliderGesture\.textTick\(\)/);
     // The idle-coalescing machinery: the timer, the re-arm, the
@@ -140,8 +146,11 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     // (the gesture never ended; the autosave deferral looped forever).
     // The surface is captured at ARM time; the ownership guard inside
     // finish keeps a canvas-superseded burst from touching the store.
-    expect(panelSource).toMatch(/idleTimer = setTimeout\(\(\) => finish\(surface\), 150\);/);
-    expect(panelSource).toMatch(/const surface = activeSurface \?\? "text";/);
+    // Session 66 (S66-A, en-route — a legitimate contract update): the
+    // surface became the tick's PARAMETER (text default; the fields
+    // pass "field") — the idle fires finish on the CAPTURED owner.
+    expect(panelSource).toMatch(/idleTimer = setTimeout\(\(\) => finish\(idleSurface\), 150\);/);
+    expect(panelSource).toMatch(/const idleSurface = activeSurface \?\? surface;/);
     expect(panelSource).toMatch(/armed = useEditorStore\.getState\(\)\.gestureSnapshot;/);
     expect(panelSource).toMatch(/const ownsCurrentGesture = \(\) =>/);
   });

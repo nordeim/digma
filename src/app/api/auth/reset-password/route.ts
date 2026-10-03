@@ -31,6 +31,14 @@ export async function POST(request: NextRequest) {
   const resetToken = typeof body?.reset_token === "string" ? body.reset_token.trim() : "";
   const newPassword = typeof body?.new_password === "string" ? body.new_password : "";
 
+  // Session 66 (S66-C — the fourteenth audit's B-4): the S62-G caps family
+  // reaches the sibling public routes (no default body-size cap in App
+  // Router handlers — an unbounded token reached the SQLite equality
+  // lookup verbatim; the password cap exists since session 64 below).
+  if (resetToken.length > 200) {
+    return fail("VALIDATION", "Token must be reasonably sized", 400);
+  }
+
   // The token check comes FIRST (the measured ordering).
   if (!resetToken) {
     return fail("VALIDATION", INVALID_TOKEN_MESSAGE, 400);
