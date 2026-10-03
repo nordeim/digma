@@ -120,11 +120,16 @@ export function LoginScreen() {
       const body = await response.json().catch(() => null);
 
       if (!response.ok || !body?.ok) {
-        if (response.status === 403 && body?.error?.code === "VERIFY_EMAIL" && body?.verificationCode) {
+        if (response.status === 403 && body?.error?.code === "VERIFY_EMAIL") {
           // Session 43: the unverified account's WORKING recovery path — the
           // login regenerated the code and the card re-opens (the reference
           // answers the same state with the generic dead-end error).
-          enterVerify(String(body.verificationCode));
+          // Session 69 (S69-C / L-C): the card opens regardless of the
+          // code's NULLNESS — under the OTP suppression knob the route
+          // answers the code null (the emailed-code delivery posture), and
+          // the null must not lock the user out of the recovery flow.
+          // Register's sibling uses the same null-tolerant degrade form.
+          enterVerify(String(body?.verificationCode ?? ""));
           return;
         }
         // Session 43, RA-60: the sign-in failure renders the reference's

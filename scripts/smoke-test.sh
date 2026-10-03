@@ -284,7 +284,9 @@ RESTORE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/api/auth/reset-p
 # its own bucket (the shared "unknown" budget and the final 429 burner
 # stay untouched — the burner still sees 10 calls minus its own shared
 # usage: login 1 + wrong 1 + register 1 + wrong-otp 1 + verify 1 + resend
-# 1 + verify2 1 = 7, leaving 3 to trip).
+# 1 + verify2 1 + register2 1 (no XFF header on it) = 8, leaving 2 to
+# trip — session 69's honest-count correction of the historical
+# undercount).
 SMOKE_XFF48="203.0.113.48"
 RELOGIN=$(curl -s -c /tmp/smoke-cookies.txt -X POST "$BASE/api/auth/login" \
   -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF48" \

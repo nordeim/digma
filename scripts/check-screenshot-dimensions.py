@@ -319,6 +319,32 @@ S78 = {
 }
 
 
+# Session 69 (the 45th audit's evidence set): the reference's standing
+# failure datums + the clone's mobile-nav fix evidence + the S69-A/B/C
+# evidence (clone-20 the standing rotation-aware marquee; clone-21 the
+# knob-posture verify card captured BY the e2e pin at the playwright
+# default 1280x720).
+S79 = {
+    "ref-00-desktop-dashboard": (1440, 900),
+    "ref-01-mobile-dashboard": (390, 844),
+    "ref-02-mobile-editor": (390, 844),
+    "ref-03-desktop-recent": (1440, 900),
+    "ref-04-desktop-editor": (1440, 900),
+    "clone-01-mobile-nav-390": (390, 844),
+    "clone-04-mobile-nav-open-390": (390, 844),
+    "clone-05-present-desktop": (1440, 900),
+    "clone-06-editor-baseline-desktop": (1440, 900),
+    "clone-07-bell-44px-390": (390, 844),
+    "clone-08-destructive-aa-confirm": (1440, 900),
+    "clone-14-recent-list-thumbnail-fit": (1440, 900),
+    "clone-16-picker-one-undo": (1440, 900),
+    "clone-17-upload-keyboard-path": (1440, 900),
+    "clone-20-marquee-rotation-live": (1280, 800),
+    # captured BY the session69 e2e pin at the playwright default viewport
+    "clone-21-knob-posture-verify-card": (1280, 720),
+}
+
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -333,6 +359,8 @@ def expected_for(name: str):
         return S75.get(Path(name).stem)
     if name.startswith("ref-audit-s76/"):
         return S76.get(Path(name).stem)
+    if name.startswith("ref-audit-s79/"):
+        return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
         return S78.get(Path(name).stem)
     if name.startswith("ref-audit-s77/"):
@@ -388,6 +416,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s76").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s77").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s78").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s79").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

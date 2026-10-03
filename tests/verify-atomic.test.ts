@@ -55,12 +55,19 @@ describe("the XFF last-hop keying (session 62, S62-D / B-M1)", () => {
   it("clientIpOf parses the LAST x-forwarded-for hop (the proxy-appended real IP)", () => {
     // THE DEFECT PIN: pre-fix the first hop was taken —
     //   return forwarded.split(",")[0]?.trim() || "unknown";
+    // Session 69 (S69-A — a legitimate contract update): the last-hop
+    // doctrine became the DEPTH-1 default of the deploy-declared trust
+    // family (DIGMA_PROXY_HOPS) — the behavioral contract (last hop at
+    // the default) is pinned in src/lib/rate-limit.test.ts and
+    // tests/proxy-hops-s69.test.ts; this source pin re-anchors onto
+    // the depth-aware index form.
     const fnStart = rateLimitSource.indexOf("export function clientIpOf");
     expect(fnStart).toBeGreaterThan(-1);
-    const fnEnd = rateLimitSource.indexOf("return headers.get(", fnStart);
+    const fnEnd = rateLimitSource.indexOf("const real = headers.get(", fnStart);
     const fn = rateLimitSource.slice(fnStart, fnEnd);
     expect(fn).toContain('const hops = forwarded.split(",").map((hop) => hop.trim()).filter(Boolean);');
-    expect(fn).toContain("return hops[hops.length - 1] ?? ");
+    expect(fn).toContain("return hops[hops.length - depth] ?? ");
+    expect(fn).toContain("if (hops.length < depth) return \"unknown\";");
   });
 
   it("the first-hop form is gone", () => {

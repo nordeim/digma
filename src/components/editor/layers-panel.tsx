@@ -34,7 +34,7 @@ export function LayersPanel() {
   // All disable — computed once beside the other derived sets.
   const visible = elements.filter((el) => el.visible);
 
-  function onRowClick(id: string, event: React.MouseEvent) {
+  function onRowClick(id: string, event: { shiftKey: boolean }) {
     const store = useEditorStore.getState();
     if (event.shiftKey) {
       store.select([id], true);
@@ -172,7 +172,7 @@ export function LayersPanel() {
                     // Space activates as well as Enter.
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      onRowClick(el.id, event as unknown as React.MouseEvent);
+                      onRowClick(el.id, event);
                     }
                   }}
                 >
@@ -252,9 +252,15 @@ export function LayersPanel() {
                           click: `lucide lucide-lock w-3 h-3 opacity-50` /
                           `opacity-100`). The lock is FUNCTIONAL in the
                           reference (the canvas element gains
-                          cursor-not-allowed + cursor:default); the clone's
-                          pointer-events:none approach is the observably
-                          equivalent working implementation. */}
+                          cursor-not-allowed + cursor:default); the clone
+                          implements the same contract through the canvas's
+                          hit-test wall — the locked TOPMOST element eats
+                          the pointer (no selection change, no drag,
+                          nothing beneath displaced) — plus the same
+                          cursor-not-allowed chrome (session 23, S23-1: a
+                          CSS pointer-suppression approach turned the lock
+                          into a window whose drags fell through and
+                          displaced the element beneath — never again). */}
                       <Lock
                         className={cn("h-3 w-3", el.locked ? "opacity-100" : "opacity-50")}
                         aria-hidden

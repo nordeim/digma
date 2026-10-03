@@ -62,6 +62,16 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   const existing = await db.team.findUnique({ where: { id } });
   if (!existing) return fail("NOT_FOUND", "Team not found", 404);
 
-  await db.team.delete({ where: { id } });
+  // Session 69 (S69-C / L-B): a concurrent DELETE racing this one makes
+  // the loser throw P2025 past the envelope — answer 404 instead (the
+  // sibling PATCH's S62-G form; the resource is gone either way).
+  try {
+    await db.team.delete({ where: { id } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return fail("NOT_FOUND", "Team not found", 404);
+    }
+    throw error;
+  }
   return ok({ deleted: true });
 }

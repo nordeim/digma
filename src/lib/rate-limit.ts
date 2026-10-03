@@ -63,7 +63,26 @@ export function aiRateLimit(ip: string, now: number = Date.now()): RateLimitResu
 }
 
 /**
- * The client IP behind a single trusted proxy.
+ * The declared proxy-topology trust depth (session 69, S69-A — the
+ * seventeenth audit's M-A, the promoted M-class carry-over).
+ *
+ * DIGMA_PROXY_HOPS: unset (the default) = 1 — exactly one appending
+ * proxy, the standing S62-D last-hop trust. 0 = direct exposure (the
+ * client-supplied header family is ignored entirely). N >= 2 = N
+ * trusted appending proxies in front of the app. Unparsable or
+ * negative values fail CLOSED onto the default — a bad env var never
+ * widens trust.
+ */
+export function proxyHopDepth(): number {
+  const raw = process.env.DIGMA_PROXY_HOPS;
+  if (raw === undefined || raw === "") return 1;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return 1;
+  return parsed;
+}
+
+/**
+ * The client IP behind a DECLARED proxy topology.
  *
  * Session 62 (S62-D / B-M1): the limiter keys on the LAST
  * x-forwarded-for hop — the proxy-APPENDED real IP. The pre-fix
@@ -73,12 +92,29 @@ export function aiRateLimit(ip: string, now: number = Date.now()): RateLimitResu
  * defense (10/IP/15min) was evadable by rotating the header. A
  * single-value header (the e2e/smoke suites' dedicated-bucket form)
  * is both first and last — unaffected.
+ *
+ * Session 69 (S69-A / M-A): the last hop is correct only behind
+ * EXACTLY ONE appending proxy — the trust is now DEPLOY-DECLARED
+ * through DIGMA_PROXY_HOPS. A direct-exposure deploy (depth 0) gets
+ * one honest shared bucket instead of a per-request header rotation
+ * that fully bypasses the limiter; a two-or-more-hop topology (depth
+ * N) keys on the hop the Nth trusted proxy preserved — the LAST hop
+ * there is the innermost PROXY's own IP, which would collapse every
+ * user into one self-DoS bucket. A list shorter than the declared
+ * depth fails closed onto "unknown" (an attacker sending single-value
+ * headers under a declared depth of 2 cannot rotate buckets). The
+ * x-real-ip fallback applies only at depth >= 1 with XFF absent —
+ * unchanged at the default, ignored entirely at depth 0.
  */
 export function clientIpOf(headers: Headers): string {
+  const depth = proxyHopDepth();
+  if (depth === 0) return "unknown";
   const forwarded = headers.get("x-forwarded-for");
   if (forwarded) {
     const hops = forwarded.split(",").map((hop) => hop.trim()).filter(Boolean);
-    return hops[hops.length - 1] ?? "unknown";
+    if (hops.length < depth) return "unknown";
+    return hops[hops.length - depth] ?? "unknown";
   }
-  return headers.get("x-real-ip") || "unknown";
+  const real = headers.get("x-real-ip");
+  return real?.trim() || "unknown";
 }

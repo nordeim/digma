@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { bodySizeRejected, clampOptionalText, MEMBER_LIMIT } from "@/lib/validation";
@@ -38,15 +39,27 @@ export async function POST(request: NextRequest, { params }: Params) {
     return fail("VALIDATION", "Too many members (max 100)", 400);
   }
 
-  const member = await db.teamMember.create({
-    data: {
-      teamId: id,
-      name: clampOptionalText(body?.name, 80) ?? memberDisplayFor(email),
-      email,
-      role: clampOptionalText(body?.role, 80),
-      avatarColor: memberColorFor(email),
-    },
-  });
+  // Session 69 (S69-C / L-B): the team can vanish between the
+  // pre-check and the create (a concurrent DELETE) — P2003 then
+  // throws past the envelope. Answer 404 instead: the invite target
+  // no longer exists.
+  let member;
+  try {
+    member = await db.teamMember.create({
+      data: {
+        teamId: id,
+        name: clampOptionalText(body?.name, 80) ?? memberDisplayFor(email),
+        email,
+        role: clampOptionalText(body?.role, 80),
+        avatarColor: memberColorFor(email),
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return fail("NOT_FOUND", "Team not found", 404);
+    }
+    throw error;
+  }
 
   return ok({ member }, 201);
 }

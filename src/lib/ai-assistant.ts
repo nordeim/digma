@@ -35,14 +35,15 @@ export type AiOperation =
 // The update operation's sanitized patch — the fields the sanitizer
 // clamps and the client applies (fill hex-validated, opacity 0..1,
 // width 1..20000, height 0..20000, scale 0.05..20, text ≤ 500 chars).
+// Session 69 (S69-D): the dead positional fields the sanitizer never
+// built and the client never applied are deleted — the type describes
+// exactly what flows.
 export type AssistantUpdatePatch = {
   fill?: string | null;
   opacity?: number;
   width?: number | null;
   height?: number | null;
   scale?: number; // relative resize (1.25 = +25%)
-  x?: number;
-  y?: number;
   text?: string | null;
 };
 
