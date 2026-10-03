@@ -1,15 +1,105 @@
-# Digma — Master Project Architecture Document (PAD) v1.42.0
+# Digma — Master Project Architecture Document (PAD) v1.43.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-10-03 (v1.42.0 — the v4-opacity/contrast/dead-code pass: the thumbnail-overlay fix (every grid project-card thumbnail rendered as a SOLID BLACK RECTANGLE — the card's hover overlay carried the v3 opacity utilities Tailwind v4 REMOVED, so `.bg-black` painted opaque black over every CanvasThumbnail on the Dashboard "Continue Working"/"All Projects" and the Recent grid since the first commit; verified against the production build three ways — the class string ships in the JS chunk, the built CSS emits ZERO v3-opacity selectors, and a pixel probe of the shipped dashboard screenshot showed the thumbnail regions at (0,0,0); the fix is the v4 modifier form `bg-black/0 group-hover:bg-black/10`, the nextjs16-tailwind4 skill's own migration-table row) + the two missed Teams AA micro-labels (the member-role and "+N more" lines at text-gray-400/2.54:1 — the S61-B family's missed sites, now gray-500/4.83:1) + the real-user avatar initial (the first chip hardcoded "Y" against the RA-53 documented real-user contract — a three-way docs/code/pin drift; ProjectCard gains the userInitial prop, both views derive it from the signed-in name, and the parity pin legitimately updates "Y"->"D" for the demo "Designer" account) + the layers rename cap (maxLength 80 matching the server's clampOptionalText — the name-cap drift family closed on the rename surface) + the reset-link guard (the in-app resetUrl href routes through safeFromUrl — the S58-C defense-in-depth family) + the Recent mount guard (the ignore pattern the sibling views carry) + the dead-code Low batch (the HeaderUser avatar-color field, the Recent no-op nested container classes, the zero-consumer ELEMENT_TOOLS export, the broken db:reset script, the dead supabase remotePatterns grant — each grep-verified before deletion; the elementToStyle doc comment gains the honest TEST-ONLY status)): the thirty-ninth audit re-verified the reference's standing surfaces (the desktop nav 124/96/92 x 36; the greeting "Good morning, sepnetflix2023" with the name; Quick Stats 1/0/Pro; the Recent sort last_accessed / "1 file found"; zero kbd; the Create-Team dead chrome the 39th — 2 clicks, 0 dialogs; R3 mobile nav failure class A the 39th — nav display:none, links 0x0, no hamburger, evidence ref-audit-s73/ref-01; the mobile editor header clipping Share L385-R458 / Present L466-R551 at 390, evidence ref-audit-s73/ref-02; the board at exactly 9 layers) — no drift, no new gaps; the clone's mobile nav verified live end-to-end at 390x844 the 40th consecutive session AND re-verified on the S63 build after the code changes (9/9 — the Tailwind v4 failure class A NOT present); the ELEVENTH Mode C code audit — TWO fresh-eyes independent full-file reviews (auditor A over the client view layer — dashboard/recent/teams/project-card/app-header/login-screen/reset-password-screen/logo/use-toast/layout+globals+every page; auditor B over the lib/ui/config/infra side — the pure lib seams, the vendored ui primitives, the editor panel components, the vitest/playwright configs + e2e setup, package.json/next.config.ts/postcss/tsconfig/eslint, proxy.ts, prisma schema+seed) found 0 Critical / 1 High / 1 Medium / 9 Low / 17 Informational, every chosen finding individually re-verified by the lead in source (the High empirically — the build artifacts + the screenshot pixel probe); the session executed all seven chosen slices S63-A..S63-G via TDD: unit RED 16 defect pins + 4 preservation pins across seven new spec files (three pin self-trips caught by the GREEN run and reworded — the fix comments quoted the very literals the pins assert absent, the F50(1) lesson) -> unit GREEN 363 = 343 + 20; e2e RED 3/3 honestly reproduced against the pre-fix standalone build at exactly the defect assertions (the dashboard thumbnail region 0.9995 solid black; the Recent thumbnail region 0.9995; the avatar initial received "Y" expected "D") -> e2e GREEN 217 = 215 + 2; FULL GATE GREEN: lint - typecheck - 363 unit / 70 files - build 23 routes - 56 smoke - 217 e2e — zero regressions; the live verification on the S63 build (the mobile nav contract 9/9 re-verified); the screenshot capture — the standard 32 re-captured + the ref-audit-s73 evidence set (ref-00/01/02/03/04 from the 39th audit + clone-01/04/05/06 + the standing clone-07 44px-bell and clone-08 AA-destructive evidence + clone-11 the S63-A painted-thumbnail evidence captured BY the e2e pin at the verified-assertion moment) — the F42 inline checks throughout (the new overlay-transparency check accepting BOTH the rgba(0,0,0,0) and the oklab(0 0 0 / 0) computed forms — v4 emits function values), dimension-checked 126/126 across the standing sets (the checker extended with the S73 mapping), VLM content-verified 16/16 (clone-11's "solid black" reading adjudicated by the pixel ground truth — 188 distinct colors, 12.7% content pixels, the purple/blue shapes over the project's own #0d1117 canvas; the F44b class), the DB re-seeded to the pristine contract after every mutating phase; .env.example verified against the source's four process.env reads — unchanged, the seven slices add no env vars) **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
+**Last Updated:** 2026-10-03 (v1.43.0 — the gesture-surface/rotation-bounds/reset-gate pass: the mobile Sheet's gesture-aware commit (the mobile properties helper omitted the third argument the desktop helper has carried since session 62 — every slider tick and every Content keystroke INSIDE THE MOBILE SHEET pushed a full history snapshot, the exact S62-A per-tick flooding defect re-introduced on the one surface the fix missed; a single 0-100 opacity drag on a phone flooded the 60-deep past stack) + the surface-aware sliderGesture (the begin/blur interleaving race — a typing burst followed by a slider pointerdown lost BOTH gestures: the slider's begin overwrote the text snapshot, then the Content blur's finish cancelled the slider's fresh gesture; the helper now carries a SURFACE token — begin flushes a changed foreign gesture so the text burst keeps its one undo entry, finish no-ops for a foreign surface) + the rotation-aware boundsOf (the footprint math ignored rotation while the hit-test inverse-maps through the corner-anchored chain — a 90-degree-rotated element's selection outline, resize handles, marquee containment, and resize math all ran on the unrotated footprint; the AABB now folds the four rotated corners with the zero-angle fast path returning the historical math exactly) + the resetUrl production gate (the forgot-password route returned the live single-use token inside the 200's payload for any known email with no env-gate mechanism — the ADR-014 documented production swap becomes DIGMA_DISABLE_IN_APP_RESET, the DIGMA_DISABLE_AI_LLM naming family) + the register P2002 race guard + the reset-password 200-char cap + the redactDatabaseUrl log seam (a credentialed non-SQLite connection string would have printed its secret to stdout) + the unified memberColorFor on both invite paths + the editor Low batch (the single-sourced isTypingTarget predicate — the shell and canvas copies had drifted; the canvas pointer capture on the draw/move/marquee branches — drags survive crossing into the chrome; the dead selection-ring classes; the TEXT Color row's null clear committed like its sibling rows)): the fortieth audit re-verified the reference's standing surfaces (the desktop nav 124/96/92 x 36; the greeting "Good morning, sepnetflix2023" with the name; Quick Stats 1/0/Pro; the Recent sort last_accessed / "1 file found"; zero kbd; the Create-Team dead chrome the 40th — 2 clicks, 0 dialogs; R3 mobile nav failure class A the 40th — nav display:none, links 0x0, no hamburger, evidence ref-audit-s74/ref-01; the mobile editor header clipping Share L385-R458 / Present L466-R551 at 390 re-measured EXACTLY, evidence ref-audit-s74/ref-02; the board at exactly 9 layers) — no drift, no new gaps; the clone's mobile nav verified live end-to-end at 390x844 the 41st consecutive session AND re-verified on the S64 build after the code changes (9/9 — the Tailwind v4 failure class A NOT present); the TWELFTH Mode C code audit — TWO fresh-eyes independent full-file reviews (auditor A over the editor core — editor-view/editor-store/canvas/properties-panel/toolbar/layers/components/AI panel/lib/editor/lib/ai-assistant, 6,132 lines, last independently reviewed session 62; auditor B over the server + test infra side — all 17 API route files, the auth/rate-limit/db/db-path/validation/api/greeting/team libs, proxy.ts, the prisma schema + seed, the vitest/playwright configs + global setup + smoke script, both auth screens) found 0 Critical / 1 High / 3 Medium / 11 Low / 10 Informational, every chosen finding individually re-verified by the lead in source; the session executed all seven chosen slices S64-A..S64-G via TDD: unit RED 27 defect pins + 6 preservation pins across seven new spec files -> unit GREEN 396 = 363 + 33; e2e RED honestly reproduced against the pre-fix standalone build at exactly the defect assertion (the second undo after the mobile Sheet slider drag stepped back INTO the middle of the drag — received 13, expected the pre-drag 100; the en-route lesson F51: the Sheet's dialog stand-down guard blocks Ctrl+Z while open, and the endGesture duplicate masks the first undo — the pin restructured onto the SECOND undo, the one the per-tick stack betrays) -> e2e GREEN 218 = 217 + 1; FULL GATE GREEN: lint - typecheck - 396 unit / 77 files - build 23 routes - 56 smoke - 218 e2e — zero regressions; the live verification on the S64 build (the mobile nav contract 9/9 re-verified); the screenshot capture — the standard 32 re-captured + the ref-audit-s74 evidence set (ref-00/01/02/03/04 from the 40th audit + clone-01/04/05/06 + the standing clone-07 44px-bell and clone-08 AA-destructive evidence + clone-12 the S64-A mobile slider one-undo evidence captured BY the e2e pin at the verified-assertion moment) — dimension-checked 138/138 across the standing sets (the checker extended with the S74 mapping), VLM content-verified 16/16 (clone-04's "not a bottom sheet" reading the standing F44b confirming-description class — the drawer IS open; clone-12's "blank readout" misread adjudicated by the zoom probe — the readout shows 100% with the handle at max, exactly the verified state), the DB re-seeded to the pristine contract after every mutating phase; .env.example extended with the DIGMA_DISABLE_IN_APP_RESET knob — the source's five process.env reads all covered) **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
 
 Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+#### Revision Block — v1.43.0 (Tracked Changes)
+
+- `[SR]` **The gesture-surface/rotation-bounds/reset-gate pass — seven
+  slices (S64-A through S64-G) — the twelfth Mode C audit's chosen work:**
+  1. **S64-A (A-1 — the HIGH): the mobile properties Sheet's `update`
+     helper passes the gesture-aware commit argument.** The desktop
+     panel's helper has carried `gestureSnapshot === null` as the third
+     `updateElements` argument since session 62 (S62-A); the mobile
+     Sheet's helper omitted it — every slider tick and every Content
+     keystroke inside the mobile Sheet pushed a full history snapshot
+     (a single 0→100 opacity drag flooded the 60-deep `past` stack).
+     Pinned by `tests/mobile-update-gesture.test.ts` + the e2e pin in
+     `tests/e2e/session64-fixes.spec.ts` (the second undo after a mobile
+     Sheet drag — the one the per-tick stack betrays).
+  2. **S64-B (A-2): the `sliderGesture` helper gains a SURFACE token.**
+     `begin(surface)` FLUSHES a changed foreign gesture first (the
+     superseded typing burst keeps its one undo entry) before beginning
+     the new one; `finish(surface)` is a NO-OP for a foreign surface
+     (the stale Content blur arriving after the slider's pointerdown
+     must not cancel the slider's fresh gesture — the pre-fix shared
+     flag wiped BOTH gestures in one interleave). The wiring carries
+     `begin("slider")`/`finish("slider")` on the range inputs and
+     `begin("text")`/`finish("text")` on the Content input. Pinned by
+     `tests/slider-surface.test.ts`.
+  3. **S64-C (A-3): `boundsOf` is rotation-aware.** The AABB folds the
+     four corner-anchored rotated corners (the render chain's
+     transform-origin is 0 0 — the hit-test already inverse-maps through
+     it); the `rotation === 0` path returns the historical math exactly.
+     The selection outline, resize handles, marquee containment, and
+     resize math now run on the VISUAL footprint of rotated elements.
+     Pinned by `tests/bounds-rotation.test.ts` (the 90° axis swap, the
+     45° enlarged AABB, the scale composition, the fitToBounds consumer).
+  4. **S64-D (B-1): the forgot-password route's in-app reset link is
+     env-gated.** `DIGMA_DISABLE_IN_APP_RESET=1` suppresses `resetUrl`
+     (the documented ADR-014 production swap becomes a mechanism — the
+     live single-use token never rides an API payload when a real email
+     service owns the delivery); the no-enumeration 200 and its message
+     are unchanged; the client's sent card degrades gracefully (it
+     renders the link only when the field is a string). `.env.example`
+     gains the knob. Pinned by `tests/reset-url-gate.test.ts`.
+  5. **S64-E (B-4 + B-12): the register create is guarded for the
+     unique-constraint code (P2002 → the same 409 CONFLICT envelope the
+     findUnique path answers — the bare-throw family closed on this
+     route) and the reset-password route gains register's 200-char
+     password cap.** Pinned by `tests/server-low-s64.test.ts`.
+  6. **S64-F (B-6 + B-7): `redactDatabaseUrl` (the pure seam in
+     db-path.ts) feeds the startup log line — a credentialed non-SQLite
+     connection string collapses its password to `***` (the `file:`
+     family passes through verbatim); the create-team member path
+     derives `avatarColor` through the shared `memberColorFor` the
+     invite path uses (the two dialogs could render the same email two
+     different colors).** Pinned by `tests/db-redaction.test.ts`.
+  7. **S64-G (the editor Low batch — A-4 + A-5 + A-6 + A-8): the
+     `isTypingTarget` predicate is single-sourced in `src/lib/editor.ts`
+     (the shell's copy carried the S62-A range carve-out; the canvas
+     copy predated it — two copies of one domain predicate, already
+     drifted); the canvas's draw/move/marquee branches capture the
+     pointer on the container (the pan/resize branches' own pattern —
+     drags survive the pointer crossing into the chrome instead of
+     committing mid-flight at the leave handler); the dead
+     selection-ring classes are deleted (the inline box-shadow owns the
+     cascade — the utilities never painted); the TEXT Color row commits
+     the null clear like its sibling fill/stroke rows (the canvas
+     renders a null text color as the default white).** Pinned by
+     `tests/editor-low-s64.test.ts`.
+- `[T]` Unit +33 checks across seven new spec files
+  (`tests/mobile-update-gesture.test.ts` 3, `tests/slider-surface.test.ts`
+  6, `tests/bounds-rotation.test.ts` 6, `tests/reset-url-gate.test.ts` 3,
+  `tests/server-low-s64.test.ts` 3, `tests/db-redaction.test.ts` 6,
+  `tests/editor-low-s64.test.ts` 6) → **396 = 363 + 33**. E2E +1
+  (`tests/e2e/session64-fixes.spec.ts` — the mobile Sheet's slider
+  one-undo-per-gesture pin, RED pre-fix at received 13 / expected 100) →
+  **218 = 217 + 1**. Three standing pins legitimately re-anchored onto
+  the surface-token wiring (`tests/slider-gesture.test.ts` × 4 + the
+  theme window 600 → 800 + the gesture-undo move-branch ordering — each
+  with the contract-change comment).
+- `[SR]` **Lesson F51 (the digma_SKILL v1.42.0 addition):** (1) a
+  behavioral pin behind a Radix dialog must account for the SHORTCUT
+  STAND-DOWN guard — Ctrl+Z is dead while the Sheet is open, so the pin
+  closes the dialog first; (2) when the fix's own gesture-entry
+  duplicates the defect's last entry, the FIRST undo cannot discriminate
+  — pin the SECOND undo, the one the per-tick stack betrays; (3) an
+  autosave remap between the interaction and the undo legitimately
+  empties the selection (markSaved remaps the LIVE ids while the
+  restored snapshot carries the pre-save ids) — a value-contract pin
+  re-selects before re-opening the surface instead of pinning the
+  selection; (4) a small readout at screenshot resolution can defeat a
+  VLM's first pass — the zoom probe (or the programmatic ground truth)
+  adjudicates.
 
 #### Revision Block — v1.42.0 (Tracked Changes)
 
@@ -1255,7 +1345,14 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — layers rename cap (S63-D) | `tests/layers-rename-cap.test.ts` | 1 | tests | Vitest |
 | Unit — reset-link guard + Recent mount guard (S63-E/F) | `tests/reset-url-guard.test.ts` + `tests/recent-mount-guard.test.ts` | 3 | tests | Vitest |
 | Unit — dead-code Low batch (S63-G) | `tests/dead-code-s63.test.ts` | 6 | tests | Vitest |
-| **Unit total** | **70 files** | **363** | | Vitest |
+| Unit — mobile update helper gesture commit (S64-A) | `tests/mobile-update-gesture.test.ts` | 3 | tests | Vitest |
+| Unit — surface-aware sliderGesture (S64-B) | `tests/slider-surface.test.ts` | 6 | tests | Vitest |
+| Unit — rotation-aware boundsOf (S64-C) | `tests/bounds-rotation.test.ts` | 6 | tests | Vitest |
+| Unit — resetUrl production gate (S64-D) | `tests/reset-url-gate.test.ts` | 3 | tests | Vitest |
+| Unit — register race + reset cap (S64-E) | `tests/server-low-s64.test.ts` | 3 | tests | Vitest |
+| Unit — URL redaction + unified member color (S64-F) | `tests/db-redaction.test.ts` | 6 | tests | Vitest |
+| Unit — editor Low batch (S64-G) | `tests/editor-low-s64.test.ts` | 6 | tests | Vitest |
+| **Unit total** | **77 files** | **396** | | Vitest |
 | E2E — auth journeys + card states + from_url guard | `tests/e2e/auth.spec.ts` | 16 | tests/e2e | Playwright |
 | E2E — reset-password journeys | `tests/e2e/reset-password.spec.ts` | 7 | tests/e2e | Playwright |
 | E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |
@@ -1278,7 +1375,8 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | E2E — session 61 fixes: AA destructive color, zoom/tool reset, soft View-all, immediate open, cap-refused draw, pagehide keepalive | `tests/e2e/session61-fixes.spec.ts` | 6 | tests/e2e | Playwright |
 | E2E — session 62 fixes: slider one-undo gesture, soft-leave goBack flush | `tests/e2e/session62-fixes.spec.ts` | 2 | tests/e2e | Playwright |
 | E2E — session 63 fixes: the painted-thumbnail pixel probes (S63-A) | `tests/e2e/session63-fixes.spec.ts` | 2 | tests/e2e | Playwright |
-| **E2E total** | **22 files** | **217** | | Playwright |
+| E2E — session 64 fixes: the mobile Sheet slider one-undo gesture (S64-A) | `tests/e2e/session64-fixes.spec.ts` | 1 | tests/e2e | Playwright |
+| **E2E total** | **23 files** | **218** | | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 56 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns

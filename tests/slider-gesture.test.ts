@@ -64,10 +64,13 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     expect(start).toBeGreaterThan(-1);
     const end = panelSource.indexOf("function ", start + 10);
     const body = panelSource.slice(start, end);
-    expect(body).toMatch(/onPointerDown=\{sliderGesture\.begin\}/);
-    expect(body).toMatch(/onPointerUp=\{sliderGesture\.finish\}/);
-    expect(body).toMatch(/onPointerCancel=\{sliderGesture\.finish\}/);
-    expect(body).toMatch(/onLostPointerCapture=\{sliderGesture\.finish\}/);
+    // Session 64 (S64-B — a legitimate contract update): the handlers
+    // became arrow wrappers carrying surface tokens (the begin/blur
+    // interleaving fix) — the gesture wiring itself is unchanged.
+    expect(body).toMatch(/onPointerDown=\{\(\) => sliderGesture\.begin\("slider"\)\}/);
+    expect(body).toMatch(/onPointerUp=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
+    expect(body).toMatch(/onPointerCancel=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
+    expect(body).toMatch(/onLostPointerCapture=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
   });
 
   it("every inline range slider carries the same gesture handler bundle", () => {
@@ -80,10 +83,12 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
       const inputStart = panelSource.lastIndexOf("<input", idx);
       const inputEnd = panelSource.indexOf("/>", idx);
       const input = panelSource.slice(inputStart, inputEnd);
-      expect(input).toMatch(/onPointerDown=\{sliderGesture\.begin\}/);
-      expect(input).toMatch(/onPointerUp=\{sliderGesture\.finish\}/);
-      expect(input).toMatch(/onPointerCancel=\{sliderGesture\.finish\}/);
-      expect(input).toMatch(/onLostPointerCapture=\{sliderGesture\.finish\}/);
+      // Session 64 (S64-B — the same legitimate update as the SliderRow
+      // pin: surface-token arrow wrappers, same gesture wiring).
+      expect(input).toMatch(/onPointerDown=\{\(\) => sliderGesture\.begin\("slider"\)\}/);
+      expect(input).toMatch(/onPointerUp=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
+      expect(input).toMatch(/onPointerCancel=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
+      expect(input).toMatch(/onLostPointerCapture=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
     }
   });
 
@@ -119,13 +124,18 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     const inputStart = panelSource.lastIndexOf("<input", idx);
     const inputEnd = panelSource.indexOf("/>", idx);
     const input = panelSource.slice(inputStart, inputEnd);
-    expect(input).toMatch(/onFocus=\{sliderGesture\.begin\}/);
-    expect(input).toMatch(/onBlur=\{sliderGesture\.finish\}/);
+    // Session 64 (S64-B — a legitimate contract update): the focus/blur
+    // pair became surface-token arrow wrappers (the interleaving fix);
+    // the idle-coalesced seam itself is unchanged.
+    expect(input).toMatch(/onFocus=\{\(\) => sliderGesture\.begin\("text"\)\}/);
+    expect(input).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\("text"\)\}/);
     expect(input).toMatch(/sliderGesture\.textTick\(\)/);
     // The idle-coalescing machinery: the timer, the re-arm, the
-    // begin-on-demand for a fresh burst.
-    expect(panelSource).toMatch(/idleTimer = setTimeout\(finish, 150\);/);
-    expect(panelSource).toMatch(/if \(useEditorStore\.getState\(\)\.gestureSnapshot === null\) \{\s*useEditorStore\.getState\(\)\.beginGesture\(\);\s*\}/);
+    // begin-on-demand for a fresh burst. Session 64 (S64-B): the timer
+    // fires the surface-aware finish; the begin-on-demand also records
+    // the owning surface.
+    expect(panelSource).toMatch(/idleTimer = setTimeout\(\(\) => finish\("text"\), 150\);/);
+    expect(panelSource).toMatch(/if \(useEditorStore\.getState\(\)\.gestureSnapshot === null\) \{\s*useEditorStore\.getState\(\)\.beginGesture\(\);\s*activeSurface = "text";\s*\}/);
   });
 
   it("the en-route isTypingTarget carve-out — a range input is not a typing target (the undo shortcut must not stand down behind a slider)", () => {
@@ -135,7 +145,17 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     // from the keyboard (observed live: 20 Ctrl+Z presses, the value
     // never moved). A range input accepts no text; the carve-out lets
     // the shortcuts through while text inputs keep the exemption.
-    expect(viewSource).toMatch(/const type = \(el as HTMLInputElement\)\.type;\s*return type !== "range";/);
+    // Session 64 (S64-G / A-4 — a legitimate contract update): the
+    // predicate moved to its single source (src/lib/editor.ts) — the
+    // shell and the canvas consume the SAME export; the carve-out
+    // contract itself is unchanged.
+    const editorLibSource = readFileSync(
+      path.resolve(import.meta.dirname, "../src/lib/editor.ts"),
+      "utf8",
+    );
+    expect(editorLibSource).toMatch(/export function isTypingTarget\(/);
+    expect(editorLibSource).toMatch(/const type = \(el as HTMLInputElement\)\.type;\s*return type !== "range";/);
+    expect(viewSource).toMatch(/import \{[^}]*isTypingTarget[^}]*\} from "@\/lib\/editor"/);
   });
 
   it("the store's gesture seam is untouched doctrine (the preservation pin)", () => {

@@ -200,6 +200,28 @@ export const DEFAULT_FILL = "#3B82F6";
 // source of truth for the server caps and the client clamp.
 export const ELEMENT_LIMIT = 2000;
 
+/** Session 64 (S64-G — the twelfth audit's A-4): the ONE typing-target
+ * predicate, single-sourced. The editor shell and the canvas had carried
+ * two hand-maintained copies that had already drifted (the shell's copy
+ * carried the range carve-out below; the canvas copy predated it). A
+ * RANGE input accepts no text — the keyboard shortcuts (above all
+ * Ctrl+Z — the most likely next action after a slider drag) must NOT
+ * stand down behind it. The pre-fix blanket input exemption left the
+ * undo shortcut dead with focus resting on a slider: the drag's own
+ * undo entry existed but was unreachable from the keyboard.
+ * Text/password/email inputs keep the exemption (typing must never
+ * trigger shortcuts). */
+export function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName?.toLowerCase();
+  if (tag === "input") {
+    const type = (el as HTMLInputElement).type;
+    return type !== "range";
+  }
+  return tag === "textarea" || tag === "select" || el.isContentEditable;
+}
+
 /** Default geometry + styling for a freshly drawn element of each type. */
 export function defaultElementFor(
   type: ElementType,
@@ -376,7 +398,14 @@ export type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
 /** Content bounding box of a set of elements (used by thumbnails + zoom-to-fit).
  * VISUAL bounds: a scaled element occupies width*scale x height*scale —
  * the selection outline, marquee containment, and thumbnails all need the
- * on-screen footprint, not the model footprint. */
+ * on-screen footprint, not the model footprint.
+ * Session 64 (S64-C — the twelfth audit's A-3): the footprint is
+ * ROTATION-AWARE. The render chain is translate(x,y) scale(s) rotate(r)
+ * with transform-origin 0 0 — the hit-test already inverse-maps through
+ * that chain, but the bounds ran on the unrotated footprint, so a
+ * rotated element's selection outline, resize handles, and marquee
+ * containment landed off its visual. The AABB folds the four rotated
+ * corners; the zero-angle path returns the historical math exactly. */
 export function boundsOf(elements: DesignElementDTO[]): Bounds | null {
   if (elements.length === 0) return null;
   let minX = Infinity;
@@ -385,10 +414,35 @@ export function boundsOf(elements: DesignElementDTO[]): Bounds | null {
   let maxY = -Infinity;
   for (const el of elements) {
     const s = el.scale ?? 1;
-    minX = Math.min(minX, el.x);
-    minY = Math.min(minY, el.y);
-    maxX = Math.max(maxX, el.x + el.width * s);
-    maxY = Math.max(maxY, el.y + el.height * s);
+    const rot = el.rotation ?? 0;
+    if (rot === 0) {
+      minX = Math.min(minX, el.x);
+      minY = Math.min(minY, el.y);
+      maxX = Math.max(maxX, el.x + el.width * s);
+      maxY = Math.max(maxY, el.y + el.height * s);
+      continue;
+    }
+    // Corner-anchored rotation (transform-origin 0 0): the local
+    // corners (0,0), (w,0), (0,h), (w,h) rotate then translate by
+    // (x,y) — all through the uniform scale first.
+    const rad = (rot * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const w = el.width * s;
+    const h = el.height * s;
+    for (const [cx, cy] of [
+      [0, 0],
+      [w, 0],
+      [0, h],
+      [w, h],
+    ]) {
+      const px = el.x + cx * cos - cy * sin;
+      const py = el.y + cx * sin + cy * cos;
+      minX = Math.min(minX, px);
+      minY = Math.min(minY, py);
+      maxX = Math.max(maxX, px);
+      maxY = Math.max(maxY, py);
+    }
   }
   return { minX, minY, maxX, maxY };
 }

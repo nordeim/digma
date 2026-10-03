@@ -136,7 +136,11 @@ describe("the editor slider contract (session 15 — the reference's Radix look)
       // widens 400 -> 600 — the slider gesture seam added four pointer
       // handlers between type and className on every range input; the
       // className is still on the SAME input element.
-      const chunk = after.slice(0, 600);
+      // Session 64 (S64-B — a second legitimate widening): the handlers
+      // became arrow wrappers carrying surface tokens (the interleaving
+      // fix) — 600 -> 800 keeps the className inside the window; still
+      // the SAME input element.
+      const chunk = after.slice(0, 800);
       expect(chunk, `unstyled range input near: ${chunk.slice(0, 60)}`).toMatch(
         /editor-range/,
       );

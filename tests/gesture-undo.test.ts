@@ -126,9 +126,13 @@ describe("the gesture undo direction (session 56, S56-A / H-1)", () => {
 
 describe("the canvas gesture wiring (source contract)", () => {
   it("both gesture starts capture the PRE-gesture snapshot", () => {
-    // The move branch (the element hit path)…
+    // The move branch (the element hit path)… Session 64 (S64-G / A-5
+    // — a legitimate contract update): the container pointer-capture
+    // call now sits between the gesture start and the drag state (the
+    // drag survives the pointer crossing into the chrome); the
+    // PRE-gesture ordering itself is unchanged.
     expect(canvasSource).toMatch(
-      /setDrag\(\{\s*kind: "move",[\s\S]*?\}\);\s*useEditorStore\.getState\(\)\.beginGesture\(\);|beginGesture\(\);\s*setDrag\(\{\s*kind: "move",/,
+      /beginGesture\(\);[\s\S]*?setDrag\(\{\s*kind: "move",|setDrag\(\{\s*kind: "move",[\s\S]*?\}\);\s*useEditorStore\.getState\(\)\.beginGesture\(\);/,
     );
     // …and the resize-handle branch.
     expect(canvasSource).toMatch(

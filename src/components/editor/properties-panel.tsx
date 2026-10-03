@@ -284,6 +284,7 @@ function HexColorRow({
 // to Saved without waiting for a blur that may never come.
 const sliderGesture = (() => {
   let changed = false;
+  let activeSurface: string | null = null;
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
   const clearIdle = () => {
     if (idleTimer) {
@@ -291,18 +292,40 @@ const sliderGesture = (() => {
       idleTimer = null;
     }
   };
-  const finish = () => {
+  const finish = (surface: string) => {
+    // Session 64 (S64-B — the twelfth audit's A-2): a terminal signal
+    // from a surface that no longer owns the gesture is a NO-OP. The
+    // interleaving this guards: typing in the Content input, then
+    // pointer-downing a slider — the slider's begin runs FIRST (the
+    // focus transfer is the pointerdown's default action) and
+    // supersedes the text gesture; the Content blur then arrives and
+    // must NOT cancel the slider's fresh gesture (the pre-fix shared
+    // flag made it do exactly that, wiping BOTH gestures in one
+    // interleave).
+    if (activeSurface !== surface) return;
     clearIdle();
     const store = useEditorStore.getState();
     if (changed) store.endGesture();
     else store.cancelGesture();
     changed = false;
+    activeSurface = null;
   };
   return {
-    begin: () => {
-      changed = false;
+    begin: (surface: string) => {
       clearIdle();
-      useEditorStore.getState().beginGesture();
+      const store = useEditorStore.getState();
+      // Session 64 (S64-B): a superseded gesture that CHANGED is
+      // flushed FIRST — its snapshot lands in history (one entry per
+      // gesture holds across the interleave), instead of being
+      // silently overwritten by the new gesture's begin.
+      if (activeSurface !== null && activeSurface !== surface && changed) {
+        store.endGesture();
+      }
+      if (activeSurface === null || activeSurface !== surface) {
+        store.beginGesture();
+      }
+      changed = false;
+      activeSurface = surface;
     },
     tick: () => {
       changed = true;
@@ -313,10 +336,11 @@ const sliderGesture = (() => {
     textTick: () => {
       if (useEditorStore.getState().gestureSnapshot === null) {
         useEditorStore.getState().beginGesture();
+        activeSurface = "text";
       }
       changed = true;
       clearIdle();
-      idleTimer = setTimeout(finish, 150);
+      idleTimer = setTimeout(() => finish("text"), 150);
     },
     finish,
   };
@@ -351,10 +375,10 @@ function SliderRow({
           max={max}
           step={step}
           value={value}
-          onPointerDown={sliderGesture.begin}
-          onPointerUp={sliderGesture.finish}
-          onPointerCancel={sliderGesture.finish}
-          onLostPointerCapture={sliderGesture.finish}
+          onPointerDown={() => sliderGesture.begin("slider")}
+          onPointerUp={() => sliderGesture.finish("slider")}
+          onPointerCancel={() => sliderGesture.finish("slider")}
+          onLostPointerCapture={() => sliderGesture.finish("slider")}
           onChange={(event) => {
             sliderGesture.tick();
             onChange(Number(event.target.value));
@@ -432,10 +456,10 @@ function GradientPanel({
               max={360}
               step={1}
               value={gradient.angle}
-              onPointerDown={sliderGesture.begin}
-              onPointerUp={sliderGesture.finish}
-              onPointerCancel={sliderGesture.finish}
-              onLostPointerCapture={sliderGesture.finish}
+              onPointerDown={() => sliderGesture.begin("slider")}
+              onPointerUp={() => sliderGesture.finish("slider")}
+              onPointerCancel={() => sliderGesture.finish("slider")}
+              onLostPointerCapture={() => sliderGesture.finish("slider")}
               onChange={(event) => {
                 sliderGesture.tick();
                 apply({ ...gradient, angle: Number(event.target.value) });
@@ -646,8 +670,8 @@ export function TextSection({
         <input
           type="text"
           value={element.text ?? ""}
-          onFocus={sliderGesture.begin}
-          onBlur={sliderGesture.finish}
+          onFocus={() => sliderGesture.begin("text")}
+          onBlur={() => sliderGesture.finish("text")}
           onChange={(event) => {
             sliderGesture.textTick();
             update({ text: event.target.value });
@@ -662,7 +686,12 @@ export function TextSection({
         onChange={(fontSize) => update({ fontSize: Math.max(fontSize, 1) })}
         min={1}
       />
-      <HexColorRow label="Color" value={element.fill} onChange={(fill) => fill && update({ fill })} />
+      {/* Session 64 (S64-G / A-8): the cleared color COMMITS the null —
+          the sibling fill and stroke rows' contract (the row's own clear
+          semantics); the canvas renders a null text color as the default
+          white, so the clear is a real revert-to-default, never a silent
+          no-op. */}
+      <HexColorRow label="Color" value={element.fill} onChange={(fill) => update({ fill })} />
       <div>
         <span className="text-xs font-medium text-gray-300">Font Family</span>
         <Select
@@ -901,10 +930,10 @@ export function TransformSection({
             max={180}
             step={1}
             value={element.rotation}
-            onPointerDown={sliderGesture.begin}
-            onPointerUp={sliderGesture.finish}
-            onPointerCancel={sliderGesture.finish}
-            onLostPointerCapture={sliderGesture.finish}
+            onPointerDown={() => sliderGesture.begin("slider")}
+            onPointerUp={() => sliderGesture.finish("slider")}
+            onPointerCancel={() => sliderGesture.finish("slider")}
+            onLostPointerCapture={() => sliderGesture.finish("slider")}
             onChange={(event) => {
               sliderGesture.tick();
               update({ rotation: Number(event.target.value) });
@@ -941,10 +970,10 @@ export function TransformSection({
             max={3}
             step={0.1}
             value={element.scale ?? 1}
-            onPointerDown={sliderGesture.begin}
-            onPointerUp={sliderGesture.finish}
-            onPointerCancel={sliderGesture.finish}
-            onLostPointerCapture={sliderGesture.finish}
+            onPointerDown={() => sliderGesture.begin("slider")}
+            onPointerUp={() => sliderGesture.finish("slider")}
+            onPointerCancel={() => sliderGesture.finish("slider")}
+            onLostPointerCapture={() => sliderGesture.finish("slider")}
             onChange={(event) => {
               sliderGesture.tick();
               update({ scale: Number(event.target.value) });
@@ -991,10 +1020,10 @@ export function OpacitySection({
           max={100}
           step={1}
           value={Math.round(element.opacity * 100)}
-          onPointerDown={sliderGesture.begin}
-          onPointerUp={sliderGesture.finish}
-          onPointerCancel={sliderGesture.finish}
-          onLostPointerCapture={sliderGesture.finish}
+          onPointerDown={() => sliderGesture.begin("slider")}
+          onPointerUp={() => sliderGesture.finish("slider")}
+          onPointerCancel={() => sliderGesture.finish("slider")}
+          onLostPointerCapture={() => sliderGesture.finish("slider")}
           onChange={(event) => {
             sliderGesture.tick();
             update({ opacity: Number(event.target.value) / 100 });

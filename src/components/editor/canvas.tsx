@@ -5,7 +5,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useEditorStore } from "./editor-store";
-import { boundsOf, canvasFontFamily, clampZoom, ELEMENT_LIMIT, fillPaintFor, type DesignElementDTO, type EditorTool } from "@/lib/editor";
+import { boundsOf, canvasFontFamily, clampZoom, ELEMENT_LIMIT, fillPaintFor, isTypingTarget, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
 // ---------------------------------------------------------------------------
 // The canvas: a DOM-element canvas (the reference's approach — absolutely
@@ -118,6 +118,11 @@ export function Canvas() {
     const drawType = TOOL_TO_TYPE[tool];
 
     if (drawType) {
+      // Session 64 (S64-G / A-5): the drag branches capture the pointer
+      // on the CONTAINER (the pan branch's own pattern) — a draw whose
+      // pointer crosses into the chrome keeps drawing instead of dying
+      // at the leave handler.
+      (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
       setDrag({
         kind: "draw",
         type: drawType,
@@ -174,9 +179,16 @@ export function Canvas() {
       // Ctrl+Z after a drag was a silent no-op and the pre-drag layout was
       // unreachable.
       useEditorStore.getState().beginGesture();
+      // Session 64 (S64-G / A-5): same container capture as the draw
+      // branch — the element keeps following the pointer across the
+      // toolbar/panels instead of committing mid-drag at the leave.
+      (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
       setDrag({ kind: "move", startX: point.x, startY: point.y, lastX: point.x, lastY: point.y, ids: nextIds });
     } else {
       if (!event.shiftKey) useEditorStore.getState().deselectAll();
+      // Session 64 (S64-G / A-5): same container capture — the marquee
+      // survives the pointer crossing into the chrome.
+      (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
       setDrag({ kind: "marquee", startX: point.x, startY: point.y, x: point.x, y: point.y, w: 0, h: 0 });
     }
   }
@@ -537,12 +549,9 @@ export function Canvas() {
   );
 }
 
-function isTypingTarget(target: EventTarget | null): boolean {
-  const el = target as HTMLElement | null;
-  if (!el) return false;
-  const tag = el.tagName?.toLowerCase();
-  return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
-}
+// Session 64 (S64-G / A-4): the typing-target predicate is single-sourced
+// in the pure seam (src/lib/editor.ts) — this file's local copy predated
+// the range carve-out and had drifted from the shell's copy.
 
 // Session 57 (S57-D — the fifth Mode C audit's M-5): Space is a standard
 // ACTIVATION key for the interactive family (buttons, links, ARIA
@@ -650,8 +659,11 @@ function CanvasElement({
   return (
     <div
       className={cn(
+        // Session 64 (S64-G / A-6): the utility ring family on the
+        // selected element is DELETED — the inline box-shadow below is
+        // the one selection-paint seam (the classes never painted; the
+        // inline style owns the cascade).
         "absolute select-none",
-        selected && "ring-2 ring-blue-500 ring-offset-0",
         // The reference's measured chrome: its locked element carries the
         // cursor-not-allowed class (the affordance that says "blocked").
         element.locked && "cursor-not-allowed",

@@ -50,18 +50,32 @@ export async function POST(request: NextRequest) {
   // info alert (the deterministic seam the e2e suite pins). Seeded/demo
   // accounts are pre-verified (the schema default) and never see this flow.
   const verifyCode = generateVerifyCode();
-  const user = await db.user.create({
-    data: {
-      email,
-      name: name || email.split("@")[0] || "Designer",
-      passwordHash: hashPassword(password),
-      avatarColor: "#3B82F6",
-      verified: false,
-      verifyCode,
-      verifyAttempts: 0,
-    },
-    select: { id: true, email: true, name: true, avatarColor: true },
-  });
+  // Session 64 (S64-E — the twelfth audit's B-4): the findUnique→create
+  // pair raced — a concurrent same-email register surfaced the Prisma
+  // unique-constraint error as an unstructured 500. The catch answers
+  // the SAME conflict envelope the pre-check path answers (the
+  // bare-throw family the S56-H/S62-G passes closed elsewhere).
+  let user;
+  try {
+    user = await db.user.create({
+      data: {
+        email,
+        name: name || email.split("@")[0] || "Designer",
+        passwordHash: hashPassword(password),
+        avatarColor: "#3B82F6",
+        verified: false,
+        verifyCode,
+        verifyAttempts: 0,
+      },
+      select: { id: true, email: true, name: true, avatarColor: true },
+    });
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+    if (code === "P2002") {
+      return fail("CONFLICT", "An account with this email already exists", 409);
+    }
+    throw error;
+  }
 
   return ok({ user, verificationCode: verifyCode }, 201);
 }

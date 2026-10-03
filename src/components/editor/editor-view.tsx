@@ -17,7 +17,7 @@ import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, fillPaintFor, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, fillPaintFor, isTypingTarget, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
 import {
   EXPORT_BOARD_HEIGHT,
   EXPORT_BOARD_WIDTH,
@@ -354,24 +354,9 @@ function useAutosave(): () => void {
 // ---------------------------------------------------------------------------
 // Keyboard shortcuts: tools (V/H/F/R/O/L/T), Delete, undo/redo, zoom.
 
-function isTypingTarget(target: EventTarget | null): boolean {
-  const el = target as HTMLElement | null;
-  if (!el) return false;
-  const tag = el.tagName?.toLowerCase();
-  if (tag === "input") {
-    // Session 62 (S62-A, en-route): a RANGE input is not a typing
-    // target — it accepts no text, so the keyboard shortcuts (above
-    // all Ctrl+Z — the most likely next action after a slider drag)
-    // must NOT stand down behind it. The pre-fix blanket input
-    // exemption left the undo shortcut dead with focus resting on a
-    // slider: the drag's own undo entry existed but was unreachable
-    // from the keyboard. Text/password/email inputs keep the
-    // exemption (typing must never trigger shortcuts).
-    const type = (el as HTMLInputElement).type;
-    return type !== "range";
-  }
-  return tag === "textarea" || tag === "select" || el.isContentEditable;
-}
+// Session 64 (S64-G / A-4): the typing-target predicate is single-sourced
+// in the pure seam (src/lib/editor.ts) — the shell and the canvas consume
+// the SAME export; the two local copies had drifted apart.
 
 function useEditorShortcuts(onOpenShortcuts: () => void) {
   React.useEffect(() => {
@@ -825,10 +810,17 @@ function MobilePropertiesEditor() {
   // selected id (the multi-selection contract — a single selection
   // carries one member, so the single case is unchanged), so autosave,
   // undo/redo, and the Unsaved badge all flow unchanged.
+  // Session 64 (S64-A — the twelfth audit's A-1): the gesture-aware
+  // default commit, the SAME doctrine the desktop helper has carried
+  // since session 62. This Sheet renders the shared section stack, so
+  // a mid-gesture tick (a slider drag, a typing burst) must commit
+  // history-free — the gesture's own snapshot lands at its end. The
+  // pre-fix omission re-introduced the per-tick history flooding on
+  // this one surface.
   const update = React.useCallback((patch: Partial<DesignElementDTO>) => {
     const s = useEditorStore.getState();
     if (s.selectedIds.length === 0) return;
-    s.updateElements(s.selectedIds, patch);
+    s.updateElements(s.selectedIds, patch, s.gestureSnapshot === null);
   }, []);
 
   if (!hasSelection) return null;

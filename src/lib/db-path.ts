@@ -106,3 +106,19 @@ export function candidateRoots(): string[] {
   roots.push(cwd);
   return [...new Set(roots)];
 }
+
+/** Session 64 (S64-F — the twelfth audit's B-6): redacts the credential
+ * section of a connection URL for SAFE LOGGING. The SQLite `file:` family
+ * carries no credentials and passes through verbatim; any URL whose
+ * authority embeds a `user:password` pair collapses the password to `***`
+ * (the username stays — it names the connection, the secret does not).
+ * The startup log line prints the RESOLVED url on every boot, and the
+ * resolver passes non-file URLs through unchanged — without this seam a
+ * credentialed connection string would print its secret to stdout. */
+export function redactDatabaseUrl(url: string): string {
+  // A URL-shaped string with a userinfo section: scheme://user:pass@rest
+  const m = /^([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)([^/@:]+):([^@]*)@(.*)$/.exec(url);
+  if (!m) return url;
+  const [, scheme, user, , rest] = m;
+  return `${scheme}${user}:***@${rest}`;
+}

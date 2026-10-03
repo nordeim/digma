@@ -45,6 +45,13 @@ export async function POST(request: NextRequest) {
   if (newPassword.length < 8) {
     return fail("VALIDATION", "Password must be at least 8 characters long", 400);
   }
+  // Session 64 (S64-E — the twelfth audit's B-12): the register surface
+  // caps the password at 200 chars; this surface is the SAME contract —
+  // the two password-setting paths must not diverge (scrypt cost is
+  // length-independent, so the cap is hygiene — but asymmetry is drift).
+  if (newPassword.length > 200) {
+    return fail("VALIDATION", "Password must be reasonably sized", 400);
+  }
 
   // The success path (unmeasurable on the reference — its token is
   // email-only): the coherent reading. The hash updates, the token CLEARS

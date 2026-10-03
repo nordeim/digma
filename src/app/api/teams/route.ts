@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { clampColor, clampOptionalText, clampText } from "@/lib/validation";
-import { memberDisplayFor } from "@/lib/team";
+import { memberColorFor, memberDisplayFor } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +54,12 @@ export async function POST(request: NextRequest) {
                 name: memberDisplayFor(memberEmail),
                 email: memberEmail,
                 role: clampOptionalText(body?.memberRole, 80),
-                avatarColor: "#3B82F6",
+                // Session 64 (S64-F — the twelfth audit's B-7): the
+                // same derivation the invite-member route uses — the
+                // two member-creation paths must agree on the color
+                // seed (the same email, the same chip, whichever
+                // dialog created it).
+                avatarColor: memberColorFor(memberEmail),
               },
             },
           }

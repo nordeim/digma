@@ -37,8 +37,12 @@ export async function POST(request: NextRequest) {
   // in any response — fetch-measured); the clone carries the SELF-HOSTED
   // in-app delivery (the ADR-014 family, same as the OTP): the resetUrl
   // rides along for existing accounts so the demo flow works end-to-end.
-  // Production with an email service should switch the delivery and drop
-  // the URL — the response shape stays compatible.
+  // Session 64 (S64-D — the twelfth audit's B-1): the production swap is
+  // now a MECHANISM, not an intention — setting the suppression knob
+  // keeps the link out of every response (an email service owns the
+  // delivery); the no-enumeration 200 and its message are unchanged
+  // either way, and the client's sent card degrades gracefully (it
+  // renders the link only when the field is a string).
   //
   // The URL is RELATIVE on purpose (the e2e trace caught the absolute form
   // breaking the standalone deploy): Next's standalone server rebuilds
@@ -46,6 +50,7 @@ export async function POST(request: NextRequest) {
   // yielded http://0.0.0.0:3100 — a host Chrome refuses cookies on, which
   // killed the post-login session. A relative href resolves against the
   // page's own origin everywhere (dev, standalone, any prod host).
+  const inAppResetEnabled = process.env.DIGMA_DISABLE_IN_APP_RESET !== "1";
   let resetUrl: string | null = null;
   const user = await db.user.findUnique({ where: { email } });
   if (user) {
@@ -57,7 +62,9 @@ export async function POST(request: NextRequest) {
         resetTokenExpiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
       },
     });
-    resetUrl = `/reset-password?token=${token}`;
+    if (inAppResetEnabled) {
+      resetUrl = `/reset-password?token=${token}`;
+    }
   }
 
   return ok({ message: NO_ENUMERATION_MESSAGE, resetUrl });

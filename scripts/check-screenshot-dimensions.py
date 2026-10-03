@@ -190,6 +190,25 @@ S73 = {
     "clone-11-thumbnail-painted": (291, 182),
 }
 
+# Session 64 (the 40th audit's evidence set): the same standing datums +
+# the S64 behavioral evidence — the mobile slider one-undo shot captured
+# BY the e2e pin at the pin's 390x844 viewport (the honest-moment
+# discipline).
+S74 = {
+    "ref-00-desktop-dashboard": (1440, 900),
+    "ref-01-mobile-dashboard": (390, 844),
+    "ref-02-mobile-editor": (390, 844),
+    "ref-03-desktop-recent": (1440, 900),
+    "ref-04-desktop-editor": (1440, 900),
+    "clone-01-mobile-nav-390": (390, 844),
+    "clone-04-mobile-nav-open-390": (390, 844),
+    "clone-05-present-desktop": (1440, 900),
+    "clone-06-editor-baseline-desktop": (1440, 900),
+    "clone-07-bell-44px-390": (390, 844),
+    "clone-08-destructive-aa-confirm": (1440, 900),
+    "clone-12-mobile-slider-one-undo": (390, 844),
+}
+
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -201,6 +220,8 @@ def png_size(path: Path):
 
 
 def expected_for(name: str):
+    if name.startswith("ref-audit-s74/"):
+        return S74.get(Path(name).stem)
     if name.startswith("ref-audit-s73/"):
         return S73.get(Path(name).stem)
     if name.startswith("ref-audit-s72/"):
@@ -245,6 +266,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s71").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s72").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s73").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s74").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
