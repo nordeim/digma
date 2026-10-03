@@ -59,8 +59,12 @@ type EditorStore = {
   // (unknown/missing projectId — reference parity). The first save creates
   // one; attachProject binds the freshly created id to the store WITHOUT
   // touching elements/selection so the in-flight save can continue.
+  // Session 62 (S62-F / A-L5): setName is DELETED — it had zero callers
+  // and the PUT body never carries the name, so any future caller would
+  // have flipped unsaved, saved, and silently never persisted the name
+  // (the S60-A bug shape). Name changes flow through the project PATCH
+  // route; a store action needs that seam wired first.
   attachProject: (id: string) => void;
-  setName: (name: string) => void;
   setSaving: () => void;
   // Session 56 (S56-B — M-1): the failure-path reset — the subscriber
   // re-arms the 800ms timer on the transition back to "unsaved" (an
@@ -173,8 +177,6 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     }),
 
   attachProject: (id) => set({ projectId: id }),
-
-  setName: (name) => set({ projectName: name, saveState: "unsaved" }),
 
   setSaving: () => set({ saveState: "saving" }),
   setUnsaved: () => set({ saveState: "unsaved" }),

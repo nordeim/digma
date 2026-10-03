@@ -54,7 +54,12 @@ describe("the unload keepalive flush (session 61, S61-I / A-3)", () => {
     // The size guard: a board whose full-list body exceeds the
     // keepalive cap is skipped (documented limitation).
     expect(body).toMatch(/JSON\.stringify\(\{\s*elements:/);
-    expect(body).toMatch(/if \(payload\.length > 60_000\) return;/);
+    // Session 62 (S62-F / A-L1 — a legitimate contract update): the
+    // guard now measures BYTES (Blob.size) — the pre-fix
+    // payload.length counted UTF-16 code units, so a CJK/emoji-heavy
+    // body under 60,000 units could still exceed Chromium's 64KB
+    // keepalive byte cap.
+    expect(body).toMatch(/if \(new Blob\(\[payload\]\)\.size > 60_000\) return;/);
     // The Untitled skip: no projectId means no PUT target (the creation
     // POST's adoption contract is out of unload scope).
     expect(body).toMatch(/if \(!projectId\) return;/);

@@ -291,8 +291,13 @@ function useAutosave(): () => void {
       });
       // A keepalive body over the Chromium cap cannot be sent through
       // unload — the honest skip (the timer/exit transports still own
-      // large boards while the page lives).
-      if (payload.length > 60_000) return;
+      // large boards while the page lives). Session 62 (S62-F / A-L1):
+      // the guard measures BYTES (Blob.size) — the pre-fix
+      // payload.length counted UTF-16 code units, so a CJK/emoji-heavy
+      // body under 60,000 units could still exceed Chromium's 64KB
+      // keepalive byte cap, pass the guard, and be silently rejected
+      // by the browser.
+      if (new Blob([payload]).size > 60_000) return;
       void fetch(`/api/projects/${projectId}/elements`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -310,6 +315,31 @@ function useAutosave(): () => void {
     });
 
     return () => {
+      // Session 62 (S62-C — the tenth audit's A-M1): the soft-leave flush.
+      // S61-I's pagehide transport covers refresh / tab close / external
+      // Back — but the App Router's Dashboard → Editor → browser Back is
+      // a SAME-DOCUMENT popstate traversal: pagehide never fires, the
+      // timer clear below killed the pending edit, and nothing flushed —
+      // an edit inside the debounce window died. A regular fetch
+      // SURVIVES unmount (the document persists through soft navigation),
+      // so the captured-current-state PUT fires fire-and-forget BEFORE
+      // disposal. The machine's own flush() is NOT used: its response
+      // handling is disposed-gated — the stuck-"saving" trap (A-L2,
+      // healed by the loader's normalization). Untitled skips (mirrors
+      // the S61-I contract: the creation POST's adoption is out of leave
+      // scope). No keepalive and no body cap — those exist for real
+      // teardown only; this fetch has a live document behind it.
+      const state = useEditorStore.getState();
+      if (state.saveState !== "saved" && state.projectId) {
+        void fetch(`/api/projects/${state.projectId}/elements`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            elements: state.elements,
+            backgroundColor: state.backgroundColor,
+          }),
+        }).catch(() => null);
+      }
       disposed = true;
       unsubscribe();
       if (timer) clearTimeout(timer);
@@ -328,7 +358,19 @@ function isTypingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
   const tag = el.tagName?.toLowerCase();
-  return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
+  if (tag === "input") {
+    // Session 62 (S62-A, en-route): a RANGE input is not a typing
+    // target — it accepts no text, so the keyboard shortcuts (above
+    // all Ctrl+Z — the most likely next action after a slider drag)
+    // must NOT stand down behind it. The pre-fix blanket input
+    // exemption left the undo shortcut dead with focus resting on a
+    // slider: the drag's own undo entry existed but was unreachable
+    // from the keyboard. Text/password/email inputs keep the
+    // exemption (typing must never trigger shortcuts).
+    const type = (el as HTMLInputElement).type;
+    return type !== "range";
+  }
+  return tag === "textarea" || tag === "select" || el.isContentEditable;
 }
 
 function useEditorShortcuts(onOpenShortcuts: () => void) {
@@ -953,8 +995,15 @@ export function EditorView({ user }: { user: HeaderUser }) {
   const projectName = useEditorStore((s) => s.projectName);
   const saveState = useEditorStore((s) => s.saveState);
   const zoom = useEditorStore((s) => s.zoom);
-  const past = useEditorStore((s) => s.past);
-  const future = useEditorStore((s) => s.future);
+  // Session 62 (S62-B — the tenth audit's A-M3): the shell subscribes to
+  // the undo/redo BOOLEANS, not the `past`/`future` arrays. Every
+  // committed mutation creates a new array identity — the array
+  // subscriptions re-rendered the ENTIRE shell subtree (Toolbar,
+  // LayersPanel, Canvas, PropertiesPanel, AiAssistant — none memoized)
+  // per keystroke/slider tick. The booleans flip only on the
+  // empty↔non-empty boundary; the buttons read exactly these.
+  const canUndo = useEditorStore((s) => s.past.length > 0);
+  const canRedo = useEditorStore((s) => s.future.length > 0);
 
   useEditorShortcuts(React.useCallback(() => setShortcutsOpen(true), []));
   // Session 56 (S56-C): the flush handle — exit() routes through it.
@@ -985,6 +1034,21 @@ export function EditorView({ user }: { user: HeaderUser }) {
         // and a soft navigation to ANOTHER project both still load.
         if (useEditorStore.getState().projectId === projectId) {
           setLoading(false);
+          // Session 62 (S62-C — the tenth audit's A-L2/I4): normalize a
+          // stale non-"saved" state. A disposed flush's terminal
+          // "saving" (the response handlers skip both markSaved and
+          // setUnsaved when disposed) otherwise survived re-entry
+          // THROUGH this skip — the badge read "Saving…" indefinitely
+          // with nothing in flight; an already-"unsaved" re-entry never
+          // re-armed (the subscriber fires on CHANGES only — and this
+          // mount's subscriber is already attached: the autosave effect
+          // declares before the load effect). setUnsaved() re-arms the
+          // S56-B retry. The F48 in-flight case is safe: the in-flight
+          // response's markSaved converges to "saved", and the armed
+          // timer's flush early-returns on "saved" — no spurious PUT.
+          if (useEditorStore.getState().saveState !== "saved") {
+            useEditorStore.getState().setUnsaved();
+          }
           return;
         }
         try {
@@ -1131,7 +1195,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
           <button
             type="button"
             onClick={() => useEditorStore.getState().undo()}
-            disabled={past.length === 0}
+            disabled={!canUndo}
             aria-label="Undo"
             className="p-2 text-gray-400 transition-colors hover:text-white disabled:opacity-50"
           >
@@ -1140,7 +1204,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
           <button
             type="button"
             onClick={() => useEditorStore.getState().redo()}
-            disabled={future.length === 0}
+            disabled={!canRedo}
             aria-label="Redo"
             className="p-2 text-gray-400 transition-colors hover:text-white disabled:opacity-50"
           >

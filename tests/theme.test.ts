@@ -132,7 +132,11 @@ describe("the editor slider contract (session 15 — the reference's Radix look)
     const afterMarkers = panelSource.split('type="range"').slice(1);
     expect(afterMarkers.length).toBeGreaterThanOrEqual(4);
     for (const after of afterMarkers) {
-      const chunk = after.slice(0, 400);
+      // Session 62 (S62-A — a legitimate contract update): the window
+      // widens 400 -> 600 — the slider gesture seam added four pointer
+      // handlers between type and className on every range input; the
+      // className is still on the SAME input element.
+      const chunk = after.slice(0, 600);
       expect(chunk, `unstyled range input near: ${chunk.slice(0, 60)}`).toMatch(
         /editor-range/,
       );

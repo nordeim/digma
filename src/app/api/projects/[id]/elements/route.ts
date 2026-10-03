@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import {
@@ -195,19 +196,37 @@ export async function PUT(request: NextRequest, { params }: Params) {
   // transaction. The old outside-read could interleave with a concurrent
   // PUT landing between this request's commit and its read — returning a
   // list this request did not write.
-  const elements = await db.$transaction(async (tx) => {
-    await tx.designElement.deleteMany({ where: { projectId: id } });
-    if (rows.length > 0) {
-      await tx.designElement.createMany({ data: rows.map((r) => ({ ...r, projectId: id })) });
+  //
+  // Session 62 (S62-G / B-L7): a project DELETE racing this long-running
+  // PUT makes the transaction's project.update (or the element writes)
+  // throw Prisma P2025/P2003 OUTSIDE the envelope — an unstructured 500
+  // violating the S56-H no-bare-throw discipline (this route IS the
+  // autosave: the failure toast then claims "Autosave failed" with a
+  // null message). The known-request races answer 404 through the
+  // envelope.
+  try {
+    const elements = await db.$transaction(async (tx) => {
+      await tx.designElement.deleteMany({ where: { projectId: id } });
+      if (rows.length > 0) {
+        await tx.designElement.createMany({ data: rows.map((r) => ({ ...r, projectId: id })) });
+      }
+      await tx.project.update({
+        where: { id },
+        data: { updatedAt: new Date(), ...(backgroundColor ? { backgroundColor } : {}) },
+      });
+      return tx.designElement.findMany({
+        where: { projectId: id },
+        orderBy: { sortOrder: "asc" },
+      });
+    });
+    return ok({ elements });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2025" || error.code === "P2003")
+    ) {
+      return fail("NOT_FOUND", "Project not found", 404);
     }
-    await tx.project.update({
-      where: { id },
-      data: { updatedAt: new Date(), ...(backgroundColor ? { backgroundColor } : {}) },
-    });
-    return tx.designElement.findMany({
-      where: { projectId: id },
-      orderBy: { sortOrder: "asc" },
-    });
-  });
-  return ok({ elements });
+    throw error;
+  }
 }

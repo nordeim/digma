@@ -6,7 +6,7 @@ import { Bot, RotateCcw, Send, WandSparkles } from "lucide-react";
 import { useEditorStore, type EditorSnapshot } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { AiOperation } from "@/lib/ai-assistant";
-import type { DesignElementDTO } from "@/lib/editor";
+import { ELEMENT_LIMIT, type DesignElementDTO } from "@/lib/editor";
 
 type ChatMessage = {
   id: string;
@@ -232,12 +232,24 @@ export function AiAssistant() {
         backgroundColor: preApply.backgroundColor,
       };
       const actionCount = applyOperations(operations);
+      // Session 62 (S62-F / A-L4): the honest reply at the ceiling. The
+      // deterministic reply asserts the REQUESTED count ("Added 3
+      // circles") — at 1,998 elements the store's ELEMENT_LIMIT clamp
+      // refuses part of the batch, the footer honestly reads "2
+      // action(s) performed", but the reply text still overclaimed. The
+      // annotation closes the mismatch (the honest-reply doctrine): a
+      // partial application with the board AT the limit is the cap's
+      // signature (other partial causes — locked/missing ids — never
+      // co-occur with a full board).
+      const capped =
+        actionCount < operations.length &&
+        useEditorStore.getState().elements.length >= ELEMENT_LIMIT;
       setMessages((prev) => [
         ...prev,
         {
           id: `a-${Date.now()}`,
           role: "assistant",
-          text: reply,
+          text: capped && actionCount > 0 ? `${reply} — the board is at its element limit` : reply,
           time: nowLabel(),
           actionCount,
           revertSnapshot: actionCount > 0 ? revertSnapshot : undefined,

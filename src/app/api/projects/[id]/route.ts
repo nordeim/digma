@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { clampColor, clampText } from "@/lib/validation";
@@ -48,12 +49,21 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     data.lastOpenedAt = new Date();
   }
 
-  const project = await db.project.update({
-    where: { id },
-    data,
-    include: { elements: { orderBy: { sortOrder: "asc" } } },
-  });
-  return ok({ project });
+  // Session 62 (S62-G / B-L7): a concurrent DELETE racing this update
+  // throws Prisma P2025 outside the envelope — answer 404 instead.
+  try {
+    const project = await db.project.update({
+      where: { id },
+      data,
+      include: { elements: { orderBy: { sortOrder: "asc" } } },
+    });
+    return ok({ project });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return fail("NOT_FOUND", "Project not found", 404);
+    }
+    throw error;
+  }
 }
 
 /** DELETE /api/projects/[id] — remove the project (elements cascade). */

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
+import { generateVerifyCode } from "@/lib/auth";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     return fail("CONFLICT", "This account is already verified — sign in.", 409);
   }
 
-  const verifyCode = String(100000 + Math.floor(Math.random() * 900000));
+  const verifyCode = generateVerifyCode();
   await db.user.update({
     where: { id: user.id },
     data: { verifyCode, verifyAttempts: 0 },

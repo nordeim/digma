@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { setSessionCookie, verifyPassword } from "@/lib/auth";
+import { generateVerifyCode, setSessionCookie, verifyPassword } from "@/lib/auth";
 import { ok } from "@/lib/api";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   // the recovery path the reference lacks. Documented in the PAD's
   // deviation ledger.
   if (!user.verified) {
-    const verifyCode = String(100000 + Math.floor(Math.random() * 900000));
+    const verifyCode = generateVerifyCode();
     await db.user.update({ where: { id: user.id }, data: { verifyCode, verifyAttempts: 0 } });
     return NextResponse.json(
       {

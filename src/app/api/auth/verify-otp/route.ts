@@ -52,8 +52,22 @@ export async function POST(request: NextRequest) {
   }
 
   if (user.verifyCode !== code) {
+    // Session 62 (S62-E / B-M2): the counter is a conditional
+    // updateMany — the pre-fix read-modify-write (the findUnique read
+    // above, then this update) UNDERCOUNTED under concurrency: N
+    // simultaneous wrong codes all read the same verifyAttempts and
+    // wrote the same increment, so the 5-attempt ceiling let a
+    // concurrent guess loop through. The conditional increment is
+    // atomic at the database; count === 0 means the ceiling was
+    // already reached (the exhausted 429).
+    const result = await db.user.updateMany({
+      where: { id: user.id, verifyAttempts: { lt: MAX_VERIFY_ATTEMPTS } },
+      data: { verifyAttempts: { increment: 1 } },
+    });
+    if (result.count === 0) {
+      return fail("VERIFY_LOCKED", EXHAUSTED_MESSAGE, 429);
+    }
     const attempts = user.verifyAttempts + 1;
-    await db.user.update({ where: { id: user.id }, data: { verifyAttempts: attempts } });
     if (attempts >= MAX_VERIFY_ATTEMPTS) {
       // The fifth wrong code trips the ceiling (session 45, RA-62: the
       // reference answers 429 here, not 400).

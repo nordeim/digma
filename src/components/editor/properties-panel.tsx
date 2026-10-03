@@ -262,6 +262,66 @@ function HexColorRow({
  * keeps keyboard/screen-reader semantics for free). Row geometry matches
  * the measured reference: `flex items-center gap-2 mt-1` + a w-8 readout.
  */
+// Session 62 (S62-A — the tenth audit's A-M2): the slider gesture seam —
+// the S56-A one-history-entry-per-gesture doctrine reaches the properties
+// panel. A native range drag fires onChange per tick; the pre-fix path
+// committed a full snapshot PER TICK (a single 0→100 opacity drag flooded
+// the 60-deep past stack — earlier work became unreachable — and left
+// per-tick undo granularity). The seam mirrors the canvas convention:
+// pointerdown captures the pre-gesture snapshot (beginGesture), ticks
+// commit WITHOUT history (the gesture-aware `update` below), the terminal
+// signal pushes the ONE snapshot — and a gesture that changed nothing
+// cancels (no no-op entry). Single-pointer-safe: only one slider can be
+// dragged at a time, so one module-level closure serves them all.
+//
+// The TextSection Content input shares the seam over focus/blur with
+// IDLE COALESCING (the en-route lesson from the mobile-properties pins:
+// Playwright's fill() and the mobile Sheet hold focus indefinitely, so a
+// pure focus/blur session left the gesture open — the machine's gesture
+// deferral kept the badge unsaved and the PUT cycle looping). Each
+// keystroke re-arms a 150ms idle timer; the idle (or blur) ends the
+// gesture: one history entry per typing burst, and the badge converges
+// to Saved without waiting for a blur that may never come.
+const sliderGesture = (() => {
+  let changed = false;
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+  const clearIdle = () => {
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+  };
+  const finish = () => {
+    clearIdle();
+    const store = useEditorStore.getState();
+    if (changed) store.endGesture();
+    else store.cancelGesture();
+    changed = false;
+  };
+  return {
+    begin: () => {
+      changed = false;
+      clearIdle();
+      useEditorStore.getState().beginGesture();
+    },
+    tick: () => {
+      changed = true;
+    },
+    // The text variant: begin-on-demand (a burst separated from the last
+    // by >150ms starts a FRESH gesture — separate intent, separate
+    // entry) + the idle re-arm.
+    textTick: () => {
+      if (useEditorStore.getState().gestureSnapshot === null) {
+        useEditorStore.getState().beginGesture();
+      }
+      changed = true;
+      clearIdle();
+      idleTimer = setTimeout(finish, 150);
+    },
+    finish,
+  };
+})();
+
 function SliderRow({
   label,
   value,
@@ -291,7 +351,14 @@ function SliderRow({
           max={max}
           step={step}
           value={value}
-          onChange={(event) => onChange(Number(event.target.value))}
+          onPointerDown={sliderGesture.begin}
+          onPointerUp={sliderGesture.finish}
+          onPointerCancel={sliderGesture.finish}
+          onLostPointerCapture={sliderGesture.finish}
+          onChange={(event) => {
+            sliderGesture.tick();
+            onChange(Number(event.target.value));
+          }}
           className="editor-range h-1.5 flex-1"
           style={{ "--range-fill": fill } as React.CSSProperties}
         />
@@ -365,7 +432,14 @@ function GradientPanel({
               max={360}
               step={1}
               value={gradient.angle}
-              onChange={(event) => apply({ ...gradient, angle: Number(event.target.value) })}
+              onPointerDown={sliderGesture.begin}
+              onPointerUp={sliderGesture.finish}
+              onPointerCancel={sliderGesture.finish}
+              onLostPointerCapture={sliderGesture.finish}
+              onChange={(event) => {
+                sliderGesture.tick();
+                apply({ ...gradient, angle: Number(event.target.value) });
+              }}
               className="editor-range h-1.5 flex-1"
               style={{ "--range-fill": `${((gradient.angle / 360) * 100).toFixed(2)}%` } as React.CSSProperties}
             />
@@ -572,7 +646,12 @@ export function TextSection({
         <input
           type="text"
           value={element.text ?? ""}
-          onChange={(event) => update({ text: event.target.value })}
+          onFocus={sliderGesture.begin}
+          onBlur={sliderGesture.finish}
+          onChange={(event) => {
+            sliderGesture.textTick();
+            update({ text: event.target.value });
+          }}
           aria-label="Text content"
           className="mt-1 h-8 w-full rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white shadow-sm focus:border-blue-500 focus:outline-none"
         />
@@ -822,7 +901,14 @@ export function TransformSection({
             max={180}
             step={1}
             value={element.rotation}
-            onChange={(event) => update({ rotation: Number(event.target.value) })}
+            onPointerDown={sliderGesture.begin}
+            onPointerUp={sliderGesture.finish}
+            onPointerCancel={sliderGesture.finish}
+            onLostPointerCapture={sliderGesture.finish}
+            onChange={(event) => {
+              sliderGesture.tick();
+              update({ rotation: Number(event.target.value) });
+            }}
             className="editor-range h-1.5 flex-1"
             style={
               {
@@ -855,7 +941,14 @@ export function TransformSection({
             max={3}
             step={0.1}
             value={element.scale ?? 1}
-            onChange={(event) => update({ scale: Number(event.target.value) })}
+            onPointerDown={sliderGesture.begin}
+            onPointerUp={sliderGesture.finish}
+            onPointerCancel={sliderGesture.finish}
+            onLostPointerCapture={sliderGesture.finish}
+            onChange={(event) => {
+              sliderGesture.tick();
+              update({ scale: Number(event.target.value) });
+            }}
             className="editor-range h-1.5 flex-1"
             style={
               {
@@ -898,7 +991,14 @@ export function OpacitySection({
           max={100}
           step={1}
           value={Math.round(element.opacity * 100)}
-          onChange={(event) => update({ opacity: Number(event.target.value) / 100 })}
+          onPointerDown={sliderGesture.begin}
+          onPointerUp={sliderGesture.finish}
+          onPointerCancel={sliderGesture.finish}
+          onLostPointerCapture={sliderGesture.finish}
+          onChange={(event) => {
+            sliderGesture.tick();
+            update({ opacity: Number(event.target.value) / 100 });
+          }}
           className="editor-range h-1.5 flex-1"
           style={{ "--range-fill": `${Math.round(element.opacity * 100)}%` } as React.CSSProperties}
         />
@@ -1028,7 +1128,18 @@ export function PropertiesPanel() {
   const single = selected.length === 1 ? selected[0] : null;
 
   const update = (patch: Parameters<ReturnType<typeof useEditorStore.getState>["updateElements"]>[1]) =>
-    useEditorStore.getState().updateElements(selectedIds, patch);
+    useEditorStore.getState().updateElements(
+      selectedIds,
+      patch,
+      // Session 62 (S62-A — the tenth audit's A-M2): the gesture-aware
+      // default commit. Mid-gesture ticks (a slider drag, a text focus
+      // session) commit WITHOUT a history entry — the single gesture
+      // snapshot lands at endGesture (the S56-A one-entry-per-gesture
+      // doctrine). Keyboard-only changes (no active gesture) commit
+      // normally — discrete intent. Programmatic callers (the AI apply
+      // seam) commit unconditionally through their own explicit paths.
+      useEditorStore.getState().gestureSnapshot === null,
+    );
 
   return (
     <div className="flex h-full flex-col">

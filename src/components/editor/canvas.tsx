@@ -5,7 +5,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useEditorStore } from "./editor-store";
-import { boundsOf, canvasFontFamily, clampZoom, fillPaintFor, type DesignElementDTO, type EditorTool } from "@/lib/editor";
+import { boundsOf, canvasFontFamily, clampZoom, ELEMENT_LIMIT, fillPaintFor, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
 // ---------------------------------------------------------------------------
 // The canvas: a DOM-element canvas (the reference's approach — absolutely
@@ -137,7 +137,7 @@ export function Canvas() {
       // (the store returns null — a silent dead click would be the
       // pre-fix behavior class).
       if (addElement({ type: "text", x: point.x, y: point.y, width: 200, height: 40 }) === null) {
-        toast.error("Element limit reached", `Boards hold at most 2000 elements.`);
+        toast.error("Element limit reached", `Boards hold at most ${ELEMENT_LIMIT} elements.`);
       }
       useEditorStore.getState().setTool("select");
       return;
@@ -281,7 +281,7 @@ export function Canvas() {
             height: drag.type === "line" ? drag.h : Math.max(drag.h, 1),
           }) === null
         ) {
-          toast.error("Element limit reached", `Boards hold at most 2000 elements.`);
+          toast.error("Element limit reached", `Boards hold at most ${ELEMENT_LIMIT} elements.`);
         }
         store.setTool("select");
       }

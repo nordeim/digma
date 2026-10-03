@@ -1,17 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { hashPassword } from "@/lib/auth";
+import { generateVerifyCode, hashPassword } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
-
-/** A fresh 6-digit verification code (session 43, RA-58): the reference's
- * verify-email card consumes exactly six digits; crypto-random with the
- * leading-zero-preserving modulo. */
-function generateVerifyCode(): string {
-  return String(100000 + (Math.floor(Math.random() * 900000)));
-}
 
 export async function POST(request: NextRequest) {
   const limit = authRateLimit(clientIpOf(request.headers));
@@ -29,6 +22,14 @@ export async function POST(request: NextRequest) {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return fail("VALIDATION", "Enter a valid email address", 400);
+  }
+  // Session 62 (S62-G / B-L3): the public route's input lengths are
+  // capped — the pre-fix form stored unbounded name/email/password
+  // strings verbatim (row bloat; every other stored string in the app
+  // was already capped). scrypt cost is length-independent, so the
+  // password cap costs nothing.
+  if (name.length > 80 || email.length > 200 || password.length > 200) {
+    return fail("VALIDATION", "Name, email, and password must be reasonably sized", 400);
   }
   if (password.length < 8) {
     // Session 45, RA-63: the reference's exact measured text (its 400

@@ -45,9 +45,23 @@ export function authRateLimit(ip: string, now: number = Date.now()): RateLimitRe
   return checkRate(buckets, `auth:${ip}`, AUTH_LIMIT, AUTH_WINDOW_MS, now);
 }
 
-/** The client IP behind a single trusted proxy. */
+/**
+ * The client IP behind a single trusted proxy.
+ *
+ * Session 62 (S62-D / B-M1): the limiter keys on the LAST
+ * x-forwarded-for hop — the proxy-APPENDED real IP. The pre-fix
+ * first-hop keying trusted a client-suppliable value: a spoofing
+ * client PREPENDS a fake IP and the proxy appends the real one after
+ * it, so the first hop was attacker-chosen and the auth brute-force
+ * defense (10/IP/15min) was evadable by rotating the header. A
+ * single-value header (the e2e/smoke suites' dedicated-bucket form)
+ * is both first and last — unaffected.
+ */
 export function clientIpOf(headers: Headers): string {
   const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
+  if (forwarded) {
+    const hops = forwarded.split(",").map((hop) => hop.trim()).filter(Boolean);
+    return hops[hops.length - 1] ?? "unknown";
+  }
   return headers.get("x-real-ip") || "unknown";
 }

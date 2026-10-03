@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { clampText } from "@/lib/validation";
@@ -27,12 +28,21 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     data.description = typeof body.description === "string" ? body.description.trim().slice(0, 300) || null : null;
   }
 
-  const team = await db.team.update({
-    where: { id },
-    data,
-    include: { members: { orderBy: { createdAt: "asc" } } },
-  });
-  return ok({ team });
+  // Session 62 (S62-G / B-L7): a concurrent DELETE racing this update
+  // throws Prisma P2025 outside the envelope — answer 404 instead.
+  try {
+    const team = await db.team.update({
+      where: { id },
+      data,
+      include: { members: { orderBy: { createdAt: "asc" } } },
+    });
+    return ok({ team });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return fail("NOT_FOUND", "Team not found", 404);
+    }
+    throw error;
+  }
 }
 
 /** DELETE /api/teams/[id] — remove a team (members cascade). */

@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "./db";
@@ -23,6 +23,18 @@ export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, KEY_LENGTH).toString("hex");
   return `${salt}:${hash}`;
+}
+
+// Session 62 (S62-G / B-L1): the single crypto-random verify-code
+// generator. The pre-fix form was Math.random() triplicated across the
+// register/login/resend-otp routes while its own comment claimed
+// "crypto-random" — a doc-integrity defect on the OTP (the only
+// email-ownership proof). randomInt is the CSPRNG-backed, modulo-bias-
+// free form; the range [100000, 1000000) preserves the six-digit
+// leading-zero-free shape the reference's verify-email card consumes
+// (session 43, RA-58).
+export function generateVerifyCode(): string {
+  return String(randomInt(100000, 1000000));
 }
 
 export function verifyPassword(password: string, stored: string): boolean {

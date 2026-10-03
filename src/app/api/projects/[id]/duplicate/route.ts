@@ -18,23 +18,31 @@ export async function POST(_request: NextRequest, { params }: Params) {
   });
   if (!source) return fail("NOT_FOUND", "Project not found", 404);
 
-  const copy = await db.project.create({
-    data: {
-      name: `${source.name} (Copy)`,
-      description: source.description,
-      template: source.template,
-      backgroundColor: source.backgroundColor,
-    },
-  });
-
-  if (source.elements.length > 0) {
-    await db.designElement.createMany({
-      data: source.elements.map((el) => {
-        const { id: _id, projectId: _projectId, createdAt: _c, updatedAt: _u, ...rest } = el;
-        return { ...rest, projectId: copy.id };
-      }),
+  // Session 62 (S62-G / B-L5): the copy is ATOMIC and the name respects
+  // the route family's own 120-char cap. The pre-fix form ran create +
+  // createMany as two separate awaits (a failure between them left a
+  // half-populated "(Copy)" project) and the name could reach 127 chars
+  // from a 120-char source — a later rename PATCH would silently
+  // truncate it while the create POST rejects at 120.
+  const copy = await db.$transaction(async (tx) => {
+    const created = await tx.project.create({
+      data: {
+        name: `${source.name} (Copy)`.slice(0, 120),
+        description: source.description,
+        template: source.template,
+        backgroundColor: source.backgroundColor,
+      },
     });
-  }
+    if (source.elements.length > 0) {
+      await tx.designElement.createMany({
+        data: source.elements.map((el) => {
+          const { id: _id, projectId: _projectId, createdAt: _c, updatedAt: _u, ...rest } = el;
+          return { ...rest, projectId: created.id };
+        }),
+      });
+    }
+    return created;
+  });
 
   const project = await db.project.findUnique({
     where: { id: copy.id },

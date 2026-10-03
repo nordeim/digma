@@ -48,9 +48,20 @@ describe("checkRate", () => {
 });
 
 describe("clientIpOf", () => {
-  it("prefers the first x-forwarded-for hop", () => {
+  // Session 62 (S62-D / B-M1 — a legitimate contract change): the
+  // limiter keys on the LAST x-forwarded-for hop — the proxy-APPENDED
+  // real IP. The pre-fix first-hop behavior trusted a client-suppliable
+  // value (a spoofing client prepends a fake IP; the proxy appends the
+  // real one after it), making the auth brute-force defense evadable by
+  // rotating the header. A single-value header (the e2e/smoke suites'
+  // dedicated-bucket form) is both first and last — unaffected.
+  it("keys on the last x-forwarded-for hop (the proxy-appended real IP)", () => {
     const headers = new Headers({ "x-forwarded-for": "1.1.1.1, 2.2.2.2" });
-    expect(clientIpOf(headers)).toBe("1.1.1.1");
+    expect(clientIpOf(headers)).toBe("2.2.2.2");
+  });
+
+  it("a single-value header is unaffected (first and last coincide)", () => {
+    expect(clientIpOf(new Headers({ "x-forwarded-for": "9.9.9.9" }))).toBe("9.9.9.9");
   });
 
   it("falls back to x-real-ip, then unknown", () => {
