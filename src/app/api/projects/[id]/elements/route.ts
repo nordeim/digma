@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import {
+  bodySizeRejected,
   clampColor,
   clampFontFamily,
   clampFontWeight,
@@ -60,6 +61,15 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const project = await loadProject(id);
   if (!project) return fail("NOT_FOUND", "Project not found", 404);
+
+  // Session 67 (S67-B / M-4): the aggregate body cap BEFORE the parse —
+  // request.json() buffers the whole payload in memory first, and App
+  // Router handlers ship no default body-size cap. The per-field caps
+  // only bound what SURVIVES the parse; this guard bounds the parse
+  // itself (the 1.45 GB abuse family never reaches it).
+  if (bodySizeRejected(request.headers.get("content-length"))) {
+    return fail("VALIDATION", "Elements payload too large (max 32 MB)", 400);
+  }
 
   const body = await request.json().catch(() => null);
   const type = typeof body?.type === "string" ? body.type : "";
@@ -130,6 +140,16 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const project = await loadProject(id);
   if (!project) return fail("NOT_FOUND", "Project not found", 404);
+
+  // Session 67 (S67-B / M-4): the aggregate body cap BEFORE the parse —
+  // THE DEFECT: request.json() buffers the whole payload in memory first
+  // (up to 2000 × ~722 KB ≈ 1.45 GB under the per-field caps), with no
+  // App Router body-size default, OOMing small self-hosted boxes inside
+  // the interactive transaction. The count check below only bounds what
+  // SURVIVES the parse; this guard bounds the parse itself.
+  if (bodySizeRejected(request.headers.get("content-length"))) {
+    return fail("VALIDATION", "Elements payload too large (max 32 MB)", 400);
+  }
 
   const body = await request.json().catch(() => null);
   const list = Array.isArray(body?.elements) ? body.elements : null;

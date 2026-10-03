@@ -71,6 +71,11 @@ export async function POST(request: NextRequest) {
       passwordHash: hashPassword(newPassword),
       resetToken: null,
       resetTokenExpiresAt: null,
+      // Session 67 (S67-A — the fifteenth audit's M-1): the eviction. Every
+      // cookie minted before this reset embeds the pre-increment version and
+      // dies at the getSessionUser comparison — a stolen/observed session no
+      // longer outlives the reset performed specifically to kill it.
+      tokenVersion: { increment: 1 },
     },
   });
 

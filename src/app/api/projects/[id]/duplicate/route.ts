@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
+import { PROJECT_LIMIT } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,14 @@ export async function POST(_request: NextRequest, { params }: Params) {
     include: { elements: { orderBy: { sortOrder: "asc" } } },
   });
   if (!source) return fail("NOT_FOUND", "Project not found", 404);
+
+  // Session 67 (S67-B / L-1): the SAME project ceiling the create POST
+  // carries — each duplicate also copies up to 2000 element rows per
+  // call, so an unbounded duplicate loop multiplies row-bloat fast.
+  const projectCount = await db.project.count();
+  if (projectCount >= PROJECT_LIMIT) {
+    return fail("VALIDATION", "Too many projects (max 500)", 400);
+  }
 
   // Session 62 (S62-G / B-L5): the copy is ATOMIC and the name respects
   // the route family's own 120-char cap. The pre-fix form ran create +

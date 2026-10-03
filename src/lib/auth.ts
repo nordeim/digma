@@ -65,29 +65,41 @@ function sign(payload: string): string {
   return createHmac("sha256", secret()).update(payload).digest("hex");
 }
 
-export function createSessionToken(userId: string): string {
+export function createSessionToken(userId: string, tokenVersion: number): string {
   const expiry = Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000;
-  const payload = `${userId}.${expiry}`;
+  // Session 67 (S67-A / M-1): the version rides the payload (and therefore
+  // the signature) — `userId.version.expiry`. The bare `userId.expiry`
+  // form had no revocation dimension: a password reset left every
+  // previously minted cookie valid for its full TTL.
+  const payload = `${userId}.${tokenVersion}.${expiry}`;
   return `${payload}.${sign(payload)}`;
 }
 
-export function parseSessionToken(token: string | undefined | null): string | null {
+export type ParsedSession = { userId: string; tokenVersion: number };
+
+export function parseSessionToken(token: string | undefined | null): ParsedSession | null {
   if (!token) return null;
   const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  const [userId, expiry, signature] = parts;
-  const expected = sign(`${userId}.${expiry}`);
+  if (parts.length !== 4) return null;
+  const [userId, version, expiry, signature] = parts;
+  const tokenVersion = Number(version);
+  if (!Number.isInteger(tokenVersion) || tokenVersion < 0) return null;
+  const expected = sign(`${userId}.${tokenVersion}.${expiry}`);
   const a = Buffer.from(signature, "hex");
   const b = Buffer.from(expected, "hex");
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   if (Number(expiry) < Date.now()) return null;
-  return userId;
+  return { userId, tokenVersion };
 }
 
-export async function setSessionCookie(userId: string, response: NextResponse): Promise<void> {
+export async function setSessionCookie(
+  userId: string,
+  tokenVersion: number,
+  response: NextResponse,
+): Promise<void> {
   response.cookies.set({
     name: SESSION_COOKIE,
-    value: createSessionToken(userId),
+    value: createSessionToken(userId, tokenVersion),
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -118,11 +130,18 @@ export type SessionUser = {
 /** Resolves the current user from the session cookie (null when signed out). */
 export async function getSessionUser(): Promise<SessionUser | null> {
   const store = await cookies();
-  const userId = parseSessionToken(store.get(SESSION_COOKIE)?.value);
-  if (!userId) return null;
+  const session = parseSessionToken(store.get(SESSION_COOKIE)?.value);
+  if (!session) return null;
   const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { id: true, email: true, name: true, avatarColor: true },
+    where: { id: session.userId },
+    select: { id: true, email: true, name: true, avatarColor: true, tokenVersion: true },
   });
-  return user;
+  // Session 67 (S67-A / M-1): the database-seam version check — a token
+  // minted before a password reset still parses and still carries a valid
+  // signature, but its embedded version no longer matches the holder's
+  // live row. This is the eviction the stateless format needed: the reset
+  // increments tokenVersion and every pre-reset cookie dies with it.
+  if (!user || user.tokenVersion !== session.tokenVersion) return null;
+  const { tokenVersion: _revoked, ...sessionUser } = user;
+  return sessionUser;
 }

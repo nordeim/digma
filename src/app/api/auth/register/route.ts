@@ -77,5 +77,11 @@ export async function POST(request: NextRequest) {
     throw error;
   }
 
-  return ok({ user, verificationCode: verifyCode }, 201);
+  // Session 67 (S67-C / M-3): the OTP half of the ADR-014 suppression
+  // family. DIGMA_DISABLE_IN_APP_OTP=1 nulls the in-response code — the
+  // same one-step deploy form its sibling DIGMA_DISABLE_IN_APP_RESET gives
+  // the resetUrl. Set it when a real email service owns the delivery: the
+  // code must not ride an API payload.
+  const inAppOtpEnabled = process.env.DIGMA_DISABLE_IN_APP_OTP !== "1";
+  return ok({ user, verificationCode: inAppOtpEnabled ? verifyCode : null }, 201);
 }

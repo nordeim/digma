@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { clampColor, clampTemplate } from "@/lib/validation";
+import { clampColor, clampTemplate, PROJECT_LIMIT } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +38,15 @@ export async function POST(request: NextRequest) {
 
   if (!name) return fail("VALIDATION", "Project name is required", 400);
   if (name.length > 120) return fail("VALIDATION", "Project name is too long (max 120)", 400);
+
+  // Session 67 (S67-B / L-1): the creation ceiling — the ELEMENT_LIMIT
+  // style reaching the surface it missed. An authenticated loop could
+  // previously insert unbounded rows (each duplicate below copies up to
+  // 2000 element rows per call).
+  const projectCount = await db.project.count();
+  if (projectCount >= PROJECT_LIMIT) {
+    return fail("VALIDATION", "Too many projects (max 500)", 400);
+  }
 
   const project = await db.project.create({
     data: { name, description: description || null, template, backgroundColor },

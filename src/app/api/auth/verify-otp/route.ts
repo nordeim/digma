@@ -86,12 +86,16 @@ export async function POST(request: NextRequest) {
 
   // Verified: clear the pending code and open the session (the register
   // route never sets the cookie — this is the flow's session landing).
+  // Session 67 (S67-A): the select carries tokenVersion so the mint embeds
+  // the holder's live version (a later reset evicts this cookie).
   const verified = await db.user.update({
     where: { id: user.id },
     data: { verified: true, verifyCode: null, verifyAttempts: 0 },
-    select: { id: true, email: true, name: true, avatarColor: true },
+    select: { id: true, email: true, name: true, avatarColor: true, tokenVersion: true },
   });
-  const response = ok({ user: verified });
-  await setSessionCookie(verified.id, response);
+  // The version rides the cookie, not the response body (shape unchanged).
+  const { tokenVersion: mintVersion, ...verifiedUser } = verified;
+  const response = ok({ user: verifiedUser });
+  await setSessionCookie(verified.id, mintVersion, response);
   return response;
 }

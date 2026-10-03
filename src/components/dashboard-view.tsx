@@ -35,35 +35,37 @@ export function DashboardView({ user }: { user: HeaderUser }) {
   const [search, setSearch] = React.useState("");
   const [view, setView] = React.useState<"grid" | "list">("grid");
 
-  const refresh = React.useCallback(async () => {
+  // Session 67 (S67-D / A-L-2): the ONE shared load seam — the pre-fix
+  // form pasted the Promise.all fetch body verbatim in `refresh` AND the
+  // initial effect (a drift hazard: a future field lands in one copy and
+  // not the other). `ignore` lets the effect discard a stale completion.
+  const load = React.useCallback(async (ignore?: () => boolean) => {
     const [projectsData, statsData] = await Promise.all([
       call<{ projects: ProjectDTO[] }>("/api/projects"),
       call<Stats>("/api/stats"),
     ]);
+    if (ignore?.()) return;
     if (projectsData) setProjects(projectsData.projects);
     if (statsData) setStats(statsData);
     setLoading(false);
   }, []);
 
+  const refresh = React.useCallback(() => load(), [load]);
+
   // Initial fetch — the docs-approved effect pattern (async function inside
-  // the effect; setState only in the awaited continuation).
+  // the effect; setState only in the awaited continuation). The local
+  // runner keeps the lint gate's set-state-in-effect analysis honest: the
+  // seam's setStates all sit behind its await.
   React.useEffect(() => {
     let ignore = false;
     async function run() {
-      const [projectsData, statsData] = await Promise.all([
-        call<{ projects: ProjectDTO[] }>("/api/projects"),
-        call<Stats>("/api/stats"),
-      ]);
-      if (ignore) return;
-      if (projectsData) setProjects(projectsData.projects);
-      if (statsData) setStats(statsData);
-      setLoading(false);
+      await load(() => ignore);
     }
-    run();
+    void run();
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [load]);
 
   const greeting = React.useMemo(() => greetingFor(), []);
   const recent = React.useMemo(() => projects.slice(0, 4), [projects]);
@@ -333,7 +335,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                     />
                   ))}
                 </div>
-              ) : (
+              ) : filtered.length > 0 ? (
                 <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
                   {filtered.map((project, index) => (
                     <button
@@ -357,8 +359,17 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                     </button>
                   ))}
                 </div>
-              )}
+              ) : null}
 
+              {/* Session 67 (S67-D / A-L-1 — the fifteenth audit's
+                  auditor-A finding): the LIST container gates on a
+                  non-empty filtered list. The pre-fix form rendered it
+                  unconditionally — an empty filtered list painted a stray
+                  2px bordered hairline ABOVE the empty-state message (the
+                  Recent view always gated both branches; the Dashboard's
+                  list branch never did). The grid branch stays ungated —
+                  an empty grid renders nothing visible (no border), so
+                  the gate would be a no-op there. */}
               {!loading && filtered.length === 0 && (
                 <div className="py-16 text-center">
                   <FileText className="mx-auto mb-4 h-12 w-12 text-gray-300" aria-hidden />

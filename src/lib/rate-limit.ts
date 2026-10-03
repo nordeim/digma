@@ -45,6 +45,23 @@ export function authRateLimit(ip: string, now: number = Date.now()): RateLimitRe
   return checkRate(buckets, `auth:${ip}`, AUTH_LIMIT, AUTH_WINDOW_MS, now);
 }
 
+// Session 67 (S67-C — the fifteenth audit's M-2, the documented B-15):
+// the assistant's DEDICATED bucket. The pre-fix route had no limiter at
+// all — an authenticated caller drove unbounded LLM completions (API cost
+// burn + up to 60s of held server work per request). The bucket is its
+// OWN `ai:` prefix, NEVER the shared `auth:` key: the e2e/smoke suites
+// drive this route from the same localhost IP as their auth calls, so a
+// shared bucket would break their budgets (the documented deferral
+// reason). 20 requests / 5 min sits far above the UI's interactive use
+// while capping scripted burn.
+const AI_LIMIT = 20;
+const AI_WINDOW_MS = 5 * 60 * 1000;
+
+/** Assistant-route wrapper: 20 requests / 5 min per IP. */
+export function aiRateLimit(ip: string, now: number = Date.now()): RateLimitResult {
+  return checkRate(buckets, `ai:${ip}`, AI_LIMIT, AI_WINDOW_MS, now);
+}
+
 /**
  * The client IP behind a single trusted proxy.
  *

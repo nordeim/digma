@@ -50,18 +50,24 @@ export async function POST(request: NextRequest) {
   if (!user.verified) {
     const verifyCode = generateVerifyCode();
     await db.user.update({ where: { id: user.id }, data: { verifyCode, verifyAttempts: 0 } });
+    // Session 67 (S67-C / M-3): the OTP suppression knob — the recovery
+    // path's delivered code nulls under DIGMA_DISABLE_IN_APP_OTP=1, the
+    // same form register's and resend's carry.
+    const inAppOtpEnabled = process.env.DIGMA_DISABLE_IN_APP_OTP !== "1";
     return NextResponse.json(
       {
         ok: false as const,
         error: { code: "VERIFY_EMAIL", message: "Verify your email to sign in — we've sent a fresh 6-digit code." },
         email,
-        verificationCode: verifyCode,
+        verificationCode: inAppOtpEnabled ? verifyCode : null,
       },
       { status: 403 },
     );
   }
 
   const response = ok({ user: { id: user.id, email: user.email, name: user.name, avatarColor: user.avatarColor } });
-  await setSessionCookie(user.id, response);
+  // Session 67 (S67-A): the mint carries the holder's live tokenVersion —
+  // a later reset (which increments it) evicts this cookie.
+  await setSessionCookie(user.id, user.tokenVersion, response);
   return response;
 }

@@ -51,5 +51,9 @@ export async function POST(request: NextRequest) {
     data: { verifyCode, verifyAttempts: 0 },
   });
 
-  return ok({ verificationCode: verifyCode });
+  // Session 67 (S67-C / M-3): the OTP suppression knob — the resend's
+  // delivered code nulls under DIGMA_DISABLE_IN_APP_OTP=1 exactly like
+  // register's and login's unverified branch (the email-service posture).
+  const inAppOtpEnabled = process.env.DIGMA_DISABLE_IN_APP_OTP !== "1";
+  return ok({ verificationCode: inAppOtpEnabled ? verifyCode : null });
 }

@@ -34,6 +34,14 @@ model User {
   // forgot-password response). Single-use: cleared on a successful reset.
   resetToken           String?   // 64-hex crypto-random, null once consumed
   resetTokenExpiresAt  DateTime? // the 60-minute window ("invalid or has expired")
+  // Session 67 (S67-A — the fifteenth audit's M-1, the documented B-5):
+  // the stateless session's revocation dimension. The token embeds the
+  // holder's version and getSessionUser rejects a mismatch — a password
+  // reset increments it, evicting every previously minted cookie (the
+  // pre-fix reset left stolen/observed sessions valid for their full
+  // 7-day TTL). The @default(0) keeps every existing row and the seed
+  // untouched.
+  tokenVersion Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

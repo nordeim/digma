@@ -1,6 +1,7 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { fail, ok, requireSession } from "@/lib/api";
 import { parseFallbackCommand, sanitizeLlmOperations, type AiCommand } from "@/lib/ai-assistant";
+import { aiRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -16,6 +17,19 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   const user = await requireSession();
   if (!user) return fail("UNAUTHENTICATED", "Sign in to use the assistant", 401);
+
+  // Session 67 (S67-C / M-2): the dedicated limiter — BEFORE the body
+  // parse (the auth family's own ordering discipline; an oversized or
+  // malformed request burns no parse work once the bucket is dry). The
+  // `ai:` bucket never touches the auth budget (the e2e/smoke suites
+  // drive both routes from one localhost IP).
+  const limit = aiRateLimit(clientIpOf(request.headers));
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { ok: false as const, error: { code: "RATE_LIMITED", message: "Too many assistant requests. Try again in a moment." } },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
 
   const body = await request.json().catch(() => null);
   const message = typeof body?.message === "string" ? body.message.trim().slice(0, 1000) : "";

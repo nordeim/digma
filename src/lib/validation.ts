@@ -121,3 +121,36 @@ export function safeFromUrl(raw: string | null | undefined): string {
   }
   return "/";
 }
+
+// Session 67 (S67-B — the fifteenth audit's M-4 + L-1): the authenticated
+// request-surface ceilings. The S66-C caps bounded per-field lengths, but
+// the elements PUT's AGGREGATE was unbounded — request.json() buffered up
+// to ~2000 × ~722 KB ≈ 1.45 GB before any validation ran (App Router
+// handlers ship no default body-size cap), OOMing small self-hosted boxes
+// inside the interactive transaction. The creation routes had no ceiling
+// at all (an authenticated loop inserts unbounded rows; each duplicate
+// copies up to 2000 element rows per call).
+
+/** The aggregate request-body ceiling: 32 MB — the documented
+ * self-hosted ceiling (a 2000-element board of image fills sits far
+ * under it; the 1.45 GB abuse family sits far over). */
+export const REQUEST_BODY_LIMIT_BYTES = 32_000_000;
+
+/** Pure: does the request's declared content-length exceed the cap?
+ * An absent or non-numeric header passes — chunked uploads carry no
+ * content-length, and the per-field caps (fillImage ≤ 700,000 chars,
+ * ELEMENT_LIMIT ≤ 2000) still bound those bodies after the parse. */
+export function bodySizeRejected(contentLength: string | null): boolean {
+  if (!contentLength) return false;
+  const bytes = Number(contentLength);
+  if (!Number.isFinite(bytes) || bytes < 0) return false;
+  return bytes > REQUEST_BODY_LIMIT_BYTES;
+}
+
+/** The creation ceilings (coherent-superset decisions at self-hosted
+ * scale, documented as such — the reference's own limits are
+ * unmeasurable): the ELEMENT_LIMIT style reaching the surfaces it
+ * missed. */
+export const PROJECT_LIMIT = 500;
+export const TEAM_LIMIT = 100;
+export const MEMBER_LIMIT = 100;

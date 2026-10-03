@@ -251,6 +251,17 @@ REPLAY=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/api/auth/reset-pa
   && ok "the token is single-use (the replay answers 400)" \
   || bad "token replay (got $REPLAY — expected 400)"
 
+# Session 67 (S67-A — the fifteenth audit's M-1): the revocation proof.
+# The jar minted at the top of the suite (BEFORE this reset round-trip)
+# must be DEAD — the reset increments the holder's tokenVersion and the
+# pre-reset cookie no longer passes the getSessionUser comparison. The
+# pre-fix suite itself demonstrated the defect: this same jar kept
+# authorizing the CRUD sections below.
+REVOKED=$(curl -s -o /dev/null -w "%{http_code}" -b /tmp/smoke-cookies.txt "$BASE/api/stats")
+[ "$REVOKED" = "401" ] \
+  && ok "the pre-reset session cookie is revoked (401) — the reset evicts it" \
+  || bad "pre-reset session survived the reset (got $REVOKED — expected 401)"
+
 # The restore: put the demo password back so every later section (and any
 # re-run against the same db) keeps its Digma1234! contract. Its own bucket.
 FORGOT2=$(curl -s -X POST "$BASE/api/auth/forgot-password" \
@@ -266,6 +277,21 @@ RESTORE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/api/auth/reset-p
 [ "$RESTORE" = "200" ] \
   && ok "the demo password is restored (Digma1234!)" \
   || bad "restore reset (got $RESTORE)"
+
+# Session 67 (S67-A): the restore ALSO bumped the version (the jar minted
+# by NEW_LOGIN above died with it — unused afterwards, by design). The
+# suite's own jar needs a FRESH mint for the authenticated sections below;
+# its own bucket (the shared "unknown" budget and the final 429 burner
+# stay untouched — the burner still sees 10 calls minus its own shared
+# usage: login 1 + wrong 1 + register 1 + wrong-otp 1 + verify 1 + resend
+# 1 + verify2 1 = 7, leaving 3 to trip).
+SMOKE_XFF48="203.0.113.48"
+RELOGIN=$(curl -s -c /tmp/smoke-cookies.txt -X POST "$BASE/api/auth/login" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF48" \
+  -d '{"email":"demo@digma.app","password":"Digma1234!"}')
+echo "$RELOGIN" | grep -q '"ok":true' \
+  && ok "the post-restore re-login mints the suite's fresh session (tokenVersion current)" \
+  || bad "post-restore re-login: $RELOGIN"
 
 # ---------------------------------------------------------------------------
 step "== Authenticated reads =="

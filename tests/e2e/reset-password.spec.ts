@@ -12,8 +12,14 @@ import { expect, test } from "@playwright/test";
 //
 // This file OPTS OUT of the shared storageState (the surface is public and
 // session-agnostic — the reference renders it while logged in) and declares
-// its own X-Forwarded-For bucket so its six auth calls never touch the
-// auth.spec.ts shared budget (src/lib/rate-limit.ts keys on XFF).
+// its own X-Forwarded-For bucket so its six auth calls (session 67: the
+// scratch account's register + verify + the round-trip's forgot + reset +
+// old-login + new-login — the same budget the demo-account form carried)
+// never touch the auth.spec.ts shared budget (src/lib/rate-limit.ts keys
+// on XFF). Session 67 (S67-A) moved the round-trip onto the scratch
+// account: a demo-account reset now evicts the shared storageState's
+// cookie (tokenVersion), which would fail every spec running after this
+// file alphabetically.
 
 test.use({ storageState: { cookies: [], origins: [] } });
 test.use({ extraHTTPHeaders: { "X-Forwarded-For": "198.51.100.46" } });
@@ -119,10 +125,53 @@ test.describe("reset-password form (non-empty token)", () => {
 
 test.describe("the full reset round-trip (the in-app delivery, ADR-014 family)", () => {
   test("forgot → the sent card carries the link → set a new password → sign in with it", async ({ page }) => {
-    // 1. The forgot request on the demo account.
+    // Session 67 (S67-A) RE-PIN: the round-trip moved onto a DEDICATED
+    // scratch account. The pre-fix spec reset the DEMO account's password
+    // mid-suite — harmless while tokens were versionless, but with
+    // tokenVersion live each reset evicts every previously minted cookie,
+    // and the demo reset would have killed the shared storageState for the
+    // ~50 specs that run after this file alphabetically. The scratch flow
+    // is identical to the demo flow it replaces (the same six-call budget
+    // in this file's own XFF bucket); no restore step is needed (the
+    // scratch account is disposable and the e2e DB re-seeds per run).
+    const scratchEmail = `s67-reset-${Date.now()}@e2e.test`;
+    await page.goto("/login");
+    const registered = await page.evaluate(
+      async ({ email }) => {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password: "Scratch1234!", name: "S67 Reset" }),
+        });
+        return res.json();
+      },
+      { email: scratchEmail },
+    );
+    expect(registered.ok).toBe(true);
+    const verified = await page.evaluate(
+      async ({ email, code }) => {
+        const res = await fetch("/api/auth/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code }),
+        });
+        return res.json();
+      },
+      { email: scratchEmail, code: registered.data.verificationCode },
+    );
+    expect(verified.ok).toBe(true);
+
+    // The scratch session is LIVE in this context — and /login bounces
+    // authenticated visits straight back to the workspace (the reference's
+    // own behavior), so the forgot flow needs the signed-out card: log the
+    // scratch session out first (the old demo-account form never hit this
+    // because the spec's storageState opt-out left it unauthenticated).
+    await page.evaluate(() => fetch("/api/auth/logout", { method: "POST" }).then(() => undefined));
+
+    // 1. The forgot request on the scratch account.
     await page.goto("/login");
     await page.getByRole("button", { name: "Forgot password?" }).click();
-    await page.getByLabel("Email").fill("demo@digma.app");
+    await page.getByLabel("Email").fill(scratchEmail);
     await page.getByRole("button", { name: "Send reset link" }).click();
     await expect(page.getByRole("heading", { name: "Check your email", exact: true })).toBeVisible({ timeout: 15_000 });
 
@@ -149,9 +198,10 @@ test.describe("the full reset round-trip (the in-app delivery, ADR-014 family)",
     await page.getByRole("button", { name: /Back to login/i }).click();
     await expect(page).toHaveURL(/\/login$/);
 
-    // 6. The OLD password no longer signs in; the NEW one does.
-    await page.getByLabel("Email").fill("demo@digma.app");
-    await page.getByLabel("Password").fill("Digma1234!");
+    // 6. The OLD password no longer signs in; the NEW one does (on the
+    //    scratch account — the assertion family is unchanged).
+    await page.getByLabel("Email").fill(scratchEmail);
+    await page.getByLabel("Password").fill("Scratch1234!");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByRole("alert").filter({ hasText: "Invalid email or password" })).toBeVisible();
 
@@ -159,19 +209,14 @@ test.describe("the full reset round-trip (the in-app delivery, ADR-014 family)",
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible({ timeout: 15_000 });
 
-    // 7. Restore the demo password (the e2e DB re-seeds per run, but the
-    //    spec stays self-contained for a reused-server re-run).
-    await page.evaluate(() => fetch("/api/auth/logout", { method: "POST" }).then(() => undefined));
-    await page.goto("/login");
-    await page.getByRole("button", { name: "Forgot password?" }).click();
-    await page.getByLabel("Email").fill("demo@digma.app");
-    await page.getByRole("button", { name: "Send reset link" }).click();
-    const restoreLink = page.getByRole("link", { name: /reset your password/i });
-    await expect(restoreLink).toBeVisible({ timeout: 15_000 });
-    await restoreLink.click();
-    await page.locator("input#password").fill("Digma1234!");
-    await page.locator("input#confirmPassword").fill("Digma1234!");
-    await page.getByRole("button", { name: "Reset password", exact: true }).click();
-    await expect(page.getByRole("heading", { name: /password reset/i })).toBeVisible({ timeout: 15_000 });
+    // 7. Session 67 (S67-A): the inline confirmation that the NEW session
+    //    (signed in at step 6) is live — /api/auth/me answers 200 with a
+    //    user even when signed out (200 { user: null }), so the honest
+    //    form asserts the resolved user. The full revocation behavioral
+    //    pin lives in session67-fixes.spec.ts.
+    const me = await page.request.get("/api/auth/me");
+    expect(me.status()).toBe(200);
+    const meBody = await me.json();
+    expect(meBody.data.user?.email).toBe(scratchEmail);
   });
 });

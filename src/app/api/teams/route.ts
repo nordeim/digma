@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { clampColor, clampOptionalText, clampText } from "@/lib/validation";
+import { clampColor, clampOptionalText, clampText, TEAM_LIMIT } from "@/lib/validation";
 import { memberColorFor, memberDisplayFor } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +40,13 @@ export async function POST(request: NextRequest) {
   const memberEmail = clampOptionalText(body?.memberEmail, 200);
   if (memberEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(memberEmail)) {
     return fail("VALIDATION", "Enter a valid email address", 400);
+  }
+
+  // Session 67 (S67-B / L-1): the creation ceiling — the ELEMENT_LIMIT
+  // style reaching the surface it missed.
+  const teamCount = await db.team.count();
+  if (teamCount >= TEAM_LIMIT) {
+    return fail("VALIDATION", "Too many teams (max 100)", 400);
   }
 
   const team = await db.team.create({
