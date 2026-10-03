@@ -81,6 +81,20 @@ function useAutosave(): () => void {
     // retry); the toast fires on the FIRST consecutive failure only so
     // an unreachable server cannot spam one toast per retry.
     let consecutiveFailures = 0;
+    // Session 68 (S68-D — the sixteenth audit's L-2): a DEAD SESSION is
+    // terminal. The pre-fix machine treated a 401 like any transient
+    // failure — the retry family re-armed on every reset, looping the
+    // PUT against a dead cookie at ~1 req/s forever. The terminal: one
+    // distinct toast, the badge honestly reads "Unsaved", and every
+    // later flush early-returns (the work is NOT saved and CANNOT be
+    // until the user signs in again; further attempts are noise).
+    let sessionDead = false;
+
+    function markSessionDead() {
+      if (sessionDead) return;
+      sessionDead = true;
+      toast.error("Session expired", "Your session has expired — sign in again to save your changes.");
+    }
 
     async function ensureProject(): Promise<string | null> {
       const store = useEditorStore.getState();
@@ -95,7 +109,13 @@ function useAutosave(): () => void {
         }),
       });
       const body = await response.json().catch(() => null);
-      if (!response.ok || !body?.ok) return null;
+      if (!response.ok || !body?.ok) {
+        // Session 68 (S68-D): the Untitled-mode creation POST obeys the
+        // same 401 terminal as the PUT — a dead session must not loop
+        // the creation POST either.
+        if (response.status === 401) markSessionDead();
+        return null;
+      }
       const id = body.data.project.id as string;
       // Session 57 (S57-B — the fifth Mode C audit's M-2): the adoption
       // guard. A stale continuation (the user hit Back during this POST
@@ -128,6 +148,11 @@ function useAutosave(): () => void {
       // also flushable — exit() relies on this (it flushes whenever the
       // state is not "saved").
       if (store.saveState === "saved") return;
+      // Session 68 (S68-D): a dead session is TERMINAL — no further
+      // attempts (the badge honestly reads "Unsaved"; the toast said
+      // why). The subscriber may keep re-arming the timer on new
+      // edits; each flush no-ops here.
+      if (sessionDead) return;
       flushing = true;
       // Session 56 (S56-B — H-2): the edit-during-flight guard. The
       // elements ARRAY REFERENCE and the project identity are captured
@@ -175,6 +200,17 @@ function useAutosave(): () => void {
         });
         const body = await response.json().catch(() => null);
         if (!response.ok || !body?.ok) {
+          // Session 68 (S68-D — the sixteenth audit's L-2): the 401 is
+          // TERMINAL — the session died mid-edit; re-arming the retry
+          // loops the PUT against a dead cookie forever at ~1 req/s.
+          // The honest terminal: one distinct toast, the badge reads
+          // "Unsaved" (true — the work is not saved), and the machine
+          // stops until the user re-authenticates.
+          if (response.status === 401) {
+            markSessionDead();
+            if (!disposed) useEditorStore.getState().setUnsaved();
+            return;
+          }
           consecutiveFailures += 1;
           if (consecutiveFailures === 1) {
             toast.error("Autosave failed", body?.error?.message ?? "Your changes are not saved yet.");

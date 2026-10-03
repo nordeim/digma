@@ -1,15 +1,115 @@
-# Digma — Master Project Architecture Document (PAD) v1.46.0
+# Digma — Master Project Architecture Document (PAD) v1.47.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-10-03 (v1.46.0 — the tokenVersion-revocation/request-surface-hardening/AI-limiter-OTP-knob/client-low pass: the stateless session gains its revocation dimension — a `tokenVersion Int @default(0)` column on User, the token payload becomes `userId.version.expiry` (a 4-part HMAC covering the version), `getSessionUser` rejects a version mismatch at the database seam, and the password reset INCREMENTS the version — every cookie minted before the reset dies with it (the pre-fix reset left stolen/observed sessions valid for their full 7-day TTL, the canonical OWASP session-revocation failure; the repo's own smoke suite had demonstrated it with its pre-reset jar) + the request-surface hardening (the elements PUT/POST gain a pure `bodySizeRejected` content-length cap BEFORE `request.json()` — the aggregate was unbounded at ~1.45 GB under the per-field caps with no App Router body-size default; the projects/duplicate/teams/members creation routes gain PROJECT_LIMIT 500 / TEAM_LIMIT 100 / MEMBER_LIMIT 100 ceilings, the ELEMENT_LIMIT style reaching the surfaces it missed) + the assistant's DEDICATED `ai:` rate-limit bucket (20/5min per IP, never the shared auth: budget — the documented deferral reason — with the 429 + Retry-After envelope) and the `DIGMA_DISABLE_IN_APP_OTP` knob (the OTP half of the ADR-014 suppression family, mirroring its reset sibling: register/login-unverified/resend null the in-response code under the knob) + the client low batch (the Dashboard's list view gates its bordered container on a non-empty filtered list — a stray 2px hairline previously rendered above the empty state; the duplicated Promise.all fetch body collapses into ONE shared `load()` seam))
+**Last Updated:** 2026-10-04 (v1.47.0 — the parse-guard-family-completion/rotation-aware-marquee/sanitizer-hardening/client-terminal pass: the pure `bodySizeRejected` 32 MB content-length cap reaches EVERY `request.json()` parse site repo-wide (session 67 landed it at the two element routes; twelve more carried unbounded bodies — six of them UNAUTHENTICATED: login/register/verify-otp/resend-otp/forgot-password/reset-password, plus projects/projects-[id]/teams/teams-[id]/teams-members/ai-assistant — each now answering the VALIDATION 400 envelope BEFORE the parse, AFTER the rate-limit/session gates) + the marquee containment becomes rotation-aware (the canvas's filter consumes `boundsOf` — the four-corner visual-footprint AABB the selection outline and resize handles already run on, closing the S64-C documented-contract drift; the rotation-0 fast path is behavior-identical) + the sanitizer hardening (the LLM-chosen ids capped at the route's own 100; the patch built through the NAMED exported `AssistantUpdatePatch` type — the broken `never`-resolving conditional cast deleted, and the client applies its patch as a typed `Partial<DesignElementDTO>`, zero never-casts repo-wide) + the client/test-infra low batch (the autosave machine's 401 TERMINAL — a dead session answers one distinct "Session expired" toast, the badge honestly reads "Unsaved", and every later flush early-returns on the `sessionDead` flag instead of looping the PUT against a dead cookie at ~1 req/s forever; the playwright webServer pre-kills stale standalone servers with `reuseExistingServer: false`; the dead `@radix-ui/react-toast` dependency removed; `fitToBounds`/`normalizeRect` carry the honest TEST-ONLY doc status))
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
 
 Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+#### Revision Block — v1.47.0 (Tracked Changes)
+
+- `[SR]` **The parse-guard-family-completion/rotation-aware-marquee/
+  sanitizer-hardening/client-terminal pass — four slices (S68-A
+  through S68-D) — the SIXTEENTH Mode C audit's chosen work:**
+  1. **S68-A (M-A — the Medium, "the M-4 family is only half-closed"):
+     the body-size guard reaches every parse site.** Session 67's
+     S67-B landed the pure `bodySizeRejected(contentLength)` cap at
+     the two element routes; twelve other `request.json()` sites
+     still buffered unbounded bodies into memory before their
+     per-field caps rejected — six of them unauthenticated
+     (`login`, `register`, `verify-otp`, `resend-otp`,
+     `forgot-password`, `reset-password`) and six authenticated
+     (`projects`, `projects/[id]`, `teams`, `teams/[id]`,
+     `teams/[id]/members`, `ai-assistant`). App Router handlers ship
+     no default body-size cap (the repo's own S66-C/S67-B
+     empirically-established fact), so a credential-less attacker
+     could push a multi-GB body to `/api/auth/login` and OOM the
+     Node process before the 200-char cap answered 400. The fix: the
+     same 3-line guard at every site, answering
+     `fail("VALIDATION", "Request body too large (max 32 MB)", 400)`
+     — the elements routes keep their pinned S67-B message; the
+     ordering discipline keeps the guard AFTER the rate-limit/session
+     gates (no parse work burns a slot) and BEFORE the parse. Pinned
+     by `tests/request-surface-s68.test.ts` (27 checks: per-site
+     presence + ordering + envelope, the auth family's
+     after-rate-limit discipline, the closure sweep — a future route
+     added without the guard fails the sweep).
+  2. **S68-B (M-1 — the Medium, the S64-C contract drift): the
+     marquee containment becomes rotation-aware.** The canvas's
+     filter tested the UNROTATED footprint (`el.x >= drag.x && el.x +
+     el.width * s <= …`) while this document and AGENTS.md state the
+     marquee runs on the VISUAL footprint — the selection outline
+     and resize handles already consumed the rotation-aware
+     `boundsOf`, so a rotated element's marquee disagreed with its
+     own outline exactly where S64-C claims they agree. The fix: the
+     filter consumes `boundsOf([el])` (the four-corner
+     corner-anchored rotated AABB); the rotation-0 fast path returns
+     the historical math exactly, so every standing unrotated
+     marquee pin is behavior-identical. Pinned by
+     `tests/marquee-rotation-s68.test.ts` (4 checks) + the two
+     discriminating e2e bands in `tests/e2e/session68-fixes.spec.ts`
+     (a band containing the VISUAL footprint but not the unrotated
+     one selects; a band containing only the unrotated footprint
+     selects nothing).
+  3. **S68-C (L-A + L-3 — the sanitizer hardening batch).** The
+     `sanitizeLlmOperations` ids gain the route's own 100 cap
+     (`.slice(0, 100)` — a hallucinated ids array can no longer
+     drive an O(ids × elements) membership filter at the client
+     seam); the update variant's inline patch type becomes the
+     exported `AssistantUpdatePatch` and the sanitizer builds a
+     TYPED patch (the broken conditional cast that resolved to
+     `never` — the "inert sanitizer cast" the session-67 plan
+     deferred — is deleted); the client builds its patch as a typed
+     `Partial<DesignElementDTO>` and calls
+     `store.updateElements(targets, patch)` directly. Zero
+     never-casts repo-wide; the clamped field set and every patch
+     VALUE are unchanged. Pinned by
+     `tests/sanitizer-ids-s68.test.ts` (7 checks).
+  4. **S68-D (L-2 + L-4 + L-5 + L-6 — the client/test-infra low
+     batch):** the autosave machine's 401 TERMINAL (a `sessionDead`
+     flag in the effect closure — the PUT's failure branch checks
+     `response.status === 401` FIRST: one distinct "Session expired"
+     toast, the badge honestly re-set to "Unsaved", and every later
+     flush early-returns; the Untitled-mode `ensureProject` POST
+     obeys the same terminal; network errors and 5xx keep the
+     S56-B retry family); the playwright `webServer` pre-kills
+     stale standalone servers before booting (the ANCHORED
+     `^bun .next/standalone` pattern — the naive unanchored form's
+     own shell carried the pattern text in its cmdline and killed
+     itself) with `reuseExistingServer: false` (a leftover :3100
+     server carrying old code and surviving in-memory rate-limit
+     buckets is never silently reused); the dead
+     `@radix-ui/react-toast` dependency removed from `package.json`
+     + `bun.lock` + the install script (grep-verified zero imports —
+     the custom globalThis toast store owns the surface); and
+     `fitToBounds`/`normalizeRect` carry the honest TEST-ONLY doc
+     status (the session-63 `elementToStyle` precedent — both are
+     unit-pinned geometry contracts with zero production consumers).
+     Pinned by `tests/editor-lows-s68.test.ts` (11 checks) + the
+     401-round-trip e2e pin (clearCookies → edit → the distinct
+     toast → a second edit → exactly ONE elements PUT ever fired).
+- `[SR]` **Counts:** unit 537 = 488 + 49 across 93 files (four new
+  spec files: request-surface-s68 27, marquee-rotation-s68 4,
+  sanitizer-ids-s68 7, editor-lows-s68 11); e2e 230 = 227 + 3
+  (`tests/e2e/session68-fixes.spec.ts`: the two discriminating
+  marquee bands + the session-expired terminal round-trip); smoke
+  unchanged at 58 (the guards are transparent to the suite's small
+  bodies).
+- `[SR]` **Docs aligned:** this revision block + the §7.1 table to
+  the 93-file/537-unit + 27-file/230-e2e reality (+ the smoke row
+  corrected to the standing 58); AGENTS.md (the counts — including
+  the gate-order paragraph's stale 56/224 — and the session-68 seam
+  bullet); CLAUDE.md (the counts + the session-68 seam rows);
+  README.md (the counts + the hardening/autosave feature rows);
+  digma_SKILL v1.46.0 (lesson F55); the remediation plan's execution
+  status; `docs/session_95.md`; the worklog entry. `.env.example`
+  verified unchanged — the four slices add no env vars (the source's
+  six digma env reads all covered).
 
 #### Revision Block — v1.46.0 (Tracked Changes)
 
@@ -1735,7 +1835,11 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — request-surface hardening (S67-B) | `tests/request-surface-s67.test.ts` | 12 | tests | Vitest |
 | Unit — AI limiter + OTP knob (S67-C) | `tests/ai-limit-otp-s67.test.ts` | 10 | tests | Vitest |
 | Unit — client low batch (S67-D) | `tests/client-lows-s67.test.ts` | 4 | tests | Vitest |
-| **Unit total** | **89 files** | **488** | | Vitest |
+| Unit — the parse-guard family completion (S68-A) | `tests/request-surface-s68.test.ts` | 27 | tests | Vitest |
+| Unit — the rotation-aware marquee containment (S68-B) | `tests/marquee-rotation-s68.test.ts` | 4 | tests | Vitest |
+| Unit — the sanitizer ids cap + the typed patch (S68-C) | `tests/sanitizer-ids-s68.test.ts` | 7 | tests | Vitest |
+| Unit — the autosave 401 terminal + the test-infra low batch (S68-D) | `tests/editor-lows-s68.test.ts` | 11 | tests | Vitest |
+| **Unit total** | **93 files** | **537** | | Vitest |
 | E2E — auth journeys + card states + from_url guard | `tests/e2e/auth.spec.ts` | 16 | tests/e2e | Playwright |
 | E2E — reset-password journeys | `tests/e2e/reset-password.spec.ts` | 7 | tests/e2e | Playwright |
 | E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |
@@ -1762,8 +1866,9 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | E2E — session 65 fixes: the list-thumbnail containment + the mid-drag Sheet-close convergence + the number-field one-undo-per-burst (S65-A/B/C) | `tests/e2e/session65-fixes.spec.ts` | 3 | tests/e2e | Playwright |
 | E2E — session 66 fixes: the type-then-drag two-undo + the bare-focus convergence + the picker-drag one-undo (S66-A/B) | `tests/e2e/session66-fixes.spec.ts` | 3 | tests/e2e | Playwright |
 | E2E — session-67 fixes (revocation + AI 429 + list empty state) | `tests/e2e/session67-fixes.spec.ts` | 3 | tests/e2e | Playwright |
-| **E2E total** | **26 files** | **227** | | Playwright |
-| Smoke — HTTP surface | `scripts/smoke-test.sh` | 56 | scripts | bash + curl + jq |
+| E2E — session-68 fixes (the marquee visual-footprint bands + the session-expired terminal) | `tests/e2e/session68-fixes.spec.ts` | 3 | tests/e2e | Playwright |
+| **E2E total** | **27 files** | **230** | | Playwright |
+| Smoke — HTTP surface | `scripts/smoke-test.sh` | 58 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns
 

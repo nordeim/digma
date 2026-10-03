@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { clampOptionalText, MEMBER_LIMIT } from "@/lib/validation";
+import { bodySizeRejected, clampOptionalText, MEMBER_LIMIT } from "@/lib/validation";
 import { memberColorFor, memberDisplayFor } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +16,14 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const team = await db.team.findUnique({ where: { id } });
   if (!team) return fail("NOT_FOUND", "Team not found", 404);
+
+  // Session 68 (S68-A — the sixteenth audit's M-A): the S67-B parse
+  // guard reaches every request.json() site — App Router handlers
+  // ship no default body-size cap, so the per-field caps only bound
+  // what SURVIVES the parse; this bounds the parse itself.
+  if (bodySizeRejected(request.headers.get("content-length"))) {
+    return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
+  }
 
   const body = await request.json().catch(() => null);
   const email = clampOptionalText(body?.email, 200);

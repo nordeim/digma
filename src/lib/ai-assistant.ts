@@ -21,18 +21,30 @@ export type AiOperation =
   | {
       op: "update";
       ids: string[]; // "all" | "selected" resolved by the caller into ids
-      patch: {
-        fill?: string | null;
-        opacity?: number;
-        width?: number | null;
-        height?: number | null;
-        scale?: number; // relative resize (1.25 = +25%)
-        x?: number;
-        y?: number;
-        text?: string | null;
-      };
+      // Session 68 (S68-C — the sixteenth audit's L-3): the patch type
+      // is NAMED and exported. The pre-fix inline form fed an untyped
+      // record through a broken conditional cast — the conditional
+      // resolved to `never`, so the cast never checked anything (the
+      // "inert sanitizer cast" the session-67 plan deferred). The named
+      // type describes exactly what the sanitizer builds and what the
+      // client applies.
+      patch: AssistantUpdatePatch;
     }
   | { op: "delete"; ids: string[] };
+
+// The update operation's sanitized patch — the fields the sanitizer
+// clamps and the client applies (fill hex-validated, opacity 0..1,
+// width 1..20000, height 0..20000, scale 0.05..20, text ≤ 500 chars).
+export type AssistantUpdatePatch = {
+  fill?: string | null;
+  opacity?: number;
+  width?: number | null;
+  height?: number | null;
+  scale?: number; // relative resize (1.25 = +25%)
+  x?: number;
+  y?: number;
+  text?: string | null;
+};
 
 export type AiCommand = {
   reply: string;
@@ -285,15 +297,22 @@ export function sanitizeLlmOperations(
       operations.push({ op: "add", element });
     } else if (op === "update" || op === "delete") {
       const rawIds = (item as LlmOperation)?.ids;
+      // Session 68 (S68-C — the sixteenth audit's L-A): the ids cap the
+      // route already enforces on the CLIENT's targetIds (100), mirrored
+      // onto the model's reply — a hallucinated ids array can no longer
+      // drive an O(ids x elements) membership filter at the client seam.
       const ids = Array.isArray(rawIds)
-        ? rawIds.filter((i): i is string => typeof i === "string")
+        ? rawIds.filter((i): i is string => typeof i === "string").slice(0, 100)
         : targetIds;
       if (ids.length === 0) continue;
       if (op === "delete") {
         operations.push({ op: "delete", ids });
       } else {
         const patchRaw = (item as LlmOperation).patch ?? {};
-        const patch: Record<string, unknown> = {};
+        // Session 68 (S68-C): the patch is BUILT TYPED — the broken
+        // conditional cast is gone (the type now checks what the code
+        // actually constructs; the clamped field set is unchanged).
+        const patch: AssistantUpdatePatch = {};
         if (
           typeof patchRaw.fill === "string" &&
           /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$/.test(patchRaw.fill)
@@ -305,7 +324,7 @@ export function sanitizeLlmOperations(
         if (typeof patchRaw.scale === "number") patch.scale = clamp(patchRaw.scale, 0.05, 20, 1);
         if (typeof patchRaw.text === "string") patch.text = patchRaw.text.slice(0, 500);
         if (Object.keys(patch).length === 0) continue;
-        operations.push({ op: "update", ids, patch: patch as AiOperation extends { op: "update"; patch: infer P } ? P : never });
+        operations.push({ op: "update", ids, patch });
       }
     }
   }

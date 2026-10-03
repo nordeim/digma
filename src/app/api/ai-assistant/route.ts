@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { fail, ok, requireSession } from "@/lib/api";
+import { bodySizeRejected } from "@/lib/validation";
 import { parseFallbackCommand, sanitizeLlmOperations, type AiCommand } from "@/lib/ai-assistant";
 import { aiRateLimit, clientIpOf } from "@/lib/rate-limit";
 
@@ -29,6 +30,14 @@ export async function POST(request: NextRequest) {
       { ok: false as const, error: { code: "RATE_LIMITED", message: "Too many assistant requests. Try again in a moment." } },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
     );
+  }
+
+  // Session 68 (S68-A — the sixteenth audit's M-A): the S67-B parse
+  // guard reaches every request.json() site — App Router handlers
+  // ship no default body-size cap, so the per-field caps only bound
+  // what SURVIVES the parse; this bounds the parse itself.
+  if (bodySizeRejected(request.headers.get("content-length"))) {
+    return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
 
   const body = await request.json().catch(() => null);

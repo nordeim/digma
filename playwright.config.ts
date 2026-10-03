@@ -57,10 +57,21 @@ export default defineConfig({
   ],
   globalSetup: "./tests/e2e/global-setup.ts",
   webServer: {
-    command: "bun .next/standalone/server.js",
+    // Session 68 (S68-D — the sixteenth audit's L-6): a leftover :3100
+    // standalone server is NEVER silently reused — a stale server
+    // carries old code and SURVIVING in-memory rate-limit buckets (the
+    // global-setup re-seed resets the DB file, not process memory — a
+    // prior run's exhausted ai:/auth: bucket fails later runs
+    // nondeterministically). The pre-kill mirrors the smoke suite's own
+    // discipline; the ANCHORED pattern (^bun .next/standalone) matches
+    // only a real bun server process — never this command's own shell,
+    // whose cmdline carries the pattern text inside the full command
+    // string (the naive unanchored form killed the shell itself).
+    command:
+      'pkill -f "^bun .next/standalone" >/dev/null 2>&1 || true; bun .next/standalone/server.js',
     url: `${BASE_URL}/api/health`,
     timeout: 60_000,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     env: {
       ...process.env,
       PORT: String(PORT),

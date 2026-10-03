@@ -304,7 +304,12 @@ export function defaultNameFor(type: ElementType, index: number): string {
   return `${TYPE_LABELS[type]} ${index + 1}`;
 }
 
-/** Normalizes a drag rectangle (any drag direction) into x/y/w/h. */
+/** Normalizes a drag rectangle (any drag direction) into x/y/w/h.
+ * TEST-ONLY (session 68, S68-D): zero production consumers — the
+ * canvas commits drags through its own drag-state math. The seam
+ * stays because the geometry contract is unit-pinned
+ * (editor.test.ts); do not wire new surfaces to it without retiring
+ * the pin's honest status first. */
 export function normalizeRect(
   x1: number,
   y1: number,
@@ -447,7 +452,15 @@ export function boundsOf(elements: DesignElementDTO[]): Bounds | null {
   return { minX, minY, maxX, maxY };
 }
 
-/** Zoom + translate that fits the content bounds (with margin) into a box. */
+/** Zoom + translate that fits the content bounds (with margin) into a box.
+ * TEST-ONLY (session 68, S68-D): zero production consumers — the
+ * thumbnails consume thumbnailFit since S65-A and no zoom-to-fit
+ * control exists (the pre-session-68 comment claimed thumbnail+zoom
+ * consumers it no longer has). The seam stays because the geometry
+ * contract is unit-pinned (editor.test.ts, bounds-rotation.test.ts —
+ * the "zoom-to-fit composes with the rotated bounds" pin); do not
+ * wire new surfaces to it without retiring the pin's honest status
+ * first. */
 export function fitToBounds(
   bounds: Bounds | null,
   boxWidth: number,

@@ -111,7 +111,12 @@ export function AiAssistant() {
           useEditorStore.getState().elements.some((el) => el.id === id),
         );
         if (targets.length === 0) continue;
-        const patch: Record<string, unknown> = {};
+        // Session 68 (S68-C — the sixteenth audit's L-3): the patch is
+        // built as the store's own Partial<DesignElementDTO> — the
+        // never-cast loophole is gone (the sanitizer's named
+        // AssistantUpdatePatch type flows through the operation into
+        // a typed apply; the field set is unchanged).
+        const patch: Partial<DesignElementDTO> = {};
         if (operation.patch.fill !== undefined) patch.fill = operation.patch.fill;
         if (operation.patch.opacity !== undefined) patch.opacity = operation.patch.opacity;
         if (operation.patch.width !== undefined && operation.patch.width !== null) patch.width = operation.patch.width;
@@ -129,7 +134,7 @@ export function AiAssistant() {
           did = true;
         }
         if (Object.keys(patch).length > 0) {
-          store.updateElements(targets, patch as never);
+          store.updateElements(targets, patch);
           did = true;
         }
         if (did) applied += 1;

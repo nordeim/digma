@@ -311,19 +311,25 @@ export function Canvas() {
     } else if (drag.kind === "marquee") {
       if (drag.w > 2 && drag.h > 2) {
         // Containment against VISUAL footprints (scale-aware).
-        const inside = elements.filter(
-          (el) => {
-            const s = el.scale ?? 1;
-            return (
-              el.visible &&
-              !el.locked &&
-              el.x >= drag.x &&
-              el.x + el.width * s <= drag.x + drag.w &&
-              el.y >= drag.y &&
-              el.y + el.height * s <= drag.y + drag.h
-            );
-          },
-        );
+        // Session 68 (S68-B — the sixteenth audit's M-1): the
+        // containment consumes boundsOf — the rotation-aware AABB the
+        // selection outline and resize handles already run on (the
+        // S64-C documented contract). The pre-fix inline test ran on
+        // the UNROTATED footprint, so a rotated element's marquee
+        // disagreed with its own outline exactly where S64-C claims
+        // they agree; the rotation-0 fast path returns the historical
+        // math exactly, so unrotated selections are unchanged.
+        const inside = elements.filter((el) => {
+          if (!el.visible || el.locked) return false;
+          const b = boundsOf([el]);
+          if (!b) return false;
+          return (
+            b.minX >= drag.x &&
+            b.maxX <= drag.x + drag.w &&
+            b.minY >= drag.y &&
+            b.maxY <= drag.y + drag.h
+          );
+        });
         if (inside.length > 0) store.select(inside.map((el) => el.id));
       }
     } else if (drag.kind === "move" || drag.kind === "resize") {

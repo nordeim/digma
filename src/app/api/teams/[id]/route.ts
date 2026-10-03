@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { clampText } from "@/lib/validation";
+import { bodySizeRejected, clampText } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const existing = await db.team.findUnique({ where: { id } });
   if (!existing) return fail("NOT_FOUND", "Team not found", 404);
+
+  // Session 68 (S68-A — the sixteenth audit's M-A): the S67-B parse
+  // guard reaches every request.json() site — App Router handlers
+  // ship no default body-size cap, so the per-field caps only bound
+  // what SURVIVES the parse; this bounds the parse itself.
+  if (bodySizeRejected(request.headers.get("content-length"))) {
+    return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
+  }
 
   const body = await request.json().catch(() => ({}));
   const data: Record<string, unknown> = {};
