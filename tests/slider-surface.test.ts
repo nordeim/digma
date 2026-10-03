@@ -69,12 +69,21 @@ describe("the surface-aware sliderGesture (session 64, S64-B / A-2)", () => {
     // The text variant's begin-on-demand + idle re-arm must carry the
     // same owner token so a superseding slider's flush and the
     // eventual idle/blur finish resolve against the right surface.
+    // Session 65 (S65-C) CONTRACT CHANGE: the idle now ends WHICHEVER
+    // surface owns the gesture — the number fields feed this same tick
+    // under their own "field" token, and a hardcoded text label made
+    // the idle a NO-OP for them (the gesture never ended; the autosave
+    // deferral looped forever). The surface is captured at ARM time
+    // (`activeSurface ?? "text"` — the demand-begin default stays the
+    // text surface), and the finish's ownership guard keeps a
+    // canvas-superseded burst from touching the store.
     const start = panelSource.indexOf("textTick: () => {");
     expect(start).toBeGreaterThan(-1);
     const end = panelSource.indexOf("},", start);
     const body = panelSource.slice(start, end);
     expect(body).toMatch(/activeSurface = "text"/);
-    expect(body).toMatch(/finish\("text"\)/);
+    expect(body).toMatch(/const surface = activeSurface \?\? "text"/);
+    expect(body).toMatch(/finish\(surface\)/);
   });
 
   it("the SliderRow and Content wiring pass their surface tokens (the consumers)", () => {

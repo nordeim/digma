@@ -12,7 +12,7 @@ import { Toolbar } from "./toolbar";
 import { Canvas } from "./canvas";
 import { LayersPanel } from "./layers-panel";
 import { ComponentsPanel } from "./components-panel";
-import { CanvasBackgroundSection, MultiSelectionSection, PropertiesPanel, PropertiesSections } from "./properties-panel";
+import { CanvasBackgroundSection, MultiSelectionSection, PropertiesPanel, PropertiesSections, resetSliderGesture } from "./properties-panel";
 import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
@@ -493,7 +493,7 @@ function ShortcutsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[85vh] gap-0 overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white sm:max-w-[420px]"
+        className="max-h-[85vh] gap-0 overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white sm:max-w-[420px] [&>button]:h-11 [&>button]:w-11"
         aria-label="Keyboard shortcuts"
         // The app's dialog convention (F34): focus returns to the trigger on
         // close. Radix's default return targets the DialogTrigger — none
@@ -748,6 +748,19 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
 // sections) and only below lg (`lg:hidden` — at ≥1024 the panel is the
 // surface).
 function MobilePropertiesEditor() {
+  // Session 65 (S65-B — the thirteenth audit's B-1): the Sheet's
+  // content unmounts on EVERY close path (the scrim tap, Escape, the
+  // dismiss control, the lg crossing, navigation) — an unmount
+  // cleanup is the one seam that covers them all. A slider drag
+  // alive at the moment of close never receives its terminal pointer
+  // event on the detached element; without the reset the closure and
+  // the store's armed snapshot leak (the endless autosave deferral
+  // loop + the dead gesture-aware commit argument) until a canvas
+  // gesture happens to heal them.
+  React.useEffect(() => {
+    return () => resetSliderGesture();
+  }, []);
+
   // The selector returns the selected element's STABLE object identity
   // (the store's immutable updates keep unrelated elements' identity), so
   // this component re-renders only when the selected element itself
@@ -891,6 +904,14 @@ function MobilePropertiesEditor() {
 // Palette metaphor, and the label honest (F39): "Edit canvas
 // properties" describes what the Sheet actually carries.
 function MobileCanvasProperties() {
+  // Session 65 (S65-B — the thirteenth audit's B-1): the canvas Sheet
+  // carries the SAME shared sections (the background + gradient
+  // sliders) — its teardown is the same gesture terminal the element
+  // Sheet's is.
+  React.useEffect(() => {
+    return () => resetSliderGesture();
+  }, []);
+
   // The selector subscribes to the empty-selection state + the color it
   // renders — the shell stays free of element/selection subscriptions,
   // and this leaf re-renders only when the background actually changes.
@@ -1047,6 +1068,14 @@ export function EditorView({ user }: { user: HeaderUser }) {
           const response = await fetch(`/api/projects/${projectId}`);
           const body = await response.json().catch(() => null);
           if (!cancelled && response.ok && body?.ok) {
+            // Session 65 (S65-B — the thirteenth audit's B-1): the store's
+            // load resets the SNAPSHOT but not the sliderGesture CLOSURE —
+            // a gesture leaked by an unmounted surface (mid-drag close)
+            // would keep its stale owner: the next same-surface begin
+            // skips arming entirely and every tick commits a full
+            // snapshot (the one-entry-per-gesture contract regressing to
+            // per-tick flooding). Heal the closure at the load seam.
+            resetSliderGesture();
             useEditorStore.getState().loadProject(body.data.project as ProjectDTO);
             setLoading(false);
             return;
@@ -1057,6 +1086,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
       }
       await Promise.resolve();
       if (!cancelled) {
+        resetSliderGesture();
         useEditorStore.getState().loadProject(UNTITLED_PROJECT);
         setLoading(false);
       }

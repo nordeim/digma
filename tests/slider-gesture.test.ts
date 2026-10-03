@@ -133,9 +133,17 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     // The idle-coalescing machinery: the timer, the re-arm, the
     // begin-on-demand for a fresh burst. Session 64 (S64-B): the timer
     // fires the surface-aware finish; the begin-on-demand also records
-    // the owning surface.
-    expect(panelSource).toMatch(/idleTimer = setTimeout\(\(\) => finish\("text"\), 150\);/);
-    expect(panelSource).toMatch(/if \(useEditorStore\.getState\(\)\.gestureSnapshot === null\) \{\s*useEditorStore\.getState\(\)\.beginGesture\(\);\s*activeSurface = "text";\s*\}/);
+    // the owning surface. Session 65 (S65-C — a legitimate contract
+    // update): the idle now ends WHICHEVER surface owns the gesture —
+    // the number fields feed the same tick under their own "field"
+    // token, and a hardcoded text label made the idle a NO-OP for them
+    // (the gesture never ended; the autosave deferral looped forever).
+    // The surface is captured at ARM time; the ownership guard inside
+    // finish keeps a canvas-superseded burst from touching the store.
+    expect(panelSource).toMatch(/idleTimer = setTimeout\(\(\) => finish\(surface\), 150\);/);
+    expect(panelSource).toMatch(/const surface = activeSurface \?\? "text";/);
+    expect(panelSource).toMatch(/armed = useEditorStore\.getState\(\)\.gestureSnapshot;/);
+    expect(panelSource).toMatch(/const ownsCurrentGesture = \(\) =>/);
   });
 
   it("the en-route isTypingTarget carve-out — a range input is not a typing target (the undo shortcut must not stand down behind a slider)", () => {

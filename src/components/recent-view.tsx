@@ -36,6 +36,12 @@ import { AppHeader, type HeaderUser } from "@/components/app-header";
 import { CanvasThumbnail, InlineProjectRename, ProjectCard } from "@/components/project-card";
 import { toast } from "@/hooks/use-toast";
 import type { ProjectDTO } from "@/lib/editor";
+// Session 65 (S65-E — the thirteenth audit's A-5): the envelope-unwrap
+// client lives in its own seam now — the files view's GET-only local
+// copy (which had already lost the init parameter) is gone; its call
+// sites are behavior-identical through the shared init-aware form
+// (a body-less init passes through unchanged).
+import { call } from "@/lib/call";
 
 type SortKey = "last_accessed" | "updated_date" | "created_date" | "name";
 
@@ -45,21 +51,6 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "created_date", label: "Date Created" },
   { value: "name", label: "Name" },
 ];
-
-async function call<T>(url: string): Promise<T | null> {
-  try {
-    const response = await fetch(url);
-    const body = await response.json().catch(() => null);
-    if (!response.ok || !body?.ok) {
-      toast.error("Something went wrong", body?.error?.message ?? `Request failed (${response.status}).`);
-      return null;
-    }
-    return (body.data ?? null) as T | null;
-  } catch {
-    toast.error("Network error", "Could not reach the server.");
-    return null;
-  }
-}
 
 function sortProjects(projects: ProjectDTO[], sort: SortKey): ProjectDTO[] {
   const copy = [...projects];
@@ -231,7 +222,7 @@ function RecentListCard({
         onKeyDown={(event) => event.stopPropagation()}
       >
         <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-          <DialogContent className="sm:max-w-[420px]">
+          <DialogContent className="sm:max-w-[420px] [&>button]:h-11 [&>button]:w-11">
             <DialogHeader>
               <DialogTitle>Delete project?</DialogTitle>
               <DialogDescription>

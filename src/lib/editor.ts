@@ -465,6 +465,37 @@ export function fitToBounds(
   };
 }
 
+/** Min-fit scale + centering translate that adapts a fixed painted box
+ * (the 320x200 thumbnail coordinate space) to its RENDERED parent box.
+ * Session 65 (S65-A — the thirteenth audit's A-1): the card thumbnail
+ * painted its fixed space anchored at the parent's top-left and let the
+ * parent's overflow crop do the "sizing" — the files-list's square slot
+ * showed a corner sliver (the seeded demo elements measured zero visible
+ * area) and the grid's ratio-locked slot cropped up to ~28% of the fitted
+ * content at laptop widths. The reference's own decoded contract scales
+ * the mini-canvas INSIDE the slot (the session-39 RA-48 measurement).
+ * The translate composes FIRST in the outer space (then the scale) so
+ * the scaled box centers exactly; a parent sharing the box's aspect
+ * ratio fills it exactly (tx = ty = 0 — the wide grid path is
+ * pixel-identical to the historical full-box paint). Degenerate
+ * non-positive parent dimensions (an unmeasured or hidden container)
+ * return the identity — the painted structure stands until a real
+ * measurement lands. */
+export function thumbnailFit(
+  parentW: number,
+  parentH: number,
+  boxW: number,
+  boxH: number,
+): { scale: number; tx: number; ty: number } {
+  if (parentW <= 0 || parentH <= 0) return { scale: 1, tx: 0, ty: 0 };
+  const scale = Math.min(parentW / boxW, parentH / boxH);
+  return {
+    scale,
+    tx: (parentW - boxW * scale) / 2,
+    ty: (parentH - boxH * scale) / 2,
+  };
+}
+
 /** Clamps zoom to the editor's supported range — the reference's measured
  * [10%, 500%] (session 39, RA-50; the Ctrl+wheel superset inherits it). */
 export function clampZoom(zoom: number): number {

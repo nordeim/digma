@@ -250,13 +250,20 @@ export function AppHeader({ user }: { user: HeaderUser }) {
                * at 390) and announces its dialog semantics
                * (aria-haspopup="dialog"); the popover keeps its pinned
                * role/Escape contract (workspace.spec.ts:94). */}
+              {/* Session 65 (S65-D — the thirteenth audit's A-3): the glyph
+                  meets the non-text contrast floor (the S61-B family — the
+                  lightest gray measured 2.54:1 on white against the 3:1
+                  floor; the next step measures 4.83:1). Not a parity-pinned
+                  site — the reference's own bell is unreachable dead chrome
+                  (the A-9 datum), so the clone's working control follows the
+                  project's AA pass. */}
               <button
                 type="button"
                 onClick={() => setBellOpen((v) => !v)}
                 aria-label="Notifications"
                 aria-expanded={bellOpen}
                 aria-haspopup="dialog"
-                className="flex h-11 w-11 items-center justify-center rounded-lg p-0 text-gray-400 transition-colors hover:text-gray-600"
+                className="flex h-11 w-11 items-center justify-center rounded-lg p-0 text-gray-500 transition-colors hover:text-gray-700"
               >
                 <Bell className="h-5 w-5" aria-hidden />
               </button>

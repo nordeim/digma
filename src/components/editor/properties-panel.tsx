@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AlignCenter, AlignLeft, AlignRight, CornerUpLeft, Image as ImageIcon, Layers, Move3d, Palette, Plus, Type, X } from "lucide-react";
 
-import { useEditorStore } from "./editor-store";
+import { useEditorStore, type EditorSnapshot } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -101,6 +101,7 @@ function NumberField({
         min={min}
         max={max}
         step={step}
+        onFocus={() => sliderGesture.begin("field")}
         onChange={(event) => {
           setDraft(event.target.value);
           // Session-21 fix (S21-2): an EMPTY draft is the user mid-edit, not
@@ -110,9 +111,23 @@ function NumberField({
           // live commit for real values, never for empty prefixes).
           if (event.target.value.trim() === "") return;
           const parsed = Number(event.target.value);
-          if (Number.isFinite(parsed)) onChange(parsed);
+          // Session 65 (S65-C — the thirteenth audit's B-2): the committing
+          // branch feeds the idle-coalesced tick FIRST (it arms the burst
+          // gesture on demand), then the value commit lands WITH the
+          // gesture aware — one history entry per typing burst instead of
+          // one full snapshot per DIGIT (typing a three-digit value into a
+          // position field produced three undo entries; a focused session
+          // across the numeric fields flooded the 60-deep stack).
+          if (Number.isFinite(parsed)) {
+            sliderGesture.textTick();
+            onChange(parsed);
+          }
         }}
         onBlur={() => {
+          // Session 65 (S65-C): the blur finishes the field gesture — the
+          // burst's single snapshot lands in history here (or at the 150ms
+          // idle, whichever comes first).
+          sliderGesture.finish("field");
           // Abandoned edit: an empty or unparseable draft restores the
           // element's current value — the input never dead-ends empty.
           const parsed = Number(draft);
@@ -178,15 +193,27 @@ function GuardedNumberInput({
       max={max}
       step={step}
       value={draft}
+      onFocus={() => sliderGesture.begin("field")}
       onChange={(event) => {
         setDraft(event.target.value);
         // An EMPTY draft is the user mid-edit, not a request for 0 —
         // only a non-empty, finite draft commits (the S21-2 contract).
         if (event.target.value.trim() === "") return;
         const parsed = Number(event.target.value);
-        if (Number.isFinite(parsed)) onChange(parsed);
+        // Session 65 (S65-C — the thirteenth audit's B-2): the inline form
+        // carries NumberField's full contract — the idle-coalesced tick
+        // FIRST, then the gesture-aware value commit (one history entry
+        // per typing burst, not one full snapshot per digit — the
+        // Rotation/Opacity values and the gradient stop positions were
+        // the flooding surface).
+        if (Number.isFinite(parsed)) {
+          sliderGesture.textTick();
+          onChange(parsed);
+        }
       }}
       onBlur={() => {
+        // Session 65 (S65-C): the blur finishes the field gesture.
+        sliderGesture.finish("field");
         // Abandoned edit: an empty or unparseable draft restores the
         // current value — the input never dead-ends empty.
         const parsed = Number(draft);
@@ -285,6 +312,17 @@ function HexColorRow({
 const sliderGesture = (() => {
   let changed = false;
   let activeSurface: string | null = null;
+  // Session 65 (S65-C — the thirteenth audit's B-2, en-route): the
+  // OWNERSHIP token. The canvas arms its own gestures through the
+  // store's beginGesture directly (never through this closure) — a
+  // canvas drag beginning while a panel gesture is open REPLACES the
+  // store's armed snapshot mid-flight. The closure's terminals must
+  // never end or cancel a gesture it no longer owns: the pre-fix idle
+  // fired mid-canvas-drag, pushed the MID-DRAG state into history,
+  // and left the canvas gesture's own cancel path a no-op (the
+  // canceled-drag undo pin regressed). Every terminal verifies the
+  // store's current snapshot is still the one this closure armed.
+  let armed: EditorSnapshot | null = null;
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
   const clearIdle = () => {
     if (idleTimer) {
@@ -292,6 +330,8 @@ const sliderGesture = (() => {
       idleTimer = null;
     }
   };
+  const ownsCurrentGesture = () =>
+    armed !== null && useEditorStore.getState().gestureSnapshot === armed;
   const finish = (surface: string) => {
     // Session 64 (S64-B — the twelfth audit's A-2): a terminal signal
     // from a surface that no longer owns the gesture is a NO-OP. The
@@ -304,11 +344,18 @@ const sliderGesture = (() => {
     // interleave).
     if (activeSurface !== surface) return;
     clearIdle();
-    const store = useEditorStore.getState();
-    if (changed) store.endGesture();
-    else store.cancelGesture();
+    // Session 65 (S65-C): ownership verified before touching the
+    // store — a foreign (canvas) gesture that replaced ours mid-flight
+    // must pass through untouched; the closure's bookkeeping still
+    // clears (its gesture is dead, superseded).
+    if (ownsCurrentGesture()) {
+      const store = useEditorStore.getState();
+      if (changed) store.endGesture();
+      else store.cancelGesture();
+    }
     changed = false;
     activeSurface = null;
+    armed = null;
   };
   return {
     begin: (surface: string) => {
@@ -317,12 +364,16 @@ const sliderGesture = (() => {
       // Session 64 (S64-B): a superseded gesture that CHANGED is
       // flushed FIRST — its snapshot lands in history (one entry per
       // gesture holds across the interleave), instead of being
-      // silently overwritten by the new gesture's begin.
-      if (activeSurface !== null && activeSurface !== surface && changed) {
+      // silently overwritten by the new gesture's begin. Session 65
+      // (S65-C): only when we still OWN the store's current gesture
+      // (a canvas takeover means the superseded gesture is already
+      // dead — flushing would push a foreign mid-flight state).
+      if (activeSurface !== null && activeSurface !== surface && changed && ownsCurrentGesture()) {
         store.endGesture();
       }
       if (activeSurface === null || activeSurface !== surface) {
         store.beginGesture();
+        armed = useEditorStore.getState().gestureSnapshot;
       }
       changed = false;
       activeSurface = surface;
@@ -332,19 +383,71 @@ const sliderGesture = (() => {
     },
     // The text variant: begin-on-demand (a burst separated from the last
     // by >150ms starts a FRESH gesture — separate intent, separate
-    // entry) + the idle re-arm.
+    // entry) + the idle re-arm. Session 65 (S65-C — the thirteenth
+    // audit's B-2): the number fields feed this same tick under their
+    // own surface token — the idle now ends WHICHEVER surface owns the
+    // gesture (a hardcoded label made it a no-op for them: the gesture
+    // never ended, the autosave's saved-marking deferred forever behind
+    // the armed snapshot). The surface is captured AT ARM time (every
+    // begin/finish clears the idle, so a stale fire cannot land on a
+    // foreign gesture), and the ownership guard inside finish keeps a
+    // canvas-superseded burst from touching the store.
     textTick: () => {
-      if (useEditorStore.getState().gestureSnapshot === null) {
-        useEditorStore.getState().beginGesture();
+      const store = useEditorStore.getState();
+      if (store.gestureSnapshot === null) {
+        store.beginGesture();
         activeSurface = "text";
+        armed = useEditorStore.getState().gestureSnapshot;
+      } else if (store.gestureSnapshot !== armed) {
+        // A foreign gesture owns the store — this burst rides under it
+        // and never ends it.
+        armed = null;
       }
+      const surface = activeSurface ?? "text";
       changed = true;
       clearIdle();
-      idleTimer = setTimeout(() => finish("text"), 150);
+      idleTimer = setTimeout(() => finish(surface), 150);
     },
     finish,
+    // Session 65 (S65-B — the thirteenth audit's B-1): the unmount
+    // terminal. Every other terminal is an ELEMENT-scoped pointer or
+    // focus event — when the host surface (a mobile Sheet or this
+    // panel) unmounts mid-gesture, the detached element never fires
+    // its pointerup/cancel/lostcapture, and the closure kept its
+    // open-gesture state while the store kept the armed snapshot:
+    // the autosave's saved-marking deferred forever behind the armed
+    // snapshot (the endless PUT loop, the badge never converging) and
+    // every subsequent panel edit silently stopped pushing undo
+    // history (the gesture-aware commit argument read false). The
+    // sheet primitives unmount their content on every close path, so
+    // an UNMOUNT cleanup is the one seam that covers them all. A
+    // CHANGED leaked gesture ENDS (the partial drag keeps its one
+    // undo entry); an unchanged one CANCELS — the same convention as
+    // finish, never a pushed no-op snapshot. Ownership verified: a
+    // gesture the canvas already replaced passes through untouched.
+    reset: () => {
+      clearIdle();
+      if (activeSurface === null) return;
+      if (ownsCurrentGesture()) {
+        const store = useEditorStore.getState();
+        if (changed) store.endGesture();
+        else store.cancelGesture();
+      }
+      changed = false;
+      activeSurface = null;
+      armed = null;
+    },
   };
 })();
+
+// The exported unmount/heal handle (session 65, S65-B): the host
+// surfaces in the editor shell consume this on their teardown, and
+// the project-load wiring heals a closure leaked across a
+// same-session project swap (the store's load resets the SNAPSHOT but
+// not this closure — a stale owner made the next same-surface begin
+// skip arming entirely, regressing the one-entry-per-gesture
+// contract to per-tick flooding).
+export const resetSliderGesture = () => sliderGesture.reset();
 
 function SliderRow({
   label,
@@ -592,7 +695,25 @@ function ImagePanel({
     <div className="space-y-4">
       <div>
         <span className="mb-2 block text-xs font-medium text-gray-300">Upload Image</span>
-        <div className="rounded-lg border-2 border-dashed border-[#30363d] p-4 text-center transition-colors hover:border-[#404040]">
+        {/* Session 65 (S65-D — the thirteenth audit's B-4): the dashed
+            zone ADVERTISES a drop target — a real file drop fell through
+            to the browser default and navigated the editor tab to the
+            file blob (the pagehide keepalive flush bounded the data
+            loss, but the session was lost and the affordance lied).
+            The drop handlers mirror the hidden input's contract: the
+            default is suppressed and the same reader consumes the
+            file, filtered to the image family the input accepts. */}
+        <div
+          className="rounded-lg border-2 border-dashed border-[#30363d] p-4 text-center transition-colors hover:border-[#404040]"
+          onDragOver={(event) => {
+            event.preventDefault();
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            const file = event.dataTransfer?.files?.[0];
+            if (file && file.type.startsWith("image/")) readFile(file);
+          }}
+        >
           <input
             type="file"
             accept="image/*"
@@ -1061,6 +1182,22 @@ export function PropertiesSections({
   element: DesignElementDTO;
   update: (patch: Partial<DesignElementDTO>) => void;
 }) {
+  // Session 65 (S65-B — the thirteenth audit's B-1): the SECTION body is
+  // the shared surface BOTH hosts render — the desktop panel's body and
+  // the mobile Sheet's content. The Sheet's content unmounts on EVERY
+  // close path (the scrim tap, Escape, the dismiss control, the lg
+  // crossing) while the HOST stays mounted — a slider drag alive at the
+  // moment of close never receives its terminal pointer event on the
+  // detached element, and without this teardown the closure and the
+  // store's armed snapshot leak: the autosave's saved-marking defers
+  // forever behind the armed snapshot (the endless PUT loop, the badge
+  // never converging) and every subsequent panel edit silently stops
+  // pushing undo history. The reset flushes a changed gesture (its
+  // partial drag keeps the one undo entry) and cleans the closure.
+  React.useEffect(() => {
+    return () => resetSliderGesture();
+  }, []);
+
   return (
     <>
       <PositionSizeSection element={element} update={update} />
@@ -1152,6 +1289,19 @@ export function PropertiesPanel() {
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const backgroundColor = useEditorStore((s) => s.backgroundColor);
   const setBackgroundColor = useEditorStore((s) => s.setBackgroundColor);
+
+  // Session 65 (S65-B — the thirteenth audit's B-1): the panel's own
+  // teardown is a gesture terminal. The chip toggle unmounts this
+  // panel mid-drag the same way the mobile Sheet's close paths
+  // unmount theirs — the detached slider never fires its
+  // pointerup/cancel/lostcapture, so the closure (and the store's
+  // armed snapshot) would leak: the autosave loop + the dead
+  // gesture-aware commit argument. The reset flushes a changed
+  // gesture (its partial drag keeps the one undo entry) and cleans
+  // the closure state.
+  React.useEffect(() => {
+    return () => resetSliderGesture();
+  }, []);
 
   const selected = elements.filter((el) => selectedIds.includes(el.id));
   const single = selected.length === 1 ? selected[0] : null;

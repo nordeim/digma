@@ -44,6 +44,7 @@ import {
   boundsOf,
   canvasFontFamily,
   fillPaintFor,
+  thumbnailFit,
   type DesignElementDTO,
   type ProjectDTO,
 } from "@/lib/editor";
@@ -86,8 +87,36 @@ export function CanvasThumbnail({
     offsetY = margin - bounds.minY * scale + (boxH - margin * 2 - contentH * scale) / 2;
   }
 
+  // Session 65 (S65-A — the thirteenth audit's A-1): the painted space
+  // is fixed at 320x200, but the PARENT box is not — the grid's
+  // ratio-locked slot narrows with the viewport and the files-list's
+  // square slot is 40x40. The pre-fix wrapper anchored the full-size
+  // painted box at the parent's top-left and let the overflow crop do
+  // the "sizing": the square slot showed a corner sliver (the seeded
+  // demo elements measured ZERO visible area) and the grid slot at
+  // laptop widths cropped ~28% of the fitted content. The reference's
+  // decoded contract scales the mini-canvas INSIDE the slot (the
+  // session-39 RA-48 measurement) — the wrapper now carries the
+  // measured min-fit scale + centering translate (a layout effect + a
+  // resize observer: the card grids mount client-side after their
+  // fetch, so the measurement lands before the first paint).
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const [fit, setFit] = React.useState({ scale: 1, tx: 0, ty: 0 });
+  React.useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      setFit(thumbnailFit(el.clientWidth, el.clientHeight, boxW, boxH));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
+      ref={containerRef}
       className="relative h-full w-full overflow-hidden"
       style={{ backgroundColor: project.backgroundColor }}
       aria-hidden
@@ -98,6 +127,7 @@ export function CanvasThumbnail({
           width: boxW,
           height: boxH,
           transformOrigin: "left top",
+          transform: `translate(${fit.tx}px, ${fit.ty}px) scale(${fit.scale})`,
         }}
       >
         <div
@@ -492,7 +522,7 @@ export function ProjectCard({
         onKeyDown={(event) => event.stopPropagation()}
       >
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="sm:max-w-[420px] [&>button]:h-11 [&>button]:w-11">
           <DialogHeader>
             <DialogTitle>Delete project?</DialogTitle>
             <DialogDescription>
@@ -588,7 +618,7 @@ export function CreateProjectDialog({
         if (!next) reset();
       }}
     >
-      <DialogContent className="max-h-[90vh] w-[95vw] overflow-y-auto sm:w-full sm:max-w-4xl">
+      <DialogContent className="max-h-[90vh] w-[95vw] overflow-y-auto sm:w-full sm:max-w-4xl [&>button]:h-11 [&>button]:w-11">
         <DialogHeader>
           <DialogTitle className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-xl text-transparent sm:text-2xl">
             Create New Design File

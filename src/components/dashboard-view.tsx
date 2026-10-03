@@ -12,6 +12,12 @@ import { CreateProjectDialog, ProjectCard } from "@/components/project-card";
 import { toast } from "@/hooks/use-toast";
 import { greetingFor, greetingName } from "@/lib/greeting";
 import type { ProjectDTO } from "@/lib/editor";
+// Session 65 (S65-E — the thirteenth audit's A-5): the single sanctioned
+// API client (the envelope unwrapper — failures degrade to a destructive
+// toast + null, never into React render) moved to its own seam. No view
+// carries a local copy anymore (the files view's GET-only variant had
+// already lost the init parameter — the drift the audit flagged).
+import { call } from "@/lib/call";
 
 type Stats = {
   projects: number;
@@ -19,26 +25,6 @@ type Stats = {
   activeThisWeek: number;
   plan: string;
 };
-
-// call() — the single sanctioned API client (envelope unwrapper): failures
-// degrade to a destructive toast + null, never into React render.
-async function call<T>(url: string, init?: RequestInit): Promise<T | null> {
-  try {
-    const response = await fetch(url, {
-      ...init,
-      ...(init?.body ? { headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } } : {}),
-    });
-    const body = await response.json().catch(() => null);
-    if (!response.ok || !body?.ok) {
-      toast.error("Something went wrong", body?.error?.message ?? `Request failed (${response.status}).`);
-      return null;
-    }
-    return (body.data ?? null) as T | null;
-  } catch {
-    toast.error("Network error", "Could not reach the server.");
-    return null;
-  }
-}
 
 export function DashboardView({ user }: { user: HeaderUser }) {
   const router = useRouter();
@@ -112,7 +98,15 @@ export function DashboardView({ user }: { user: HeaderUser }) {
             <div className="mx-auto max-w-7xl px-6 py-12">
               <div className="flex flex-col items-center justify-between gap-8 lg:flex-row">
                 <div className="flex-1">
-                  <h1 className="mb-3 text-4xl font-bold">
+                  {/* Session 65 (S65-D — the thirteenth audit's A-2): the
+                      greeting's time bucket computes once on the server at
+                      request time and once in the browser at hydration —
+                      across the bucket boundaries with divergent clocks React
+                      logged a text-content hydration error on every such
+                      visit (the UI self-corrected). The suppression keeps
+                      exactly that self-correcting behavior minus the error:
+                      the server bucket renders until hydration patches it. */}
+                  <h1 className="mb-3 text-4xl font-bold" suppressHydrationWarning>
                     {greeting}, {greetingName(user.name)} ✨
                   </h1>
                   <p className="mb-6 max-w-xl text-lg text-purple-100">

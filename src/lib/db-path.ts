@@ -116,9 +116,25 @@ export function candidateRoots(): string[] {
  * resolver passes non-file URLs through unchanged — without this seam a
  * credentialed connection string would print its secret to stdout. */
 export function redactDatabaseUrl(url: string): string {
-  // A URL-shaped string with a userinfo section: scheme://user:pass@rest
-  const m = /^([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)([^/@:]+):([^@]*)@(.*)$/.exec(url);
+  // Session 65 (S65-D — the thirteenth audit's B-3): the split runs on
+  // the AUTHORITY segment (everything after scheme:// up to the first
+  // path/query/hash delimiter), and within it the LAST @ separates
+  // userinfo from host — the pre-fix first-@ split leaked the tail of
+  // a password that itself contains the separator character (the
+  // characters between the first and last separator were password
+  // material, printed verbatim). Over-redaction is safe; a redaction
+  // seam's contract is that the secret never prints.
+  const m = /^([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)([^/?#]*)/.exec(url);
   if (!m) return url;
-  const [, scheme, user, , rest] = m;
+  const [, scheme, authority] = m;
+  const at = authority.lastIndexOf("@");
+  if (at === -1) return url;
+  const userinfo = authority.slice(0, at);
+  const colon = userinfo.indexOf(":");
+  if (colon === -1) return url;
+  const user = userinfo.slice(0, colon);
+  // Everything after the LAST @ in the authority (the host + the
+  // preserved path/query/hash tail of the original string).
+  const rest = url.slice(scheme.length + at + 1);
   return `${scheme}${user}:***@${rest}`;
 }

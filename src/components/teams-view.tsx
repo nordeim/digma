@@ -18,6 +18,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { AppHeader, type HeaderUser } from "@/components/app-header";
 import { toast } from "@/hooks/use-toast";
 import { memberColorFor } from "@/lib/team";
+// Session 65 (S65-E — the thirteenth audit's A-5): the envelope-unwrap
+// client lives in its own seam now — no per-view local copy.
+import { call } from "@/lib/call";
 
 type TeamMemberDTO = {
   id: string;
@@ -34,24 +37,6 @@ type TeamDTO = {
   color: string;
   members: TeamMemberDTO[];
 };
-
-async function call<T>(url: string, init?: RequestInit): Promise<T | null> {
-  try {
-    const response = await fetch(url, {
-      ...init,
-      ...(init?.body ? { headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } } : {}),
-    });
-    const body = await response.json().catch(() => null);
-    if (!response.ok || !body?.ok) {
-      toast.error("Something went wrong", body?.error?.message ?? `Request failed (${response.status}).`);
-      return null;
-    }
-    return (body.data ?? null) as T | null;
-  } catch {
-    toast.error("Network error", "Could not reach the server.");
-    return null;
-  }
-}
 
 const TEAM_COLORS = ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#06B6D4"];
 
@@ -361,7 +346,7 @@ function CreateTeamDialog({
         if (!next) reset();
       }}
     >
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] [&>button]:h-11 [&>button]:w-11">
         <DialogHeader>
           <DialogTitle className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Create a Team
@@ -484,7 +469,7 @@ function InviteMemberDialog({
 
   return (
     <Dialog open={team !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px] [&>button]:h-11 [&>button]:w-11">
         <DialogHeader>
           <DialogTitle>Invite to {team?.name}</DialogTitle>
           <DialogDescription>Send an invite by email and set their role.</DialogDescription>
