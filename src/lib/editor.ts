@@ -27,13 +27,9 @@ export type EditorTool =
   | "text"
   | "image";
 
-export const ELEMENT_TOOLS: EditorTool[] = [
-  "rectangle",
-  "ellipse",
-  "line",
-  "text",
-  "frame",
-];
+// Session 63 (S63-G / B-L1): the dead tool-list export is deleted — it
+// had zero consumers in src AND tests (grep-verified; the vocabulary
+// lives in the EditorTool union and the shortcut map pins completeness).
 
 // The single-source keyboard-shortcut map (session 48, S48-1). The toolbar
 // titles advertise `"{Tool} ({shortcut})"` and the keyboard handler resolves
@@ -324,9 +320,13 @@ export function canvasFontFamily(fontFamily?: string | null): string {
   return fontFamily && fontFamily !== "Inter" ? fontFamily : "Inter, sans-serif";
 }
 
-/** The inline style the canvas renders an element with (mirrors the
- * reference: translate(x,y) scale(s) rotate(r) — scale sits between the
- * translate and the rotate, exactly the chain the reference DOM ships). */
+/** TEST-ONLY reference-geometry contract (session 63, S63-G — the honest
+ * status): the canvas re-implements this style chain inline at its render
+ * site; this export exists so the unit suite pins the geometry the canvas
+ * must reproduce (translate(x,y) scale(s) rotate(r) — scale sits between
+ * the translate and the rotate, exactly the chain the reference DOM
+ * ships). Making the canvas consume this seam directly is the deferred
+ * Mode D refactor. */
 export function elementToStyle(el: DesignElementDTO): ElementStyle {
   const style: ElementStyle = {
     transform: `translate(${el.x}px, ${el.y}px) scale(${el.scale}) rotate(${el.rotation}deg)`,

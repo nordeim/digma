@@ -446,7 +446,13 @@ export function LoginScreen() {
                         <p className="text-sm text-blue-700">
                           Self-hosted mode: no email service is configured —{" "}
                           <a
-                            href={resetUrl}
+                            // Session 63 (S63-E / A-L4): the API's resetUrl is
+                            // same-origin by construction (a relative
+                            // /reset-password?token=… link), but the href routes
+                            // through safeFromUrl anyway — the S58-C
+                            // defense-in-depth family (any non-site-local
+                            // target falls back to "/").
+                            href={safeFromUrl(resetUrl)}
                             className="font-semibold underline underline-offset-2 hover:text-blue-800"
                           >
                             reset your password directly

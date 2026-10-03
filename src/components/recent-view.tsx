@@ -277,10 +277,21 @@ export function RecentView({ user }: { user: HeaderUser }) {
   const [view, setView] = React.useState<"grid" | "list">("grid");
 
   React.useEffect(() => {
-    call<{ projects: ProjectDTO[] }>("/api/projects").then((data) => {
+    // Session 63 (S63-F / A-L3): the documented unmount guard (the sibling
+    // views' pattern) — an unmount mid-fetch must not commit state after
+    // teardown. Async function inside the effect; setState only in the
+    // awaited continuation behind the ignore flag.
+    let ignore = false;
+    async function run() {
+      const data = await call<{ projects: ProjectDTO[] }>("/api/projects");
+      if (ignore) return;
       if (data) setProjects(data.projects);
       setLoading(false);
-    });
+    }
+    run();
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const visible = React.useMemo(() => {
@@ -379,7 +390,12 @@ export function RecentView({ user }: { user: HeaderUser }) {
             </div>
           </div>
 
-          <div className="mx-auto max-w-7xl px-0 py-8 sm:px-0">
+          {/* Session 63 (S63-G / A-L5): the pre-fix wrapper duplicated the
+              parent container's max-width/margins plus zero-padding
+              overrides inside the identical parent — every class except
+              the py-8 spacing was a no-op. Only the load-bearing vertical
+              spacing stays (layout pixel-identical). */}
+          <div className="py-8">
             <div className="mb-6 flex items-center justify-between">
               <div className="text-sm text-gray-500">
                 {loading ? "Loading…" : `${visible.length} ${visible.length === 1 ? "file" : "files"} found`}
@@ -399,6 +415,10 @@ export function RecentView({ user }: { user: HeaderUser }) {
                     <ProjectCard
                       key={project.id}
                       project={project}
+                      // Session 63 (S63-C / A-L2): the first avatar chip
+                      // carries the real-user initial (RA-53) — the
+                      // greetingName "D" (Designer) fallback convention.
+                      userInitial={user.name.trim().charAt(0).toUpperCase() || "D"}
                       onRenamed={(updated) =>
                         setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
                       }

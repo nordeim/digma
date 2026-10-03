@@ -290,10 +290,16 @@ export function InlineProjectRename({
 
 export function ProjectCard({
   project,
+  userInitial,
   onRenamed,
   onDeleted,
 }: {
   project: ProjectDTO;
+  // Session 63 (S63-C / A-L2): the RA-53 documented contract — the first
+  // avatar chip carries the REAL-USER initial (title "You", the RA-40
+  // working-superset family), not a hardcoded constant. Both call sites
+  // derive it from the signed-in user's name.
+  userInitial: string;
   onRenamed?: (project: ProjectDTO) => void;
   onDeleted?: (id: string) => void;
 }) {
@@ -364,7 +370,14 @@ export function ProjectCard({
       <div className="block w-full text-left">
         <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
           <CanvasThumbnail project={project} elements={elements} />
-          <div className="absolute inset-0 bg-black bg-opacity-0 transition-all duration-300 group-hover:bg-opacity-10" />
+          {/* Session 63 (S63-A / A-H1 — the eleventh audit's HIGH): the
+              pre-fix overlay used the v3 opacity-utility syntax that
+              Tailwind v4 REMOVED — v4 emits none of those selectors, so
+              `.bg-black` painted a fully OPAQUE overlay, hiding every grid
+              card's thumbnail behind (0,0,0) since the first commit. The
+              v4 modifier form restores the original intent: transparent
+              at rest, 10% black on hover. */}
+          <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover:bg-black/10" />
         </div>
       </div>
       <div className="p-3">
@@ -454,7 +467,7 @@ export function ProjectCard({
               className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-blue-500 to-purple-600"
               title="You"
             >
-              <span className="text-[9px] font-medium text-white">Y</span>
+              <span className="text-[9px] font-medium text-white">{userInitial}</span>
             </div>
             <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-green-500 to-teal-600">
               <span className="text-[9px] font-medium text-white">B</span>

@@ -16,10 +16,12 @@ const nextConfig: NextConfig = {
   // caseSensitive flag is not honored — observed self-loop).
   // The reference app renders template thumbnails from unsplash URLs with
   // plain <img> tags; remotePatterns keeps next/image available if we switch.
+  // Session 63 (S63-G / B-L4): the dead supabase grant is deleted —
+  // next/image is never imported anywhere (plain <img> everywhere), and the
+  // entry pre-dated nothing that ever referenced it.
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "qtrypzzcjebvfcihiynt.supabase.co" },
     ],
   },
   // Dev-time type safety is enforced by `bun run typecheck` (the explicit

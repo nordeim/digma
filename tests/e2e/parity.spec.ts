@@ -987,8 +987,12 @@ test.describe("grid-card inline rename + avatar chips (session 41, RA-52/RA-53)"
     });
     // First chip: the real-user identity (title "You", the RA-40 superset
     // family) on the reference's blue-500 -> purple-600 gradient.
+    // Session 63 (S63-C / A-L2) — the LEGITIMATE CONTRACT UPDATE: the
+    // pre-fix pin blessed the hardcoded "Y" constant; the documented RA-53
+    // contract is the REAL-USER initial, which the card now renders from
+    // the signed-in name (the demo account "Designer" -> "D").
     expect(chips[0]?.title).toBe("You");
-    expect(chips[0]?.initials).toBe("Y");
+    expect(chips[0]?.initials).toBe("D");
     expect(chips[0]?.backgroundImage).toContain("linear-gradient");
     expect(chips[0]?.backgroundImage).toContain("rgb(59, 130, 246)");
     expect(chips[0]?.backgroundImage).toContain("rgb(147, 51, 234)");

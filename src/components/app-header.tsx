@@ -14,7 +14,12 @@ export type HeaderUser = {
   id: string;
   name: string;
   email: string;
-  avatarColor: string;
+  // Session 63 (S63-G / A-L1): the dead avatar-color field is deleted —
+  // the header avatar renders the static blue-500 -> purple-600 gradient +
+  // User icon and never read the color (grep-verified zero consumers of
+  // the HeaderUser shape's field). The DB column and the auth API's
+  // response shape stay (dropping them is a prisma schema change — the
+  // same deferred class as the dead thumbnailSeed column, B-L6).
 };
 
 const NAV_LINKS = [

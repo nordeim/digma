@@ -181,6 +181,11 @@ export function LayersPanel() {
                     {renaming === el.id ? (
                       <input
                         autoFocus
+                        // Session 63 (S63-D / B-L3): the server clamps names
+                        // at 80 (clampOptionalText(raw?.name, 80) in both
+                        // row-builders) — the input cap keeps the local edit
+                        // and the persisted row from diverging past 80 chars.
+                        maxLength={80}
                         value={renameValue}
                         onChange={(e) => setRenameValue(e.target.value)}
                         onBlur={() => {

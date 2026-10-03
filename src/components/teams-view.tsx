@@ -268,12 +268,16 @@ function TeamCard({
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-gray-800">{member.name}</p>
-              <p className="truncate text-xs text-gray-400">{member.role ?? member.email ?? "Member"}</p>
+              {/* Session 63 (S63-B / A-M1 — the eleventh audit's M-1): the
+                  gray-500 (#6b7280) reads at 4.83:1 on white — AA at 12px.
+                  The pre-fix gray-400 (#9ca3af) computed to 2.54:1 — the
+                  S61-B family's two missed sites. */}
+              <p className="truncate text-xs text-gray-500">{member.role ?? member.email ?? "Member"}</p>
             </div>
           </li>
         ))}
         {team.members.length > shown.length && (
-          <li className="text-xs text-gray-400">+{team.members.length - shown.length} more</li>
+          <li className="text-xs text-gray-500">+{team.members.length - shown.length} more</li>
         )}
       </ul>
 
