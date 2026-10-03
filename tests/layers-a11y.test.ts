@@ -53,8 +53,14 @@ describe("the Low a11y batch (session 57, S57-F)", () => {
     expect(m).not.toBeNull();
     const handler = m![1];
     // The label/deselect decision considers ONLY the visible family…
-    expect(handler).toContain("filter((el) => el.visible)");
-    expect(handler).toContain(".every(");
+    // Session 61 (S61-D) contract update: the visible family is computed
+    // ONCE at the component top (const visible = elements.filter((el) =>
+    // el.visible)) instead of inline in the handler — the flip still
+    // reads exactly that family.
+    expect(handler).toContain("visible.length > 0");
+    expect(handler).toContain("visible.every(");
+    const hoisted = layersSource.indexOf("const visible = elements.filter((el) => el.visible);");
+    expect(hoisted).toBeGreaterThan(-1);
     // …and the empty-canvas reference quirk (0 layers → "Deselect All")
     // is preserved.
     expect(handler).toContain("elements.length === 0");
@@ -65,7 +71,7 @@ describe("the Low a11y batch (session 57, S57-F)", () => {
     const labelStart = layersSource.indexOf('"Deselect All"', handlerIdx);
     expect(labelStart).toBeGreaterThan(-1);
     const before = layersSource.slice(Math.max(0, labelStart - 400), labelStart);
-    expect(before).toContain("filter((el) => el.visible)");
+    expect(before).toContain("visible.length > 0");
   });
 
   it("L-3: the layers row activates on Space as well as Enter", () => {

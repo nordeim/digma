@@ -315,7 +315,12 @@ export function ProjectCard({
 
   async function openProject() {
     // Touch lastOpenedAt so "Continue Working" and Recent reorder.
-    await fetch(`/api/projects/${project.id}`, {
+    // Session 61 (S61-H / B-L-5 — the ninth audit's B-L-5): the PATCH is
+    // fire-and-forget — pre-fix this await blocked the navigation on the
+    // round-trip, and a slow network made the click look dead. The
+    // failure path already degraded to navigate; the reorder is
+    // server-side and unaffected by the unmount (the request is sent).
+    fetch(`/api/projects/${project.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lastOpened: true }),
@@ -429,7 +434,10 @@ export function ProjectCard({
             </>
           )}
         </div>
-        <div className="flex items-center justify-between text-xs text-gray-400">
+        {/* Session 61 (S61-B — the ninth audit's M-2): gray-500 (#6b7280)
+            reads at 4.83:1 on white — AA at 12px. The pre-fix gray-400
+            (#9ca3af) computed to 2.54:1. */}
+        <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" aria-hidden />
             <span>{openedLabel}</span>

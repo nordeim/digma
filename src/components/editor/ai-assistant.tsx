@@ -92,10 +92,24 @@ export function AiAssistant() {
         if (operation.element.radius) {
           partial.radius = operation.element.radius;
         }
-        store.addElements([partial]);
-        applied += 1;
+        // Session 61 (S61-F / A-L-5): the honest count — the store clamps
+        // at ELEMENT_LIMIT and returns only the actually-created ids; a
+        // cap-refused add no longer increments `applied` (the footer's
+        // "N action(s) performed" stays honest at the ceiling).
+        const addedIds = store.addElements([partial]);
+        if (addedIds.length > 0) applied += 1;
       } else if (operation.op === "update") {
-        const targets = operation.ids.filter((id) => store.elements.some((el) => el.id === id));
+        // Session 61 (S61-E — the ninth audit's A-L-3): the membership check
+        // reads the LIVE elements. The pre-fix single getState() capture
+        // (taken once before the loop) was stale after the batch's own
+        // mutations — a multi-op LLM reply that removed id X and then
+        // referenced X again passed the check, ran a no-op, pushed a junk
+        // undo entry, and inflated the applied count. (The action calls
+        // below stay on the captured handle — Zustand actions are stable
+        // and bound to the live store; only the elements READ was stale.)
+        const targets = operation.ids.filter((id) =>
+          useEditorStore.getState().elements.some((el) => el.id === id),
+        );
         if (targets.length === 0) continue;
         const patch: Record<string, unknown> = {};
         if (operation.patch.fill !== undefined) patch.fill = operation.patch.fill;
@@ -132,7 +146,9 @@ export function AiAssistant() {
         // deleteElements, whose locked-deleting row-trash path stays
         // reference parity.
         const targets = operation.ids.filter(
-          (id) => store.elements.some((el) => el.id === id && !el.locked),
+          // Session 61 (S61-E — A-L-3): the live-state re-read — same
+          // rationale as the update branch above.
+          (id) => useEditorStore.getState().elements.some((el) => el.id === id && !el.locked),
         );
         if (targets.length > 0) {
           store.deleteElements(targets);

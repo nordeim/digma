@@ -30,6 +30,9 @@ export function LayersPanel() {
   const [renameValue, setRenameValue] = React.useState("");
 
   const selectedSet = new Set(selectedIds);
+  // Session 61 (S61-D / A-L-4): the hidden-family state drives the Select
+  // All disable — computed once beside the other derived sets.
+  const visible = elements.filter((el) => el.visible);
 
   function onRowClick(id: string, event: React.MouseEvent) {
     const store = useEditorStore.getState();
@@ -52,6 +55,13 @@ export function LayersPanel() {
               "Deselect All" exactly like the reference app. */}
           <button
             type="button"
+            // Session 61 (S61-D — the ninth audit's A-L-4): with elements
+            // present but every layer hidden, the click could select
+            // nothing (selectAll is visible-only) — a dead control that
+            // lied. The honest fix disables it in that state. The 0-element
+            // "Deselect All" quirk above is deliberately preserved
+            // (reference parity, pinned by the S57-F suite).
+            disabled={elements.length > 0 && visible.length === 0}
             onClick={() => {
               const store = useEditorStore.getState();
               // Session 57 (S57-F / L-1 — the fifth Mode C audit): the flip
@@ -59,7 +69,6 @@ export function LayersPanel() {
               // VISIBLE family only — comparing against elements.length
               // meant the label could never flip while any layer was
               // hidden (every click re-ran selectAll, a no-op).
-              const visible = elements.filter((el) => el.visible);
               const allVisibleSelected =
                 elements.length === 0 ||
                 (visible.length > 0 && visible.every((el) => selectedIds.includes(el.id)));
@@ -69,10 +78,9 @@ export function LayersPanel() {
                 store.selectAll();
               }
             }}
-            className="text-xs text-gray-400 transition-colors hover:text-white"
+            className="text-xs text-gray-400 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {(() => {
-              const visible = elements.filter((el) => el.visible);
               return elements.length === 0 ||
                 (visible.length > 0 && visible.every((el) => selectedIds.includes(el.id)))
                 ? "Deselect All"
@@ -130,7 +138,13 @@ export function LayersPanel() {
                     // the top/bottom via its clamp.
                     store.reorderElements([fromId], after ? targetIndex : targetIndex + 1);
                   }}
-                  onDoubleClick={() => {
+                  onDoubleClick={(event) => {
+                    // Session 61 (S61-D / A-L-1 — the ninth audit): the
+                    // S59-A nested-control guard, applied to dblclick. The
+                    // eye/lock buttons stop propagation on CLICK only, so a
+                    // rapid double-toggle bubbled a dblclick into this
+                    // handler and silently stole focus into rename mode.
+                    if ((event.target as HTMLElement).closest("button, input")) return;
                     setRenaming(el.id);
                     setRenameValue(el.name ?? "");
                   }}

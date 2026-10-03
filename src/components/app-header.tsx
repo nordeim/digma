@@ -118,7 +118,9 @@ function MobileNav() {
           })}
         </nav>
         <div className="mt-auto border-t border-gray-200 p-5">
-          <p className="text-xs text-gray-400">Digma · Design workspace</p>
+          {/* Session 61 (S61-B — the ninth audit's M-2): AA at 12px —
+              gray-500 (#6b7280, 4.83:1), not the 2.54:1 gray-400. */}
+          <p className="text-xs text-gray-500">Digma · Design workspace</p>
         </div>
       </SheetContent>
     </Sheet>
@@ -237,12 +239,19 @@ export function AppHeader({ user }: { user: HeaderUser }) {
             </div>
 
             <div className="relative" ref={bellRef}>
+              {/* Session 61 (S61-H / B-L-2 — the ninth audit): the bell meets
+               * the 44px touch floor (the project's own convention for
+               * mobile header controls — it sits beside the 44px hamburger
+               * at 390) and announces its dialog semantics
+               * (aria-haspopup="dialog"); the popover keeps its pinned
+               * role/Escape contract (workspace.spec.ts:94). */}
               <button
                 type="button"
                 onClick={() => setBellOpen((v) => !v)}
                 aria-label="Notifications"
                 aria-expanded={bellOpen}
-                className="rounded-lg p-2 text-gray-400 transition-colors hover:text-gray-600"
+                aria-haspopup="dialog"
+                className="flex h-11 w-11 items-center justify-center rounded-lg p-0 text-gray-400 transition-colors hover:text-gray-600"
               >
                 <Bell className="h-5 w-5" aria-hidden />
               </button>

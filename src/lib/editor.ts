@@ -194,6 +194,16 @@ export const CANVAS_BACKGROUND_PRESETS: Array<{ title: string; value: string }> 
 
 export const DEFAULT_FILL = "#3B82F6";
 
+// Session 61 (S61-F — the ninth audit's A-L-5, the residual half of
+// S60-D's B-L-2): the single seam for the board-size ceiling. The PUT
+// route carried it as a literal since session 33; S60-D added the POST
+// literal; the CLIENT add paths (the store's addElements — the canvas
+// draw commit, the text tool, the AI add branch) stayed uncapped, so
+// crossing the ceiling client-side wedged every subsequent autosave PUT
+// in a 400-retry loop. The route imports this constant too — one
+// source of truth for the server caps and the client clamp.
+export const ELEMENT_LIMIT = 2000;
+
 /** Default geometry + styling for a freshly drawn element of each type. */
 export function defaultElementFor(
   type: ElementType,

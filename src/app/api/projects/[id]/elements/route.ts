@@ -10,7 +10,7 @@ import {
   clampTextAlign,
   isElementType,
 } from "@/lib/validation";
-import { clampFillImageFit, defaultNameFor, parseGradient, type ElementType } from "@/lib/editor";
+import { clampFillImageFit, defaultNameFor, ELEMENT_LIMIT, parseGradient, type ElementType } from "@/lib/editor";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +71,9 @@ export async function POST(request: NextRequest, { params }: Params) {
   // it) could push a project PAST 2000, after which every autosave PUT
   // failed with the "Too many elements (max 2000)" 400 toast and the
   // design was unsavable until the user deleted back below the cap.
-  if (count >= 2000) {
+  // Session 61 (S61-F): the literal becomes the shared ELEMENT_LIMIT seam
+  // (src/lib/editor.ts) — one source of truth with the client clamp.
+  if (count >= ELEMENT_LIMIT) {
     return fail("VALIDATION", "Too many elements (max 2000)", 400);
   }
   const sortOrder = clampNumber(body?.sortOrder, 0, 999, count);
@@ -131,7 +133,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const body = await request.json().catch(() => null);
   const list = Array.isArray(body?.elements) ? body.elements : null;
   if (!list) return fail("VALIDATION", "elements array is required", 400);
-  if (list.length > 2000) return fail("VALIDATION", "Too many elements (max 2000)", 400);
+  if (list.length > ELEMENT_LIMIT) return fail("VALIDATION", "Too many elements (max 2000)", 400);
 
   // Session 33 (S33-3): the autosave PUT carries the FULL canvas state —
   // an optional backgroundColor alongside the element list. Validated like

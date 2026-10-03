@@ -26,7 +26,11 @@
   --color-muted-foreground: #6b7280;
   --color-accent: #f3f4f6;
   --color-accent-foreground: #111827;
-  --color-destructive: #ef4444;
+  /* Session 61 (S61-A — the ninth audit's M-1): #dc2626 (red-600) pairs
+     with the white foreground at 4.83:1 — WCAG AA. The shadcn-default
+     #ef4444 computed to 3.76:1, failing every destructive confirm and
+     toast at normal text sizes (the a11y working-superset doctrine). */
+  --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
   --color-border: #e5e7eb;
   --color-input: #e5e7eb;

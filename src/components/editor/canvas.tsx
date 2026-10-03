@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 import { useEditorStore } from "./editor-store";
 import { boundsOf, canvasFontFamily, clampZoom, fillPaintFor, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
@@ -132,7 +133,12 @@ export function Canvas() {
 
     if (tool === "text") {
       const { addElement } = useEditorStore.getState();
-      addElement({ type: "text", x: point.x, y: point.y, width: 200, height: 40 });
+      // Session 61 (S61-F / A-L-5): the cap-refused add answers the user
+      // (the store returns null — a silent dead click would be the
+      // pre-fix behavior class).
+      if (addElement({ type: "text", x: point.x, y: point.y, width: 200, height: 40 }) === null) {
+        toast.error("Element limit reached", `Boards hold at most 2000 elements.`);
+      }
       useEditorStore.getState().setTool("select");
       return;
     }
@@ -264,13 +270,19 @@ export function Canvas() {
 
     if (drag.kind === "draw") {
       if (drag.w > 3 || drag.h > 3) {
-        store.addElement({
-          type: drag.type,
-          x: drag.x,
-          y: drag.y,
-          width: drag.type === "line" ? drag.w : Math.max(drag.w, 1),
-          height: drag.type === "line" ? drag.h : Math.max(drag.h, 1),
-        });
+        // Session 61 (S61-F / A-L-5): the cap-refused draw answers the
+        // user (the store returns null instead of a new id).
+        if (
+          store.addElement({
+            type: drag.type,
+            x: drag.x,
+            y: drag.y,
+            width: drag.type === "line" ? drag.w : Math.max(drag.w, 1),
+            height: drag.type === "line" ? drag.h : Math.max(drag.h, 1),
+          }) === null
+        ) {
+          toast.error("Element limit reached", `Boards hold at most 2000 elements.`);
+        }
         store.setTool("select");
       }
     } else if (drag.kind === "marquee") {

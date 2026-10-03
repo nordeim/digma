@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, Grid3x3, List, Plus, Search, Sparkles, TrendingUp } from "lucide-react";
 
@@ -92,8 +93,13 @@ export function DashboardView({ user }: { user: HeaderUser }) {
   return (
     <>
       <AppHeader user={user} />
-      <main className="min-h-[calc(100vh-4rem)]">
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
+      {/* Session 61 (S61-G — the ninth audit's B-L-1): the gradient lives on
+       * the main element. The pre-fix inner div carried min-h-screen (100vh),
+       * defeating the calc above it — the page was always ~64px taller than
+       * the viewport (a permanent phantom scroll). The gradient still paints
+       * the full viewport through main's own min-height. */}
+      <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-white to-purple-50">
+        <div>
           {/* Hero — measured: purple→pink→blue gradient, greeting, CTAs, glass stats card.
            * The chrome renders FLAT at every viewport (session 35, RA-36 —
            * measured on the reference at 390×844: text-4xl h1 / text-lg
@@ -180,13 +186,16 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                   </h2>
                   <p className="text-sm text-gray-600">Pick up where you left off</p>
                 </div>
-                <a
+                {/* Session 61 (S61-H / B-L-4): next/link — the raw <a> was a
+                 * full document reload (client state lost, prefetch gone);
+                 * every other internal link already used the router. */}
+                <Link
                   href="/Recent"
                   className="flex items-center gap-2 text-sm font-medium text-purple-600 hover:text-purple-700"
                 >
                   View all
                   <TrendingUp className="h-4 w-4" aria-hidden />
-                </a>
+                </Link>
               </div>
 
               {loading ? (
@@ -340,7 +349,9 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       <span className="flex-1 truncate text-sm font-medium text-gray-800">
                         {project.name}
                       </span>
-                      <span className="hidden text-xs text-gray-400 sm:block">
+                      {/* Session 61 (S61-B — the ninth audit's M-2): AA at
+                          12px — gray-500, not the 2.54:1 gray-400. */}
+                      <span className="hidden text-xs text-gray-500 sm:block">
                         {new Date(project.lastOpenedAt).toLocaleDateString()}
                       </span>
                     </button>

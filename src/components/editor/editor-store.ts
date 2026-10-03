@@ -7,6 +7,7 @@
 import { create } from "zustand";
 import {
   defaultElementFor,
+  ELEMENT_LIMIT,
   type DesignElementDTO,
   type EditorTool,
   type ElementType,
@@ -82,7 +83,7 @@ type EditorStore = {
   deselectAll: () => void;
 
   // element mutations
-  addElement: (partial: Partial<DesignElementDTO> & { type: ElementType }) => string;
+  addElement: (partial: Partial<DesignElementDTO> & { type: ElementType }) => string | null;
   addElements: (partials: Array<Partial<DesignElementDTO> & { type: ElementType }>) => string[];
   updateElements: (ids: string[], patch: Partial<DesignElementDTO>, commit?: boolean) => void;
   scaleElements: (ids: string[], factor: number) => void;
@@ -152,6 +153,17 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       past: [],
       future: [],
       saveState: "saved",
+      // Session 61 (S61-C — the ninth audit's A-L-2): the load boundary
+      // resets the VIEWPORT and the armed tool too. The store is a module
+      // singleton surviving App Router soft navigation, so the previous
+      // project's zoom/pan and its armed draw tool otherwise leaked into
+      // the next one (a left-armed Line tool DREW on the first click
+      // instead of selecting; a 500% zoom rendered the new board
+      // offscreen).
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      tool: "select",
       // Session 57 (S57-A — the fifth Mode C audit's H-1): a gesture whose
       // pointerdown never got its pointerup/leave pair (an unmount
       // mid-drag, a pointercancel) must NOT leak into the next editor
@@ -201,12 +213,29 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   deselectAll: () => set({ selectedIds: [] }),
   selectAll: () => set({ selectedIds: get().elements.filter((el) => el.visible).map((el) => el.id) }),
 
-  addElement: (partial) => get().addElements([partial])[0]!,
+  addElement: (partial) => {
+    // Session 61 (S61-F / A-L-5): the honest return — null when the cap
+    // refused the add (both canvas call sites toast on it).
+    const ids = get().addElements([partial]);
+    return ids[0] ?? null;
+  },
 
   addElements: (partials) => {
     const state = get();
+    // Session 61 (S61-F / A-L-5): the client-side half of the ceiling.
+    // The server PUT rejects lists over ELEMENT_LIMIT; pre-fix the only
+    // way to reach an over-limit board was the server (scripted POSTs),
+    // but every CLIENT add path (draw commit, text tool, AI batch-add)
+    // fed the store directly — element #2001 rendered, flipped unsaved,
+    // and wedged every subsequent autosave PUT in a 400-retry loop. The
+    // clamp refuses honestly: the batch is sliced to the room left and
+    // only the actually-created ids return (the AI seam counts `applied`
+    // on exactly that).
+    const room = ELEMENT_LIMIT - state.elements.length;
+    if (room <= 0) return [];
+    const accepted = partials.slice(0, room);
     const baseIndex = state.elements.length;
-    const created = partials.map((partial, i) => {
+    const created = accepted.map((partial, i) => {
       const order = partial.sortOrder ?? baseIndex + i;
       const draft = defaultElementFor(
         partial.type,

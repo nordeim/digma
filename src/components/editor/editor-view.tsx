@@ -260,6 +260,48 @@ function useAutosave(): () => void {
 
     flushRef.current = () => void flush();
 
+    // Session 61 (S61-I — session-60's deferred A-3, the design now
+    // decided): the unload flush. The machine's only transports were the
+    // 800ms timer and exit() — neither survives a refresh, tab close, or
+    // browser Back, so edits inside the debounce window were silently
+    // lost. A pagehide listener fires the captured-body PUT with
+    // keepalive: true — the browser completes it through the unload.
+    // The honest limits are coded, not hidden: the keepalive body cap
+    // (64KB in Chromium) is guarded (the PUT sends the FULL element
+    // list, so large boards are skipped — documented); Untitled mode is
+    // skipped (the creation POST's adoption contract is out of unload
+    // scope).
+    function onUnload() {
+      // Session 61 (S61-I, en-route — the flushing guard REMOVED): a
+      // regular in-flight fetch does NOT survive page teardown — the
+      // pre-fix "the machine's own PUT may complete" rationale was wrong
+      // for real unloads (observed live: the PUT canceled mid-flight,
+      // the edit lost with the guard in place). The keepalive PUT fires
+      // whenever unsaved state + a target exist; it is an idempotent
+      // full-replace, and its body is the CURRENT (same-or-newer) state.
+      const store = useEditorStore.getState();
+      if (store.saveState === "saved") return;
+      const projectId = store.projectId;
+      // Untitled mode: no PUT target — the creation POST's adoption
+      // contract (attachProject + replaceState) is out of unload scope.
+      if (!projectId) return;
+      const payload = JSON.stringify({
+        elements: store.elements,
+        backgroundColor: store.backgroundColor,
+      });
+      // A keepalive body over the Chromium cap cannot be sent through
+      // unload — the honest skip (the timer/exit transports still own
+      // large boards while the page lives).
+      if (payload.length > 60_000) return;
+      void fetch(`/api/projects/${projectId}/elements`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => null);
+    }
+    window.addEventListener("pagehide", onUnload);
+
     const unsubscribe = useEditorStore.subscribe((state) => {
       if (state.saveState === "unsaved" && !disposed) {
         if (timer) clearTimeout(timer);
@@ -271,6 +313,7 @@ function useAutosave(): () => void {
       disposed = true;
       unsubscribe();
       if (timer) clearTimeout(timer);
+      window.removeEventListener("pagehide", onUnload);
     };
   }, []);
 
@@ -925,6 +968,25 @@ export function EditorView({ user }: { user: HeaderUser }) {
     let cancelled = false;
     (async () => {
       if (projectId) {
+        // Session 61 (S61-I, en-route — the adoption-clobber guard): Next
+        // 14.1+ integrates window.history.replaceState into the App
+        // Router, so the Untitled adoption's replaceState (inside
+        // ensureProject) RE-RUNS this effect with the fresh id. That
+        // re-run's GET races the machine's own first PUT: it returns the
+        // project WITHOUT the just-drawn elements, and the unconditional
+        // loadProject below then CLOBBERED the live store with the stale
+        // server list (observed live: the store's element survived only
+        // if the next 800ms re-flush lost the race to the navigation —
+        // the untitled-editor persistence pin flipped with the S61-I
+        // keepalive, which faithfully persisted the clobbered empty
+        // state through the unload). The store already holding THIS
+        // project IS the adoption case — the editor is live, the URL is
+        // just catching up. Skip the re-load; a refresh (fresh store)
+        // and a soft navigation to ANOTHER project both still load.
+        if (useEditorStore.getState().projectId === projectId) {
+          setLoading(false);
+          return;
+        }
         try {
           const response = await fetch(`/api/projects/${projectId}`);
           const body = await response.json().catch(() => null);

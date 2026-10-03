@@ -26,26 +26,30 @@ describe("the elements POST cap (session 60, S60-D / B-L-2)", () => {
   it("the POST rejects a project already at the 2000-element ceiling", () => {
     // THE DEFECT PIN: pre-fix the POST's count query fed only the
     // sortOrder default — no ceiling check anywhere in the handler.
+    // Session 61 (S61-F) contract update: the literal 2000 became the
+    // shared ELEMENT_LIMIT seam (src/lib/editor.ts) — same check, same
+    // message, one source of truth with the client clamp.
     const postStart = routeSource.indexOf("export async function POST");
     expect(postStart).toBeGreaterThan(-1);
     const putStart = routeSource.indexOf("export async function PUT");
     expect(putStart).toBeGreaterThan(postStart);
     const postHandler = routeSource.slice(postStart, putStart);
-    expect(postHandler).toContain("count >= 2000");
+    expect(postHandler).toContain("count >= ELEMENT_LIMIT");
     expect(postHandler).toContain('fail("VALIDATION", "Too many elements (max 2000)", 400)');
     // The cap guards BEFORE the create (the count query already runs).
     const countQuery = postHandler.indexOf("db.designElement.count");
     const createCall = postHandler.indexOf("db.designElement.create");
     expect(countQuery).toBeGreaterThan(-1);
     expect(createCall).toBeGreaterThan(countQuery);
-    expect(postHandler.indexOf("count >= 2000")).toBeGreaterThan(countQuery);
-    expect(postHandler.indexOf("count >= 2000")).toBeLessThan(createCall);
+    expect(postHandler.indexOf("count >= ELEMENT_LIMIT")).toBeGreaterThan(countQuery);
+    expect(postHandler.indexOf("count >= ELEMENT_LIMIT")).toBeLessThan(createCall);
   });
 
   it("the PUT keeps its own list-length cap (the standing contract)", () => {
+    // Session 61 (S61-F) contract update: the literal became ELEMENT_LIMIT.
     const putStart = routeSource.indexOf("export async function PUT");
     const putHandler = routeSource.slice(putStart);
-    expect(putHandler).toContain("list.length > 2000");
+    expect(putHandler).toContain("list.length > ELEMENT_LIMIT");
     expect(putHandler).toContain('fail("VALIDATION", "Too many elements (max 2000)", 400)');
   });
 });

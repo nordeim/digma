@@ -108,7 +108,9 @@ function RecentListCard({
 
   async function openProject() {
     // Touch lastOpenedAt so Recent reorders — the grid card's PATCH.
-    await fetch(`/api/projects/${project.id}`, {
+    // Session 61 (S61-H / B-L-5): fire-and-forget — the navigation is
+    // immediate (the grid-card variant's rationale).
+    fetch(`/api/projects/${project.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lastOpened: true }),
