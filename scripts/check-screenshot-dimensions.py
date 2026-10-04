@@ -393,6 +393,10 @@ S81 = {
     "clone-22-login-403-fold": (1280, 720),
 }
 
+# Session 72 (the twentieth audit's evidence set — the S82 mapping): the
+# same families as S81 (the s72 capture re-verifies every standing shot).
+S82 = dict(S81)
+
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -412,6 +416,8 @@ def expected_for(name: str):
         return S80.get(Path(name).stem)
     if name.startswith("ref-audit-s81/"):
         return S81.get(Path(name).stem)
+    if name.startswith("ref-audit-s82/"):
+        return S82.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -472,6 +478,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s79").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s80").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s81").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s82").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

@@ -263,20 +263,23 @@ export function Canvas() {
       const s = el.scale ?? 1;
       const vw = startBounds.w * s;
       const vh = startBounds.h * s;
-      const minV = (n: number) => (el.type === "line" ? 0 : 1) * s;
+      // Session 72 (S72-D): the dead parameter died — the helper is a
+      // plain constant (lines allow a zero extent; every other shape
+      // floors at 1 visual px so resize can never invert the element).
+      const minVisual = (el.type === "line" ? 0 : 1) * s;
       let x = startBounds.x;
       let y = startBounds.y;
       let w = vw;
       let h = vh;
 
-      if (handle.includes("e")) w = Math.max(point.x - x, minV(1));
+      if (handle.includes("e")) w = Math.max(point.x - x, minVisual);
       if (handle.includes("w")) {
-        w = Math.max(x + vw - point.x, minV(1));
+        w = Math.max(x + vw - point.x, minVisual);
         x = x + vw - w;
       }
-      if (handle.includes("s")) h = Math.max(point.y - y, minV(1));
+      if (handle.includes("s")) h = Math.max(point.y - y, minVisual);
       if (handle.includes("n")) {
-        h = Math.max(y + vh - point.y, minV(1));
+        h = Math.max(y + vh - point.y, minVisual);
         y = y + vh - h;
       }
       // Session 70 (S70-D / L-A7): the width floor is TYPE-AWARE now —
@@ -458,13 +461,13 @@ export function Canvas() {
       >
         {/* Session-19 fix (S19-3): hidden elements must NOT render on the
             canvas. Every other consumer of element.visible already agrees —
-            the click hit-test ("topmost visible unlocked element"), the
-            marquee containment, presentation mode, and the thumbnails — but
-            the canvas kept painting hidden elements, so the layer row's eye
-            icon said "hidden" while the canvas said "visible" (an internally
-            inconsistent state; the reference's own eye is a no-op — this
-            clone ships the working superset, and the whole contract must be
-            coherent). */}
+            the click hit-test ("topmost visible element, locked included —
+            the S23 wall"), the marquee containment, presentation mode, and
+            the thumbnails — but the canvas kept painting hidden elements,
+            so the layer row's eye icon said "hidden" while the canvas said
+            "visible" (an internally inconsistent state; the reference's own
+            eye is a no-op — this clone ships the working superset, and the
+            whole contract must be coherent). */}
         {elements.filter((el) => el.visible).map((el) => (
           <MemoizedCanvasElement
             key={el.id}

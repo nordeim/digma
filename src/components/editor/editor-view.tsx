@@ -437,7 +437,11 @@ function useAutosave(): () => void {
 }
 
 // ---------------------------------------------------------------------------
-// Keyboard shortcuts: tools (V/H/F/R/O/L/T), Delete, undo/redo, zoom.
+// Keyboard shortcuts: the nine tools resolve through the ONE
+// TOOL_SHORTCUTS seam (src/lib/editor.ts — V/H/F/R/O/L/P/T/I), plus
+// Delete, undo/redo, zoom. Session 72 (S72-D): the hand-maintained
+// seven-key enumeration died — it reproduced exactly the S48-1 drift
+// (two hand-maintained maps diverging) inside a comment.
 
 // Session 64 (S64-G / A-4): the typing-target predicate is single-sourced
 // in the pure seam (src/lib/editor.ts) — the shell and the canvas consume

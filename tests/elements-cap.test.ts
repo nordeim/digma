@@ -37,8 +37,11 @@ describe("the elements POST cap (session 60, S60-D / B-L-2)", () => {
     expect(postHandler).toContain("count >= ELEMENT_LIMIT");
     expect(postHandler).toContain('fail("VALIDATION", "Too many elements (max 2000)", 400)');
     // The cap guards BEFORE the create (the count query already runs).
-    const countQuery = postHandler.indexOf("db.designElement.count");
-    const createCall = postHandler.indexOf("db.designElement.create");
+    // Session 72 (S72-E) contract re-anchor: the count and the create
+    // moved INSIDE the TOCTOU transaction (tx.* forms) — the
+    // cap-before-create ordering is pinned on the transactional calls.
+    const countQuery = postHandler.indexOf("tx.designElement.count");
+    const createCall = postHandler.indexOf("tx.designElement.create");
     expect(countQuery).toBeGreaterThan(-1);
     expect(createCall).toBeGreaterThan(countQuery);
     expect(postHandler.indexOf("count >= ELEMENT_LIMIT")).toBeGreaterThan(countQuery);

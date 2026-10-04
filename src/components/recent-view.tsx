@@ -114,7 +114,10 @@ function RecentListCard({
     setDeleting(true);
     // Session 71 (S71-A / L-A1): the DELETE rides the ONE call() seam
     // with the list card's own error copy as the errorTitle.
-    const data = await call<{ project: { id: string } }>(
+    // Session 72 (S72-A): the type is the route's ACTUAL payload (the
+    // route answers ok({ deleted: true }) — the pre-fix annotation
+    // claimed a wrapper that never existed; honest by type now).
+    const data = await call<{ deleted: boolean }>(
       `/api/projects/${project.id}`,
       { method: "DELETE" },
       { errorTitle: "Delete failed" },

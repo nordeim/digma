@@ -58,15 +58,31 @@ export async function POST(request: NextRequest) {
   // style reaching the surface it missed. An authenticated loop could
   // previously insert unbounded rows (each duplicate below copies up to
   // 2000 element rows per call).
-  const projectCount = await db.project.count();
-  if (projectCount >= PROJECT_LIMIT) {
+  // Session 72 (S72-E / L-B5): the count and the create now run INSIDE
+  // one transaction — the pre-fix count-then-create pair was a TOCTOU
+  // window (a concurrent burst between the two awaits could insert past
+  // the ceiling; SQLite serializes writers, so the transaction closes
+  // the window). The envelope is byte-identical.
+  let overCap = false;
+  const project = await db.$transaction(async (tx) => {
+    const projectCount = await tx.project.count();
+    if (projectCount >= PROJECT_LIMIT) {
+      overCap = true;
+      return null;
+    }
+    return tx.project.create({
+      data: { name, description: description || null, template, backgroundColor },
+      include: { elements: true },
+    });
+  });
+  if (overCap) {
     return fail("VALIDATION", "Too many projects (max 500)", 400);
   }
-
-  const project = await db.project.create({
-    data: { name, description: description || null, template, backgroundColor },
-    include: { elements: true },
-  });
+  if (!project) {
+    // Unreachable (the transaction either created the row or set the
+    // over-cap sentinel) — the guard exists for the type narrowing only.
+    return fail("VALIDATION", "Too many projects (max 500)", 400);
+  }
 
   return ok({ project }, 201);
 }

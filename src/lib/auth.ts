@@ -4,8 +4,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // import); this module re-exports it so the routes' existing import
 // surface (import { hashPassword } from "@/lib/auth") survives
 // byte-identically.
-import { generateVerifyCode, hashPassword, verifyPassword } from "@/lib/password";
-export { generateVerifyCode, hashPassword, verifyPassword };
+import { generateVerifyCode, hashPassword, timingEqualizerHash, verifyPassword } from "@/lib/password";
+export { generateVerifyCode, hashPassword, timingEqualizerHash, verifyPassword };
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "./db";

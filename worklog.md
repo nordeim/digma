@@ -777,3 +777,65 @@ Stage Summary:
     (the resend uniform 400 + the login fold + the index drop + the sortOrder clamp), and the pins/guards batch (the lint ladder's first rung + the
     rangeFillPercent five-site seam + the clampText fold + the elementSummary posture pin); gate green at 666 unit / 58 smoke / 240 e2e; mobile nav 9/9 the 48th
     consecutive session; the deferred queue documented in docs/remediation-plan-session71.md
+
+---
+Task ID: digma-session-72
+Agent: Super Z (main agent)
+Task: The operator's session-101/102-cycle directive — refresh the workspace, re-validate against the mandated docs, the 48th reference audit against
+    https://digma-371dfd0d.base44.app/ with the mobile-nav focus, the twentieth Mode C code audit with the repo skills, TDD remediation, the standing gates,
+    the screenshots, the .env.example, aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- Workspace refreshed (git pull — the sandbox was NOT reset; the repo at the operator's session-102 log push 9881096); the mandated docs reviewed (README/AGENTS/
+    CLAUDE/PAD v1.50.0, digma_SKILL v1.49.0, session_101/session_102/remediation-plan-session71/worklog tail, the skills catalog); all four S71 seams verified intact
+    in source; .env verified with the mandated DATABASE_URL="file:../db/custom.db" + db/ at the repo root (the pristine 1/2/6/1/3 contract); the parent-shell
+    DATABASE_URL trap neutralized (the stale parent .env DELETED; the unset discipline in every db-touching command)
+- BASELINE GATE CAUGHT A SHIPPED REGRESSION: lint/typecheck/666 unit/107 files/build/58 smoke green, but the e2e re-run (chunked) surfaced the standing session58
+    rename pin DETERMINISTICALLY RED (3x) with 7 grouped-run cascade failures (all passing in isolation) — trace analysis: the rename PATCH 200 + the correct
+    { project } DTO + the stale h3; root cause verified in source + git history: the S71-A call() migration LOST the hand-rolled form's .project unwrap (the
+    wrapper crossed the onRenamed boundary; updated.id undefined; the card title never updated after a successful rename on all three surfaces — the S58-A defect
+    reintroduced; the cascade = the failed rename-back leaving the seeded name mutated for later specs in the same server process)
+- 48th reference audit (agent-browser, desktop 1440x900 + mobile 390x844, the real CDP login): no drift, no new gaps — evidence docs/screenshots/ref-audit-s82/
+    (the editor probe needed the project-card ANCHOR retry — the standing first-attempt miss family); mobile nav 9/9 the 49th consecutive session
+    (scripts/verify-nav-s72.sh) + re-verified on the final S72 build
+- Twentieth Mode C audit (the lead's hunk-by-hunk + two fresh-eyes subagents + the lead's source re-verification of every chosen finding): 0 Critical / 1 High (the
+    lead's baseline-surfaced rename regression) / 1 Medium / 8 Low / 8 Informational; docs/remediation-plan-session72.md written and validated
+- TDD: unit RED 24 defect pins + 2 preservation pins across three new spec files -> GREEN 692 = 666 + 26 (six standing pins legitimately re-anchored onto the
+    restructured contracts, each with the contract-change comment); e2e RED = the standing session58 rename pin (deterministically RED at baseline — the honest
+    evidence) -> GREEN 240 (no new spec files; the previously-cascading 8-failure grouped run now 14/14 in 34s); smoke unchanged 58
+- S72-A: the rename unwrap restored (call<{ project: ProjectSummaryDTO }> + onRenamed(renamed.project)) + the two DELETE sites' honest { deleted: boolean }
+    annotations
+- S72-B: the Toaster z-[300] above the PresentOverlay's z-[200] (the autosave failure family stays visible during a presentation)
+- S72-C: the elements POST's P2003 -> NOT_FOUND envelope catch (the members POST's S69-C sibling) + the login route's constant-work envelope (the lazy
+    timingEqualizerHash() burning the scrypt on the unknown-email branch; the 401 family byte-identical)
+- S72-D: the honesty batch — the clampText fold's ninth site (the teams PATCH description), the corrected hit-test/tool-enumeration/API-surface comments, the dead
+    minV parameter, the PAD §4 riders (the composite index, the real fontSize ranges, the ADR-003 shared-pool posture, the rotation-scope correction with the
+    rotated-resize deferral note), the schema fontWeight comment, the bounds-rotation test header
+- S72-E: the five TOCTOU count-then-create ceilings (projects POST, duplicate, teams POST, members POST, elements POST) moved inside their create transactions
+    (the over-cap sentinel; the envelopes byte-identical; the S69-C P2003 catch survives; the S71-C sortOrder clamp reads the transactional count)
+- En-route (the F59 lessons): the migration-unwrap regression (preserve the PAYLOAD UNWRAP when migrating onto a generic seam — the type parameter is the
+    assertion), the cascade fingerprint (one deterministic failure + state pollution behind grouped-run many-failures-that-pass-in-isolation), the detached-DOM
+    read (re-query after React replaces the node), the sliced-spec false match (bound handler slices at the next export boundary); corollary: re-prove the prior
+    session's claimed gate results at every cycle start
+- Full gate green: lint, typecheck, 692/692 unit / 110 files, build, 58/58 smoke, 240/240 e2e — zero regressions (the full e2e re-run in chunks under the
+    tool-call time limit)
+- Live verification: the mobile nav contract 9/9 on the final build; the capture (scripts/capture-session72.sh): the standard 32 + the ref-audit-s82 evidence set
+    (the S71 clone-21/22 behavioral evidence refreshed by the e2e pins) + the standing inline checks re-verified (the overlay, the a11y forms, the projection, the
+    thumbnail fit, the empty-state, the close-X, the picker one-undo, the upload keyboard path, the bell, the marquee, the destructive AA, the XFF closure both
+    directions, the resend uniform 400, the live index list) + THREE NEW inline checks (the rename-heal live healed:true; the toaster-over-present computed z
+    300>200; the login timing floor 39ms vs the pre-fix ~2-5ms) — dimension-checked 265/265 (the checker extended with the S82 mapping), VLM 21/21; the DB
+    re-seeded pristine
+- .env.example verified unchanged (the source's seven digma env reads all covered — the five slices add no env vars); .env keeps
+    DATABASE_URL="file:../db/custom.db" with db/ at the repo root
+- Docs aligned: PAD v1.51.0 (the header + the revision block + the 7.1 table to the 110-file/692-unit reality + the §4 honesty riders + the rotation-scope
+    correction), digma_SKILL v1.50.0 (lesson F59), AGENTS/CLAUDE/README counts + seam rows, remediation-plan-session72 execution status, docs/session_103.md, the
+    repo worklog entry
+- Committed on main and pushed via docs/ssh_git_wrapper_v3.py (the paramiko shim); remote refs/heads/main == local HEAD verified; the operator key shredded per
+    the runbook
+
+Stage Summary:
+- Session 72 fully delivered and pushed to main: the headline S71-A migration regression (the lost .project unwrap — the rename UI never updating after a
+    successful rename, shipped inside a documented-green session and caught by the re-proven baseline gate) closed with the honest unwrap + type honesty; the
+    Toaster above the presentation; the elements POST P2003 envelope + the login timing equalizer; the honesty batch (the ninth clampText site + the comments +
+    the PAD riders + the rotation-scope correction); and the five TOCTOU ceilings transactional; gate green at 692 unit / 58 smoke / 240 e2e; mobile nav 9/9 the
+    49th consecutive session; the deferred queue documented in docs/remediation-plan-session72.md

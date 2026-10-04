@@ -33,7 +33,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     data.name = name;
   }
   if (body?.description !== undefined) {
-    data.description = typeof body.description === "string" ? body.description.trim().slice(0, 300) || null : null;
+    // Session 72 (S72-D / L-B4): the fold's ninth site — the inline
+    // trim-and-slice twin died; the shared clampText seam carries the
+    // identical null/trim/slice semantics (the S71-D fold missed this
+    // one — exactly the twin-hazard the fold's rationale names).
+    data.description = clampText(body.description, 300);
   }
 
   // Session 62 (S62-G / B-L7): a concurrent DELETE racing this update

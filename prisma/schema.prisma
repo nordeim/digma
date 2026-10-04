@@ -85,7 +85,7 @@ model DesignElement {
   radius      Float    @default(0) // corner radius
   text        String? // text elements
   fontSize    Float?
-  fontWeight  String? // 400 | 500 | 600 | 700
+  fontWeight  String? // 300 | 400 | 500 | 600 | 700 | 800 (the shared FONT_WEIGHTS enum — session 72, S72-D: the stale 4-value comment died)
   fontFamily  String? // the reference's Font Family combobox (7 options, session 29)
   textAlign   String? // left | center | right
   // Session 70 (S70-B / L-A1 — the eighteenth audit): the four dead

@@ -1,15 +1,19 @@
-# Digma — Master Project Architecture Document (PAD) v1.50.0
+# Digma — Master Project Architecture Document (PAD) v1.51.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-10-04 (v1.50.0 — the call-consolidation/exit-single-put/server-envelope/lint-ladder pass: the ONE call() seam gains the options surface (errorTitle + silent — the failure toast title derives from the option, and silent suppresses BOTH toast families so the fire-and-forget lastOpened PATCHes declare their toast-less contract) and the SIX card-level raw fetch sites migrate onto it (the rename/lastOpened/DELETE/create quartet + the Recent pair — the hand-rolled unwrap/catch branches die); the Dashboard's LIST-row open fires the same silent PATCH (pre-fix a bare router.push — "Continue Working" and Recent ordering silently disagreed with the card-family paths); the teams-view load dedups into the ONE load(ignore?) seam; the exit() double-PUT closed through the in-flight same-reference indicator (the machine exposes the CAPTURED { projectId, elements, backgroundColor } descriptor while its PUT is in flight — assigned at capture time, cleared in finally — and the soft-leave cleanup PUT SKIPS when the descriptor's references equal the live store's: the machine's fetch survives the soft navigation and carries exactly this state, so the pre-fix duplicate was a ≤2000-row delete+recreate transaction run TWICE per exit-with-pending-edit); the server enumeration/envelope pair (the resend-otp verified-account branch answers the SAME uniform VALIDATION 400 as unknown emails — the 200/409/400 account-state oracle that survived the OTP production knob is closed; the login 403's verificationCode folds INSIDE error and the dead top-level email field is deleted — the response is a plain envelope shape); the redundant single-column projectId index dies beside the composite; the elements POST sortOrder clamp agrees with ELEMENT_LIMIT; and the guards/pins batch (the lint ladder's cheapest rung — no-unreachable/no-debugger/no-redeclare at error, finding-free; the exported rangeFillPercent seam consumed at ALL FIVE --range-fill sites — the rotation/scale inline forms rendered 300%/−1.7% fills for server-legal persisted values; the clampText fold deleting the behaviorally-identical twin with its 8 call sites migrated; the elementSummary prompt-injection posture pin — the surface is enum/geometry-only, no el.name/el.text reaches the system prompt)))
+**Last Updated:** 2026-10-04 (v1.51.0 — the rename-unwrap-regression/toaster-z-order/server-race-hygiene/TOCTOU-ceilings pass: the S71-A call() migration's lost `.project` unwrap RESTORED — the PATCH route answers `ok({ project })` while `call()` returns `body.data` itself, so the wrapper crossed the onRenamed boundary and every card surface kept the STALE title after a successful rename (the S58-A defect reintroduced; deterministically e2e-RED, the trace carrying the PATCH 200 + the correct DTO + the stale h3; seven grouped-run cascade failures from the rename-back cleanup never running); the Toaster stacks z-[300] ABOVE the PresentOverlay's z-[200] (the autosave failure family painted BEHIND the presentation for the toast's whole lifetime); the elements POST's create gains the P2003 → NOT_FOUND envelope catch (the members POST's S69-C sibling — the vanished-project race escaped as an unstructured 500); the login route's constant-work envelope (the lazy `timingEqualizerHash()` burns the scrypt against a precomputed hash on the unknown-email branch — the latency oracle that survived the S71-C status-code fix is closed; the 401 family stays byte-identical); the honesty batch (the clampText fold's ninth site — the teams PATCH description; the stale hit-test/tool-enumeration/API-surface comments; the dead minV parameter; the §4 reference riders: the composite index, the real fontSize ranges, the ADR-003 shared-pool posture, the rotation-scope correction with the rotated-resize deferral note); and the five TOCTOU count-then-create ceilings moved INSIDE their create transactions (projects POST, duplicate, teams POST, members POST, elements POST — the concurrent-burst window past the ceilings closed; SQLite serializes writers; the envelopes stay byte-identical)))
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
 
 Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+#### Revision Block — v1.51.0 (Tracked Changes)
+
+- `[SR]` **The rename-unwrap-regression/toaster-z-order/server-race-hygiene/TOCTOU-ceilings pass (session 72, S72-A..S72-E — the twentieth Mode C audit's chosen work):** the S71-A migration's lost unwrap restored (the headline HIGH — surfaced by the baseline e2e gate, the standing session-58 rename pin deterministically RED with the trace evidence; the fix types the call honestly and unwraps before the callback; the two DELETE sites' dishonest annotations corrected beside it); the Toaster above the presentation; the elements POST P2003 envelope + the login timing equalizer; the honesty batch (the ninth clampText site + the comment riders + the §4 corrections); the five TOCTOU ceilings transactional. Unit 692 = 666 + 26 across 110 files; e2e 240 (no new spec files — the standing rename pin IS the honest RED → GREEN evidence; the full suite the regression net); smoke unchanged at 58; six standing pins legitimately re-anchored onto the restructured contracts (each with the contract-change comment).
 
 #### Revision Block — v1.50.0 (Tracked Changes)
 
@@ -726,10 +730,15 @@ Every change is tagged with its source: `[RES]` = validated by web research, `[S
      four corner-anchored rotated corners (the render chain's
      transform-origin is 0 0 — the hit-test already inverse-maps through
      it); the `rotation === 0` path returns the historical math exactly.
-     The selection outline, resize handles, marquee containment, and
-     resize math now run on the VISUAL footprint of rotated elements.
-     Pinned by `tests/bounds-rotation.test.ts` (the 90° axis swap, the
-     45° enlarged AABB, the scale composition, the fitToBounds consumer).
+     The selection outline, resize handles, and marquee containment run
+     on the VISUAL footprint of rotated elements. (Session 72, S72-D —
+     the scope note: the RESIZE DRAG MATH itself remains axis-aligned —
+     world-axis deltas applied to the local width/height, scale-aware on
+     write-back but not rotation-mapped; rotated resize is documented
+     out of scope, and AGENTS.md's outline/handles/marquee wording is
+     the accurate contract.) Pinned by `tests/bounds-rotation.test.ts`
+     (the 90° axis swap, the 45° enlarged AABB, the scale composition,
+     the fitToBounds consumer).
   4. **S64-D (B-1): the forgot-password route's in-app reset link is
      env-gated.** `DIGMA_DISABLE_IN_APP_RESET=1` suppresses `resetUrl`
      (the documented ADR-014 production swap becomes a mechanism — the
@@ -1858,11 +1867,11 @@ erDiagram
     }
 ```
 
-Table-level notes: `User`–`Project` has no FK (projects are keyed to the app user by query, mirroring the single-workspace demo model); `DesignElement.projectId` and `TeamMember.teamId` are `onDelete: Cascade`. Indexes: `DesignElement @@index([projectId])` and `@@index([sortOrder])`, `TeamMember @@index([teamId])`.
+Table-level notes: `User`–`Project` has no FK, and no route keys rows by user — the single-role shared pool is the documented ADR-003 posture (session 72, S72-D: the stale "keyed by query" claim died; every project/team query runs unfiltered behind the session gate); `DesignElement.projectId` and `TeamMember.teamId` are `onDelete: Cascade`. Indexes: `DesignElement @@index([projectId, sortOrder])` (the S70-B composite — its leftmost prefix serves every element query; the single-column siblings were dropped in sessions 70/71), `TeamMember @@index([teamId])`.
 
 ### 4.2 Data Models
 
-The runtime element shape (`src/lib/editor.ts` — `CanvasElement`) is the authoritative TypeScript model for the canvas: all coordinates are canvas-space pixels at 100% zoom; the view layer transforms to viewport space with zoom/pan. Domain invariants enforced in `src/lib/validation.ts` and the editor store: opacity clamped 0–1, fontSize clamped with a 32px ceiling (pinned by unit tests), colors hex-verified, sizes floored at minimums so resize can't invert an element.
+The runtime element shape (`src/lib/editor.ts` — `CanvasElement`) is the authoritative TypeScript model for the canvas: all coordinates are canvas-space pixels at 100% zoom; the view layer transforms to viewport space with zoom/pan. Domain invariants enforced in `src/lib/validation.ts` and the editor store: opacity clamped 0–1, fontSize clamped to its per-surface range (1–500 in the shared row-builder clamps, 1–200 through the AI sanitizer — session 72, S72-D: the stale fixed-ceiling sentence died; the ranges are the real contracts), colors hex-verified, sizes floored at minimums so resize can't invert an element.
 
 ### 4.3 Persistence Strategy
 
@@ -2069,7 +2078,10 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — the exit in-flight descriptor (S71-B) | `tests/exit-flush-s71.test.ts` | 7 | tests | Vitest |
 | Unit — the server enumeration/envelope pair (S71-C) | `tests/server-lows-s71.test.ts` | 8 | tests | Vitest |
 | Unit — the lint ladder + rangeFillPercent + clampText fold + elementSummary pin (S71-D) | `tests/pins-guards-s71.test.ts` | 10 | tests | Vitest |
-| **Unit total** | **107 files** | **666** | | Vitest |
+| Unit — the rename unwrap + DELETE type honesty (S72-A) | `tests/rename-unwrap-s72.test.ts` | 5 | tests | Vitest |
+| Unit — the toaster z-order + P2003 + timing equalizer + the TOCTOU ceilings (S72-B/C/E) | `tests/server-lows-s72.test.ts` | 11 | tests | Vitest |
+| Unit — the honesty batch: the ninth clampText site + the comment/PAD riders (S72-D) | `tests/honesty-lows-s72.test.ts` | 10 | tests | Vitest |
+| **Unit total** | **110 files** | **692** | | Vitest |
 | E2E — auth journeys + card states + from_url guard | `tests/e2e/auth.spec.ts` | 16 | tests/e2e | Playwright |
 | E2E — reset-password journeys | `tests/e2e/reset-password.spec.ts` | 7 | tests/e2e | Playwright |
 | E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |

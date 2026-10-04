@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { generateVerifyCode, setSessionCookie, verifyPassword } from "@/lib/auth";
+import { generateVerifyCode, setSessionCookie, timingEqualizerHash, verifyPassword } from "@/lib/auth";
 import { ok, fail } from "@/lib/api";
 import { bodySizeRejected } from "@/lib/validation";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
@@ -38,7 +38,15 @@ export async function POST(request: NextRequest) {
   }
 
   const user = await db.user.findUnique({ where: { email } });
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  // Session 72 (S72-C / L-B2 — the documented deferred B-L2): the
+  // constant-work envelope. The pre-fix `!user ||` short-circuit skipped
+  // the scrypt work for unknown emails, so response latency distinguished
+  // registered emails (the timing oracle that survived S71-C's
+  // status-code fix). The equal work burns against a precomputed hash of
+  // a throwaway constant — the 401 envelope family below stays
+  // byte-identical, only the timing changes.
+  const passwordOk = verifyPassword(password, user?.passwordHash ?? timingEqualizerHash());
+  if (!user || !passwordOk) {
     return NextResponse.json(
       // The reference's measured text (session 43, RA-60): the inline alert
       // inside the sign-in form reads "Invalid email or password" — the

@@ -36,3 +36,21 @@ export function verifyPassword(password: string, stored: string): boolean {
 export function generateVerifyCode(): string {
   return String(randomInt(100000, 1000000));
 }
+
+// Session 72 (S72-C / L-B2): the login route's timing equalizer. The
+// pre-fix `!user || !verifyPassword(...)` short-circuit skipped the
+// scrypt work for unknown emails — response latency distinguished
+// registered emails even after S71-C closed the status-code oracle.
+// The fix burns the SAME scrypt work on the miss branch against a
+// precomputed hash of a throwaway constant (the constant-work envelope;
+// the 401 envelope family stays byte-identical). LAZY: computed once on
+// the first miss, never a cold-start scrypt on every module import —
+// the login route is the only consumer.
+let equalizerHash: string | null = null;
+
+export function timingEqualizerHash(): string {
+  if (equalizerHash === null) {
+    equalizerHash = hashPassword("digma-timing-equalizer-constant");
+  }
+  return equalizerHash;
+}

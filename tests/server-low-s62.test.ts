@@ -65,7 +65,12 @@ describe("the server Low batch (session 62, S62-G)", () => {
       /export function generateVerifyCode\(\): string \{\s*return String\(randomInt\(100000, 1000000\)\);\s*\}/,
     );
     expect(passwordSource).toMatch(/from "node:crypto"/);
-    expect(authSource).toMatch(/export \{ generateVerifyCode, hashPassword, verifyPassword \}/);
+    // Session 72 (S72-C) contract re-anchor: the re-export list grew —
+    // timingEqualizerHash joined the trio (the login route's constant-
+    // work envelope); the single-generator contract is unchanged.
+    expect(authSource).toMatch(
+      /export \{ generateVerifyCode, hashPassword, timingEqualizerHash, verifyPassword \}/,
+    );
   });
 
   it("B-L1: the three routes import the helper — no Math.random generators remain", () => {

@@ -57,10 +57,16 @@ describe("the DELETE race catches (S69-C / L-B)", () => {
     const post = route.slice(route.indexOf("export async function POST"));
     expect(post).toMatch(/P2003/);
     expect(post).toMatch(/fail\("NOT_FOUND"/);
+    // Session 72 (S72-E) contract re-anchor: the create moved INSIDE the
+    // TOCTOU transaction — the guarded surface is the $transaction call
+    // (the P2003 propagates out of the transaction to the same catch);
+    // the behavioral contract (envelope 404, never a bare 500) is
+    // pinned unchanged.
     const tryIdx = post.indexOf("try {");
-    const createIdx = post.indexOf("db.teamMember.create");
+    const createIdx = post.indexOf("tx.teamMember.create");
     expect(createIdx).toBeGreaterThan(tryIdx);
     expect(createIdx).toBeGreaterThan(-1);
+    expect(post).toMatch(/db\.\$transaction\(async \(tx\) =>/);
   });
 
   it("the sibling PATCH catches are PRESERVED (the S62-G family untouched)", () => {

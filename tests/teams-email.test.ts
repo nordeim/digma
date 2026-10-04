@@ -38,7 +38,10 @@ describe("the Create-Team inline member email validation (session 60, S60-C / B-
     );
     expect(validateIndex).toBeGreaterThan(-1);
     // The validation guards the create (before the team.create call).
-    const createCall = teamsRouteSource.indexOf("db.team.create");
+    // Session 72 (S72-E) contract re-anchor: the create moved INSIDE the
+    // TOCTOU transaction (tx.team.create) — the validation-before-create
+    // ordering is pinned on the transactional create.
+    const createCall = teamsRouteSource.indexOf("tx.team.create");
     expect(createCall).toBeGreaterThan(-1);
     expect(validateIndex).toBeLessThan(createCall);
     // The invalid email answers the SAME message the members route 400s.

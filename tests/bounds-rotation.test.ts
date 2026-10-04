@@ -40,11 +40,15 @@ function el(partial: Partial<DesignElementDTO>): DesignElementDTO {
 // only — rotation never entered the math — while the canvas hit-test
 // inverse-maps through the corner-anchored rotation. A rotated
 // element was SELECTED where it rendered but its selection outline,
-// resize handles, marquee containment, and resize math all ran on the
+// resize handles, and marquee containment all ran on the
 // unrotated footprint: a 90°-rotated element's outline and handles
 // landed completely off its visual bounds. The clone's per-element
 // rotation is a superset feature — a superset must be internally
-// coherent (the F22 doctrine).
+// coherent (the F22 doctrine). (Session 72, S72-D: the resize DRAG
+// MATH itself stays axis-aligned by scope — the handles are
+// positioned on this rotation-aware footprint, but their drag deltas
+// apply world-axis deltas to the local width/height; rotated resize
+// is the documented deferral.)
 //
 // THE FIX: fold the four corner-anchored rotated corners into the
 // min/max. The rotation=0 path returns the historical math EXACTLY

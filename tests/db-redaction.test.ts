@@ -68,7 +68,10 @@ describe("the db log line + the unified member color (session 64, S64-F / B-6 + 
     // the invite route derived from the email — the same person could
     // wear two colors. Anchored on the POST route's own create call
     // (the GET route's include block also says "members: {").
-    const createIdx = teamsSource.indexOf("db.team.create(");
+    // Session 72 (S72-E) contract re-anchor: the create moved INSIDE
+    // the TOCTOU transaction (tx.team.create) — the member-color
+    // contract is pinned on the transactional create.
+    const createIdx = teamsSource.indexOf("tx.team.create(");
     expect(createIdx).toBeGreaterThan(-1);
     const createBody = teamsSource.slice(createIdx, createIdx + 900);
     expect(createBody).toMatch(/memberColorFor\(memberEmail\)/);

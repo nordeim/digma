@@ -93,7 +93,12 @@ describe("the pure password seam (S70-D / L-A5)", () => {
   it("auth.ts consumes + re-exports the seam (the register route's imports survive)", () => {
     const auth = src("src/lib/auth.ts");
     expect(auth).toMatch(/from "@\/lib\/password"/);
-    expect(auth).toMatch(/export \{ generateVerifyCode, hashPassword, verifyPassword \}/);
+    // Session 72 (S72-C) contract re-anchor: the re-export list grew —
+    // timingEqualizerHash joined the trio (the login route's constant-
+    // work envelope); the seam's single-source contract is unchanged.
+    expect(auth).toMatch(
+      /export \{ generateVerifyCode, hashPassword, timingEqualizerHash, verifyPassword \}/,
+    );
     // The duplicated scrypt implementation is deleted from auth.ts (the
     // single seam owns it).
     const implCount = (auth.match(/scryptSync\(/g) || []).length;

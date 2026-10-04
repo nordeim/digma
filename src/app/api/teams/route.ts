@@ -52,36 +52,53 @@ export async function POST(request: NextRequest) {
 
   // Session 67 (S67-B / L-1): the creation ceiling — the ELEMENT_LIMIT
   // style reaching the surface it missed.
-  const teamCount = await db.team.count();
-  if (teamCount >= TEAM_LIMIT) {
+  // Session 72 (S72-E / L-B5): the count and the create (with the
+  // nested first member) now run INSIDE one transaction — the pre-fix
+  // count-then-create pair was a TOCTOU window (a concurrent burst
+  // between the two awaits could insert past the ceiling; SQLite
+  // serializes writers, so the transaction closes the window). The
+  // envelope is byte-identical.
+  let overCap = false;
+  const team = await db.$transaction(async (tx) => {
+    const teamCount = await tx.team.count();
+    if (teamCount >= TEAM_LIMIT) {
+      overCap = true;
+      return null;
+    }
+    return tx.team.create({
+      data: {
+        name,
+        description,
+        color,
+        ...(memberEmail
+          ? {
+              members: {
+                create: {
+                  name: memberDisplayFor(memberEmail),
+                  email: memberEmail,
+                  role: clampText(body?.memberRole, 80),
+                  // Session 64 (S64-F — the twelfth audit's B-7): the
+                  // same derivation the invite-member route uses — the
+                  // two member-creation paths must agree on the color
+                  // seed (the same email, the same chip, whichever
+                  // dialog created it).
+                  avatarColor: memberColorFor(memberEmail),
+                },
+              },
+            }
+          : {}),
+      },
+      include: { members: { orderBy: { createdAt: "asc" } } },
+    });
+  });
+  if (overCap) {
     return fail("VALIDATION", "Too many teams (max 100)", 400);
   }
-
-  const team = await db.team.create({
-    data: {
-      name,
-      description,
-      color,
-      ...(memberEmail
-        ? {
-            members: {
-              create: {
-                name: memberDisplayFor(memberEmail),
-                email: memberEmail,
-                role: clampText(body?.memberRole, 80),
-                // Session 64 (S64-F — the twelfth audit's B-7): the
-                // same derivation the invite-member route uses — the
-                // two member-creation paths must agree on the color
-                // seed (the same email, the same chip, whichever
-                // dialog created it).
-                avatarColor: memberColorFor(memberEmail),
-              },
-            },
-          }
-        : {}),
-    },
-    include: { members: { orderBy: { createdAt: "asc" } } },
-  });
+  if (!team) {
+    // Unreachable (the transaction either created the row or set the
+    // over-cap sentinel) — the guard exists for the type narrowing only.
+    return fail("VALIDATION", "Too many teams (max 100)", 400);
+  }
 
   return ok({ team }, 201);
 }

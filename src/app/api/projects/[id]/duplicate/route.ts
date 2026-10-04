@@ -23,10 +23,11 @@ export async function POST(_request: NextRequest, { params }: Params) {
   // Session 67 (S67-B / L-1): the SAME project ceiling the create POST
   // carries — each duplicate also copies up to 2000 element rows per
   // call, so an unbounded duplicate loop multiplies row-bloat fast.
-  const projectCount = await db.project.count();
-  if (projectCount >= PROJECT_LIMIT) {
-    return fail("VALIDATION", "Too many projects (max 500)", 400);
-  }
+  // Session 72 (S72-E / L-B5): the count moved INSIDE the copy
+  // transaction — the pre-fix count-then-create pair was a TOCTOU
+  // window (a concurrent burst between the count and the copy could
+  // insert past the ceiling; SQLite serializes writers, so the
+  // transaction closes the window). The envelope is byte-identical.
 
   // Session 62 (S62-G / B-L5): the copy is ATOMIC and the name respects
   // the route family's own 120-char cap. The pre-fix form ran create +
@@ -34,7 +35,13 @@ export async function POST(_request: NextRequest, { params }: Params) {
   // half-populated "(Copy)" project) and the name could reach 127 chars
   // from a 120-char source — a later rename PATCH would silently
   // truncate it while the create POST rejects at 120.
+  let overCap = false;
   const copy = await db.$transaction(async (tx) => {
+    const projectCount = await tx.project.count();
+    if (projectCount >= PROJECT_LIMIT) {
+      overCap = true;
+      return null;
+    }
     const created = await tx.project.create({
       data: {
         name: `${source.name} (Copy)`.slice(0, 120),
@@ -53,6 +60,14 @@ export async function POST(_request: NextRequest, { params }: Params) {
     }
     return created;
   });
+  if (overCap) {
+    return fail("VALIDATION", "Too many projects (max 500)", 400);
+  }
+  if (!copy) {
+    // Unreachable (the transaction either created the copy or set the
+    // over-cap sentinel) — the guard exists for the type narrowing only.
+    return fail("VALIDATION", "Too many projects (max 500)", 400);
+  }
 
   const project = await db.project.findUnique({
     where: { id: copy.id },

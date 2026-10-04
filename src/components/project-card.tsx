@@ -256,7 +256,13 @@ export function InlineProjectRename({
     // the errorTitle option carries the card's own toast copy (the
     // per-site hand-rolled unwrap + catch branches died with the
     // migration; the unified fallback description is the seam's).
-    const renamed = await call<ProjectSummaryDTO>(
+    // Session 72 (S72-A): the call is typed as the route's ACTUAL
+    // envelope payload and the member is unwrapped BEFORE the callback —
+    // the S71-A migration lost the hand-rolled form's `.project` read
+    // (call() returns body.data itself, so the wrapper crossed the
+    // callback boundary and every consumer's id compare never matched:
+    // the card title kept the stale name after a successful rename).
+    const renamed = await call<{ project: ProjectSummaryDTO }>(
       `/api/projects/${project.id}`,
       {
         method: "PATCH",
@@ -264,10 +270,10 @@ export function InlineProjectRename({
       },
       { errorTitle: "Rename failed" },
     );
-    if (renamed) {
+    if (renamed?.project) {
       toast.success("Project renamed", name);
       // Session 70 (S70-C): the PATCH response ships the summary shape.
-      onRenamed(renamed);
+      onRenamed(renamed.project);
     }
     setSaving(false);
   }
@@ -378,7 +384,12 @@ export function ProjectCard({
     setDeleting(true);
     // Session 71 (S71-A / L-A1): the DELETE rides the ONE call() seam
     // with the card's own error copy as the errorTitle.
-    const data = await call<{ project: { id: string } }>(
+    // Session 72 (S72-A): the type is the route's ACTUAL payload — the
+    // route answers ok({ deleted: true }) (the pre-fix annotation
+    // claimed a project wrapper that never existed; it worked by
+    // truthiness but lied by type — a future data.project.id read
+    // would crash past the type gate).
+    const data = await call<{ deleted: boolean }>(
       `/api/projects/${project.id}`,
       { method: "DELETE" },
       { errorTitle: "Delete failed" },

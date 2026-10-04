@@ -34,31 +34,47 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   // Session 67 (S67-B / L-1): the per-team member ceiling — the
   // ELEMENT_LIMIT style reaching the surface it missed.
-  const memberCount = await db.teamMember.count({ where: { teamId: id } });
-  if (memberCount >= MEMBER_LIMIT) {
-    return fail("VALIDATION", "Too many members (max 100)", 400);
-  }
-
+  // Session 72 (S72-E / L-B5): the count and the create now run INSIDE
+  // one transaction — the pre-fix count-then-create pair was a TOCTOU
+  // window (a concurrent burst between the two awaits could insert
+  // past the ceiling; SQLite serializes writers, so the transaction
+  // closes the window). The S69-C race catch survives around it.
   // Session 69 (S69-C / L-B): the team can vanish between the
   // pre-check and the create (a concurrent DELETE) — P2003 then
   // throws past the envelope. Answer 404 instead: the invite target
   // no longer exists.
+  let overCap = false;
   let member;
   try {
-    member = await db.teamMember.create({
-      data: {
-        teamId: id,
-        name: clampText(body?.name, 80) ?? memberDisplayFor(email),
-        email,
-        role: clampText(body?.role, 80),
-        avatarColor: memberColorFor(email),
-      },
+    member = await db.$transaction(async (tx) => {
+      const memberCount = await tx.teamMember.count({ where: { teamId: id } });
+      if (memberCount >= MEMBER_LIMIT) {
+        overCap = true;
+        return null;
+      }
+      return tx.teamMember.create({
+        data: {
+          teamId: id,
+          name: clampText(body?.name, 80) ?? memberDisplayFor(email),
+          email,
+          role: clampText(body?.role, 80),
+          avatarColor: memberColorFor(email),
+        },
+      });
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
       return fail("NOT_FOUND", "Team not found", 404);
     }
     throw error;
+  }
+  if (overCap) {
+    return fail("VALIDATION", "Too many members (max 100)", 400);
+  }
+  if (!member) {
+    // Unreachable (the transaction either created the row or set the
+    // over-cap sentinel) — the guard exists for the type narrowing only.
+    return fail("VALIDATION", "Too many members (max 100)", 400);
   }
 
   return ok({ member }, 201);

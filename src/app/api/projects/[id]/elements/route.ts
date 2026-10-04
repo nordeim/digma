@@ -34,8 +34,14 @@ export async function GET(_request: NextRequest, { params }: Params) {
 }
 
 /**
- * POST /api/projects/[id]/elements — create one element (drawn on the canvas,
- * spawned by the AI assistant, or re-added from history).
+ * POST /api/projects/[id]/elements — create one element.
+ *
+ * Session 72 (S72-D): an honest API-surface note — the clone's client
+ * persists exclusively through the full-list PUT below (the autosave
+ * replace contract), so this route serves external/API consumers (and
+ * the smoke suite's validation probes); no first-party client surface
+ * calls it today. The ceiling + the P2003 envelope keep it safe to
+ * expose either way.
  */
 export async function POST(request: NextRequest, { params }: Params) {
   const user = await requireSession();
@@ -58,37 +64,68 @@ export async function POST(request: NextRequest, { params }: Params) {
   const type = typeof body?.type === "string" ? body.type : "";
   if (!isElementType(type)) return fail("VALIDATION", "Unknown element type", 400);
 
-  const count = await db.designElement.count({ where: { projectId: id } });
-  // Session 60 (S60-D — the eighth audit's B-L-2): the POST enforces the
-  // SAME ceiling the PUT carries. Pre-fix the count fed only the sortOrder
-  // default — the single-element route (and the client add paths through
-  // it) could push a project PAST 2000, after which every autosave PUT
-  // failed with the "Too many elements (max 2000)" 400 toast and the
-  // design was unsavable until the user deleted back below the cap.
-  // Session 61 (S61-F): the literal becomes the shared ELEMENT_LIMIT seam
-  // (src/lib/editor.ts) — one source of truth with the client clamp.
-  if (count >= ELEMENT_LIMIT) {
+  // Session 72 (S72-C + S72-E / L-B1 + L-B5): the count, the clamp, and
+  // the create now run INSIDE one transaction — (E) the pre-fix
+  // count-then-create pair was a TOCTOU window (a concurrent burst
+  // between the two awaits could insert past the ELEMENT_LIMIT ceiling;
+  // SQLite serializes writers, so the transaction closes the window),
+  // and (C) the create is wrapped for P2003 — the project can vanish
+  // between the loadProject pre-check and the create (a concurrent
+  // DELETE), and the FK violation previously escaped as an unstructured
+  // 500. The members POST's S69-C form answers it through the envelope.
+  let overCap = false;
+  let element: Awaited<ReturnType<typeof db.designElement.create>> | null = null;
+  try {
+    element = await db.$transaction(async (tx) => {
+      // Session 60 (S60-D — the eighth audit's B-L-2): the POST enforces
+      // the SAME ceiling the PUT carries. Pre-fix the count fed only the
+      // sortOrder default — the single-element route (and the client add
+      // paths through it) could push a project PAST 2000, after which
+      // every autosave PUT failed with the "Too many elements (max
+      // 2000)" 400 toast and the design was unsavable until the user
+      // deleted back below the cap. Session 61 (S61-F): the literal
+      // becomes the shared ELEMENT_LIMIT seam (src/lib/editor.ts) — one
+      // source of truth with the client clamp.
+      const count = await tx.designElement.count({ where: { projectId: id } });
+      if (count >= ELEMENT_LIMIT) {
+        overCap = true;
+        return null;
+      }
+      // Session 71 (S71-C / L-A7 — the nineteenth audit's B-F11): the
+      // clamp max agrees with the 2000-element ceiling — the stale 999
+      // clamped an explicit end-append past element #1000 to a 999 tie
+      // (unstable order), and the count fallback escaped the clamp
+      // entirely. The count is bounded by the ceiling check above, so
+      // the fallback is always in range.
+      const sortOrder = clampNumber(body?.sortOrder, 0, ELEMENT_LIMIT - 1, count);
+
+      // Session 70 (S70-B / L-A2 — the row-builder dedup): the POST
+      // consumes the ONE shared seam (create mode synthesizes the
+      // omitted-field defaults; the clamps live in src/lib/editor.ts
+      // beside the domain types).
+      return tx.designElement.create({
+        data: {
+          projectId: id,
+          ...buildElementRow(body, sortOrder, "create"),
+        },
+      });
+    });
+  } catch (error) {
+    // Session 72 (S72-C / L-B1): a vanished project between the
+    // pre-check and the create answers the envelope, never a bare 500.
+    if ((error as { code?: string }).code === "P2003") {
+      return fail("NOT_FOUND", "Project not found", 404);
+    }
+    throw error;
+  }
+  if (overCap) {
     return fail("VALIDATION", "Too many elements (max 2000)", 400);
   }
-  // Session 71 (S71-C / L-A7 — the nineteenth audit's B-F11): the clamp
-  // max agrees with the 2000-element ceiling — pre-fix the stale 999
-  // clamped an explicit end-append past element #1000 to a 999 tie
-  // (unstable order), and the count fallback escaped the clamp entirely
-  // (an omitted sortOrder at count 1500 stored 1500 while an explicit
-  // 1500 clamped to 999). The count is bounded by the ceiling check
-  // above, so the fallback is always in range.
-  const sortOrder = clampNumber(body?.sortOrder, 0, ELEMENT_LIMIT - 1, count);
-
-  // Session 70 (S70-B / L-A2 — the row-builder dedup): the POST consumes
-  // the ONE shared seam (create mode synthesizes the omitted-field
-  // defaults; the clamps live in src/lib/editor.ts beside the domain
-  // types). The dead src/path/zIndex writes died with their columns.
-  const element = await db.designElement.create({
-    data: {
-      projectId: id,
-      ...buildElementRow(body, sortOrder, "create"),
-    },
-  });
+  if (!element) {
+    // Unreachable (the transaction either created the row or set the
+    // over-cap sentinel) — the guard exists for the type narrowing only.
+    return fail("VALIDATION", "Too many elements (max 2000)", 400);
+  }
 
   return ok({ element }, 201);
 }
