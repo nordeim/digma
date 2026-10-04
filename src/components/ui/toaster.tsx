@@ -50,11 +50,15 @@ export function Toaster() {
               </p>
             )}
           </div>
+          {/* Session 76 (S76-E — the twenty-fourth audit's A-L3): the
+              dismiss control meets the repo's 44px touch floor (every
+              other mobile close target already does via the h-11
+              family) — the hit area is the floor, the glyph stays 16px. */}
           <button
             type="button"
             aria-label="Dismiss notification"
             onClick={() => toast.dismiss(t.id)}
-            className="absolute right-1.5 top-1.5 rounded-md p-1 opacity-50 transition-opacity hover:opacity-100"
+            className="absolute right-1.5 top-1.5 flex h-11 w-11 items-center justify-center rounded-md opacity-50 transition-opacity hover:opacity-100"
           >
             <X className="h-4 w-4" />
           </button>

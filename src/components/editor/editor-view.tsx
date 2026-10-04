@@ -1485,7 +1485,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 sibling cluster, never a fourth member of the measured one. */}
             <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-1 text-sm text-gray-300" aria-live="polite">
+                <div className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-1 text-sm text-gray-300">
                   {Math.round(zoom * 100)}%
                 </div>
                 <button

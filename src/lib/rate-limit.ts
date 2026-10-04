@@ -10,7 +10,20 @@ export type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
-/** Pure: does the key fit in the window? Opportunistically evicts expired entries. */
+/** Session 76 (S76-G — the twenty-fourth audit's B-M2, the deferred
+ * queue's design from session 75): the eviction sweep is AMORTIZED. A
+ * per-buckets watermark (the minimum live resetAt, held in a WeakMap
+ * side-channel keyed by the buckets instance — checkRate already
+ * mutates the passed Map, so the signature stays pure) gates the sweep:
+ * calls before the watermark skip it entirely, and an expired entry
+ * resets LAZILY at its own key's access. The per-key observable behavior
+ * is identical to the always-sweep form; only the memory reclamation of
+ * UN-ACCESSED keys is deferred to the watermark crossing — rotated-key
+ * growth no longer costs O(n) per call (the O(n²) burst family). */
+const sweepWatermarks = new WeakMap<RateBuckets, number>();
+
+/** Pure: does the key fit in the window? Sweeps expired entries at the
+ * watermark; an expired key resets lazily at its own access. */
 export function checkRate(
   buckets: RateBuckets,
   key: string,
@@ -18,11 +31,25 @@ export function checkRate(
   windowMs: number,
   now: number,
 ): RateLimitResult {
-  for (const [k, v] of buckets) {
-    if (v.resetAt <= now) buckets.delete(k);
+  const watermark = sweepWatermarks.get(buckets);
+  if (watermark === undefined || now >= watermark) {
+    let minReset = Number.POSITIVE_INFINITY;
+    for (const [k, v] of buckets) {
+      if (v.resetAt <= now) {
+        buckets.delete(k);
+      } else if (v.resetAt < minReset) {
+        minReset = v.resetAt;
+      }
+    }
+    // No live entries: sweep again on the next call (an empty sweep is
+    // O(1)); otherwise the watermark holds until the earliest expiry.
+    sweepWatermarks.set(buckets, minReset === Number.POSITIVE_INFINITY ? now : minReset);
   }
   const entry = buckets.get(key);
-  if (!entry) {
+  if (!entry || entry.resetAt <= now) {
+    // A fresh window — the lazy reset: an expired entry resets at its
+    // own key's access (identical observable to the evict-then-insert
+    // form the always-sweep ran).
     buckets.set(key, { count: 1, resetAt: now + windowMs });
     return { allowed: true, retryAfterSeconds: 0 };
   }

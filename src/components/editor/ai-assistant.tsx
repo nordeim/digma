@@ -37,6 +37,34 @@ function nowLabel(): string {
   return new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
+// Session 76 (S76-C — the twenty-fourth audit's A-L1): the chat's revert
+// snapshots are capped. Every applied reply stores a full shallow copy of
+// the element list; the store's own history is 60 snapshots deep, but the
+// chat's copies would otherwise accumulate unboundedly for the tab's
+// lifetime (a long session on a 2000-element board retains hundreds of
+// stale element shells). Older carriers beyond the cap keep their bubbles
+// but lose their stale copy — the store's undo already covers older
+// states, and the Revert control couples its render to the snapshot's
+// presence (a control that cannot work must not render).
+const MAX_RETAINED_REVERT_SNAPSHOTS = 10;
+
+// Strip the stale snapshots from all but the newest (cap − 1) carriers —
+// the message appended after this pass carries the newest snapshot, so
+// the total retained lands exactly at the cap.
+function stripAgedSnapshots(prev: ChatMessage[]): ChatMessage[] {
+  let seen = 0;
+  const out = [...prev];
+  for (let i = out.length - 1; i >= 0; i -= 1) {
+    const m = out[i];
+    if (!m.revertSnapshot) continue;
+    seen += 1;
+    if (seen >= MAX_RETAINED_REVERT_SNAPSHOTS) {
+      out[i] = { ...m, revertSnapshot: undefined };
+    }
+  }
+  return out;
+}
+
 // The AI Assistant — measured from the reference: a chat panel anchored at
 // the bottom of the canvas column with an intro bubble, suggestions, and an
 // input with send button. Commands POST to /api/ai-assistant (LLM first,
@@ -250,7 +278,7 @@ export function AiAssistant() {
         actionCount < operations.length &&
         useEditorStore.getState().elements.length >= ELEMENT_LIMIT;
       setMessages((prev) => [
-        ...prev,
+        ...stripAgedSnapshots(prev),
         {
           id: `a-${Date.now()}`,
           role: "assistant",
@@ -312,18 +340,25 @@ export function AiAssistant() {
                   {message.actionCount != null && message.actionCount > 0 && !message.reverted && (
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold">{message.actionCount} action(s) performed</p>
-                      <button
-                        type="button"
-                        onClick={() => revertMessage(message.id)}
-                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors hover:bg-accent h-5 px-1 text-xs text-orange-400 hover:text-orange-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      >
-                        <RotateCcw className="h-3 w-3 mr-1" aria-hidden />
-                        Revert
-                      </button>
+                      {message.revertSnapshot && (
+                        <button
+                          type="button"
+                          onClick={() => revertMessage(message.id)}
+                          className="inline-flex items-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors hover:bg-accent h-5 px-1 text-xs text-orange-400 hover:text-orange-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" aria-hidden />
+                          Revert
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
-                <div className="mt-1 text-left text-xs text-gray-500">{message.time}</div>
+                {/* Session 76 (S76-B — the twenty-fourth audit's A-M1): the
+                    server and client clocks legitimately disagree (the UTC
+                    production-server case), so the SSR-computed intro
+                    timestamp mismatches at hydration — the S65-D family
+                    form: the client value wins and React stops logging. */}
+                <div className="mt-1 text-left text-xs text-gray-500" suppressHydrationWarning>{message.time}</div>
               </div>
             </div>
           ),

@@ -73,8 +73,14 @@ export async function POST(request: NextRequest) {
   // email-only): the coherent reading. The hash updates, the token CLEARS
   // (single-use — a replay answers the invalid-token 400), and no session
   // opens (the user signs in with the new password on /login).
-  await db.user.update({
-    where: { id: user.id },
+  // Session 76 (S76-A — the twenty-fourth audit's B-L1): the write is the
+  // ATOMIC conditional form its verify-otp sibling received in S70-D. The
+  // where-clause carries the token AND the live expiry, so a racing replay
+  // whose read interleaved before this commit lands count 0 (the token is
+  // already consumed) and answers the invalid-token 400 instead of
+  // overwriting the just-reset password on the bare row id.
+  const result = await db.user.updateMany({
+    where: { id: user.id, resetToken, resetTokenExpiresAt: { gt: new Date() } },
     data: {
       passwordHash: hashPassword(newPassword),
       resetToken: null,
@@ -86,6 +92,12 @@ export async function POST(request: NextRequest) {
       tokenVersion: { increment: 1 },
     },
   });
+  // A zero count means the token went stale between the pre-read and
+  // this commit (the racing-replay shape — a concurrent reset consumed
+  // it first): the invalid-token 400, never a success envelope.
+  if (result.count === 0) {
+    return fail("VALIDATION", INVALID_TOKEN_MESSAGE, 400);
+  }
 
   return ok({ message: "Password reset successfully" });
 }

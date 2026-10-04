@@ -554,7 +554,12 @@ function SliderRow({
           className="editor-range h-1.5 flex-1"
           style={{ "--range-fill": fill } as React.CSSProperties}
         />
-        <span className="w-8 text-right text-xs text-gray-300" aria-live="polite">
+        {/* Session 76 (S76-D): the per-tick readout spans carry no
+            live-region semantics — the native range input announces its
+            own value changes, so a second stream of announcements
+            during a drag was duplication, not coverage. The save-state
+            badge (a DISCRETE flip) keeps its live region. */}
+        <span className="w-8 text-right text-xs text-gray-300">
           {format ? format(value) : Math.round(value)}
         </span>
       </div>
@@ -635,7 +640,7 @@ function GradientPanel({
               className="editor-range h-1.5 flex-1"
               style={{ "--range-fill": `${rangeFillPercent(gradient.angle, 0, 360).toFixed(2)}%` } as React.CSSProperties}
             />
-            <span className="w-10 text-right text-xs text-gray-300" aria-live="polite">
+            <span className="w-10 text-right text-xs text-gray-300">
               {gradient.angle}&deg;
             </span>
           </div>
@@ -1262,7 +1267,6 @@ export function TransformSection({
           />
           <span
             className="w-12 text-right text-xs text-gray-300"
-            aria-live="polite"
             data-testid="scale-value"
           >
             {(element.scale ?? 1).toFixed(1)}x

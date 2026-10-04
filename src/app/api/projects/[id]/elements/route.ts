@@ -17,7 +17,15 @@ async function loadProject(id: string) {
 }
 
 
-/** GET /api/projects/[id]/elements — the canvas element list. */
+/**
+ * GET /api/projects/[id]/elements — the canvas element list.
+ *
+ * Session 76 (S76-F): an honest API-surface note —
+ * no first-party client surface calls this list route today (the
+ * clone's client loads the board through GET /api/projects/[id],
+ * which ships the same full rows through its include). The session
+ * guard + the 404 keep it safe to expose either way.
+ */
 export async function GET(_request: NextRequest, { params }: Params) {
   const user = await requireSession();
   if (!user) return fail("UNAUTHENTICATED", "Sign in to view elements", 401);

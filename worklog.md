@@ -1088,3 +1088,63 @@ Stage Summary:
     mount gating (the deferred queue's #1 — a real mobile perf win with zero UI change), the elementSummary sanitizer, and the honesty batch + the deferred-queue
     decisions (the at-rest token hashing closed as not-applicable); gate green at 796 unit / 58 smoke / 245 e2e; mobile nav 9/9 the 52nd consecutive session;
     the deferred queue documented in docs/remediation-plan-session75.md
+
+---
+Task ID: digma-session-76
+Agent: Super Z (main agent)
+Task: The operator's session-109/110-cycle directive — refresh the workspace, re-validate the codebase against the mandated docs, the 52nd reference audit against
+    https://digma-371dfd0d.base44.app/, the twenty-fourth Mode C code audit with the repo skills, TDD remediation, the standing gates, the screenshots, the
+    .env.example, aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- Workspace refreshed (the sandbox HAD been reset — the repo re-cloned from the operator's session-109 log push 8553dda); the environment re-established (bun
+    install, prisma generate + db:push + db:seed to the pristine 1/2/6/1/3 contract, .env recreated with the mandated DATABASE_URL="file:../db/custom.db" +
+    db/ at the repo root); the mandated docs reviewed (README/AGENTS/CLAUDE/PAD v1.54.0, digma_SKILL v1.53.0, session_109/session_110/
+    remediation-plan-session75/worklog tail, the skills catalog + the scandihaven stack-pattern review — the same next 16.3/react 19/tailwind 4.3.3/vitest 5/
+    zustand 5.0.15 versions); all seven S75 seams verified intact in source; .env.example covers all seven env reads
+- BASELINE GATE RE-PROVEN GREEN — the prior session's claims HELD (the F59 corollary satisfied): lint/typecheck/796 unit/120 files/build/58 smoke/the full e2e
+    suite in 7 chunks (251 chunked checks) — zero regressions
+- 52nd reference audit (agent-browser, desktop 1440x900 + mobile 390x844, the real CDP login): NO DRIFT on the standing datums (nav 124/96/92x36, the greeting,
+    Quick Stats 1/0/Pro, the Recent sort, kbd 0 via the JSON-wrapped re-probe, the Create-Team dead chrome, the class-A mobile nav, Share L385-R458/Present
+    L466-R551 byte-identical the 13th consecutive session, the board at 9 layers — all nine names text-verified); mobile nav 9/9 the 53rd consecutive session
+    (scripts/verify-nav-s76.sh) + re-verified on the final S76 build
+- Twenty-fourth Mode C audit (the lead's seam re-verification + two fresh-eyes subagents — auditor A over the editor/client layer, auditor B over the
+    server/infra side): 0 Critical / 0 High / 3 Medium / 7 Low / 11 Informational (B's two Mediums are the standing documented deferrals re-verified);
+    docs/remediation-plan-session76.md written and validated; the deferred-queue judgments: the AI-assistant panel below md CLOSED as
+    examined-and-not-applicable (visible reference chrome, zero store subscriptions — the honest residues became S76-B/C), the fillImageThumb kept queued with
+    the codec/protocol decision tree recorded, the rate-limit amortization CHOSEN (the design recorded twice)
+- TDD: unit RED 18 defect pins + 6 preservation pins across three new spec files -> GREEN 820 = 796 + 24 / 123 files (zero standing pins re-anchored — the
+    watermark design was chosen so every existing rate-limit pin stayed green unchanged); e2e 246 (+1 the toast-floor discriminator, the full suite re-ran
+    green in chunks); smoke unchanged 58
+- S76-A (the headline): the reset-password single-use consumption becomes the ATOMIC conditional updateMany (the where-clause carries the token + live
+    expiry; count 0 answers the same invalid-token 400) — the S70-D verify-otp sibling's form reaching its sibling; the racing replay resolves through the
+    where-clause; live-proven by the capture's scripted double-spend (first 200, the SAME token's replay 400)
+- S76-B: the AI-assistant intro timestamp carries suppressHydrationWarning (the S65-D family — the SSR clock vs the client clock text mismatch)
+- S76-C: the chat revert-snapshot cap (MAX_RETAINED_REVERT_SNAPSHOTS = 10 + stripAgedSnapshots on append; the Revert render couples to the snapshot's presence)
+- S76-D: the four per-tick live regions retire (the zoom chip + three slider readouts; the DISCRETE save-state badge keeps its — live-verified one live region)
+- S76-E: the toast dismiss control h-11 w-11 (the 44px floor; live-measured 44x44 + the e2e discriminator)
+- S76-F: the honesty batch (the honest 1.45 GB ceiling arithmetic + the known-edge note, the readBoundedJson fast-path stream CANCEL — behaviorally pinned,
+    the elements GET consumer note)
+- S76-G: the rate-limit eviction amortization IMPLEMENTED (the min-resetAt watermark WeakMap + the lazy per-entry reset — per-key observables identical to
+    the always-sweep form, only un-accessed reclamation deferred; rotated-key growth no longer O(n) per call)
+- En-route (the F63 lessons): the sibling-form audit reward (form parity across siblings doing the same domain action, not only call-site parity), the
+    SSR-clock initializer trap, the watermarked-sweep design (the no-observable-change amortization), the wrapped-comment pin discipline (seventh appearance —
+    flatten [*\s]+ before matching); corollaries: the agent-browser plain-number eval quirk, the evidence-shot ordering rule (a shot's viewport is the capture
+    position — the dimension checker caught the sed-inherited misplacement)
+- Full gate green: lint, typecheck, 820/820 unit / 123 files, build, 58/58 smoke, 246/246 e2e — zero regressions
+- Live verification: the mobile nav 9/9 on the final build; the capture (scripts/capture-session76.sh + the clone-21 tail re-capture): the standard 32 +
+    the ref-audit-s86 evidence set (the 5 reference datums + the new clone-23 toast-floor shot) + the standing inline checks re-verified + THREE NEW inline
+    checks (the reset replay 200->400 double-spend; the live-region count exactly-one-the-badge; the toast dismiss 44x44) — dimension-checked 323/323 (the
+    S86 mapping added), VLM 23/23 in one complete passing run
+- .env.example verified unchanged (the session's slices add no env vars)
+- Docs aligned: PAD v1.55.0 (header + revision block + 7.1 + the four 10 rows + 11 line counts + the command-table counts), digma_SKILL v1.54.0 (lesson F63),
+    AGENTS/CLAUDE/README counts + the session-76 seam bullet, remediation-plan-session76 execution status, docs/session_111.md, the repo worklog entry
+- Committed on main and pushed via docs/ssh_git_wrapper_v3.py; remote refs/heads/main == local HEAD verified; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 76 fully delivered and pushed to main: the reset-password single-use atomicity (the headline — the S70-D sibling form reaching its sibling, the
+    racing-replay window closed, live-proven by the scripted double-spend), the intro-timestamp hydration fix (the S65-D family), the chat revert-snapshot
+    cap, the per-tick live-region cleanup, the toast 44px dismiss floor, the honesty batch (the honest ceiling arithmetic + the fast-path stream cancel +
+    the GET consumer note), and the rate-limit eviction amortization implemented from the deferred queue (the watermark + lazy reset — zero pins re-anchored)
+    + the deferred-queue decisions (the AI-panel closure with evidence, the fillImageThumb decision tree); gate green at 820 unit / 58 smoke / 246 e2e;
+    mobile nav 9/9 the 53rd consecutive session; the deferred queue documented in docs/remediation-plan-session76.md

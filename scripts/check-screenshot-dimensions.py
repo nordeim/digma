@@ -424,6 +424,15 @@ S85.update({
     "clone-21-mobile-panel-gating": (390, 844),
 })
 
+# Session 76 (the 52nd reference audit): the s86 evidence set mirrors the
+# s85 form (the standing ref family) + the session's own clone-23 (the
+# S76-E toast dismiss 44px floor evidence — captured at the desktop
+# editor viewport where the Share toast fired).
+S86 = dict(S85)
+S86.update({
+    "clone-23-toast-dismiss-44px": (1440, 900),
+})
+
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -451,6 +460,8 @@ def expected_for(name: str):
         return S84.get(Path(name).stem)
     if name.startswith("ref-audit-s85/"):
         return S85.get(Path(name).stem)
+    if name.startswith("ref-audit-s86/"):
+        return S86.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -515,6 +526,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s83").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s84").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s85").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s86").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

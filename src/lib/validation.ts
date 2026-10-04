@@ -130,8 +130,14 @@ export function safeFromUrl(raw: string | null | undefined): string {
 // copies up to 2000 element rows per call).
 
 /** The aggregate request-body ceiling: 32 MB — the documented
- * self-hosted ceiling (a 2000-element board of image fills sits far
- * under it; the 1.45 GB abuse family sits far over). */
+ * self-hosted ceiling (a typical image-carrying board sits far under
+ * it at ~30 MB of data-URL prose; the 2000 × ~722 KB full-image
+ * board ≈ 1.45 GB sits far OVER — the elements PUT's own arithmetic —
+ * and the S67-B abuse family the cap exists to stop). Note the
+ * scripted elements POST path has no aggregate cap below this line,
+ * so a stored board larger than 32 MB is constructible — after which
+ * every full-list PUT answers the payload-too-large 400 until the
+ * oversized elements are removed (the documented known edge). */
 export const REQUEST_BODY_LIMIT_BYTES = 32_000_000;
 
 /** Pure: does the request's declared content-length exceed the cap?
@@ -168,8 +174,13 @@ export type BoundedJson =
  * contract, so the call sites' field narrowing is untouched. */
 export async function readBoundedJson(request: Request): Promise<BoundedJson> {
   // Fast path: a declared content-length over the cap rejects before
-  // any byte is read.
+  // any byte is read — and the unconsumed stream is cancelled (the
+  // symmetric twin of the stream-counter path's own cancel below: a
+  // kept-open stream would hold the connection and buffer the
+  // producer's remaining chunks server-side). The optional chain
+  // guards the body-less GET-shaped case.
   if (bodySizeRejected(request.headers.get("content-length"))) {
+    await request.body?.cancel().catch(() => {});
     return { tooLarge: true };
   }
   const body = request.body;
