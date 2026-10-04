@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { generateVerifyCode, setSessionCookie, timingEqualizerHash, verifyPassword } from "@/lib/auth";
 import { ok, fail } from "@/lib/api";
-import { bodySizeRejected } from "@/lib/validation";
+import { readBoundedJson } from "@/lib/validation";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -20,11 +20,11 @@ export async function POST(request: NextRequest) {
   // guard reaches every request.json() site — App Router handlers
   // ship no default body-size cap, so the per-field caps only bound
   // what SURVIVES the parse; this bounds the parse itself.
-  if (bodySizeRejected(request.headers.get("content-length"))) {
+  const parsed = await readBoundedJson(request);
+  if (parsed.tooLarge) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
-
-  const body = await request.json().catch(() => null);
+  const body = parsed.value;
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 

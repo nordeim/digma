@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { bodySizeRejected, clampText, MEMBER_LIMIT } from "@/lib/validation";
+import { readBoundedJson, clampText, MEMBER_LIMIT } from "@/lib/validation";
 import { memberColorFor, memberDisplayFor } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -22,11 +22,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   // guard reaches every request.json() site — App Router handlers
   // ship no default body-size cap, so the per-field caps only bound
   // what SURVIVES the parse; this bounds the parse itself.
-  if (bodySizeRejected(request.headers.get("content-length"))) {
+  const parsed = await readBoundedJson(request);
+  if (parsed.tooLarge) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
-
-  const body = await request.json().catch(() => null);
+  const body = parsed.value;
   const email = clampText(body?.email, 200);
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return fail("VALIDATION", "Enter a valid email address", 400);

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { fail, ok, requireSession } from "@/lib/api";
-import { bodySizeRejected } from "@/lib/validation";
-import { parseFallbackCommand, sanitizeLlmOperations, type AiCommand } from "@/lib/ai-assistant";
+import { readBoundedJson } from "@/lib/validation";
+import { parseFallbackCommand, sanitizeElementSummary, sanitizeLlmOperations, type AiCommand } from "@/lib/ai-assistant";
 import { aiRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -36,11 +36,11 @@ export async function POST(request: NextRequest) {
   // guard reaches every request.json() site — App Router handlers
   // ship no default body-size cap, so the per-field caps only bound
   // what SURVIVES the parse; this bounds the parse itself.
-  if (bodySizeRejected(request.headers.get("content-length"))) {
+  const parsed = await readBoundedJson(request);
+  if (parsed.tooLarge) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
-
-  const body = await request.json().catch(() => null);
+  const body = parsed.value;
   const message = typeof body?.message === "string" ? body.message.trim().slice(0, 1000) : "";
   const targetIds = Array.isArray(body?.targetIds)
     ? (body.targetIds as unknown[]).filter((i): i is string => typeof i === "string").slice(0, 100)
@@ -52,7 +52,15 @@ export async function POST(request: NextRequest) {
   const lockedTargetIds = Array.isArray(body?.lockedTargetIds)
     ? (body.lockedTargetIds as unknown[]).filter((i): i is string => typeof i === "string").slice(0, 100)
     : [];
-  const elementSummary = typeof body?.elementSummary === "string" ? body.elementSummary.slice(0, 3000) : "";
+  // Session 75 (S75-F): the summary rides the system role, so it passes
+  // through the server-side sanitizer first — one line, control-free,
+  // capped at 500 (the pre-S75 raw 3000-char slice kept newlines and the
+  // whole control-character family: a scripted client could forge the
+  // system prompt's line structure). The legit client builder is
+  // enum/geometry prose and passes through verbatim.
+  const elementSummary = sanitizeElementSummary(
+    typeof body?.elementSummary === "string" ? body.elementSummary : "",
+  );
 
   if (!message) return fail("VALIDATION", "A message is required", 400);
 

@@ -54,13 +54,23 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
 
 function sortProjects(projects: ProjectSummaryDTO[], sort: SortKey): ProjectSummaryDTO[] {
   const copy = [...projects];
+  // Session 75 (S75-G / A75-F5 — the date-guard family's sort sibling):
+  // a corrupt timestamp makes the comparator produce NaN, which
+  // Array#sort treats as 0 — the row lands at an implementation-defined
+  // position. The guard pins corrupt rows to the bottom deterministically
+  // (epoch 0 sorts oldest under every descending date branch), matching
+  // the three render-site guards' corrupt-date posture (S74-C).
+  const timeOf = (value: string | Date | null): number => {
+    const t = +new Date(value as string);
+    return Number.isNaN(t) ? 0 : t;
+  };
   switch (sort) {
     case "last_accessed":
-      return copy.sort((a, b) => +new Date(b.lastOpenedAt) - +new Date(a.lastOpenedAt));
+      return copy.sort((a, b) => timeOf(b.lastOpenedAt) - timeOf(a.lastOpenedAt));
     case "updated_date":
-      return copy.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+      return copy.sort((a, b) => timeOf(b.updatedAt) - timeOf(a.updatedAt));
     case "created_date":
-      return copy.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+      return copy.sort((a, b) => timeOf(b.createdAt) - timeOf(a.createdAt));
     case "name":
       // RA-45 (session 39): the reference's name sort is DESCENDING — its
       // select refetches entities/Project?sort=-name and the rendered order

@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { bodySizeRejected, clampColor, clampNumber, isElementType } from "@/lib/validation";
+import { readBoundedJson, clampColor, clampNumber, isElementType } from "@/lib/validation";
 // Session 70 (S70-B): the row-builder family (buildElementRow +
 // clampFillImage + the field clamps) lives in the ONE seam —
 // src/lib/editor.ts — consumed by both handlers below.
@@ -56,11 +56,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   // Router handlers ship no default body-size cap. The per-field caps
   // only bound what SURVIVES the parse; this guard bounds the parse
   // itself (the 1.45 GB abuse family never reaches it).
-  if (bodySizeRejected(request.headers.get("content-length"))) {
+  const parsed = await readBoundedJson(request);
+  if (parsed.tooLarge) {
     return fail("VALIDATION", "Elements payload too large (max 32 MB)", 400);
   }
-
-  const body = await request.json().catch(() => null);
+  const body = parsed.value ?? {};
   const type = typeof body?.type === "string" ? body.type : "";
   if (!isElementType(type)) return fail("VALIDATION", "Unknown element type", 400);
 
@@ -113,7 +113,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   } catch (error) {
     // Session 72 (S72-C / L-B1): a vanished project between the
     // pre-check and the create answers the envelope, never a bare 500.
-    if ((error as { code?: string }).code === "P2003") {
+    // Session 75 (S75-G / B75-F5): the catch joins the family's
+    // instanceof dialect (the PUT's own form) — the duck-typed cast
+    // would swallow any non-Prisma error carrying the same code string.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
       return fail("NOT_FOUND", "Project not found", 404);
     }
     throw error;
@@ -149,11 +152,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
   // App Router body-size default, OOMing small self-hosted boxes inside
   // the interactive transaction. The count check below only bounds what
   // SURVIVES the parse; this guard bounds the parse itself.
-  if (bodySizeRejected(request.headers.get("content-length"))) {
+  const parsed = await readBoundedJson(request);
+  if (parsed.tooLarge) {
     return fail("VALIDATION", "Elements payload too large (max 32 MB)", 400);
   }
-
-  const body = await request.json().catch(() => null);
+  const body = parsed.value;
   const list = Array.isArray(body?.elements) ? body.elements : null;
   if (!list) return fail("VALIDATION", "elements array is required", 400);
   if (list.length > ELEMENT_LIMIT) return fail("VALIDATION", "Too many elements (max 2000)", 400);

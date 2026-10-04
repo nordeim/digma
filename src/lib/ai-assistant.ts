@@ -258,6 +258,27 @@ export function parseFallbackCommand(
 // LLM output sanitation: bounds whatever the model returns before it can
 // touch the canvas (the same doctrine the reference's planner uses).
 
+/**
+ * Session 75 (S75-F — the elementSummary server-side sanitizer, the
+ * deferred queue's middle option): the client-supplied element summary
+ * rides the request and is interpolated into the LLM's system role — a
+ * scripted client (not the UI, whose builder is enum/geometry-only)
+ * could otherwise forge the system prompt's line structure with
+ * newlines/control characters or pad it with kilobytes of hostile
+ * prose. The full server-side re-derivation was judged not worth a
+ * protocol change (the request carries no projectId; the injection is
+ * self-scoped — own canvas, sanitized operations, the client lock wall
+ * + Revert); the SANITIZER is the chosen posture: newlines and control
+ * characters collapse to spaces (one line, always), the printable
+ * allowlist keeps the legitimate summary's punctuation, and the cap
+ * tightens from the route's old raw 3000-char slice to 500. Pure and
+ * unit-pinned (tests/server-lows-s75.test.ts).
+ */
+export function sanitizeElementSummary(raw: string): string {
+  const flattened = raw.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+  return flattened.slice(0, 500);
+}
+
 export type LlmOperation = { op: string; element?: Record<string, unknown>; ids?: unknown; patch?: Record<string, unknown> };
 
 export function sanitizeLlmOperations(

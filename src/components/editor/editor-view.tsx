@@ -16,6 +16,7 @@ import { CanvasBackgroundSection, MultiSelectionSection, PropertiesPanel, Proper
 import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { HeaderUser } from "@/components/app-header";
 import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, fillPaintFor, isTypingTarget, textAlignToJustify, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
 import {
@@ -1137,6 +1138,19 @@ export function EditorView({ user }: { user: HeaderUser }) {
   // Defaults mirror the reference: Layers on, Components off, Properties on.
   const [panels, setPanels] = React.useState({ layers: true, components: false, properties: true });
 
+  // Session 75 (S75-E — the hidden-panel mount gating): the media-query
+  // subscriptions that gate the three panel MOUNTS. Below md/lg the
+  // wrappers are CSS-hidden but the trees were fully mounted and
+  // subscribed to `elements` — every drag tick re-rendered two invisible
+  // trees (LayersPanel maps all N rows; PropertiesPanel rebuilds its
+  // section stack). The toggle chips are themselves hidden below md/lg,
+  // so gating the mounts changes zero UI; the SSR snapshot stays
+  // desktop-first (the hook's getServerSnapshot) so the server output is
+  // byte-identical and a below-md hydration unmounts the CSS-invisible
+  // panels without a mismatch. Pinned by tests/client-lows-s75.test.ts.
+  const isMd = useMediaQuery("(min-width: 768px)");
+  const isLg = useMediaQuery("(min-width: 1024px)");
+
   const projectName = useEditorStore((s) => s.projectName);
   const saveState = useEditorStore((s) => s.saveState);
   const zoom = useEditorStore((s) => s.zoom);
@@ -1438,14 +1452,14 @@ export function EditorView({ user }: { user: HeaderUser }) {
             hidden below md: the mobile editor keeps a full-width canvas —
             a deliberate improvement over the reference, which squeezes all
             columns to unreadable widths at 390px. */}
-        {panels.layers && (
+        {panels.layers && isMd && (
           <div className="hidden w-60 flex-shrink-0 flex-col border-r border-[#30363d] bg-[#161b22] md:flex">
             <div className="min-h-0 flex-1">
               <LayersPanel />
             </div>
           </div>
         )}
-        {panels.components && (
+        {panels.components && isMd && (
           <div className="hidden w-60 flex-shrink-0 flex-col border-r border-[#30363d] bg-[#161b22] md:flex">
             <ComponentsPanel />
           </div>
@@ -1581,7 +1595,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
         </div>
 
         {/* Right: properties (chip-toggled). */}
-        {panels.properties && (
+        {panels.properties && isLg && (
           <div className="hidden w-72 flex-shrink-0 border-l border-[#30363d] bg-[#161b22] lg:flex">
             <PropertiesPanel />
           </div>

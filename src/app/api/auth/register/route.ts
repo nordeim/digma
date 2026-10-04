@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { generateVerifyCode, hashPassword } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
-import { bodySizeRejected } from "@/lib/validation";
+import { readBoundedJson } from "@/lib/validation";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -20,11 +21,11 @@ export async function POST(request: NextRequest) {
   // guard reaches every request.json() site — App Router handlers
   // ship no default body-size cap, so the per-field caps only bound
   // what SURVIVES the parse; this bounds the parse itself.
-  if (bodySizeRejected(request.headers.get("content-length"))) {
+  const parsed = await readBoundedJson(request);
+  if (parsed.tooLarge) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
-
-  const body = await request.json().catch(() => null);
+  const body = parsed.value;
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
@@ -79,8 +80,10 @@ export async function POST(request: NextRequest) {
       select: { id: true, email: true, name: true, avatarColor: true },
     });
   } catch (error) {
-    const code = (error as { code?: string } | null)?.code;
-    if (code === "P2002") {
+    // Session 75 (S75-G / B75-F5): the catch joins the envelope-catch
+    // family's instanceof dialect — the duck-typed cast would swallow
+    // any non-Prisma error carrying the same code string into the 409.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return fail("CONFLICT", "An account with this email already exists", 409);
     }
     throw error;

@@ -135,14 +135,83 @@ export function safeFromUrl(raw: string | null | undefined): string {
 export const REQUEST_BODY_LIMIT_BYTES = 32_000_000;
 
 /** Pure: does the request's declared content-length exceed the cap?
- * An absent or non-numeric header passes — chunked uploads carry no
- * content-length, and the per-field caps (fillImage ≤ 700,000 chars,
- * ELEMENT_LIMIT ≤ 2000) still bound those bodies after the parse. */
+ * An absent or non-numeric header passes — the STREAM COUNTER in
+ * readBoundedJson bounds those bodies (chunked uploads carry no
+ * content-length; the counter rejects mid-read at the same cap). */
 export function bodySizeRejected(contentLength: string | null): boolean {
   if (!contentLength) return false;
   const bytes = Number(contentLength);
   if (!Number.isFinite(bytes) || bytes < 0) return false;
   return bytes > REQUEST_BODY_LIMIT_BYTES;
+}
+
+/** The bounded body-parse result: `tooLarge` answers the 32 MB
+ * envelope; `value` carries the parsed JSON (null when unparseable —
+ * the sites' historical `.catch(() => null)` contract). */
+export type BoundedJson =
+  | { tooLarge: true }
+  | { tooLarge: false; value: Record<string, unknown> | null };
+
+/** Session 75 (S75-B / B75-F1 — the chunked-parse bound): the ONE
+ * seam every request.json() parse site consumes. The pre-S68/S67 form
+ * (a content-length-only guard before an unbounded request.json())
+ * left the chunked-transfer family open: a Transfer-Encoding: chunked
+ * request carries NO content-length, so the guard passed and the
+ * parse buffered the whole body before any per-field cap ran — six of
+ * the fourteen sites unauthenticated (the OOM rationale the family
+ * itself documented). The seam's two layers: the content-length fast
+ * path (a declared over-cap body rejects before ANY read — the
+ * bodySizeRejected logic, unchanged) and the stream counter
+ * (request.body read chunk-by-chunk, rejecting + cancelling the read
+ * past REQUEST_BODY_LIMIT_BYTES — the bound the header family could
+ * never see). The decode+parse tail keeps the null-on-unparseable
+ * contract, so the call sites' field narrowing is untouched. */
+export async function readBoundedJson(request: Request): Promise<BoundedJson> {
+  // Fast path: a declared content-length over the cap rejects before
+  // any byte is read.
+  if (bodySizeRejected(request.headers.get("content-length"))) {
+    return { tooLarge: true };
+  }
+  const body = request.body;
+  if (!body) {
+    // No stream to bound (a body-less request): the standard parse,
+    // guarded the same way the sites' old form was.
+    try {
+      return { tooLarge: false, value: (await request.json()) as Record<string, unknown> };
+    } catch {
+      return { tooLarge: false, value: null };
+    }
+  }
+  // The stream counter — the chunked family's only bound.
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      total += value.byteLength;
+      if (total > REQUEST_BODY_LIMIT_BYTES) {
+        // Stop the producer before returning — a kept-open stream would
+        // hold the connection and buffer the attacker's remaining
+        // chunks server-side.
+        await reader.cancel().catch(() => {});
+        return { tooLarge: true };
+      }
+      chunks.push(value);
+    }
+  }
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return { tooLarge: false, value: JSON.parse(new TextDecoder().decode(merged)) as Record<string, unknown> };
+  } catch {
+    return { tooLarge: false, value: null };
+  }
 }
 
 /** The creation ceilings (coherent-superset decisions at self-hosted

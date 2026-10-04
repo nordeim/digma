@@ -50,10 +50,30 @@
      scale the app consumes is pinned here to the v3 values — measured against
      the live reference DOM (Share/Present/active tool = #2563EB/#16A34A). */
   --color-blue-50: #eff6ff;
+  /* Session 75 (S75-A / A75-F1 — the palette-pins family completion):
+     the eleven consumed-but-unpinned members found by the mechanical
+     consumed-vs-pinned enumeration. The S74-G pin closed only
+     neutral-900 and declared the family closed at "the one
+     consumed-but-unpinned scale" — an N−1 family count (the F61
+     lesson recurring inside the family-completion fix itself). Unlike
+     the achromatic neutral-900, these CHROMATIC members were taking
+     the v4 oklch default TODAY — the reference-measured alert chrome
+     (the login/reset cards' pale reds and greens, the RA-48
+     list-thumbnail gradient's blue-100, the Revert orange, the
+     layer-trash red) shipped visibly off-palette.
+     tests/palette-pins-s75.test.ts pins the eleven hexes AND runs the
+     enumeration itself — the consumed-vs-pinned difference must stay
+     EMPTY, so this block's own rule can never silently falsify
+     again. */
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-800: #1e40af;
   --color-blue-400: #60a5fa;
   --color-blue-500: #3b82f6;
   --color-blue-600: #2563eb;
   --color-blue-700: #1d4ed8;
+  --color-green-50: #f0fdf4;
+  --color-green-200: #bbf7d0;
   --color-green-500: #22c55e;
   --color-green-600: #16a34a;
   --color-green-700: #15803d;
@@ -71,11 +91,17 @@
   --color-pink-500: #ec4899;
   --color-pink-600: #db2777;
   --color-pink-700: #be185d;
+  --color-red-50: #fef2f2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
   --color-red-500: #ef4444;
   --color-red-600: #dc2626;
   --color-red-700: #b91c1c;
   --color-amber-500: #f59e0b;
   --color-yellow-400: #facc15;
+  --color-orange-300: #fdba74;
+  --color-orange-400: #fb923c;
   --color-orange-500: #f97316;
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
@@ -99,10 +125,13 @@
   --color-slate-900: #0f172a;
   /* Session 74 (S74-G / A74-I2): the view-toggle surfaces' dark chip
      (bg-neutral-900 — dashboard-view + recent-view grid/list toggles).
-     The one consumed-but-unpinned scale: v4's achromatic neutral-900
-     round-trips to this hex today, but the pins block's own rule (every
-     consumed scale pinned to the v3 value) is what keeps a FUTURE
-     neutral-500/700 use from silently taking the oklch default. */
+     Session 74 believed this was the one consumed-but-unpinned scale —
+     the audit's undercount: v4's achromatic neutral-900 round-trips to
+     this hex today, but session 75's enumeration found ELEVEN more
+     consumed-but-unpinned (chromatic) members — the S75-A pins above.
+     The block's own rule (every consumed scale pinned to the v3 value)
+     is now mechanically enforced by the enumeration pin in
+     tests/palette-pins-s75.test.ts. */
   --color-neutral-900: #171717;
 
   /* Fonts — LITERAL names only (the v1.5.0 font-bug fix). next/font's

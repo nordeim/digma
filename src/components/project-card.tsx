@@ -52,7 +52,6 @@ import {
   type ProjectSummaryDTO,
   type ThumbnailElementDTO,
 } from "@/lib/editor";
-import { memberColorFor } from "@/lib/team";
 
 // The create-dialog's template cards carry the reference's per-template icons
 // (session-15 parity fix, SVG-path-verified in the reference's DOM):

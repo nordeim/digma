@@ -45,20 +45,28 @@ const GUARDED_ROUTES: Array<{ file: string; handler: string; auth: "public" | "g
   { file: "src/app/api/ai-assistant/route.ts", handler: "POST", auth: "gated" },
 ];
 
-describe("every request.json() parse site carries the body-size guard (S68-A / M-A)", () => {
+describe("every body-parse site consumes the bounded seam (S68-A / M-A, re-anchored S75-B)", () => {
+  // Session 75 (S75-B / B75-F1 — the chunked-parse bound) RE-ANCHORED
+  // this spec's pins: the guard+parse pair (a content-length-only
+  // bodySizeRejected check before an unbounded request.json()) folded
+  // INTO the readBoundedJson seam — the content-length fast path plus
+  // the stream counter that bounds the chunked-transfer family the
+  // header check could never see. The per-site contract evolves from
+  // "guard before parse" to "the seam IS the parse"; the behavioral
+  // seam pins live in tests/request-surface-s75.test.ts.
   for (const route of GUARDED_ROUTES) {
-    it(`${route.file} checks bodySizeRejected BEFORE the ${route.handler} parse`, () => {
-      // THE DEFECT PIN: pre-fix the route parses first — Node buffers
-      // the whole payload before any per-field cap answers.
+    it(`${route.file} parses through readBoundedJson (the ${route.handler} seam consumption)`, () => {
+      // THE EVOLVED PIN: the handler consumes the seam — no bare
+      // request.json() remains behind it.
       const source = src(route.file);
-      expect(source).toMatch(/bodySizeRejected/);
+      expect(source).toMatch(/readBoundedJson/);
       const parts = source.split(`export async function ${route.handler}`);
       expect(parts.length).toBeGreaterThan(1);
-      const body = parts[1] ?? "";
-      const firstParse = body.indexOf("await request.json()");
-      const firstCheck = body.indexOf("bodySizeRejected(");
-      expect(firstCheck).toBeGreaterThan(-1);
-      expect(firstParse).toBeGreaterThan(firstCheck);
+      const body = parts.slice(1).join(`export async function ${route.handler}`);
+      expect(body).toMatch(/readBoundedJson\(request\)/);
+      // The bare parse is gone from the handler — the seam is the ONLY
+      // body read (the S75-B evolved contract).
+      expect(body).not.toMatch(/await request\.json\(\)/);
     });
 
     it(`${route.file} answers the VALIDATION envelope with the generic 32 MB message`, () => {
@@ -68,41 +76,38 @@ describe("every request.json() parse site carries the body-size guard (S68-A / M
     });
   }
 
-  it("the guard sits AFTER the rate-limit gate on the auth family (no parse work burns a slot)", () => {
+  it("the seam sits AFTER the rate-limit gate on the auth family (no parse work burns a slot)", () => {
     // The S67-C ordering discipline: the rate limiter runs before any
-    // body work. The guard must not jump ahead of it.
+    // body work. The seam must not jump ahead of it.
     for (const route of GUARDED_ROUTES.filter((r) => r.auth === "ratelimited")) {
       const source = src(route.file);
       const parts = source.split("export async function POST");
       const body = parts[1] ?? "";
       const limitCall = body.search(/RateLimit\(/);
-      const guard = body.indexOf("bodySizeRejected(");
+      const seam = body.indexOf("readBoundedJson(");
       expect(limitCall).toBeGreaterThan(-1);
-      expect(guard).toBeGreaterThan(limitCall);
+      expect(seam).toBeGreaterThan(limitCall);
     }
   });
 
-  it("the two element routes keep their pinned S67-B forms unchanged (preservation)", () => {
-    // The session-67 message and ordering are PINNED artifacts — the
-    // family's completion must not rewrite them.
+  it("the two element routes keep their pinned S67-B messages (preservation, re-anchored S75-B)", () => {
+    // The session-67 MESSAGE is a PINNED artifact — the family's
+    // completion must not rewrite it. The seam consumption replaces
+    // the old ordering form (the guard lives inside readBoundedJson).
     const elementsRoute = src("src/app/api/projects/[id]/elements/route.ts");
     expect(elementsRoute).toMatch(/Elements payload too large \(max 32 MB\)/);
     const puts = elementsRoute.split("export async function PUT");
     const putBody = puts[1] ?? "";
-    expect(putBody.indexOf("await request.json()")).toBeGreaterThan(
-      putBody.indexOf("bodySizeRejected("),
-    );
+    expect(putBody).toMatch(/readBoundedJson\(request\)/);
     const posts = elementsRoute.split("export async function POST");
     const postBody = posts[1] ?? "";
-    expect(postBody.indexOf("await request.json()")).toBeGreaterThan(
-      postBody.indexOf("bodySizeRejected("),
-    );
+    expect(postBody).toMatch(/readBoundedJson\(request\)/);
   });
 
-  it("no request.json() parse site anywhere in the API lacks the guard (the family is closed)", () => {
-    // The complete sweep: every route file that parses a body must
-    // carry the guard — the honest closure check (a future route
-    // added without the guard fails here).
+  it("no request.json() parse site anywhere in the API bypasses the seam (the family stays closed)", () => {
+    // The complete sweep, evolved with S75-B: a bare request.json()
+    // (no seam) fails here — the honest closure check for any FUTURE
+    // route added without the bound.
     const files = [
       "src/app/api/ai-assistant/route.ts",
       "src/app/api/auth/forgot-password/route.ts",
@@ -123,8 +128,8 @@ describe("every request.json() parse site carries the body-size guard (S68-A / M
     ];
     for (const file of files) {
       const source = src(file);
-      if (!source.includes("await request.json()")) continue; // GET-only routes
-      expect(source, `${file} parses a body but carries no guard`).toMatch(/bodySizeRejected/);
+      if (!source.includes("await request.json()")) continue; // seam-only or GET routes
+      expect(source, `${file} parses a body but bypasses the seam`).toMatch(/readBoundedJson/);
     }
   });
 });

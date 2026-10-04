@@ -62,32 +62,32 @@ describe("bodySizeRejected — the aggregate body cap (S67-B / M-4)", () => {
 describe("the element routes check the body size BEFORE parsing (S67-B / M-4)", () => {
   const elementsRoute = src("src/app/api/projects/[id]/elements/route.ts");
 
-  it("the PUT rejects an oversized body with the VALIDATION envelope before request.json()", () => {
-    // THE DEFECT PIN: pre-fix the route parses first — the only bound
-    // is the post-parse element-count check. (The call form
-    // `await request.json()` discriminates the CALL from comment text.)
-    expect(elementsRoute).toMatch(/bodySizeRejected/);
+  it("the PUT rejects an oversized body with the VALIDATION envelope through the bounded seam", () => {
+    // THE DEFECT PIN (re-anchored S75-B): pre-fix the route parsed first —
+    // the only bound was the post-parse element-count check. Session 75
+    // folded the guard INTO readBoundedJson (the content-length fast path
+    // + the stream counter); the PUT's evolved contract is seam
+    // consumption with NO bare parse behind it. The behavioral seam
+    // pins live in tests/request-surface-s75.test.ts.
+    expect(elementsRoute).toMatch(/readBoundedJson/);
     const puts = elementsRoute.split(/export async function PUT/);
     expect(puts.length).toBeGreaterThan(1);
     const putBody = puts[1] ?? "";
-    const firstParse = putBody.indexOf("await request.json()");
-    const firstCheck = putBody.indexOf("bodySizeRejected(");
-    expect(firstCheck).toBeGreaterThan(-1);
-    expect(firstParse).toBeGreaterThan(firstCheck);
+    expect(putBody).toMatch(/readBoundedJson\(request\)/);
+    expect(putBody).not.toMatch(/await request\.json\(\)/);
     expect(putBody).toMatch(/Elements payload too large/);
     expect(putBody).toMatch(/fail\("VALIDATION"/);
   });
 
-  it("the single-element POST carries the same guard (preservation of the family's symmetry)", () => {
+  it("the single-element POST carries the same seam (preservation of the family's symmetry)", () => {
     // The S60-D discipline: the POST enforces the SAME ceilings the
-    // PUT carries. The body guard belongs to that family.
+    // PUT carries. The body seam belongs to that family (re-anchored
+    // S75-B — the guard lives inside readBoundedJson now).
     const posts = elementsRoute.split(/export async function POST/);
     expect(posts.length).toBeGreaterThan(1);
     const postBody = posts[1] ?? "";
-    expect(postBody).toMatch(/bodySizeRejected/);
-    const firstParse = postBody.indexOf("await request.json()");
-    const firstCheck = postBody.indexOf("bodySizeRejected(");
-    expect(firstParse).toBeGreaterThan(firstCheck);
+    expect(postBody).toMatch(/readBoundedJson\(request\)/);
+    expect(postBody).not.toMatch(/await request\.json\(\)/);
   });
 });
 

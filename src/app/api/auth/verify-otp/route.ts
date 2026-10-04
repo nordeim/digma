@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { setSessionCookie } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
-import { bodySizeRejected } from "@/lib/validation";
+import { readBoundedJson } from "@/lib/validation";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -30,11 +30,11 @@ export async function POST(request: NextRequest) {
   // guard reaches every request.json() site — App Router handlers
   // ship no default body-size cap, so the per-field caps only bound
   // what SURVIVES the parse; this bounds the parse itself.
-  if (bodySizeRejected(request.headers.get("content-length"))) {
+  const parsed = await readBoundedJson(request);
+  if (parsed.tooLarge) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
-
-  const body = await request.json().catch(() => null);
+  const body = parsed.value;
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const code = typeof body?.code === "string" ? body.code.trim() : "";
 
@@ -153,7 +153,13 @@ export async function POST(request: NextRequest) {
   // returned undefined (an empty 200). The vanished-user race family's
   // own form answers here: the user row the handler read at the top can
   // only be gone through an out-of-band DB mutation mid-request (no
-  // user-delete endpoint exists), and the family's every sibling
-  // answers 404 through the envelope.
+  // user-delete endpoint exists). Session 75 (S75-G / B75-F4) corrected
+  // the earlier claim that the whole family uniformly answers with the
+  // NOT_FOUND status: the SAME handler's count===1 re-select above
+  // answers its own vanished-user race with the no-enumeration 400
+  // (the verify flow's deliberate form: the caller already submitted
+  // the email + code, and the message is the flow's own); THIS terminal
+  // closes only the impossible-count fall-through, answering the
+  // envelope instead of an empty 200.
   return fail("NOT_FOUND", "User not found", 404);
 }

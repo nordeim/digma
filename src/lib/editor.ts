@@ -176,8 +176,13 @@ export type ProjectDTO = {
 // chain. NOT shipped: name (frames render no thumbnail label, RA-19),
 // locked (thumbnails render locked elements — visible is the only
 // filter), sortOrder (the array IS the order), timestamps, and the dead
-// columns S70-B dropped.
-export type ThumbnailElementDTO = Omit<DesignElementDTO, "name" | "locked" | "sortOrder">;
+// columns S70-B dropped. Session 75 (S75-C / B75-F2): projectId joins
+// the Omit list — the SELECT never ships the column (the row already
+// rides inside its project's response), so the TYPE promising it was a
+// type/wire divergence: a future consumer trusting the declared shape
+// would read undefined. The Omit set and the SELECT's omission set are
+// now the same set (pinned by tests/server-lows-s75.test.ts).
+export type ThumbnailElementDTO = Omit<DesignElementDTO, "name" | "locked" | "sortOrder" | "projectId">;
 
 /** The list-family project shape: the project fields + the projected
  * (bounded) element rows. The DETAIL route (GET /api/projects/[id] — the

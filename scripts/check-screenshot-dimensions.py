@@ -415,6 +415,15 @@ S84.update({
     "probe-05-rot90-crop-3x": (540, 660),
 })
 
+# Session 75 (the 51st reference audit): the s85 evidence set mirrors the
+# s84 form (the standing ref + clone families) WITHOUT the probe family
+# (the rotated-resize question is CLOSED since session 74) + the session's
+# own clone-21 (the S75-E mobile panel-mount gating evidence at 390x844).
+S85 = dict(S83)
+S85.update({
+    "clone-21-mobile-panel-gating": (390, 844),
+})
+
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -440,6 +449,8 @@ def expected_for(name: str):
         return S83.get(Path(name).stem)
     if name.startswith("ref-audit-s84/"):
         return S84.get(Path(name).stem)
+    if name.startswith("ref-audit-s85/"):
+        return S85.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -503,6 +514,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s82").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s83").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s84").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s85").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

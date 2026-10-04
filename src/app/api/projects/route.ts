@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
-import { bodySizeRejected, clampColor, clampTemplate, PROJECT_LIMIT } from "@/lib/validation";
+import { readBoundedJson, clampColor, clampTemplate, PROJECT_LIMIT } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -53,11 +53,11 @@ export async function POST(request: NextRequest) {
   // guard reaches every request.json() site — App Router handlers
   // ship no default body-size cap, so the per-field caps only bound
   // what SURVIVES the parse; this bounds the parse itself.
-  if (bodySizeRejected(request.headers.get("content-length"))) {
+  const parsed = await readBoundedJson(request);
+  if (parsed.tooLarge) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
-
-  const body = await request.json().catch(() => null);
+  const body = parsed.value;
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const description = typeof body?.description === "string" ? body.description.trim().slice(0, 500) : null;
   const template = clampTemplate(typeof body?.template === "string" ? body.template : "blank");
