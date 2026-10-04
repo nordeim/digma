@@ -396,6 +396,10 @@ S81 = {
 # Session 72 (the twentieth audit's evidence set — the S82 mapping): the
 # same families as S81 (the s72 capture re-verifies every standing shot).
 S82 = dict(S81)
+# Session 73 (the 49th reference audit): the s83 evidence set mirrors the
+# s82 form (ref-00/ref-03/ref-04 desktop 1440x900, ref-01/ref-02 mobile
+# 390x844).
+S83 = dict(S82)
 
 
 def png_size(path: Path):
@@ -418,6 +422,8 @@ def expected_for(name: str):
         return S81.get(Path(name).stem)
     if name.startswith("ref-audit-s82/"):
         return S82.get(Path(name).stem)
+    if name.startswith("ref-audit-s83/"):
+        return S83.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -479,6 +485,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s80").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s81").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s82").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s83").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

@@ -60,8 +60,13 @@ describe("the verify-otp atomic success path (S70-D / L-A4)", () => {
     // THE FIX PIN: the "N attempts remaining" message derives from the
     // post-increment attempts, not the pre-read value (a concurrent
     // attempt made the pre-read display lie).
-    const wrongIdx = route.indexOf("if (user.verifyCode !== code");
-    const wrong = route.slice(wrongIdx, wrongIdx + 2000);
+    // Session 73 (S73-H / B-F6) contract change: the half-dead
+    // `user.verifyCode !== code ||` disjunct died (reaching the branch
+    // implies the atomic update matched zero rows) — the locator
+    // re-anchors onto the live condition (the window widened for the
+    // S73-H comment block that now sits inside it).
+    const wrongIdx = route.indexOf("if (verifiedResult.count === 0)");
+    const wrong = route.slice(wrongIdx, wrongIdx + 3000);
     expect(wrong).toMatch(/const fresh = await db\.user\.findUnique/);
     expect(wrong).toMatch(/verifyAttempts: true/);
     expect(wrong).toMatch(/fresh\?\.verifyAttempts/);

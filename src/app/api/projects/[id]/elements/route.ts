@@ -210,7 +210,16 @@ export async function PUT(request: NextRequest, { params }: Params) {
         where: { projectId: id },
         orderBy: { sortOrder: "asc" },
       });
-    });
+    }, { timeout: 30_000 });
+    // Session 73 (S73-C — B-F2): the replace transaction deletes and
+    // recreates up to ELEMENT_LIMIT rows — a legitimate ~30 MB of
+    // fillImage data-URLs under the 32 MB body cap. Prisma's DEFAULT
+    // interactive-transaction timeout is 5s; a max-ceiling save on a
+    // slow self-hosted disk (the documented deploy posture) can exceed
+    // it, and the P2028-family abort matches neither P2025 nor P2003 —
+    // it would rethrow through the catch below as an unstructured 500,
+    // exactly the no-bare-throw family this route's own comments
+    // enforce. 30s covers the documented worst case with margin.
     return ok({ elements });
   } catch (error) {
     if (

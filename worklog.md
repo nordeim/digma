@@ -839,3 +839,103 @@ Stage Summary:
     Toaster above the presentation; the elements POST P2003 envelope + the login timing equalizer; the honesty batch (the ninth clampText site + the comments +
     the PAD riders + the rotation-scope correction); and the five TOCTOU ceilings transactional; gate green at 692 unit / 58 smoke / 240 e2e; mobile nav 9/9 the
     49th consecutive session; the deferred queue documented in docs/remediation-plan-session72.md
+
+---
+Task ID: digma-s73-a
+Agent: Auditor A (fresh-eyes client-layer audit)
+Task: The 21st Mode C audit — client layer (editor core + views)
+
+Work Log:
+- Read the mandated docs (AGENTS.md/CLAUDE.md contracts via cut-truncated reads, worklog tail-80) then full-file read every in-scope client file: editor-store.ts, canvas.tsx, editor-view.tsx (1623 lines), properties-panel.tsx (1439), layers-panel.tsx, ai-assistant.tsx, toolbar.tsx, components-panel.tsx, project-card.tsx, recent-view.tsx, dashboard-view.tsx, teams-view.tsx, app-header.tsx, login-screen.tsx, reset-password-screen.tsx, logo.tsx, ui/toaster.tsx + sheet.tsx + dropdown-menu.tsx, hooks/use-toast.ts, lib/call.ts + lib/api.ts, the client-consumed lib seams (editor.ts, export-png.ts text branch, validation.ts, greeting.ts, team.ts), and all 8 app-router page files; src verified clean vs HEAD (383aacc)
+- Cross-checked the documented contracts one by one (gesture seam, autosave machine, pointer wall, TOOL_SHORTCUTS single-source, memoized CanvasElement, zoom clamp, name-sort descending, toast globalThis store, Tailwind v4 CSS-first, z-[300]/z-[200], the S72 fixes) and deepened all five DEFERRED-QUEUE items with exact file:line evidence
+- React-19 discipline sweep (21 effects: zero synchronous setState-in-effect bodies; render-time compare-and-adjust used at all six sanctioned sites), XSS surface sweep (zero dangerouslySetInnerHTML/innerHTML in src), v3-opacity sweep (zero dead utilities), use-client sweep (15/15 interactive files)
+
+Stage Summary:
+- NEW: 0 Critical / 0 High / 2 Medium / 1 Low / 3 Informational
+  - A-F1 (Medium, editor-view.tsx:793-795): PresentOverlay drops the canvas's textAlign→justifyContent mapping — centered/right text renders LEFT-aligned in presentation mode (the canvas maps it visibly at canvas.tsx:683-685, the SVG export maps it to text-anchor at export-png.ts:185-187 and is unit-pinned; the present branch sets display:flex + textAlign only, where textAlign has no visible effect on an anonymous content-sized flex item); the S58-E comment at :781-787 claims the "EXACT contract"
+  - A-F2 (Low, project-card.tsx:179-181): CanvasThumbnail carries the same missing mapping — card thumbnails render centered text left-aligned (the third divergent render site of the same model field)
+  - A-F3 (Low, Documentation, editor-view.tsx:783 + tests/present-text.test.ts:10/16/48): the cited "canvasStyleFor in src/lib/editor.ts" seam does not exist (grep: only the comment mention) — the preservation reference is the inline CanvasElement chain + the TEST-ONLY elementToStyle; a phantom seam citation in the honesty-doctrine repo
+  - A-F4 (Informational, project-card.tsx:361-364): dead `||` fallback in openedLabel (toLocaleDateString never returns ""; a corrupt lastOpenedAt renders "Opened Invalid Date")
+  - A-F5 (Informational, canvas.tsx:89-93/471-481): O(n·m) selectedIds.includes scans in the Canvas render path (up to ~4M per drag tick at ELEMENT_LIMIT with a full selection; the layers panel already builds a Set)
+  - A-F6 (Informational, layers-panel.tsx:107-138): layer drag-reorder is pointer-only (no keyboard path; reference-parity softener — its rows are draggable only)
+- DEFERRED-QUEUE deepened (not new): (1) name-cap asymmetry — the UI is coherent (rename input maxLength=120 at project-card.tsx:291, create dialog :673, layer rename maxLength=80 at layers-panel.tsx:182 matching the row-builder clamp; the POST-rejects/PATCH-truncates asymmetry at projects/route.ts:55 vs [id]/route.ts:47 is scriptable-only); (2) rotated-resize — the handles render on the rotation-aware AABB (canvas.tsx:484-492) but the drag math (canvas.tsx:257-297) applies world-axis deltas to the LOCAL box anchored at (el.x, el.y) with rotation entirely absent — at 90° the east handle sits at world x=el.x (the local TOP edge) and dragging right grows the local width, which renders DOWNWARD: the wrong axis grows, the anchor corner is wrong, and the AABB east edge is pinned; at 45° the element grows diagonally while the handle tracks the world x-axis and drifts off the pointer; the opposite-world-corner-fixed invariant is unimplementable without adjusting x/y; (3) fillImageThumb — the upload seam (properties-panel.tsx:730-762) stores the FULL data URL (~683k chars for a 500KB file, just under the 700k server cap) with no downscale, so every autosave PUT (editor-view.tsx:219-222), detail GET, and list GET (THUMBNAIL_ELEMENT_SELECT ships fillImage, editor.ts:203) re-ships the bytes; (4) hidden-panel render cost — the panels are display:none-but-mounted below md/lg (editor-view.tsx:1430/1437/1573) while LayersPanel (layers-panel.tsx:27-28) and PropertiesPanel (properties-panel.tsx:1385-1386) subscribe to elements+selectedIds and re-render their full trees on every drag tick; (5) marquee×locked/shift-click asymmetries confirmed informational (canvas.tsx:333-334/166 vs layers-panel.tsx:50-54 vs editor-store.ts:216)
+- VERIFIED CLEAN: the S72-A rename unwrap + the Toaster z-[300] fix hold in source; the memoized CanvasElement contract (undefined-zoom discrimination); the globalThis toast store with useSyncExternalStore + stable SSR snapshot; zero setState-in-effect across 21 effects; zero v3 opacity utilities; no tailwind.config.*; use client on 15/15 interactive files; the gesture-seam directions + the sliderGesture ownership/foreign-ride guards + the four unmount resets + the load-boundary heal; the autosave machine (serialized flushes, elements+backgroundColor reference guard, gesture deferral, 401 terminal, Untitled adoption guard, pagehide Blob.size cap, S71-B same-reference soft-leave indicator); TOOL_SHORTCUTS single-source (toolbar + handler + dialog); the pointer wall (hit-test, marquee, keyboard Delete, AI delete); ELEMENT_LIMIT client ceiling with honest nulls + toasts; zoom [0.1,5] at all three seams; the S21-2 empty-draft guards at all inline number inputs; rangeFillPercent at all five --range-fill sites; the layers measured semantics (opacity lock, immediate trash, drop-time reorder index, Select All flip + 0/0 quirk); sortProjects descending name; safeFromUrl at both seams; the five-state auth card with inline alerts; router.push+refresh (no window.location); the call() seam with errorTitle/silent at all 14 sites; pages session-gated server-side with Suspense where useSearchParams; zero XSS surface; the AI 30s abort + live membership re-read + honest counts
+
+---
+Task ID: digma-s73-b
+Agent: Auditor B (fresh-eyes server/infra audit)
+Task: The 21st Mode C audit — server + lib/config/infra
+
+Work Log:
+- Contracts read first: AGENTS.md + CLAUDE.md (cut -c1-400), worklog tail (the session-72 entry), the PAD single-tenant/deferred sections, docs/remediation-plan-session72.md
+- Full-file reads of ALL 18 route files (ai-assistant, auth login/register/verify-otp/resend-otp/forgot-password/reset-password/logout/me, health, projects, projects/[id], duplicate, elements, stats, teams, teams/[id], members), ALL 14 src/lib files (api, auth, call, db, db-path, editor, export-png, greeting, password, rate-limit, team, validation, ai-assistant, utils), prisma/schema.prisma + prisma/seed.ts, the 9 configs (next/vitest/playwright/eslint/tsconfig/package.json/postcss/proxy/globals.css), the e2e global-setup + backdate amendment, the smoke-test.sh header, scripts/check-db-contract.ts
+- Grep-verified the cross-cutting invariants: requireSession first-line on all 13 protected handlers; bodySizeRejected before every one of the 14 request.json() sites; the S72-E transactional ceilings intact at all five create sites; the S71-C/S72-C/S70-D/S67-A seams intact in source; the client AI-apply site's locked-id guard (the wall holds for BOTH operation sources)
+- Live read-only probes (node + bun, count-only queries): the Prisma 6.19 runtime resolves relative file: URLs against the SCHEMA directory, NOT the process CWD — disproving db-path.ts's header mechanism claim from /tmp and src/ cwds (B-F5)
+- Confirmed the elements-route client surface is PUT-only and duplicate has zero client consumers (the deferred #6 family), and that the list GET's ?template= filter has zero consumers repo-wide (?search= is e2e-infra-only)
+
+Stage Summary:
+- 0 Critical / 0 High / 4 Low / 5 Informational; 7 deferred-queue items deepened with file:line evidence and quantification
+- B-F1 (Low): duplicate's post-commit re-read can answer 201 { project: null } — the one envelope-race gap in the family (duplicate/route.ts:72-79)
+- B-F2 (Low): the row-heavy interactive transactions (elements PUT, duplicate copy) rely on Prisma's default 5s timeout — a max-ceiling PUT can abort with a non-P2025/P2003 error escaping the envelope as a bare 500 (elements/route.ts:200)
+- B-F3 (Low): smoke-test.sh has no mechanical DATABASE_URL guard — the documented #1 trap stays operator-discipline-only; a parent URL pointing at a second seeded checkout false-greens the gate (smoke-test.sh:1-27; check-db-contract.ts:6 the sibling)
+- B-F4 (Low): residual timing oracles on forgot-password (update-on-known) and resend-otp (update-on-known-unverified) — the S72-C login family's siblings; register's explicit 409 mitigates the marginal leak
+- B-F5 (Info): db-path.ts:7-12 + the AGENTS bullet misattribute the standalone trap to CWD/chdir — live probes prove schema-directory anchoring (.env.example's wording is the accurate one; the fix and tests are unaffected)
+- B-F6 (Info): verify-otp:107's half-dead condition + the structural fall-through
+- B-F7 (Info): the list GET's ?template= param has zero consumers; ?search= is e2e-only (the S72-D zero-consumer family extension); SQLite contains is case-sensitive and unpinned
+- B-F8 (Info): the projects POST response is the one list-family reply off the thumbnail projection (include elements:true, always []) and the client comment claims "no element include"
+- B-F9 (Info): check-db-contract.ts validates 4 of the pristine contract's 5 counts (members=3 unchecked)
+- DEFERRED-QUEUE deepened: D-2 quantified (500 x ~32MB-per-project ceiling ≈ 16GB theoretical; one image fill per project = ~342MB per Dashboard load; the S70-C projection still ships fillImage — the payload risk for image-heavy boards is ~unchanged); D-1 recommendation (align PATCH name to the POST's explicit 400); D-4 quantified (the sweep is O(n) per request — unamortized — so rotated-key growth is O(n^2) CPU total); D-3/D-5/D-6/D-7 posture-verified with exact lines
+- Verified clean: session gating on all 13 protected handlers, the 14/14 parse-guard coverage, the envelope family + the documented raw 429 family, limiter-first on the six public auth routes + the dedicated ai: bucket, the tokenVersion eviction chain, timingSafeEqual on both crypto comparisons, the SameSite=Lax+JSON CSRF posture, the safeFromUrl redirect guard, export-png's XML escaping, clampFillImage's allowlist, the playwright env-override ordering, the schema's composite index + cascades, the seed's FK-safe wipe order
+
+---
+Task ID: digma-session-73
+Agent: Super Z (main agent)
+Task: The operator's session-103/104-cycle directive — refresh the workspace, re-validate against the mandated docs, the 49th reference audit against
+    https://digma-371dfd0d.base44.app/ with the mobile-nav focus, the twenty-first Mode C code audit with the repo skills, TDD remediation, the standing gates,
+    the screenshots, the .env.example, aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- Workspace refreshed (git pull — the sandbox was NOT reset; the repo at the operator's session-104 log push 383aacc); the mandated docs reviewed (README/AGENTS/
+    CLAUDE/PAD v1.51.0, digma_SKILL v1.50.0, session_103/session_104/remediation-plan-session72/worklog tail, the skills catalog); all five S72 seams verified intact
+    in source; .env verified with the mandated DATABASE_URL="file:../db/custom.db" + db/ at the repo root (the pristine 1/2/6/1/3 contract); the parent-shell
+    DATABASE_URL trap's unset discipline maintained
+- BASELINE GATE RE-PROVEN GREEN — the prior session's claims HELD this cycle (the F59 corollary satisfied): lint/typecheck/692 unit/110 files/build/58 smoke/the
+    full e2e suite in chunks — zero regressions, no shipped regression to catch
+- 49th reference audit (agent-browser, desktop 1440x900 + mobile 390x844, the real CDP login): no drift, no new gaps — evidence docs/screenshots/ref-audit-s83/
+    (the editor probe needed the project-card ANCHOR retry — the standing first-attempt miss family); mobile nav 9/9 the 50th consecutive session
+    (scripts/verify-nav-s73.sh) + re-verified on the final S73 build
+- Twenty-first Mode C audit (the lead's hunk-by-hunk + two fresh-eyes subagents + the lead's source re-verification of every chosen finding): 0 Critical / 0 High /
+    2 Medium (the A-F1 present-mode text alignment + the A-F2 thumbnail twin) / 5 Low / 8 Informational; the deferred queue deepened (DQ-1 the name-cap,
+    DQ-2 the unbounded aggregate quantified at ~342MB-per-Dashboard-load worst case, DQ-3 the downscale); docs/remediation-plan-session73.md written and validated
+- TDD: unit RED 24 defect pins across three new spec files -> GREEN 724 = 692 + 32 (one standing pin legitimately re-anchored onto the restructured verify-otp
+    contract); e2e RED the two new defect checks (the present-mode justify-content normal; the 2400px image persisting) -> GREEN 243 = 240 + 3; smoke unchanged 58
+- S73-A: the textAlignToJustify seam consumed by all three text render sites (the canvas fold + the PresentOverlay + the CanvasThumbnail) + the phantom
+    canvasStyleFor citation retired
+- S73-B: the duplicate's post-commit re-read null guard (the 404 envelope)
+- S73-C: the elements PUT + duplicate transactions at { timeout: 30_000 } (the row-heavy worst case vs the default 5s P2028 escape)
+- S73-D: the smoke script's DATABASE_URL refusal mechanism (two-way proven) + check-db-contract's fifth count (members === 3)
+- S73-E: the name-cap symmetry (the PATCH carries the POST's exact reject shape; descriptions stay truncate-at-500)
+- S73-F: the list GET's take: PROJECT_LIMIT + the upload downscale (downscaleDataUrl + the pure FILL_IMAGE_MAX_DIM/shouldDownscale/downscaledDimensions helpers
+    + the min-length guard)
+- S73-G: the rotated-resize DEFERRED with the design space closed (both candidate semantics fail a hard requirement — the 90° perpendicular-collapse vs the
+    r=0 semantic change; the next cycle's reference probe decides)
+- S73-H: the honesty batch (the db-path schema-anchoring mechanism correction across code/AGENTS/skill, the verify-otp live condition, the POST projection
+    include + comment, the openedLabel NaN guard, the canvas Set membership, the ?template= note, the PAD's B-F4 deviation row)
+- En-route (the F60 lessons): the phantom-citation mask, the render-surface divergence class, the design-space-before-implementation discipline, the
+    discipline-becomes-mechanism pattern; corollaries: the comment-literal FIFTH appearance, the sliced-spec window discipline
+- Full gate green: lint, typecheck, 724/724 unit / 113 files, build, 58/58 smoke, 243/243 e2e — zero regressions (the full e2e re-run in chunks)
+- Live verification: the mobile nav 9/9 on the final build; the capture (scripts/capture-session73.sh): the standard 32 + the ref-audit-s83 evidence set
+    (5 reference + 10 clone) + the standing inline checks re-verified + THREE NEW inline checks (the present-mode alignment center; the card-thumbnail alignment
+    center; the name-cap PATCH 400) — dimension-checked 280/280 (the checker extended), VLM 21/21; the DB re-seeded pristine
+- .env.example verified unchanged (the seven digma env reads all covered — the slices add no env vars)
+- Docs aligned: PAD v1.52.0 (header + revision block + 7.1 table + the deviation row), digma_SKILL v1.51.0 (lesson F60 + the chdir-theory retirement),
+    AGENTS/CLAUDE/README counts + the session-73 seam bullet + the mechanism corrections, remediation-plan-session73 execution status, docs/session_105.md,
+    the repo worklog entry
+- Committed on main and pushed via docs/ssh_git_wrapper_v3.py; remote refs/heads/main == local HEAD verified; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 73 fully delivered and pushed to main: the headline render-surface parity fix (centered text rendering centered in Present mode AND in every card
+    thumbnail through the one textAlignToJustify seam — a divergence masked 15 sessions by a phantom citation), the duplicate guard, the transaction timeouts,
+    the smoke-gate mechanism, the name-cap symmetry, the list bound + the upload downscale, the honesty batch, and the rotated-resize design-space closure;
+    gate green at 724 unit / 58 smoke / 243 e2e; mobile nav 9/9 the 50th consecutive session; the deferred queue documented in
+    docs/remediation-plan-session73.md

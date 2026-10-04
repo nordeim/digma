@@ -44,8 +44,19 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const data: Record<string, unknown> = {};
 
   if (body?.name !== undefined) {
-    const name = clampText(body.name, 120);
+    // Session 73 (S73-E — the name-cap asymmetry closed, the deferred
+    // DQ-1): the create POST REJECTS names over 120 chars with a pinned
+    // 400 ("Project name is too long (max 120)") while this PATCH
+    // silently truncated through clampText — a scripted 200-char rename
+    // landed truncated while the POST taught consumers to expect
+    // rejection. Explicit-over-silent (the hand-rolled validation
+    // doctrine: names are identity — reject; descriptions are prose —
+    // truncate, the description branches below): the PATCH now carries
+    // the POST's EXACT validation shape. Unreachable from the app —
+    // both rename surfaces carry the UI's maxLength=120.
+    const name = typeof body.name === "string" ? body.name.trim() : "";
     if (!name) return fail("VALIDATION", "Project name is required", 400);
+    if (name.length > 120) return fail("VALIDATION", "Project name is too long (max 120)", 400);
     data.name = name;
   }
   if (body?.description !== undefined) {

@@ -212,7 +212,7 @@ test.describe("session 58 — the PresentOverlay text fidelity (S58-E / B-M-1)",
 
     // THE RED PIN: pre-fix the present overlay carried no whiteSpace —
     // HTML collapsed the seeded Headline's newline into one overflowing
-    // line while the canvas renders it pre-wrap (canvasStyleFor).
+    // line while the canvas renders it pre-wrap (the inline text chain).
     const measured = await overlay.evaluate((root) => {
       // The INNERMOST div carrying the Headline's text: ancestors contain
       // the text via propagation and precede descendants in document

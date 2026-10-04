@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useEditorStore } from "./editor-store";
 import { resetSliderGesture } from "./properties-panel";
-import { boundsOf, canvasFontFamily, clampZoom, ELEMENT_LIMIT, fillPaintFor, isTypingTarget, type DesignElementDTO, type EditorTool } from "@/lib/editor";
+import { boundsOf, canvasFontFamily, clampZoom, ELEMENT_LIMIT, fillPaintFor, isTypingTarget, textAlignToJustify, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
 // ---------------------------------------------------------------------------
 // The canvas: a DOM-element canvas (the reference's approach — absolutely
@@ -86,9 +86,16 @@ export function Canvas() {
   const panY = useEditorStore((s) => s.panY);
   const backgroundColor = useEditorStore((s) => s.backgroundColor);
 
+  // Session 73 (S73-H — A-F5): membership through a Set — the
+  // elements.filter(selectedIds.includes) + per-element selected prop
+  // forms were O(n·m) scans on EVERY drag tick (up to ~4M includes at
+  // ELEMENT_LIMIT with a large selection, all before the memoized
+  // children bail out). The layers panel already built a Set for the
+  // same purpose; the canvas joins it.
+  const selectedIdSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
   const selected = React.useMemo(
-    () => elements.filter((el) => selectedIds.includes(el.id)),
-    [elements, selectedIds],
+    () => elements.filter((el) => selectedIdSet.has(el.id)),
+    [elements, selectedIdSet],
   );
   const selectionBounds = React.useMemo(() => boundsOf(selected), [selected]);
 
@@ -472,7 +479,7 @@ export function Canvas() {
           <MemoizedCanvasElement
             key={el.id}
             element={el}
-            selected={selectedIds.includes(el.id)}
+            selected={selectedIdSet.has(el.id)}
             // Only frames consume the zoom (the label's counter-scale) —
             // undefined for every other type keeps their renders memoized
             // across zoom changes.
@@ -678,11 +685,12 @@ function CanvasElement({
     // picking center changed its canvas text's computed text-align). The
     // flex row maps the alignment to justify-content so it is VISIBLE,
     // and the text-align itself stays measurable on the computed style.
+    // Session 73 (S73-A): the mapping folds into the ONE seam every text
+    // render site consumes — the PresentOverlay and the CanvasThumbnail
+    // render the SAME justification through textAlignToJustify.
     const align = element.textAlign ?? "left";
     style.textAlign = align as React.CSSProperties["textAlign"];
-    style.justifyContent = (
-      align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start"
-    ) as React.CSSProperties["justifyContent"];
+    style.justifyContent = textAlignToJustify(element.textAlign);
     style.whiteSpace = "pre-wrap";
     style.overflow = "hidden";
   }

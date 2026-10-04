@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
-  if (user.verifyCode !== code || verifiedResult.count === 0) {
+  if (verifiedResult.count === 0) {
     // Session 62 (S62-E / B-M2): the counter is a conditional
     // updateMany — the pre-fix read-modify-write (the findUnique read
     // above, then this update) UNDERCOUNTED under concurrency: N
@@ -113,6 +113,13 @@ export async function POST(request: NextRequest) {
     // concurrent guess loop through. The conditional increment is
     // atomic at the database; count === 0 means the ceiling was
     // already reached (the exhausted 429).
+    //
+    // Session 73 (S73-H — B-F6): the half-dead first disjunct died —
+    // reaching this line implies the atomic update matched ZERO rows
+    // (the count === 1 path returned above), so the old
+    // `user.verifyCode !== code ||` guard was always true here and
+    // TypeScript could not prove the function exhaustive. The live
+    // condition stands alone.
     const result = await db.user.updateMany({
       where: { id: user.id, verifyAttempts: { lt: MAX_VERIFY_ATTEMPTS } },
       data: { verifyAttempts: { increment: 1 } },

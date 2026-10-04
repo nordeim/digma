@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 //
 // The present-mode element style carried NO whiteSpace and NO overflow
 // (and fontSize ?? undefined instead of the canvas's ?? 16), while the
-// canvas seam (canvasStyleFor in src/lib/editor.ts) renders text with
+// canvas text chain (the inline CanvasElement style block + the shared
+// textAlignToJustify seam, src/lib/editor.ts) renders text with
 // whiteSpace: "pre-wrap" + overflow: "hidden" + fontSize ?? 16 +
 // fontWeight ?? "500". Multi-line text collapsed to one overflowing line
 // in Present mode — the seeded project's own Headline
@@ -45,7 +46,7 @@ describe("the PresentOverlay text fidelity (session 58, S58-E / B-M-1)", () => {
     );
   });
 
-  it("the present text defaults fontSize 16 and fontWeight 500 (matching canvasStyleFor)", () => {
+  it("the present text defaults fontSize 16 and fontWeight 500 (the canvas text chain contract)", () => {
     expect(presentStyle![0]).toMatch(
       /fontSize: el\.type === "text" \? el\.fontSize \?\? 16 : undefined/,
     );

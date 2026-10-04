@@ -5,11 +5,18 @@ import { fileURLToPath } from "node:url";
 // The SQLite URL contract (pinned by tests/db-path.test.ts):
 //
 // The Prisma CLI resolves RELATIVE `file:` URLs against prisma/schema.prisma
-// (the file that declares the datasource). The runtime engine, however,
-// anchors them against the process CWD — and Next's standalone server.js
-// chdirs into .next/standalone before any module executes. Without
-// normalization the CLI and the server can open DIFFERENT database files
-// ("Error code 14: Unable to open the database file").
+// (the file that declares the datasource). The Prisma 6 RUNTIME engine
+// anchors them the same way — against the schema directory the client was
+// GENERATED against, NOT the process working directory (session 73's live
+// probes: from cwd=/tmp, a relative file: URL still resolves beside the
+// schema; the engine ignores the process CWD entirely). The standalone
+// trap is real for a different reason: `next build` TRACES a copy of the
+// generated client into .next/standalone/prisma/ — the traced schema
+// relocates the engine's anchor to .next/standalone/, so a relative URL
+// would resolve to .next/standalone/db/… ("Error code 14: Unable to open
+// the database file"). The process.chdir(__dirname) into .next/standalone
+// is REAL but causally irrelevant — the wrong mechanism steered path
+// debugging toward chdir-based non-fixes for 59 sessions.
 //
 // Resolution rule: a relative `file:` URL resolves against the first
 // "anchor" directory that contains prisma/schema.prisma — the same rule the

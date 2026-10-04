@@ -45,6 +45,7 @@ import {
   boundsOf,
   canvasFontFamily,
   fillPaintFor,
+  textAlignToJustify,
   thumbnailFit,
   type DesignElementDTO,
   type ProjectDTO,
@@ -179,6 +180,15 @@ export function CanvasThumbnail({
                   display: el.type === "text" ? "flex" : undefined,
                   alignItems: el.type === "text" ? "center" : undefined,
                   textAlign: (el.type === "text" ? el.textAlign ?? "left" : undefined) as React.CSSProperties["textAlign"],
+                  // Session 73 (S73-A — A-F2): the canvas maps the
+                  // alignment onto justify-content so it is VISIBLE — the
+                  // thumbnail renders the same mapping through the shared
+                  // seam (pre-fix every Dashboard/Recent card showed
+                  // centered text LEFT-ALIGNED while the canvas and both
+                  // export formats rendered it centered).
+                  justifyContent: (el.type === "text"
+                    ? textAlignToJustify(el.textAlign)
+                    : undefined) as React.CSSProperties["justifyContent"],
                   whiteSpace: el.type === "text" ? "pre-wrap" : undefined,
                   overflow: "hidden",
                 }}
@@ -358,10 +368,15 @@ export function ProjectCard({
 
   const elements = project.elements ?? [];
   const opened = new Date(project.lastOpenedAt);
-  const openedLabel = `Opened ${
-    opened.toLocaleDateString("en-US", { month: "short", day: "numeric" }) ||
-    opened.toLocaleDateString()
-  }`;
+  // Session 73 (S73-H — A-F4): the dead `|| toLocaleDateString()` twin
+  // died — a Date formatted through toLocaleDateString NEVER returns ""
+  // (an invalid date yields the truthy "Invalid Date"), so the fallback
+  // was unreachable while a corrupt lastOpenedAt still rendered
+  // "Opened Invalid Date". The honest guard: a NaN timestamp renders the
+  // bare label, never the garbage form.
+  const openedLabel = Number.isNaN(opened.getTime())
+    ? "Opened —"
+    : `Opened ${opened.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 
   function openProject() {
     // Touch lastOpenedAt so "Continue Working" and Recent reorder.
@@ -616,8 +631,11 @@ export function CreateProjectDialog({
       { errorTitle: "Could not create the project" },
     );
     if (data) {
-      // Session 70 (S70-C): the created project (no element include on
-      // the POST) flows into the summary-typed list state.
+      // Session 70 (S70-C): the created project flows into the
+      // summary-typed list state — the POST ships the same bounded
+      // thumbnail projection as the list family since session 73 (a
+      // create seeds no elements; the include form is the S73-H
+      // honesty rider).
       onCreated(data.project);
       onOpenChange(false);
       reset();

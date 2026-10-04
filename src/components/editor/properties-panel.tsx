@@ -13,9 +13,11 @@ import {
   addGradientStop,
   cornerRadiusMax,
   defaultGradient,
+  downscaledDimensions,
   parseGradient,
   rangeFillPercent,
   removeGradientStop,
+  shouldDownscale,
   type DesignElementDTO,
   type GradientFill,
 } from "@/lib/editor";
@@ -709,6 +711,44 @@ function GradientPanel({
 }
 
 /**
+ * Session 73 (S73-F — the deferred DQ-3): the DOM half of the upload
+ * downscale. Loads the data URL's intrinsic dimensions; an image within
+ * the FILL_IMAGE_MAX_DIM bound (or an SVG with no intrinsic size) passes
+ * through untouched; an oversized one is drawn onto an offscreen canvas
+ * at the pure helpers' longest-side fit and re-encoded (JPEG sources stay
+ * JPEG — photos have no alpha and re-encode far smaller; every other
+ * family re-encodes PNG, preserving alpha). The SHRUNK result wins only
+ * when it is actually SHORTER than the original — a re-encode that grew
+ * the payload keeps the original, so the stored bytes never get worse.
+ * A decode failure rejects and the caller degrades to the raw URL (the
+ * upload's own contract — never a broken fill).
+ */
+async function downscaleDataUrl(dataUrl: string): Promise<string> {
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("decode failed"));
+    image.src = dataUrl;
+  });
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  // No intrinsic size (some SVGs) or already within the bound — the
+  // original is the honest stored form.
+  if (w <= 0 || h <= 0 || !shouldDownscale(w, h)) return dataUrl;
+  const { width, height } = downscaledDimensions(w, h);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, width, height);
+  const isJpeg = /^data:image\/jpe?g/.test(dataUrl);
+  const shrunk = isJpeg ? canvas.toDataURL("image/jpeg", 0.92) : canvas.toDataURL("image/png");
+  // The min-length guard: the downscale never makes the stored bytes worse.
+  return shrunk.length < dataUrl.length ? shrunk : dataUrl;
+}
+
+/**
  * The Image tab's editor (session 41, RA-54) — the reference's measured
  * dropzone chrome (dashed border, the hidden file input, the lucide-image
  * glyph, "Click to upload image", "PNG, JPG, SVG"). The clone stores the
@@ -740,7 +780,6 @@ function ImagePanel({
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = String(reader.result ?? "");
-      setBusy(false);
       // Session 56 (S56-E — the Mode C audit's M-4): accept exactly the
       // server's five families. The old bare startsWith("data:image/")
       // let a BMP/AVIF/ICO fill paint client-side, then the first
@@ -749,8 +788,26 @@ function ImagePanel({
       // vanished ~1s later with no toast. Rejecting at read time gives
       // the EXISTING "Unsupported image" toast instead.
       if (/^data:image\/(png|jpe?g|gif|svg\+xml|webp);base64,/.test(dataUrl)) {
-        update({ fillImage: dataUrl, fillGradient: null, fillImageFit: null });
+        // Session 73 (S73-F — the deferred DQ-3): dimension-bound the
+        // STORED bytes before the update lands. The raw data URL rode
+        // every autosave PUT / detail GET / list GET at the file's full
+        // intrinsic size; the downscale fits oversized dimensions to
+        // <=1200 on the longest side (the pure helpers in
+        // src/lib/editor.ts) and keeps whichever encoding is actually
+        // SHORTER (a re-encode that grew the payload never wins). A
+        // decode failure degrades to the original — the upload's own
+        // contract, never a broken fill.
+        downscaleDataUrl(dataUrl)
+          .then((stored) => {
+            setBusy(false);
+            update({ fillImage: stored, fillGradient: null, fillImageFit: null });
+          })
+          .catch(() => {
+            setBusy(false);
+            update({ fillImage: dataUrl, fillGradient: null, fillImageFit: null });
+          });
       } else {
+        setBusy(false);
         toast.show({ title: "Unsupported image", description: "PNG, JPG, GIF, WebP, or SVG images are supported." });
       }
     };

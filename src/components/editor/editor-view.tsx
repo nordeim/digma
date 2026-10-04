@@ -17,7 +17,7 @@ import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, fillPaintFor, isTypingTarget, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, fillPaintFor, isTypingTarget, textAlignToJustify, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
 import {
   EXPORT_BOARD_HEIGHT,
   EXPORT_BOARD_WIDTH,
@@ -779,8 +779,11 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                 borderRadius: el.type === "ellipse" ? "50%" : el.radius || undefined,
                 color: el.type === "text" ? el.fill ?? "#fff" : undefined,
                 // Session 58 (S58-E — the sixth audit's B-M-1): the text
-                // branch adopts the canvas seam's EXACT contract
-                // (canvasStyleFor): pre-wrap whitespace + clipped overflow +
+                // branch adopts the canvas text chain's EXACT contract
+                // (the inline CanvasElement style block in canvas.tsx +
+                // the shared textAlignToJustify seam — session 73's S73-A
+                // replaced the phantom-seam citation with the real one):
+                // pre-wrap whitespace + clipped overflow +
                 // the 16/500 defaults. Pre-fix the present mode collapsed
                 // multi-line text to one overflowing line — the seeded
                 // Headline's own "Design faster,\ntogether." was the live
@@ -793,6 +796,15 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                 display: el.type === "text" ? "flex" : undefined,
                 alignItems: el.type === "text" ? "center" : undefined,
                 textAlign: (el.type === "text" ? el.textAlign ?? "left" : undefined) as React.CSSProperties["textAlign"],
+                // Session 73 (S73-A — A-F1): the canvas maps the alignment
+                // onto justify-content so it is VISIBLE — the present
+                // branch carries the same mapping through the shared seam
+                // (pre-fix a content-sized flex text node ignored
+                // textAlign: centered text rendered LEFT-ALIGNED in
+                // presentation mode).
+                justifyContent: (el.type === "text"
+                  ? textAlignToJustify(el.textAlign)
+                  : undefined) as React.CSSProperties["justifyContent"],
               }}
             >
               {el.type === "text" ? el.text : null}

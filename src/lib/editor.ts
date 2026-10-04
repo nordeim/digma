@@ -412,6 +412,26 @@ export function canvasFontFamily(fontFamily?: string | null): string {
   return fontFamily && fontFamily !== "Inter" ? fontFamily : "Inter, sans-serif";
 }
 
+/** Session 73 (S73-A — the render-surface parity seam): the ONE mapping
+ * from a text element's stored textAlign onto the flex-row justification
+ * that makes the alignment VISIBLE. The canvas always carried it (the
+ * measured reference contract — its Text Align buttons flip the computed
+ * justify-content); the PresentOverlay and the CanvasThumbnail previously
+ * set display:flex + textAlign with NO justifyContent, so a content-sized
+ * flex text node ignored text-align and centered text rendered
+ * left-aligned in presentation mode and in every card thumbnail. Every
+ * text render site consumes this seam now (the S58-E "exact contract"
+ * citation finally names a seam that exists). */
+export function textAlignToJustify(
+  align: string | null | undefined,
+): "flex-start" | "center" | "flex-end" {
+  if (align === "center") return "center";
+  if (align === "right") return "flex-end";
+  // left, unset, and any unknown value degrade to the leading edge —
+  // the hand-rolled validation doctrine (never throw on foreign data).
+  return "flex-start";
+}
+
 /** TEST-ONLY reference-geometry contract (session 63, S63-G — the honest
  * status): the canvas re-implements this style chain inline at its render
  * site; this export exists so the unit suite pins the geometry the canvas
@@ -738,6 +758,37 @@ export function clampFillImageFit(value: unknown): "cover" | "contain" | "auto" 
  * parameterizes; the elements route owned both before the row-builder
  * dedup). */
 const FILL_IMAGE_MAX_CHARS = 700_000;
+
+/** Session 73 (S73-F — the deferred DQ-3): the client-side downscale
+ * bound. An image fill's stored data URL rides EVERY payload family —
+ * the 800ms-debounced autosave PUT (the full-list replace body), the
+ * detail GET, and the list GET (the thumbnail projection still ships
+ * fillImage; the thumbnail paint needs it). The upload seam downscales
+ * any image whose LONGEST side exceeds this bound before storing, so a
+ * 4000x3000 photo under the 500 KB file gate can no longer become a
+ * ~683k-char data URL that inflates every request the editor makes. */
+export const FILL_IMAGE_MAX_DIM = 1200;
+
+/** Whether an image's intrinsic dimensions exceed the stored bound. */
+export function shouldDownscale(width: number, height: number): boolean {
+  return width > FILL_IMAGE_MAX_DIM || height > FILL_IMAGE_MAX_DIM;
+}
+
+/** The longest-side fit: the longest dimension lands exactly at
+ * FILL_IMAGE_MAX_DIM and the aspect is preserved (a 4000x3000 photo fits
+ * to 1200x900). Dimensions already within the bound pass through
+ * unchanged; degenerate (<=0) dimensions pass through untouched — an SVG
+ * with no intrinsic size is the caller's no-op. */
+export function downscaledDimensions(
+  width: number,
+  height: number,
+): { width: number; height: number } {
+  if (width <= 0 || height <= 0) return { width, height };
+  const longest = Math.max(width, height);
+  if (longest <= FILL_IMAGE_MAX_DIM) return { width, height };
+  const k = FILL_IMAGE_MAX_DIM / longest;
+  return { width: Math.round(width * k), height: Math.round(height * k) };
+}
 
 /** The image-fill sanitize seam: only data-URLs of the five supported
  * raster/SVG families within the size cap pass (the autosave PUT carries

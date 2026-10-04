@@ -59,7 +59,13 @@ export async function POST(_request: NextRequest, { params }: Params) {
       });
     }
     return created;
-  });
+  }, { timeout: 30_000 });
+  // Session 73 (S73-C — B-F2): the copy transaction recreates up to
+  // ELEMENT_LIMIT full element rows; Prisma's default 5s interactive-
+  // transaction timeout can abort a max-ceiling copy on a slow
+  // self-hosted disk — the P2028-family escape would surface as an
+  // unstructured 500 outside the envelope. 30s covers the documented
+  // worst case (2000 rows under the 32 MB body cap) with margin.
   if (overCap) {
     return fail("VALIDATION", "Too many projects (max 500)", 400);
   }
@@ -76,5 +82,14 @@ export async function POST(_request: NextRequest, { params }: Params) {
     // column — the copy itself is lossless).
     include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
   });
+  // Session 73 (S73-B — B-F1): the one post-commit read left unguarded.
+  // A concurrent DELETE of the copy between the commit and this re-read
+  // previously answered `ok({ project: null }, 201)` — a success-status
+  // envelope with a null payload — while every sibling in the race-
+  // hygiene family (the PATCH/DELETE P2025 pair, the elements PUT/POST
+  // P2025/P2003 catches) answers 404 for a vanished row. The duplicate
+  // has no first-party consumer today, so the impact was API-consumer-
+  // only — but the envelope contract is uniform now.
+  if (!project) return fail("NOT_FOUND", "Project not found", 404);
   return ok({ project }, 201);
 }

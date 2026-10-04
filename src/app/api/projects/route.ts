@@ -6,7 +6,16 @@ import { bodySizeRejected, clampColor, clampTemplate, PROJECT_LIMIT } from "@/li
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/projects — list projects (search + template filter). */
+/** GET /api/projects — list projects (search + template filter).
+ *
+ * Session 73 (S73-F — the deferred DQ-2 half A): the findMany carries
+ * `take: PROJECT_LIMIT` now — the aggregate is BOUNDED BY CONSTRUCTION at
+ * the product ceiling (500 rows). The views render the full list (the
+ * reference has no pagination either — a take/cursor product decision
+ * this closes the honest way: bounded at the ceiling, not paginated);
+ * pre-fix NOTHING stood between the caller and an unbounded scan.
+ * `?search=` is e2e-infra-only and `?template=` has zero consumers — the
+ * honest API-surface note (the S72-D family extension). */
 export async function GET(request: NextRequest) {
   const user = await requireSession();
   if (!user) return fail("UNAUTHENTICATED", "Sign in to view projects", 401);
@@ -20,6 +29,9 @@ export async function GET(request: NextRequest) {
       ...(template ? { template } : {}),
     },
     orderBy: [{ lastOpenedAt: "desc" }],
+    // Session 73 (S73-F — the deferred DQ-2 half A): bounded by
+    // construction at the creation ceiling — see the doc comment above.
+    take: PROJECT_LIMIT,
     // Session 70 (S70-C / L-A3 — the eighteenth audit): the bounded
     // thumbnail projection — the list previously shipped FULL element
     // rows (every column including the ≤700 KB data-URL fillImage) to
@@ -72,7 +84,14 @@ export async function POST(request: NextRequest) {
     }
     return tx.project.create({
       data: { name, description: description || null, template, backgroundColor },
-      include: { elements: true },
+      // Session 73 (S73-H — B-F8): the one list-family reply still on
+      // the full-row element form flips onto the S70-C bounded
+      // projection — a create seeds no elements (the array is always
+      // []), so the payload is byte-identical TODAY, but the include
+      // stays honest if template-seeding ever lands (the three siblings
+      // — the list GET, the PATCH response, the duplicate response —
+      // already ship this exact form).
+      include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
     });
   });
   if (overCap) {

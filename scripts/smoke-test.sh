@@ -7,6 +7,20 @@
 
 set -u
 
+# ---------------------------------------------------------------------------
+# Session 73 (S73-D — B-F3): the parent-env trap becomes a MECHANISM, not
+# operator discipline. An exported DATABASE_URL in the parent shell makes
+# the standalone server open a DIFFERENT database than db/custom.db — the
+# symptom family AGENTS.md documents (the empty-DB 500 storm, or worse: a
+# second seeded checkout that false-greens every check). Refuse up front.
+if [ -n "${DATABASE_URL:-}" ]; then
+  echo "REFUSED: DATABASE_URL is exported in the parent shell — the smoke" >&2
+  echo "server would open a foreign database and every check would run" >&2
+  echo "against the wrong data. Run the gate as:" >&2
+  echo "  unset DATABASE_URL && ./scripts/smoke-test.sh" >&2
+  exit 1
+fi
+
 PORT="${PORT:-3000}"
 BASE="http://localhost:${PORT}"
 PASS=0
