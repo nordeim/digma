@@ -35,7 +35,7 @@ import { Label } from "@/components/ui/label";
 import { AppHeader, type HeaderUser } from "@/components/app-header";
 import { CanvasThumbnail, InlineProjectRename, ProjectCard } from "@/components/project-card";
 import { toast } from "@/hooks/use-toast";
-import type { ProjectDTO } from "@/lib/editor";
+import type { ProjectDTO, ProjectSummaryDTO } from "@/lib/editor";
 // Session 65 (S65-E — the thirteenth audit's A-5): the envelope-unwrap
 // client lives in its own seam now — the files view's GET-only local
 // copy (which had already lost the init parameter) is gone; its call
@@ -52,7 +52,7 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
-function sortProjects(projects: ProjectDTO[], sort: SortKey): ProjectDTO[] {
+function sortProjects(projects: ProjectSummaryDTO[], sort: SortKey): ProjectSummaryDTO[] {
   const copy = [...projects];
   switch (sort) {
     case "last_accessed":
@@ -88,8 +88,8 @@ function RecentListCard({
   onRenamed,
   onDeleted,
 }: {
-  project: ProjectDTO;
-  onRenamed: (project: ProjectDTO) => void;
+  project: ProjectSummaryDTO;
+  onRenamed: (project: ProjectSummaryDTO) => void;
   onDeleted: (id: string) => void;
 }) {
   const router = useRouter();
@@ -247,7 +247,9 @@ function RecentListCard({
 
 export function RecentView({ user }: { user: HeaderUser }) {
   const params = useSearchParams();
-  const [projects, setProjects] = React.useState<ProjectDTO[]>([]);
+  // Session 70 (S70-C): the list surface types as the summary shape (the
+  // route ships the bounded thumbnail projection).
+  const [projects, setProjects] = React.useState<ProjectSummaryDTO[]>([]);
   const [loading, setLoading] = React.useState(true);
   // Session 58 (S58-D — the sixth audit's A-M-4): the search seeds from the
   // ?search param and RE-DERIVES on same-route param changes through the
@@ -274,7 +276,7 @@ export function RecentView({ user }: { user: HeaderUser }) {
     // awaited continuation behind the ignore flag.
     let ignore = false;
     async function run() {
-      const data = await call<{ projects: ProjectDTO[] }>("/api/projects");
+      const data = await call<{ projects: ProjectSummaryDTO[] }>("/api/projects");
       if (ignore) return;
       if (data) setProjects(data.projects);
       setLoading(false);

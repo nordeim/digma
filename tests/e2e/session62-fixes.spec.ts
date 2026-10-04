@@ -49,10 +49,10 @@ test.describe("session 62 — the slider gesture seam (S62-A / A-M2)", () => {
     // The seeded Glow element — selected through the lock-immune layer
     // row (the gesture-undo order-independence convention).
     await page.goto("/");
-    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: "Open Marketing Hero Banner" }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
     await expect(page.getByText("6 layers", { exact: true })).toBeVisible();
-    await page.locator("[role=button][aria-label='Layer Glow']").click();
+    await page.locator("button[aria-label='Layer Glow']").click();
     await expect(page.getByRole("heading", { name: "Properties" })).toBeVisible();
 
     const slider = page.locator("input[aria-label='Opacity']");
@@ -113,7 +113,8 @@ test.describe("session 62 — the soft-leave flush on browser Back (S62-C / A-M1
       // router.push) — the App Router's same-document traversal. A
       // page.goto would make the subsequent goBack a CROSS-document
       // traversal (pagehide territory — the S61-I path, not this pin).
-      const card = page.locator("[aria-label^='Open ']").filter({ hasText: FIXTURE_NAME }).first();
+      // Session 70 (S70-A): the stretched button IS the click target.
+      const card = page.getByRole("button", { name: `Open ${FIXTURE_NAME}` }).first();
       await expect(card).toBeVisible();
       await card.click();
       await expect(page).toHaveURL(new RegExp(`/Editor\\?projectId=${fixture.id}`));
@@ -135,7 +136,7 @@ test.describe("session 62 — the soft-leave flush on browser Back (S62-C / A-M1
       // The layer row proves the draw committed client-side (the count
       // widget prints the singular "1 layer" at 1 — the row locator is
       // unambiguous).
-      await expect(page.locator("[role=button][aria-label='Layer Rectangle 1']")).toBeVisible();
+      await expect(page.locator("button[aria-label='Layer Rectangle 1']")).toBeVisible();
 
       // IMMEDIATELY browser Back — a same-document popstate: pagehide
       // NEVER fires, the effect's cleanup clears the timer, and pre-fix
@@ -165,7 +166,7 @@ test.describe("session 62 — the soft-leave flush on browser Back (S62-C / A-M1
       // programmatic API check above just proved the persistence; the
       // shot shows the element on the board).
       await page.goto(`/Editor?projectId=${fixture.id}`);
-      await expect(page.locator("[role=button][aria-label='Layer Rectangle 1']")).toBeVisible();
+      await expect(page.locator("button[aria-label='Layer Rectangle 1']")).toBeVisible();
       await page.screenshot({
         path: "docs/screenshots/ref-audit-s72/clone-10-soft-leave-persisted.png",
       });

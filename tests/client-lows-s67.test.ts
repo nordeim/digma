@@ -58,7 +58,10 @@ describe("the DashboardView fetch body is shared (S67-D / A-L-2)", () => {
     // THE DEFECT PIN: pre-fix the Promise.all([call("/api/projects"),
     // call("/api/stats")]) fetch appears verbatim TWICE.
     const source = src("src/components/dashboard-view.tsx");
-    const occurrences = source.match(/Promise\.all\(\[\s*call<\{ projects: ProjectDTO\[\] }>\("\/api\/projects"\),/g) ?? [];
+    // Session 70 (S70-C) contract re-anchor: the list surface types as
+    // ProjectSummaryDTO[] (the bounded thumbnail projection) — the seam
+    // itself is pinned unchanged.
+    const occurrences = source.match(/Promise\.all\(\[\s*call<\{ projects: ProjectSummaryDTO\[\] }>\("\/api\/projects"\),/g) ?? [];
     expect(occurrences.length).toBe(1);
     expect(source).toMatch(/const load = React\.useCallback/);
     // the effect consumes the seam (the ignore-guard stays — the

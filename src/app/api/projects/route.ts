@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
+import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
 import { bodySizeRejected, clampColor, clampTemplate, PROJECT_LIMIT } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,13 @@ export async function GET(request: NextRequest) {
       ...(template ? { template } : {}),
     },
     orderBy: [{ lastOpenedAt: "desc" }],
-    include: { elements: { orderBy: { sortOrder: "asc" } } },
+    // Session 70 (S70-C / L-A3 — the eighteenth audit): the bounded
+    // thumbnail projection — the list previously shipped FULL element
+    // rows (every column including the ≤700 KB data-URL fillImage) to
+    // feed 320×200 card thumbnails; the response side was never bounded
+    // by the 32 MB request cap. The projection ships exactly the
+    // fields CanvasThumbnail + boundsOf consume.
+    include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
   });
 
   return ok({ projects });

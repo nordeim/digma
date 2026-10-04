@@ -140,81 +140,97 @@ export function LayersPanel() {
                   }}
                   onDoubleClick={(event) => {
                     // Session 61 (S61-D / A-L-1 — the ninth audit): the
-                    // S59-A nested-control guard, applied to dblclick. The
+                    // nested-control guard, applied to dblclick. The
                     // eye/lock buttons stop propagation on CLICK only, so a
                     // rapid double-toggle bubbled a dblclick into this
                     // handler and silently stole focus into rename mode.
-                    if ((event.target as HTMLElement).closest("button, input")) return;
+                    // Session 70 (S70-A): the guard's selector follows the
+                    // restructure — the ACTION trio is scoped by its
+                    // data-layer-action wrapper and the rename input by its
+                    // tag; the select button (the row's own primary surface)
+                    // is deliberately EXEMPT so a double-click on the name
+                    // still opens the rename (the reference's measured
+                    // contract — double-click on a layer row's name).
+                    if ((event.target as HTMLElement).closest("[data-layer-action], input")) return;
                     setRenaming(el.id);
                     setRenameValue(el.name ?? "");
                   }}
-                  onClick={(event) => onRowClick(el.id, event)}
                   className={cn(
                     "group flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-all duration-200",
                     isSelected ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-[#30363d]",
                   )}
-                  role="button"
-                  aria-pressed={isSelected}
-                  aria-label={`Layer ${el.name ?? el.type}`}
-                  tabIndex={0}
-                  onKeyDown={(event) => {
-                    // Session 59 (S59-A — the seventh audit's B-M-1): the
-                    // nested-control exemption FIRST. Events whose target
-                    // resolves inside a button or input (the rename field,
-                    // the eye/lock/trash trio) return untouched — a Space
-                    // typed in the rename input inserts the character, and
-                    // Enter/Space on a focused action button activates it
-                    // natively. Pre-fix the unconditional branch below
-                    // canceled BOTH (multi-word layer names were untypeable,
-                    // the S57-F keyboard-reachable buttons inoperable).
-                    if ((event.target as HTMLElement).closest("button, input")) return;
-                    // Session 57 (S57-F / L-3): the WAI-ARIA button pattern —
-                    // Space activates as well as Enter.
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onRowClick(el.id, event);
-                    }
-                  }}
+                  // Session 70 (S70-A / M-A2 — the eighteenth audit): the
+                  // WAI-ARIA button-pattern violation closed — the row was a
+                  // div carrying the button ROLE with NESTED interactive
+                  // descendants (the rename input + the eye/lock/trash
+                  // trio), which AT flattens or misannounces. The select
+                  // surface is now a REAL button (below); the row keeps the
+                  // drag-reorder handlers + the dblclick rename entry (the
+                  // forbidden literal is deliberately not quoted here —
+                  // absence pins read comments, the F50(1) lesson).
+                  // data-layer-row is the row container's semantic marker
+                  // (no AT impact).
+                  data-layer-row
                 >
-                  <Icon className="h-4 w-4 flex-shrink-0" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    {renaming === el.id ? (
-                      <input
-                        autoFocus
-                        // Session 63 (S63-D / B-L3): the server clamps names
-                        // at 80 (clampOptionalText(raw?.name, 80) in both
-                        // row-builders) — the input cap keeps the local edit
-                        // and the persisted row from diverging past 80 chars.
-                        maxLength={80}
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onBlur={() => {
-                          if (renameValue.trim()) {
-                            useEditorStore.getState().updateElements([el.id], { name: renameValue.trim() });
-                          }
-                          setRenaming(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                          if (e.key === "Escape") setRenaming(null);
-                        }}
-                        // Session-19 fix (S19-1) — the reference's measured
-                        // chrome (double-click on a layer row name, live DOM):
-                        // the input renders the shadcn-Input base plus editor
-                        // overrides — rounded-md, a VISIBLE border-[#30363d],
-                        // bg-[#0d1117], text-white, h-6 px-2 py-1, text-sm,
-                        // shadow-sm — with the focus ring only on
-                        // focus-visible. The previous `rounded px-1 ring-1
-                        // ring-blue-500` shipped an always-on blue ring, no
-                        // border, and the wrong rounding/padding.
-                        className="h-6 w-full rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-1 text-sm text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    ) : (
-                      <div className="truncate text-sm font-medium">{el.name ?? el.type}</div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
+                  {renaming === el.id ? (
+                    <input
+                      autoFocus
+                      aria-label={`Rename layer ${el.name ?? el.type}`}
+                      // Session 63 (S63-D / B-L3): the server clamps names
+                      // at 80 (clampOptionalText(raw?.name, 80) in both
+                      // row-builders) — the input cap keeps the local edit
+                      // and the persisted row from diverging past 80 chars.
+                      maxLength={80}
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onBlur={() => {
+                        if (renameValue.trim()) {
+                          useEditorStore.getState().updateElements([el.id], { name: renameValue.trim() });
+                        }
+                        setRenaming(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") setRenaming(null);
+                      }}
+                      // Session-19 fix (S19-1) — the reference's measured
+                      // chrome (double-click on a layer row name, live DOM):
+                      // the input renders the shadcn-Input base plus editor
+                      // overrides — rounded-md, a VISIBLE border-[#30363d],
+                      // bg-[#0d1117], text-white, h-6 px-2 py-1, text-sm,
+                      // shadow-sm — with the focus ring only on
+                      // focus-visible. The previous `rounded px-1 ring-1
+                      // ring-blue-500` shipped an always-on blue ring, no
+                      // border, and the wrong rounding/padding.
+                      // Session 70 (S70-A): the input is now the select
+                      // button's SIBLING (the row's direct child, flex-1 —
+                      // the nesting that made the row a WAI-ARIA violation
+                      // is gone), carrying its own accessible name.
+                      className="h-6 min-w-0 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-1 text-sm text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      aria-pressed={isSelected}
+                      aria-label={`Layer ${el.name ?? el.type}`}
+                      onClick={(event) => onRowClick(el.id, event)}
+                      // Session 70 (S70-A / M-A2): the select surface — a
+                      // REAL button (native Enter/Space activation replaces
+                      // the row's hand-rolled S57-F/S59-A keydown pair; the
+                      // S59-A nested-control exemption is structurally
+                      // unnecessary now the actions are siblings). The
+                      // aria-pressed toggle + the "Layer …" accessible name
+                      // ride the button, so every standing locator family
+                      // (getByRole button name Layer X, the 40 attribute
+                      // selectors, the aria-pressed pins) survives.
+                      className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0" aria-hidden />
+                      <div className="min-w-0 flex-1 truncate text-sm font-medium">{el.name ?? el.type}</div>
+                    </button>
+                  )}
+                  <div className="flex items-center gap-1" data-layer-action>
                     <button
                       type="button"
                       aria-label={el.visible ? "Hide layer" : "Show layer"}

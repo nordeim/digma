@@ -75,10 +75,19 @@ describe("the Low a11y batch (session 57, S57-F)", () => {
   });
 
   it("L-3: the layers row activates on Space as well as Enter", () => {
-    const m = layersSource.match(/onKeyDown=\{\(event\) => \{([\s\S]*?)\}\}/);
-    expect(m).not.toBeNull();
-    expect(m![1]).toContain('event.key === "Enter"');
-    expect(m![1]).toContain('event.key === " "');
+    // Session 70 (S70-A) contract re-anchor: the hand-rolled row keydown
+    // is gone — the select surface is a REAL <button>, and a button
+    // activates on Enter AND Space natively (the behavioral contract is
+    // pinned unchanged; the e2e Space-activation pin in
+    // session70-fixes.spec.ts exercises it live).
+    const buttonIdx = layersSource.indexOf('aria-label={`Layer ${el.name ?? el.type}`}');
+    expect(buttonIdx).toBeGreaterThan(-1);
+    const buttonStart = layersSource.lastIndexOf("<button", buttonIdx);
+    expect(layersSource.slice(buttonStart, buttonIdx)).toContain("type=\"button\"");
+    // And the row container carries no hand-rolled key handler at all.
+    const rowStart = layersSource.indexOf("draggable={renaming !== el.id}");
+    const rowEnd = layersSource.indexOf("data-layer-row", rowStart);
+    expect(layersSource.slice(rowStart, rowEnd)).not.toMatch(/onKeyDown/);
   });
 
   it("L-5: exactly ONE separator renders at the hand-frame boundary", () => {

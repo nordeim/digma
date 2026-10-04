@@ -19,8 +19,11 @@ const panelSource = readFileSync(
   path.resolve(import.meta.dirname, "../src/components/editor/properties-panel.tsx"),
   "utf8",
 );
+// Session 70 (S70-B) contract re-anchor: the server-side clamp moved
+// from the elements route into the ONE row-builder seam (src/lib/editor.ts)
+// — the five-family parity contract is pinned unchanged.
 const routeSource = readFileSync(
-  path.resolve(import.meta.dirname, "../src/app/api/projects/[id]/elements/route.ts"),
+  path.resolve(import.meta.dirname, "../src/lib/editor.ts"),
   "utf8",
 );
 

@@ -35,7 +35,7 @@ const SEEDED_PROJECT = "Marketing Hero Banner";
 
 async function openSeededEditor(page: import("@playwright/test").Page) {
   await page.goto("/");
-  await page.getByText(SEEDED_PROJECT).filter({ visible: true }).first().click();
+  await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
   await expect(page).toHaveURL(/\/Editor\?projectId=/);
   return page.url();
 }
@@ -135,7 +135,7 @@ test.describe("the autosave identity guards (session 57, S57-B / M-1 + M-2)", ()
     await expect(page).toHaveURL(/\/Dashboard/);
 
     // Enter the seeded project well inside the flight window.
-    await page.getByText(SEEDED_PROJECT).filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
     // Capture the URL AFTER it settles (the click navigates async).
     const seededUrl = page.url();
@@ -243,7 +243,7 @@ test.describe("the select-all flip with hidden layers (session 57, S57-F / L-1)"
   test("the toggle flips to Deselect All while a layer is hidden", async ({ page }) => {
     await openSeededEditor(page);
 
-    const rows = page.locator("[role=button][aria-label^='Layer']");
+    const rows = page.locator("button[aria-label^='Layer']");
     // The layers render asynchronously after the project loads — wait
     // for the first row before counting (an immediate count races the
     // fetch).
@@ -254,9 +254,12 @@ test.describe("the select-all flip with hidden layers (session 57, S57-F / L-1)"
     // Hide the FIRST row's element — with a hidden layer present, the
     // pre-fix condition (selectedIds.length === elements.length) could
     // never reach equality: the label stayed "Select All" forever.
-    const firstRow = rows.first();
-    await firstRow.getByRole("button", { name: "Hide layer" }).click();
-    await expect(firstRow.getByRole("button", { name: "Show layer" })).toBeVisible();
+    // Session 70 (S70-A): the eye/lock/trash trio renders as the select
+    // button's SIBLINGS — scope through the row container's
+    // data-layer-row marker.
+    const firstRowContainer = page.locator("[data-layer-row]").first();
+    await firstRowContainer.getByRole("button", { name: "Hide layer" }).click();
+    await expect(firstRowContainer.getByRole("button", { name: "Show layer" })).toBeVisible();
 
     // Select All (the VISIBLE family) → the label flips.
     await page.getByRole("button", { name: "Select All" }).click();
@@ -264,7 +267,7 @@ test.describe("the select-all flip with hidden layers (session 57, S57-F / L-1)"
 
     // Cleanup: deselect, un-hide, and wait for the saved state.
     await page.getByRole("button", { name: "Deselect All" }).click();
-    await firstRow.getByRole("button", { name: "Show layer" }).click();
+    await firstRowContainer.getByRole("button", { name: "Show layer" }).click();
     await expect(page.locator("[data-element-id]")).toHaveCount(before);
     await waitForSaved(page);
   });

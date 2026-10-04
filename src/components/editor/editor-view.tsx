@@ -445,14 +445,6 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
       const store = useEditorStore.getState();
       const meta = event.ctrlKey || event.metaKey;
 
-      // Session 49 (S49-2): Shift+/ — the standard discoverability
-      // convention — opens the shortcut help from anywhere in the editor.
-      if (event.key === "?") {
-        event.preventDefault();
-        onOpenShortcuts();
-        return;
-      }
-
       if (meta && event.key.toLowerCase() === "z") {
         event.preventDefault();
         if (event.shiftKey) store.redo();
@@ -512,6 +504,19 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
       // Frame/Pen/Ellipse/Select behind the user's back. Tool keys are
       // single-key shortcuts by contract (the toolbar's "(V)" titles).
       if (event.ctrlKey || event.metaKey || event.altKey) return;
+      // Session 70 (S70-D / L-A6): the ? branch sits BELOW the modifier
+      // bail — pre-fix it fired 64 lines above, so Ctrl+?/Cmd+?/Alt+?
+      // opened the shortcuts dialog and preventDefaulted the chord (the
+      // handler's own single-key contract violated at its own guard).
+      // Shift+/ is single-key (shift only) — it passes the bail.
+      // Session 49 (S49-2): the standard discoverability convention —
+      // opens the shortcut help from anywhere in the editor.
+      if (event.key === "?") {
+        event.preventDefault();
+        onOpenShortcuts();
+        return;
+      }
+
       // The tool keys resolve through the SINGLE-SOURCE seam (session 48,
       // S48-1): the toolbar titles advertise "{Tool} ({shortcut})" from the
       // same TOOL_SHORTCUTS map — before this, the hand-rolled switch below

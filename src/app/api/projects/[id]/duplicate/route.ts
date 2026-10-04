@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
+import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
 import { PROJECT_LIMIT } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,10 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   const project = await db.project.findUnique({
     where: { id: copy.id },
-    include: { elements: { orderBy: { sortOrder: "asc" } } },
+    // Session 70 (S70-C): the duplicate RESPONSE ships the bounded
+    // thumbnail projection (the copy's SOURCE read above keeps every
+    // column — the copy itself is lossless).
+    include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
   });
   return ok({ project }, 201);
 }

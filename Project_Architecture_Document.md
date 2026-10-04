@@ -1,15 +1,131 @@
-# Digma — Master Project Architecture Document (PAD) v1.48.0
+# Digma — Master Project Architecture Document (PAD) v1.49.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-10-04 (v1.48.0 — the XFF-trust-topology-knob/dependency-hygiene/route-race/OTP-knob-recovery pass: the per-IP limiter's client key becomes deploy-DECLARED through `DIGMA_PROXY_HOPS` (default 1 = the standing last-hop trust behind exactly one appending proxy; 0 = direct exposure — the client-supplied forwarding-header family is ignored entirely, closing the per-request rotation bypass that fully evaded the auth 10/15-min and ai 20/5-min limits; N = N appending proxies — the limiter keys on the hop the Nth proxy preserved, never the innermost proxy's own self-DoS key; a short list fails closed) + the dependency/bootstrap hygiene batch (the eight zero-import radix dependencies removed; `scripts/install_packages.sh` regenerated from package.json — it had drifted to missing live packages and installing dead ones — with the BOTH-direction parity pin) + the route-race/OTP-knob client batch (the DELETE handlers' P2025 and the members POST's P2003 answer through the envelope as 404 — the sibling PATCH's S62-G form; the login screen's VERIFY_EMAIL recovery guard opens the verify card regardless of the code's nullness — under `DIGMA_DISABLE_IN_APP_OTP=1` the null code no longer locks an unverified user out of the recovery flow, register's degrade form) + the docs/comment/typing low batch (the AGENTS.md triplicated session-68 bullet deduplicated; the layers-panel lock comment rewritten to the REAL hit-test-wall mechanism; the layers-row double-cast removed; DEPLOYMENT.md refreshed — the real counts, the one-time-cookie-eviction note, the four `DIGMA_*` knob rows, the public-deploy posture; the dead x/y patch fields deleted))
+**Last Updated:** 2026-10-04 (v1.49.0 — the a11y-restructure/one-schema-push/list-payload-projection/server-client-low pass: the two WAI-ARIA button-pattern violations the clone added unilaterally are closed with the canonical restructures — the ProjectCard becomes the stretched-button form (a real `absolute inset-0` button owns the open; the content layer pointer-events-none with the interactive children opting back in) and the layers row becomes the button-region form (the icon+name area is a real button carrying aria-pressed + the Layer accessible name; the rename input and the eye/lock/trash trio render as its siblings — the S59-A nested-control exemption became structurally unnecessary) + the one-schema-push batch (the four dead columns dropped — thumbnailSeed/src/path/zIndex — and `@@index([sortOrder])` becomes `@@index([projectId, sortOrder])`; the three element row-builders collapse into the ONE shared `buildElementRow(raw, index, mode)` seam in src/lib/editor.ts — create-mode synthesizes the POST's omitted-field defaults, replace-mode nulls them, both share the clamps; clampFillImage moved with it) + the list-payload projection (the list GET, the PATCH response, and the duplicate response ship the bounded THUMBNAIL_ELEMENT_SELECT rows — exactly the fields CanvasThumbnail + boundsOf consume, no name/locked/sortOrder/timestamps weight; the detail GET keeps the full include; ThumbnailElementDTO + ProjectSummaryDTO type the projection) + the server/client low batch (the verify-otp success path becomes the conditional updateMany carrying BOTH the code match and the attempts bound — the stale-read race that opened a session past the ceiling is closed; the wrong-code display derives from a post-increment read; the pure password seam src/lib/password.ts kills the seed's duplicated scrypt parameters; the ?-shortcut moves below the modifier bail; the line-width clamp symmetrized at all four sites (line → 0, non-line → 1); the SliderRow degenerate guard; the ADR-014 enumeration-tradeoff sentence; the me-route doc drift))
 **Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
 
 Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+#### Revision Block — v1.49.0 (Tracked Changes)
+
+- `[SR]` **The a11y-restructure/one-schema-push/list-payload-projection/
+  server-client-low pass — four slices (S70-A through S70-D) — the
+  EIGHTEENTH Mode C audit's chosen work:**
+  1. **S70-A (M-A1 + M-A2 — the documented deferred #5): the two
+     WAI-ARIA button-pattern violations closed.** The ProjectCard root
+     was a `role="button"` div with NESTED interactive descendants (the
+     rename Input, the Check/X Buttons, the ellipsis trigger) and the
+     layers row the same violation (the rename input + the eye/lock/
+     trash trio) — AT flattens or misannounces the inner controls, and
+     the S31-3/S58-B/S59-A stopPropagation/exemption wrappers existed
+     BECAUSE of the nesting. The canonical restructures: the card
+     becomes the stretched-button form (a real `absolute inset-0 z-0`
+     button carrying the open + the `Open ${name}` aria-label — the
+     40-locator family survives byte-identically; the content blocks
+     carry `relative z-10 pointer-events-none` with the interactive
+     children opting back in — BOTH content blocks must be positioned,
+     a non-positioned sibling paints below the z-0 button and the hit
+     test lands on the button even over the auto'd ellipsis) and the
+     row becomes the button-region form (the icon+name region is a real
+     `<button>` with aria-pressed + the Layer accessible name; the
+     rename input and the action trio are its siblings; the row
+     container keeps the drag-reorder handlers + the REFINED S61-D
+     dblclick guard — `closest("[data-layer-action], input")`, the
+     select button exempt so dblclick-on-name still renames; the
+     23 getByRole locators survive). The e2e migration: the
+     `[role=button][aria-label...]` attribute selectors become
+     `button[aria-label...]` (40 sites), the action scoping goes through
+     the row's data-layer-row marker, and the card-open clicks target
+     the stretched button (the getByText card clicks hung — Playwright
+     refuses an intercepted click).
+  2. **S70-B (L-A1 + L-A2 — the documented #3/#4, the one-schema-push
+     batch): the dead columns + the row-builder dedup.** The schema
+     loses `thumbnailSeed` (zero code references), `src`/`path`/
+     `zIndex` (written by the row-builders, zero read sites), and the
+     sortOrder-only index (served no query, amplified every 2000-row
+     replace) — replaced by `@@index([projectId, sortOrder])` (the
+     filter+order every element query runs). The THREE row-builders
+     (POST synthesizes fill/stroke defaults for omitted fields, PUT
+     nulls them, the client is type-aware) collapse into the ONE shared
+     `buildElementRow(raw, index, mode)` in src/lib/editor.ts —
+     `clampFillImage` + `FILL_IMAGE_MAX_CHARS` moved with it; the
+     DesignElementDTO + defaultElementFor + the store's field lists
+     lose the dead fields; the seven test fixture literals follow; the
+     e2e global-setup's db push gains `--accept-data-loss` (the
+     throwaway e2e db re-seeds immediately after — a destructive push
+     must not stall on the piped confirmation).
+  3. **S70-C (L-A3 — the documented #2): the bounded list-payload
+     projection.** The list-family routes (GET /api/projects, the PATCH
+     response, the duplicate response) shipped FULL element rows —
+     every column including the ≤700 KB data-URL fillImage — to feed
+     320x200 card thumbnails; the response side was never bounded by
+     the 32 MB request cap. The shared `THUMBNAIL_ELEMENT_SELECT`
+     (src/lib/editor.ts) ships exactly the fields CanvasThumbnail +
+     boundsOf consume; the detail GET (the editor's surface) KEEPS the
+     full include; `ThumbnailElementDTO = Omit<DesignElementDTO, "name"
+     | "locked" | "sortOrder">` + `ProjectSummaryDTO` type the
+     projection; the card family + both list views consume the summary
+     shape. (The fillImageThumb bounded-image variant — client-side
+     downscale at upload — stays deferred: the real weight bound.)
+  4. **S70-D (L-A4 + L-A5 + L-A6 + L-A7 + L-A8 + the doc riders): the
+     server/client low batch.** The verify-otp success path becomes
+     the conditional `updateMany` carrying BOTH the code match AND the
+     attempts bound in the where-clause (the stale-read race that
+     opened a session past a ceiling a concurrent request tripped is
+     closed at the database — the S62-E increment's sibling fix the
+     success path never received; count===0 falls to the wrong-code
+     family); the wrong-code display derives from a post-increment
+     read; the pure `src/lib/password.ts` seam (node:crypto only —
+     hashPassword/verifyPassword/generateVerifyCode) kills the seed's
+     duplicated scrypt parameter set (auth.ts re-exports, the routes'
+     import surface unchanged); the `?` shortcut relocates below the
+     modifier bail (Ctrl+?/Cmd+? no longer open the shortcuts dialog);
+     the line-width clamp symmetrized at all four sites (the resize
+     write-back, scaleElements, the panel W field — line → 0 floor,
+     non-line → 1, both dimensions, matching the draw commit); the
+     SliderRow fill percentage clamps (no NaN at max===min, no >100%
+     out-of-range fills); the ADR-014 enumeration-tradeoff sentence
+     (the field-level nullness of resetUrl/verificationCode
+     re-introduces account enumeration — the no-enumeration 200 covers
+     the message body, not the payload shape); the me-route sentence
+     corrected (200 {user: null}, not 401).
+  5. **TDD:** unit RED 43 defect pins + 8 preservation pins across five
+     new spec files -> GREEN **625 = 574 + 51** (a11y-restructure-s70
+     10, schema-hygiene-s70 15, list-projection-s70 9, server-lows-s70
+     10, client-lows-s70 7 — ten standing pins legitimately re-anchored
+     onto the restructured contracts, each with the contract-change
+     comment: layers-honesty's refined guard selector, layers-a11y's
+     native-activation form, layers-keyboard's sibling-structure pins,
+     ellipsis-keyboard's stretched-button form, image-whitelist's seam
+     path, client-lows-s67's summary typing, server-low-s62's
+     re-export seam). E2E RED 4/6 at exactly the defect assertions (the
+     card tagName, the sweep violations, the row tagName, the
+     projection's shipped name) -> GREEN **236 = 231 + 5**; smoke
+     unchanged at **58**.
+  6. **The live verification:** the 46th reference audit (no drift, no
+     new gaps — evidence docs/screenshots/ref-audit-s80/); the mobile
+     nav **9/9 the 47th consecutive session**, re-verified on the final
+     build; the standard 32 re-captured + the ref-audit-s80 evidence
+     set with clone-21/clone-22 captured BY the e2e pins at the
+     verified-assertion moments (the honest-moment discipline) +
+     THREE NEW inline checks (the stretched-button card form, the
+     button-region row form, the projected list payload) + the standing
+     XFF rotation-bypass closure re-verified live in both directions —
+     dimension-checked **233/233** (the checker extended with the S80
+     mapping), VLM content-verified **21/21**; the DB re-seeded to the
+     pristine 1/2/6/1/3 contract.
+  7. **Docs aligned:** this revision block + the 7.1 table to the
+     102-file/625-unit + 29-file/236-e2e reality; AGENTS.md (the
+     session-70 seam bullet + the counts); CLAUDE.md (the counts + the
+     seam rows); README.md (the counts + the a11y/projection feature
+     rows); the remediation plan's execution status; session_99.md; the
+     worklog entry. `.env.example` verified unchanged — the four slices
+     add no env vars (the source's seven reads all covered).
 
 #### Revision Block — v1.48.0 (Tracked Changes)
 
@@ -1382,7 +1498,7 @@ How to use this document:
 - **Context:** Session 43's functional sweep of the reference's signup/forgot SUBMIT paths (the session-45 next step) found the reference's register does NOT open a session — the card transitions to a fourth state, "Verify your email" (six auto-advancing digit inputs, a decrementing "N attempts remaining" wrong-code error, a timerless Resend), and the session lands only on a verified OTP (`POST /auth/verify-otp`; `POST /auth/resend-otp` regenerates). The reference's own login on a correct-password-but-UNVERIFIED account returns the SAME generic 400 "Invalid email or password" — a dead end with no path back to the card. The forgot submit transitions to a fifth state, the "Check your email" success card (the mail icon circle, the green alert, the full-width bottom back button).
 - **Decision:** The clone ports all five auth states' CHROME and the flow's SHAPE: the register route creates the account `verified:false` + a 6-digit `verifyCode` and opens NO session; `/api/auth/verify-otp` verifies and opens the session (the wrong-code counter decrements from 5; the ceiling requires a Resend); `/api/auth/resend-otp` regenerates and resets (no cooldown — the reference's measured timerlessness); the login's UNVERIFIED branch regenerates the code and re-opens the verify card — the WORKING SUPERSET over the reference's generic dead-end (the mobile-nav/eye-toggle family). **The DELIVERY deviation: no email service exists in the self-hosted clone, so the 6-digit code travels in the API response and renders in the card's blue info alert ("Self-hosted mode: no email service is configured — your verification code is NNNNNN")** — the deterministic seam the e2e suite pins; the reference emails it. Seeded/demo accounts are pre-verified (`verified @default(true)`) so the demo flow is unchanged. The "Check your email" card renders verbatim but NO email is sent (the reset story stays "re-seed or edit the DB", documented).
 - **Rationale:** The verify-email card is a major undiscovered functional surface (a whole auth state + two endpoints + an attempts protocol); skipping it would leave the clone's signup visibly and behaviorally divergent. The in-app delivery keeps the flow HONEST (the user can always complete it) instead of faking an email that never arrives — the same doctrine as the deterministic AI fallback. The login-recovery superset fixes the reference's own dead-end (an unverified user who leaves the card can NEVER get back to it — the F2 "clone the visible behavior, fix the data bug" family).
-- **Consequences:** Positive — five-state auth parity, a working verification round-trip, a recovery path the reference lacks. Negative — the code is visible in the response/UI (acceptable for a self-hosted demo with no mail transport; production with an email service should switch the delivery and drop the note — the route's response shape stays compatible). The auth-call budget tightened: the rate limiter (10/IP/15min) now covers register/verify/resend too, so the e2e auth file keeps its total at 9 of 10 (the Resend ROUND-TRIP lives in the smoke suite's own server/bucket; session 45's smoke exhaustion section and e2e weak-password pin each declare a DEDICATED XFF bucket — `X-Forwarded-For` keys the limiter — so neither touches the shared budget). ~~The wrong-code ceiling answered 400 "Too many attempts. Request a new code."~~ (superseded by v1.24.0/RA-62: the fifth wrong code and every attempt after it answer the reference's measured 429 "Too many failed attempts. Please request a new verification code.", and the pending code is LOCKED at the ceiling — even the correct code answers 429 until a Resend resets the counter). The reference's `otp_expires_in_minutes: 10` metadata is NOT ported (moot under the in-app delivery).
+- **Consequences:** Positive — five-state auth parity, a working verification round-trip, a recovery path the reference lacks. Negative — the code is visible in the response/UI (acceptable for a self-hosted demo with no mail transport; production with an email service should switch the delivery and drop the note — the route's response shape stays compatible). **The enumeration tradeoff (session 70's naming of it): the FIELD-LEVEL nullness re-introduces account enumeration** — the forgot response's `resetUrl` (and the register/login/resend `verificationCode`) is null for unknown accounts and present for known ones, so the no-enumeration 200 covers only the MESSAGE body, not the payload shape; the smoke suite itself asserts the discriminator. Both delivery knobs (`DIGMA_DISABLE_IN_APP_RESET`, `DIGMA_DISABLE_IN_APP_OTP`) restore the uniform null-for-everyone shape — the public-deploy mandatory-knob posture in DEPLOYMENT.md §3. The auth-call budget tightened: the rate limiter (10/IP/15min) now covers register/verify/resend too, so the e2e auth file keeps its total at 9 of 10 (the Resend ROUND-TRIP lives in the smoke suite's own server/bucket; session 45's smoke exhaustion section and e2e weak-password pin each declare a DEDICATED XFF bucket — `X-Forwarded-For` keys the limiter — so neither touches the shared budget). ~~The wrong-code ceiling answered 400 "Too many attempts. Request a new code."~~ (superseded by v1.24.0/RA-62: the fifth wrong code and every attempt after it answer the reference's measured 429 "Too many failed attempts. Please request a new verification code.", and the pending code is LOCKED at the ceiling — even the correct code answers 429 until a Resend resets the counter). The reference's `otp_expires_in_minutes: 10` metadata is NOT ported (moot under the in-app delivery).
 - **Alternatives Rejected:** Skipping the verify state (a visible behavioral divergence); emailing through a third-party service in the demo (credentials, cost, non-determinism); leaving the login's generic dead-end (a trap for real users); a cooldown on Resend (the reference has none — measured); porting the 10-minute OTP expiry (meaningless when the code is delivered in the response); a client-side `minLength` on the password inputs (RA-63: the reference has none — the native validation bubble masks the API's inline-alert path).
 
 ---
@@ -1820,7 +1936,7 @@ shadcn/ui (Radix) primitives in `src/components/ui/`: button (cva variants), inp
 
 ### 6.3 Authentication & Authorization
 
-Login: `POST /api/auth/login` (rate-limited) → scrypt verify → sets httpOnly cookie → client `router.push(from_url)` + `router.refresh()` (never `window.location` — the server components must re-resolve the session for the header swap). Logout: `POST /api/auth/logout` clears the cookie. `me`: returns the current user or 401. Register validates email + password (min 8, the reference's exact "Password must be at least 8 characters long" — rendered in the card's inline alert; the auth inputs deliberately carry NO client-side `minLength`, RA-63: the reference has none and a native validation bubble would mask the API's inline-alert path) and answers duplicate emails with `409 CONFLICT` (the coherent superset over the reference's incoherent 200 re-register). The verify-email flow (ADR-014): `verify-otp` decrements the wrong-code counter from 5; the FIFTH wrong code AND every attempt after it answer `429` "Too many failed attempts. Please request a new verification code." — at the ceiling the pending code is LOCKED (even the correct code answers 429) until a Resend or the login's unverified-recovery branch regenerates + resets (RA-62). The password-reset round-trip (RA-65, session 46): `POST /api/auth/forgot-password` answers the no-enumeration 200 with the reference's exact message for known AND unknown emails (rate-limited), issuing a crypto-random 64-hex `resetToken` + a 60-minute `resetTokenExpiresAt` for existing accounts and returning the RELATIVE `resetUrl` (the ADR-014 in-app delivery — null for unknown accounts; production with an email service should switch the delivery; the URL is relative BY DESIGN: `request.url` on the standalone server rebuilds from the bind address, and an absolute form once yielded a cookie-refusing `0.0.0.0` origin that broke the post-login session — lesson F33). `POST /api/auth/reset-password` takes the reference's exact `{reset_token, new_password}` shape, validates the token BEFORE the password (the measured ordering), answers invalid/expired/consumed tokens with `400` "Invalid or expired reset token", weak passwords with the RA-63 exact text, and on success updates the hash and CLEARS the token (single-use — a replay answers the invalid-token 400; no session opens — the user signs in afresh). The `/reset-password` PAGE is public and session-agnostic (it renders while logged in — unlike `/login`, which bounces authenticated visits to the workspace): a non-empty `?token=` renders the "Set new password" form; anything else renders the "Invalid Reset Link" card (RA-66). Authorization model: single-role (any authenticated user has full workspace access) — matches the reference app's model; RBAC would be a schema + gate change if ever needed.
+Login: `POST /api/auth/login` (rate-limited) → scrypt verify → sets httpOnly cookie → client `router.push(from_url)` + `router.refresh()` (never `window.location` — the server components must re-resolve the session for the header swap). Logout: `POST /api/auth/logout` clears the cookie. `me`: answers `200 { user: null }` for anonymous callers (the signed-out probe contract — a 200-with-null envelope, never a bare 401; the session-gated PAGES carry the 302/redirect side). Register validates email + password (min 8, the reference's exact "Password must be at least 8 characters long" — rendered in the card's inline alert; the auth inputs deliberately carry NO client-side `minLength`, RA-63: the reference has none and a native validation bubble would mask the API's inline-alert path) and answers duplicate emails with `409 CONFLICT` (the coherent superset over the reference's incoherent 200 re-register). The verify-email flow (ADR-014): `verify-otp` decrements the wrong-code counter from 5; the FIFTH wrong code AND every attempt after it answer `429` "Too many failed attempts. Please request a new verification code." — at the ceiling the pending code is LOCKED (even the correct code answers 429) until a Resend or the login's unverified-recovery branch regenerates + resets (RA-62). The password-reset round-trip (RA-65, session 46): `POST /api/auth/forgot-password` answers the no-enumeration 200 with the reference's exact message for known AND unknown emails (rate-limited), issuing a crypto-random 64-hex `resetToken` + a 60-minute `resetTokenExpiresAt` for existing accounts and returning the RELATIVE `resetUrl` (the ADR-014 in-app delivery — null for unknown accounts; production with an email service should switch the delivery; the URL is relative BY DESIGN: `request.url` on the standalone server rebuilds from the bind address, and an absolute form once yielded a cookie-refusing `0.0.0.0` origin that broke the post-login session — lesson F33). `POST /api/auth/reset-password` takes the reference's exact `{reset_token, new_password}` shape, validates the token BEFORE the password (the measured ordering), answers invalid/expired/consumed tokens with `400` "Invalid or expired reset token", weak passwords with the RA-63 exact text, and on success updates the hash and CLEARS the token (single-use — a replay answers the invalid-token 400; no session opens — the user signs in afresh). The `/reset-password` PAGE is public and session-agnostic (it renders while logged in — unlike `/login`, which bounces authenticated visits to the workspace): a non-empty `?token=` renders the "Set new password" form; anything else renders the "Invalid Reset Link" card (RA-66). Authorization model: single-role (any authenticated user has full workspace access) — matches the reference app's model; RBAC would be a schema + gate change if ever needed.
 
 ### 6.4 Threat Model
 
@@ -1939,7 +2055,12 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — the dependency/bootstrap hygiene (S69-B) | `tests/dependency-hygiene-s69.test.ts` | 6 | tests | Vitest |
 | Unit — the route-race catches + the login OTP-knob guard (S69-C) | `tests/route-race-s69.test.ts` | 7 | tests | Vitest |
 | Unit — the docs/comment/typing low batch (S69-D) | `tests/doc-lows-s69.test.ts` | 12 | tests | Vitest |
-| **Unit total** | **97 files** | **574** | | Vitest |
+| Unit — the a11y restructures (S70-A) | `tests/a11y-restructure-s70.test.ts` | 10 | tests | Vitest |
+| Unit — the schema-push + row-builder seam (S70-B) | `tests/schema-hygiene-s70.test.ts` | 15 | tests | Vitest |
+| Unit — the list-payload projection (S70-C) | `tests/list-projection-s70.test.ts` | 9 | tests | Vitest |
+| Unit — the server low batch (S70-D) | `tests/server-lows-s70.test.ts` | 10 | tests | Vitest |
+| Unit — the client low batch (S70-D) | `tests/client-lows-s70.test.ts` | 7 | tests | Vitest |
+| **Unit total** | **102 files** | **625** | | Vitest |
 | E2E — auth journeys + card states + from_url guard | `tests/e2e/auth.spec.ts` | 16 | tests/e2e | Playwright |
 | E2E — reset-password journeys | `tests/e2e/reset-password.spec.ts` | 7 | tests/e2e | Playwright |
 | E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |
@@ -1968,7 +2089,8 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | E2E — session-67 fixes (revocation + AI 429 + list empty state) | `tests/e2e/session67-fixes.spec.ts` | 3 | tests/e2e | Playwright |
 | E2E — session-68 fixes (the marquee visual-footprint bands + the session-expired terminal) | `tests/e2e/session68-fixes.spec.ts` | 3 | tests/e2e | Playwright |
 | E2E — session-69 fixes (the knob-posture login verify-card round-trip) | `tests/e2e/session69-fixes.spec.ts` | 1 | tests/e2e | Playwright |
-| **E2E total** | **28 files** | **231** | | Playwright |
+| E2E — session-70 fixes (the a11y structures + the projection shape) | `tests/e2e/session70-fixes.spec.ts` | 5 | tests/e2e | Playwright |
+| **E2E total** | **29 files** | **236** | | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 58 | scripts | bash + curl + jq |
 
 ### 7.2 Test Patterns

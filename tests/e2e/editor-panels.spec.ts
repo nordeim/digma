@@ -12,7 +12,7 @@ const SEEDED_PROJECT = "Marketing Hero Banner";
 
 async function openSeededEditor(page: import("@playwright/test").Page) {
   await page.goto("/");
-  await page.getByText(SEEDED_PROJECT).filter({ visible: true }).first().click();
+  await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
   await expect(page).toHaveURL(/\/Editor\?projectId=/);
 }
 
@@ -78,7 +78,7 @@ test.describe("layers header selection toggle", () => {
     // group-hover:opacity-100, lucide-trash2 w-3 h-3). The reference's
     // trash deletes IMMEDIATELY (no confirm — verified live: 1 layer → 0);
     // the clone's recovery path is undo (Ctrl+Z, 60 snapshots).
-    const rows = page.locator("[role=button][aria-label^='Layer']");
+    const rows = page.locator("button[aria-label^='Layer']");
     const before = await rows.count();
     expect(before).toBeGreaterThanOrEqual(6);
 
@@ -133,7 +133,7 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
     // and thumbnails already enforce. Before session 19 the canvas kept
     // rendering hidden elements (the icon said hidden, the canvas said
     // visible — an internally inconsistent state).
-    const rows = page.locator("[role=button][aria-label^='Layer']");
+    const rows = page.locator("button[aria-label^='Layer']");
     const before = await rows.count();
     expect(before).toBeGreaterThanOrEqual(6);
     const canvas = page.locator("[data-element-id]");
@@ -146,17 +146,21 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
     const firstName = ((await firstRow.getAttribute("aria-label")) ?? "").replace(/^Layer /, "");
     await expect(page.locator(`[data-element-id][aria-label="${firstName}"]`)).toHaveCount(1);
 
-    await firstRow.getByRole("button", { name: "Hide layer" }).click();
+    // Session 70 (S70-A): the action trio renders as the select button's
+    // SIBLINGS — scope through the row container (DOM-order 1:1 with the
+    // button rows).
+    const firstRowContainer = page.locator("[data-layer-row]").first();
+    await firstRowContainer.getByRole("button", { name: "Hide layer" }).click();
 
     // The canvas drops exactly that element; the row itself stays.
     await expect(page.locator(`[data-element-id][aria-label="${firstName}"]`)).toHaveCount(0);
     await expect(canvas).toHaveCount(before - 1);
     await expect(rows).toHaveCount(before);
     // The row's action flips to "Show layer".
-    await expect(firstRow.getByRole("button", { name: "Show layer" })).toBeVisible();
+    await expect(firstRowContainer.getByRole("button", { name: "Show layer" })).toBeVisible();
 
     // Showing it again restores the canvas element.
-    await firstRow.getByRole("button", { name: "Show layer" }).click();
+    await firstRowContainer.getByRole("button", { name: "Show layer" }).click();
     await expect(page.locator(`[data-element-id][aria-label="${firstName}"]`)).toHaveCount(1);
     await expect(canvas).toHaveCount(before);
   });
@@ -169,13 +173,17 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
     // shadow-sm — with the focus ring only on focus-visible. The pre-session
     // clone rendered `rounded px-1 ring-1 ring-blue-500` (an ALWAYS-on blue
     // ring, no border).
-    const firstRow = page.locator("[role=button][aria-label^='Layer']").first();
+    const firstRow = page.locator("button[aria-label^='Layer']").first();
+    // Session 70 (S70-A): the rename input is the select button's SIBLING
+    // (the row container's direct child) — the button UNMOUNTS during the
+    // rename, so the name is captured first and the input is targeted
+    // through the row container's data-layer-row marker.
+    const rowName = (await firstRow.getAttribute("aria-label")) ?? "";
 
     await firstRow.dblclick();
-    const input = firstRow.locator("input");
+    const input = page.locator("[data-layer-row] input").first();
     await expect(input).toBeVisible();
     // Prefilled with the row's current name (the reference's behavior).
-    const rowName = (await firstRow.getAttribute("aria-label")) ?? "";
     await expect(input).toHaveValue(rowName.replace(/^Layer /, ""));
     // The reference's measured chrome.
     await expect(input).toHaveClass(/h-6/);
@@ -194,17 +202,19 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
     // Typing a new name and blurring renames the row.
     await input.fill("Renamed Hero");
     await input.blur();
-    await expect(page.locator("[role=button][aria-label^='Layer']").first()).toContainText("Renamed Hero");
+    await expect(page.locator("button[aria-label^='Layer']").first()).toContainText("Renamed Hero");
 
     // Escape cancels the rename (the row keeps its name).
-    const topRow = page.locator("[role=button][aria-label^='Layer']").first();
+    const topRow = page.locator("button[aria-label^='Layer']").first();
     const currentName = (await topRow.getAttribute("aria-label")) ?? "";
     await topRow.dblclick();
-    const cancelInput = topRow.locator("input");
+    // Session 70 (S70-A): the input targets the row container (the button
+    // unmounts while renaming).
+    const cancelInput = page.locator("[data-layer-row] input").first();
     await expect(cancelInput).toBeVisible();
     await cancelInput.press("Escape");
     await expect(cancelInput).toBeHidden();
-    await expect(page.locator("[role=button][aria-label^='Layer']").first()).toHaveAttribute(
+    await expect(page.locator("button[aria-label^='Layer']").first()).toHaveAttribute(
       "aria-label",
       currentName,
     );
@@ -216,8 +226,11 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
     // flipping only the svg's opacity class — opacity-50 unlocked /
     // opacity-100 locked. The pre-session clone swapped two different
     // hand-inlined padlock SVGs with no opacity distinction.
-    const firstRow = page.locator("[role=button][aria-label^='Layer']").first();
-    const lockButton = firstRow.getByRole("button", { name: "Lock layer" });
+    // Session 70 (S70-A): the eye/lock/trash trio renders as the select
+    // button's SIBLINGS — scope the action buttons through the row
+    // container's data-layer-row marker.
+    const firstRowContainer = page.locator("[data-layer-row]").first();
+    const lockButton = firstRowContainer.getByRole("button", { name: "Lock layer" });
     const lockSvg = lockButton.locator("svg");
 
     // Unlocked: the lucide-lock component icon, dimmed to 50%.
@@ -229,7 +242,7 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
     // Locking flips the SAME icon's opacity to 100 (a class flip, not an
     // icon swap) and swaps the aria-label.
     await lockButton.click();
-    const unlockedButton = firstRow.getByRole("button", { name: "Unlock layer" });
+    const unlockedButton = firstRowContainer.getByRole("button", { name: "Unlock layer" });
     await expect(unlockedButton).toBeVisible();
     const lockedSvg = unlockedButton.locator("svg");
     await expect(lockedSvg).toHaveClass(/lucide-lock/);
@@ -238,12 +251,12 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
 
     // Unlocking returns the dimmed state.
     await unlockedButton.click();
-    await expect(firstRow.getByRole("button", { name: "Lock layer" })).toBeVisible();
-    await expect(firstRow.getByRole("button", { name: "Lock layer" }).locator("svg")).toHaveClass(/opacity-50/);
+    await expect(firstRowContainer.getByRole("button", { name: "Lock layer" })).toBeVisible();
+    await expect(firstRowContainer.getByRole("button", { name: "Lock layer" }).locator("svg")).toHaveClass(/opacity-50/);
 
     // The eye button renders the lucide component icon too (not a
     // hand-inlined svg) — the reference's DOM carries lucide lucide-eye.
-    const eyeSvg = firstRow.getByRole("button", { name: "Hide layer" }).locator("svg");
+    const eyeSvg = firstRowContainer.getByRole("button", { name: "Hide layer" }).locator("svg");
     await expect(eyeSvg).toHaveClass(/lucide-eye/);
     await expect(eyeSvg).toHaveClass(/h-3 w-3/);
   });
@@ -545,7 +558,7 @@ test.describe("layers drag-reorder precision (session 21)", () => {
   //   CTA Label, CTA Button, Headline, Glow, Accent Bar, Hero Section
 
   async function rowOrder(page: import("@playwright/test").Page): Promise<string[]> {
-    return page.locator("[role=button][aria-label^='Layer']").evaluateAll((rows) =>
+    return page.locator("button[aria-label^='Layer']").evaluateAll((rows) =>
       rows.map((r) => (r.getAttribute("aria-label") ?? "").replace(/^Layer /, "")),
     );
   }
@@ -563,7 +576,7 @@ test.describe("layers drag-reorder precision (session 21)", () => {
     await page.evaluate(
       ({ sourceName, targetName, heightFraction }) => {
         const rows = Array.from(
-          document.querySelectorAll("[role=button][aria-label^='Layer']"),
+          document.querySelectorAll("button[aria-label^='Layer']"),
         );
         const source = rows.find((r) =>
           (r.getAttribute("aria-label") ?? "").includes(sourceName),
@@ -647,7 +660,7 @@ test.describe("properties number-input commit semantics (session 21)", () => {
     // ran Number("") → 0 → committed, teleporting the element to x=0 the
     // instant the field was cleared (live-verified: translate(120px, …) →
     // translate(0px, …)). Abandoning the edit (blur) must restore the value.
-    await page.locator("[role=button][aria-label='Layer Accent Bar']").click();
+    await page.locator("button[aria-label='Layer Accent Bar']").click();
     const element = page.locator("[data-element-id][aria-label='Accent Bar']");
     await expect(element).toHaveCount(1);
 
@@ -692,10 +705,15 @@ test.describe("locked-element pointer contract (session 23)", () => {
   async function lockGlow(page: import("@playwright/test").Page) {
     // Idempotent: the lock persists across tests (the autosave replace
     // contract writes it to the e2e DB) — only click when not already locked.
-    const row = page.locator("[role=button][aria-label='Layer Glow']");
-    const unlock = row.getByRole("button", { name: "Unlock layer" });
+    // Session 70 (S70-A): the lock action renders as the select button's
+    // SIBLING — scope through the row container (matched by the row's
+    // accessible name through the button).
+    const container = page
+      .locator("button[aria-label='Layer Glow']")
+      .locator("xpath=..");
+    const unlock = container.getByRole("button", { name: "Unlock layer" });
     if (!(await unlock.isVisible())) {
-      await row.getByRole("button", { name: "Lock layer" }).click();
+      await container.getByRole("button", { name: "Lock layer" }).click();
     }
     await expect(unlock).toBeVisible();
   }
@@ -748,11 +766,15 @@ test.describe("locked-element pointer contract (session 23)", () => {
     await lockGlow(page);
 
     // Row-select the Headline (rows are the selection path for any element,
-    // locked or not — parity).
-    const headlineRow = page.locator("[role=button][aria-label='Layer Headline']");
+    // locked or not — parity). Session 70 (S70-A): the selected chrome
+    // (bg-blue-600) rides the ROW CONTAINER; the select button carries the
+    // aria-pressed state — both asserted.
+    const headlineRow = page.locator("button[aria-label='Layer Headline']");
+    const headlineRowContainer = headlineRow.locator("xpath=..");
     await headlineRow.click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
-    await expect(headlineRow).toHaveClass(/bg-blue-600/);
+    await expect(headlineRow).toHaveAttribute("aria-pressed", "true");
+    await expect(headlineRowContainer).toHaveClass(/bg-blue-600/);
 
     // Click the locked Glow's canvas center.
     const box = await page.locator("[data-element-id][aria-label='Glow']").boundingBox();
@@ -762,7 +784,8 @@ test.describe("locked-element pointer contract (session 23)", () => {
     // The Headline stays selected — the locked click was consumed (pre-fix:
     // the fall-through selects the Hero Section frame and steals the pill).
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
-    await expect(headlineRow).toHaveClass(/bg-blue-600/);
+    await expect(headlineRow).toHaveAttribute("aria-pressed", "true");
+    await expect(headlineRowContainer).toHaveClass(/bg-blue-600/);
   });
 
   test("the locked canvas element renders the reference's not-allowed cursor (session 23)", async ({ page }) => {
@@ -782,7 +805,7 @@ test.describe("locked-element pointer contract (session 23)", () => {
     // element. (The reference ships no handles at all — this pins the
     // superset's internal consistency, S23-2.)
     await lockGlow(page);
-    await page.locator("[role=button][aria-label='Layer Glow']").click();
+    await page.locator("button[aria-label='Layer Glow']").click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
     // The outline renders (the selection is visible)…
@@ -834,10 +857,12 @@ test.describe("keyboard delete locked contract (session 25)", () => {
   async function lockGlow(page: import("@playwright/test").Page) {
     // Idempotent (the session-23 convention): the lock persists across tests
     // via the autosave replace contract — only click when not already locked.
-    const row = page.locator("[role=button][aria-label='Layer Glow']");
-    const unlock = row.getByRole("button", { name: "Unlock layer" });
+    // Session 70 (S70-A): the lock action is the select button's SIBLING
+    // — scope through the button's parent row container.
+    const container = page.locator("button[aria-label='Layer Glow']").locator("xpath=..");
+    const unlock = container.getByRole("button", { name: "Unlock layer" });
     if (!(await unlock.isVisible())) {
-      await row.getByRole("button", { name: "Lock layer" }).click();
+      await container.getByRole("button", { name: "Lock layer" }).click();
     }
     await expect(unlock).toBeVisible();
   }
@@ -862,7 +887,7 @@ test.describe("keyboard delete locked contract (session 25)", () => {
     // next test's prerequisites vanish with the Glow).
     await lockGlow(page);
 
-    const glowRow = page.locator("[role=button][aria-label='Layer Glow']");
+    const glowRow = page.locator("button[aria-label='Layer Glow']");
     await glowRow.click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
@@ -902,7 +927,7 @@ test.describe("keyboard delete locked contract (session 25)", () => {
     // Capture the outcome before restoring.
     const glowOnCanvas = await page.locator("[data-element-id][aria-label='Glow']").count();
     const layerCount = await page.locator("[data-element-id]").count();
-    const glowRowVisible = await page.locator("[role=button][aria-label='Layer Glow']").isVisible();
+    const glowRowVisible = await page.locator("button[aria-label='Layer Glow']").isVisible();
 
     // Restore the canvas and persist the restore.
     await page.keyboard.press("Control+z");
@@ -921,7 +946,7 @@ test.describe("keyboard delete locked contract (session 25)", () => {
     // row-selected element still deletes via the keyboard, and Ctrl+Z still
     // recovers it. (GREEN pre-fix by design: it pins the preserved behavior
     // so the locked filter can never over-reach into a dead keyboard.)
-    const headlineRow = page.locator("[role=button][aria-label='Layer Headline']");
+    const headlineRow = page.locator("button[aria-label='Layer Headline']");
     await headlineRow.click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
@@ -949,8 +974,10 @@ test.describe("keyboard delete locked contract (session 25)", () => {
     // the store action.
     await lockGlow(page);
 
-    const glowRow = page.locator("[role=button][aria-label='Layer Glow']");
-    await glowRow.getByRole("button", { name: "Delete layer Glow" }).click();
+    // Session 70 (S70-A): the trash action is the select button's
+    // SIBLING — scope through the button's parent row container.
+    const glowContainer = page.locator("button[aria-label='Layer Glow']").locator("xpath=..");
+    await glowContainer.getByRole("button", { name: "Delete layer Glow" }).click();
 
     // Capture, then restore (undo recovers the locked element — the
     // recovery path, session 17).
@@ -958,7 +985,7 @@ test.describe("keyboard delete locked contract (session 25)", () => {
     const layerCount = await page.locator("[data-element-id]").count();
 
     await page.keyboard.press("Control+z");
-    await expect(page.locator("[role=button][aria-label='Layer Glow']")).toBeVisible();
+    await expect(page.locator("button[aria-label='Layer Glow']")).toBeVisible();
     await expect(page.locator("[data-element-id]")).toHaveCount(6);
     await waitForSaved(page);
 
@@ -976,10 +1003,12 @@ test.describe("AI delete locked contract (session 27)", () => {
   async function lockGlow(page: import("@playwright/test").Page) {
     // Idempotent (the session-23/25 convention): the lock persists across
     // tests via the autosave replace contract — only click when not locked.
-    const row = page.locator("[role=button][aria-label='Layer Glow']");
-    const unlock = row.getByRole("button", { name: "Unlock layer" });
+    // Session 70 (S70-A): the lock action is the select button's SIBLING
+    // — scope through the button's parent row container.
+    const container = page.locator("button[aria-label='Layer Glow']").locator("xpath=..");
+    const unlock = container.getByRole("button", { name: "Unlock layer" });
     if (!(await unlock.isVisible())) {
-      await row.getByRole("button", { name: "Lock layer" }).click();
+      await container.getByRole("button", { name: "Lock layer" }).click();
     }
     await expect(unlock).toBeVisible();
   }
@@ -1011,7 +1040,7 @@ test.describe("AI delete locked contract (session 27)", () => {
     // the shared e2e DB mutated.
     await lockGlow(page);
 
-    const glowRow = page.locator("[role=button][aria-label='Layer Glow']");
+    const glowRow = page.locator("button[aria-label='Layer Glow']");
     await glowRow.click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
@@ -1070,7 +1099,7 @@ test.describe("AI delete locked contract (session 27)", () => {
     // row-selected element still deletes via the AI instruction, and Ctrl+Z
     // still recovers it. (GREEN pre-fix by design: it pins the preserved
     // behavior so the locked filter can never deaden the assistant.)
-    const headlineRow = page.locator("[role=button][aria-label='Layer Headline']");
+    const headlineRow = page.locator("button[aria-label='Layer Headline']");
     await headlineRow.click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
@@ -1176,7 +1205,7 @@ test.describe("line + text element rendering (session 29)", () => {
     await expect(line).toHaveCSS("border-top-width", "0px");
     // The layer row and the canvas agree on what this element is (the
     // S19-3 coherence class): the row says Line, the canvas shows a stroke.
-    await expect(page.locator("[role=button][aria-label^='Layer Line']").first()).toBeVisible();
+    await expect(page.locator("button[aria-label^='Layer Line']").first()).toBeVisible();
 
     // Cleanup: undo the draw and let the autosave settle (a RED failure
     // must never leave the shared e2e DB mutated — session 25 discipline).
@@ -1189,7 +1218,7 @@ test.describe("line + text element rendering (session 29)", () => {
     // TRANSFORM | OPACITY — NO Corner Radius (a corner-radius slider on a
     // corner-less shape is incoherent chrome, the S23-2 class).
     const line = await drawLine(page);
-    await page.locator("[role=button][aria-label^='Layer Line']").first().click();
+    await page.locator("button[aria-label^='Layer Line']").first().click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
     await expect(await panelSections(page)).toEqual([
@@ -1205,7 +1234,7 @@ test.describe("line + text element rendering (session 29)", () => {
 
   test("an ellipse selection hides the Corner Radius section (session 29)", async ({ page }) => {
     // Same measured contract for ellipses (RA-9): no Corner Radius.
-    await page.locator("[role=button][aria-label='Layer Glow']").click();
+    await page.locator("button[aria-label='Layer Glow']").click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
     await expect(await panelSections(page)).toEqual([
@@ -1222,7 +1251,7 @@ test.describe("line + text element rendering (session 29)", () => {
     // control lives inside the TEXT section). The measured TEXT controls:
     // Content (INPUT), Font Size, Color, Font Family (combobox, "Inter"),
     // Text Align (segmented buttons) — no Weight control.
-    await page.locator("[role=button][aria-label='Layer Headline']").click();
+    await page.locator("button[aria-label='Layer Headline']").click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
     await expect(await panelSections(page)).toEqual([
@@ -1245,7 +1274,7 @@ test.describe("line + text element rendering (session 29)", () => {
     // picking Arial changed its canvas text's computed font-family). The
     // clone's port must be too — a dead control that lies is a documented
     // bug class.
-    await page.locator("[role=button][aria-label='Layer Headline']").click();
+    await page.locator("button[aria-label='Layer Headline']").click();
     await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
 
     await page.getByRole("combobox", { name: "Font Family" }).click();
@@ -1379,10 +1408,14 @@ test.describe("frame container rendering (session 31)", () => {
     // div carries the 1px #555555 border and an EMPTY interior — NO label
     // child. The pre-fix thumbnail rendered the solid #161B22 panel.
     await page.goto("/");
-    const card = page.locator("[aria-label^='Open ']").filter({ hasText: SEEDED_PROJECT }).first();
+    // Session 70 (S70-A): the accessible-name carrier is the STRETCHED
+    // BUTTON (an empty element — hasText filters no longer apply); the
+    // thumbnail renders in the card ROOT around it.
+    const card = page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first();
     await expect(card).toBeVisible();
+    const cardRoot = card.locator("xpath=..");
 
-    const thumb = card.locator(".aspect-\\[16\\/10\\]");
+    const thumb = cardRoot.locator(".aspect-\\[16\\/10\\]");
     // The bordered container renders inside the thumbnail.
     const bordered = await thumb.evaluate((root) => {
       return Array.from(root.querySelectorAll("div")).some((d) => {
@@ -1493,7 +1526,7 @@ test.describe("fill tabs: the functional three-tab editor (session 41, RA-54)", 
 
   async function openOnCta(page: import("@playwright/test").Page) {
     await page.goto("/");
-    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: "Open Marketing Hero Banner" }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
     await page.getByRole("button", { name: "Layer CTA Button", exact: true }).click();
     await expect(page.getByRole("heading", { level: 4, name: "Fill & Stroke" })).toBeVisible();

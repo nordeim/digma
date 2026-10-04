@@ -204,7 +204,7 @@ test.describe("session 58 — the header-search same-route sync (S58-D / A-M-4)"
 test.describe("session 58 — the PresentOverlay text fidelity (S58-E / B-M-1)", () => {
   test("the seeded multi-line Headline presents pre-wrap (the canvas contract)", async ({ page }) => {
     await page.goto("/");
-    await page.getByText(SEEDED_PROJECT).filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
     await page.getByRole("button", { name: "Present" }).click();
     const overlay = page.getByRole("dialog");

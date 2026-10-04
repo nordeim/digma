@@ -48,7 +48,10 @@ async function deleteFixture(page: import("@playwright/test").Page, id: string) 
 
 async function openSeededEditor(page: import("@playwright/test").Page, name: string) {
   await page.goto("/");
-  await page.getByText(name).filter({ visible: true }).first().click();
+  // Session 70 (S70-A): the card's click target is the STRETCHED BUTTON
+  // (the a11y restructure) — the name text sits in the
+  // pointer-events-none layer above it.
+  await page.getByRole("button", { name: `Open ${name}` }).first().click();
   await expect(page).toHaveURL(/\/Editor\?projectId=/);
 }
 
@@ -66,9 +69,14 @@ test.describe("session 61 — the destructive-token AA contrast (S61-A / M-1)", 
     const fixture = await createFixture(page);
     try {
       await page.goto("/");
-      const card = page.locator("[aria-label^='Open ']").filter({ hasText: FIXTURE_NAME }).first();
+      // Session 70 (S70-A): the accessible-name carrier is the STRETCHED
+      // BUTTON; the ellipsis trigger renders in the card ROOT around it.
+      const card = page.getByRole("button", { name: `Open ${FIXTURE_NAME}` }).first();
       await expect(card).toBeVisible();
-      await card.getByRole("button", { name: /More options for Session61 Fixture/ }).click();
+      await card
+        .locator("xpath=..")
+        .getByRole("button", { name: /More options for Session61 Fixture/ })
+        .click();
       await page.getByRole("menuitem", { name: "Delete" }).click();
       const confirm = page.getByRole("dialog");
       await expect(confirm.getByRole("heading", { name: "Delete project?" })).toBeVisible();
@@ -111,7 +119,7 @@ test.describe("session 61 — the loadProject viewport/tool reset (S61-C / A-L-2
     // the store singleton survives BOTH navigations.
     await page.getByRole("button", { name: "Back to dashboard" }).click();
     await expect(page).toHaveURL(/\/Dashboard/);
-    await page.getByText(SEEDED_PROJECT_B).filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: `Open ${SEEDED_PROJECT_B}` }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
 
     // THE DEFECT PIN: pre-fix project B opened at project A's 144% with
@@ -168,7 +176,7 @@ test.describe("session 61 — the immediate card open (S61-H / B-L-5)", () => {
 
     const before = Date.now();
     await page.goto("/");
-    await page.getByText(SEEDED_PROJECT_B).filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: `Open ${SEEDED_PROJECT_B}` }).first().click();
 
     // THE DEFECT PIN: pre-fix this waited for the held PATCH (a 10s
     // expect-timeout RED); post-fix the navigation is immediate.

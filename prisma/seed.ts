@@ -3,15 +3,13 @@
 // Run: bunx tsx prisma/seed.ts  (or: bun prisma/seed.ts)
 
 import { PrismaClient } from "@prisma/client";
-import { scryptSync, randomBytes } from "crypto";
+// Session 70 (S70-D / L-A5): the seed imports the PURE password seam —
+// the pre-fix duplicate of the scrypt parameter set (16-byte salt, 64-byte
+// key) drifted silently against src/lib/auth.ts. The seam is node:crypto
+// only, so this bare-PrismaClient script imports it safely.
+import { hashPassword } from "../src/lib/password";
 
 const db = new PrismaClient();
-
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
 
 function d(iso: string): Date {
   return new Date(iso);

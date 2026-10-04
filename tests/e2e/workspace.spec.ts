@@ -82,7 +82,7 @@ test.describe("workspace shell (desktop)", () => {
   test("the editor loads a seeded project with layers", async ({ page }) => {
     // Navigate through the dashboard (the real user path).
     await page.goto("/");
-    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: "Open Marketing Hero Banner" }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
     await expect(page.getByRole("heading", { name: "Marketing Hero Banner" })).toBeVisible();
     await expect(page.getByRole("toolbar", { name: "Editor tools" })).toBeVisible();
@@ -118,7 +118,7 @@ test.describe("workspace shell (desktop)", () => {
     // degrade-not-fail contract must keep the page alive, answer, and mutate
     // the canvas even when the LLM layer is unavailable.
     await page.goto("/");
-    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: "Open Marketing Hero Banner" }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
 
     const before = await page.getByRole("button", { name: /^Layer / }).count();
@@ -162,12 +162,17 @@ test.describe("project delete confirm (session 31)", () => {
     await expect(page).toHaveURL(/\/Editor\?projectId=/, { timeout: 15_000 });
     await page.goto("/");
 
-    const card = page.locator("[aria-label^='Open ']").filter({ hasText: "Delete Confirm Spec" }).first();
+    // Session 70 (S70-A): the accessible-name carrier is the STRETCHED
+    // BUTTON; the ellipsis trigger renders in the card ROOT around it.
+    const card = page
+      .getByRole("button", { name: "Open Delete Confirm Spec" })
+      .first();
     await expect(card).toBeVisible();
+    const cardRoot = card.locator("xpath=..");
 
     // Open the ellipsis menu and click Delete — the CONFIRM renders (the
     // pre-fix code deleted immediately: this assertion is the RED line).
-    await card.getByRole("button", { name: /More options for Delete Confirm Spec/ }).click();
+    await cardRoot.getByRole("button", { name: /More options for Delete Confirm Spec/ }).click();
     await page.getByRole("menuitem", { name: "Delete" }).click();
     const confirm = page.getByRole("dialog");
     await expect(confirm.getByRole("heading", { name: "Delete project?" })).toBeVisible();
@@ -178,7 +183,7 @@ test.describe("project delete confirm (session 31)", () => {
     await expect(card).toBeVisible();
 
     // Delete again — "Yes, Delete" removes the project (and cleans up).
-    await card.getByRole("button", { name: /More options for Delete Confirm Spec/ }).click();
+    await cardRoot.getByRole("button", { name: /More options for Delete Confirm Spec/ }).click();
     await page.getByRole("menuitem", { name: "Delete" }).click();
     await expect(confirm.getByRole("heading", { name: "Delete project?" })).toBeVisible();
     await confirm.getByRole("button", { name: "Yes, Delete" }).click();

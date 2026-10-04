@@ -29,7 +29,6 @@ function rect(x: number, y: number, w: number, h: number, opts: Partial<DesignEl
     type: "rectangle",
     name: "el",
     sortOrder: 0,
-    zIndex: 0,
     x,
     y,
     width: w,

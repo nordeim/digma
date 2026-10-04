@@ -20,7 +20,7 @@ const SEEDED_PROJECT = "Marketing Hero Banner";
 
 async function openSeededEditor(page: import("@playwright/test").Page) {
   await page.goto("/");
-  await page.getByText(SEEDED_PROJECT).filter({ visible: true }).first().click();
+  await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
   await expect(page).toHaveURL(/\/Editor\?projectId=/);
 }
 
@@ -43,7 +43,7 @@ test.describe("the autosave state machine (session 56, S56-B / H-2)", () => {
     await openSeededEditor(page);
 
     // Edit A: move the Accent Bar's X 120 → 200 (a real, committed edit).
-    await page.locator("[role=button][aria-label='Layer Accent Bar']").click();
+    await page.locator("button[aria-label='Layer Accent Bar']").click();
     const element = page.locator("[data-element-id][aria-label='Accent Bar']");
     const inlineTransform = () => element.evaluate((node) => node.style.transform);
     const x = page.getByRole("spinbutton", { name: "X" });
@@ -68,7 +68,7 @@ test.describe("the autosave state machine (session 56, S56-B / H-2)", () => {
 
     // …and it PERSISTS: reload and the element still sits at 280.
     await page.reload();
-    await page.locator("[role=button][aria-label='Layer Accent Bar']").click();
+    await page.locator("button[aria-label='Layer Accent Bar']").click();
     await expect(page.getByRole("spinbutton", { name: "X" })).toHaveValue("280");
 
     // Cleanup: restore the seeded X before leaving (a failure must never
@@ -103,7 +103,7 @@ test.describe("the exit flush parity (session 56, S56-C / M-2)", () => {
     // The fire-and-forget exit flush completes in the background; give it
     // generous settle time, then reopen the project.
     await page.waitForTimeout(2_500);
-    await page.getByText(SEEDED_PROJECT).filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
 
     // The pre-fix exit PUT carried elements ONLY — the background silently

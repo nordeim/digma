@@ -14,7 +14,7 @@ const SEEDED_PROJECT = "Marketing Hero Banner";
 
 async function openSeededEditor(page: import("@playwright/test").Page) {
   await page.goto("/");
-  await page.getByText(SEEDED_PROJECT).filter({ visible: true }).first().click();
+  await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
   await expect(page).toHaveURL(/\/Editor\?projectId=/);
 }
 

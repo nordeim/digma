@@ -20,10 +20,15 @@ export default function globalSetup(): void {
   const run = (cmd: string) =>
     execSync(cmd, { cwd: repo, env, stdio: "pipe" }).toString();
 
+  // Session 70 (S70-B): --accept-data-loss — the e2e database is a
+  // throwaway (wiped + re-seeded by this very setup); a destructive
+  // schema push (the session-70 dead-column drop was the first) must not
+  // stall on the interactive confirmation the piped execSync cannot
+  // answer.
   try {
-    run("bunx prisma db push --skip-generate");
+    run("bunx prisma db push --skip-generate --accept-data-loss");
   } catch {
-    run("npx prisma db push --skip-generate");
+    run("npx prisma db push --skip-generate --accept-data-loss");
   }
   try {
     run("bun prisma/seed.ts");

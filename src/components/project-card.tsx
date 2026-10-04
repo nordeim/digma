@@ -47,6 +47,8 @@ import {
   thumbnailFit,
   type DesignElementDTO,
   type ProjectDTO,
+  type ProjectSummaryDTO,
+  type ThumbnailElementDTO,
 } from "@/lib/editor";
 import { memberColorFor } from "@/lib/team";
 
@@ -70,7 +72,10 @@ export function CanvasThumbnail({
   elements,
 }: {
   project: Pick<ProjectDTO, "backgroundColor" | "id">;
-  elements: DesignElementDTO[];
+  // Session 70 (S70-C): the thumbnail consumes the PROJECTED rows (the
+  // list-family routes ship the bounded projection; the detail/editor
+  // rows are a structural superset and fit the same param).
+  elements: ThumbnailElementDTO[];
 }) {
   const bounds = boundsOf(elements);
   const boxW = 320;
@@ -225,8 +230,8 @@ export function InlineProjectRename({
   onRenamed,
   onCancel,
 }: {
-  project: ProjectDTO;
-  onRenamed: (project: ProjectDTO) => void;
+  project: ProjectSummaryDTO;
+  onRenamed: (project: ProjectSummaryDTO) => void;
   onCancel: () => void;
 }) {
   const [value, setValue] = React.useState(project.name);
@@ -256,7 +261,8 @@ export function InlineProjectRename({
         return;
       }
       toast.success("Project renamed", name);
-      onRenamed(body.data.project as ProjectDTO);
+      // Session 70 (S70-C): the PATCH response ships the summary shape.
+      onRenamed(body.data.project as ProjectSummaryDTO);
     } catch {
       toast.error("Network error", "Could not rename the project.");
     } finally {
@@ -266,7 +272,7 @@ export function InlineProjectRename({
 
   return (
     <div
-      className="flex w-full items-center gap-1"
+      className="pointer-events-auto flex w-full items-center gap-1"
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >
@@ -324,13 +330,13 @@ export function ProjectCard({
   onRenamed,
   onDeleted,
 }: {
-  project: ProjectDTO;
+  project: ProjectSummaryDTO;
   // Session 63 (S63-C / A-L2): the RA-53 documented contract — the first
   // avatar chip carries the REAL-USER initial (title "You", the RA-40
   // working-superset family), not a hardcoded constant. Both call sites
   // derive it from the signed-in user's name.
   userInitial: string;
-  onRenamed?: (project: ProjectDTO) => void;
+  onRenamed?: (project: ProjectSummaryDTO) => void;
   onDeleted?: (id: string) => void;
 }) {
   const router = useRouter();
@@ -384,20 +390,24 @@ export function ProjectCard({
   }
 
   return (
-    <div
-      className="group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-300 hover:border-gray-300 hover:shadow-md"
-      onClick={() => void openProject()}
-      role="button"
-      tabIndex={0}
-      aria-label={`Open ${project.name}`}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          void openProject();
-        }
-      }}
-    >
-      <div className="block w-full text-left">
+    // Session 70 (S70-A / M-A1 — the eighteenth audit): the WAI-ARIA
+    // button-pattern violation closed — the root carried role="button" +
+    // tabIndex + the Enter/Space onKeyDown with NESTED interactive
+    // descendants (the rename Input, the Check/X buttons, the ellipsis
+    // trigger), which AT flattens or misannounces. The canonical
+    // stretched-button form: a real absolute inset-0 <button> owns the
+    // open; the content layer suppresses pointer events; the interactive
+    // children opt back in (pointer-events-auto). The [aria-label^='Open ']
+    // locator family survives byte-identically; the S31-3/S58-B
+    // stopPropagation wrappers stay as belt-and-braces.
+    <div className="group relative cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-300 hover:border-gray-300 hover:shadow-md focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-1">
+      <button
+        type="button"
+        aria-label={`Open ${project.name}`}
+        onClick={() => void openProject()}
+        className="absolute inset-0 z-0 cursor-pointer"
+      />
+      <div className="pointer-events-none relative z-10 block w-full text-left">
         <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
           <CanvasThumbnail project={project} elements={elements} />
           {/* Session 63 (S63-A / A-H1 — the eleventh audit's HIGH): the
@@ -410,7 +420,11 @@ export function ProjectCard({
           <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover:bg-black/10" />
         </div>
       </div>
-      <div className="p-3">
+      {/* Session 70 (S70-A): the content blocks BOTH carry relative z-10 —
+          a non-positioned sibling paints BELOW the positioned stretched
+          button (z-0), so the hit test would land on the button even over
+          the pointer-events-auto ellipsis. */}
+      <div className="pointer-events-none relative z-10 p-3">
         <div className="mb-2 flex items-start justify-between">
           {/* Session 41 (RA-52): the ellipsis Rename opens the reference's
               INLINE header-row editor (input + Check/X icon buttons), not a
@@ -438,6 +452,7 @@ export function ProjectCard({
               navigating to the editor and unmounting the menu — keyboard
               users could not Rename/Delete from a grid card. */}
           <div
+            className="pointer-events-auto"
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}
           >
@@ -557,7 +572,7 @@ export function CreateProjectDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated: (project: ProjectDTO) => void;
+  onCreated: (project: ProjectSummaryDTO) => void;
 }) {
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -587,7 +602,9 @@ export function CreateProjectDialog({
         toast.error("Could not create the project", body?.error?.message ?? "Please try again.");
         return;
       }
-      const project = body.data.project as ProjectDTO;
+      // Session 70 (S70-C): the created project (no element include on
+      // the POST) flows into the summary-typed list state.
+      const project = body.data.project as ProjectSummaryDTO;
       onCreated(project);
       onOpenChange(false);
       reset();

@@ -34,7 +34,14 @@ describe("the layers-row dblclick nested-control guard (session 61, S61-D / A-L-
     const end = panelSource.indexOf("onClick={(event)", start);
     expect(end).toBeGreaterThan(start);
     const handler = panelSource.slice(start, end);
-    expect(handler).toContain('closest("button, input")');
+    // Session 70 (S70-A) contract re-anchor: the guard's selector
+    // REFINED with the a11y restructure — the action trio is scoped by
+    // its data-layer-action wrapper and the rename input by its tag; the
+    // select button (the row's primary surface) is exempt so a
+    // double-click on the name still opens the rename. The BEHAVIORAL
+    // contract (a rapid eye/lock double-toggle never steals into rename)
+    // is pinned unchanged.
+    expect(handler).toContain('closest("[data-layer-action], input")');
   });
 });
 

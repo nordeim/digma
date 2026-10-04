@@ -43,7 +43,6 @@ function rect(id: string, x: number, y: number): DesignElementDTO {
     type: "rectangle",
     name: id,
     sortOrder: 0,
-    zIndex: 0,
     x,
     y,
     width: 200,

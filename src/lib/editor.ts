@@ -3,9 +3,18 @@
 // AI-assistant route both import.
 
 // The editor's pure geometry + paint seams. Keep this module import-free
-// except the shared validation helpers (clampColor) — it is the domain core
-// every render site consumes.
-import { clampColor } from "@/lib/validation";
+// except the shared validation helpers — it is the domain core every render
+// site consumes (session 70 widened the import surface to the full clamp
+// family for the ONE row-builder seam the elements routes consume).
+import {
+  clampColor,
+  clampFontFamily,
+  clampFontWeight,
+  clampNumber,
+  clampOptionalText,
+  clampTextAlign,
+  isElementType,
+} from "@/lib/validation";
 
 export type ElementType =
   | "rectangle"
@@ -126,8 +135,9 @@ export type DesignElementDTO = {
    * null falls back to Inter at every render site. */
   fontFamily: string | null;
   textAlign: string | null;
-  src: string | null;
-  path: string | null;
+  // Session 70 (S70-B / L-A1): the dead DTO fields deleted with their
+  // schema columns — src/path (written by the row-builders, zero read
+  // sites) and zIndex (written + round-tripped, zero read sites).
   /** The Gradient tab's persisted document (session 41, RA-54) — a JSON
    * string on the wire and in the store, parsed by parseGradient at the
    * consumption seams. Null = no gradient (the solid `fill` paints). */
@@ -140,7 +150,6 @@ export type DesignElementDTO = {
    * paints as cover (the reference's upload default). Stretch maps to the
    * reference's "100% 100%" backgroundSize at the paint seam. */
   fillImageFit: string | null;
-  zIndex: number;
   visible: boolean;
   locked: boolean;
   sortOrder: number;
@@ -157,6 +166,53 @@ export type ProjectDTO = {
   updatedAt: string;
   elements?: DesignElementDTO[];
 };
+
+// Session 70 (S70-C / L-A3 — the eighteenth audit): the bounded
+// thumbnail projection for the LIST-family routes. The list GET, the
+// PATCH response, and the duplicate response previously shipped FULL
+// element rows — every column including the ≤700 KB data-URL fillImage —
+// to feed 320×200 card thumbnails. The projection below ships exactly
+// the fields CanvasThumbnail + boundsOf consume: the geometry/paint
+// chain. NOT shipped: name (frames render no thumbnail label, RA-19),
+// locked (thumbnails render locked elements — visible is the only
+// filter), sortOrder (the array IS the order), timestamps, and the dead
+// columns S70-B dropped.
+export type ThumbnailElementDTO = Omit<DesignElementDTO, "name" | "locked" | "sortOrder">;
+
+/** The list-family project shape: the project fields + the projected
+ * (bounded) element rows. The DETAIL route (GET /api/projects/[id] — the
+ * editor's surface) keeps the full-row include and the full ProjectDTO. */
+export type ProjectSummaryDTO = Omit<ProjectDTO, "elements"> & { elements: ThumbnailElementDTO[] };
+
+/** The shared Prisma select object for the projection — one source for
+ * the three list-family routes (list GET, PATCH response, duplicate
+ * response). A plain const (no Prisma type import — the route files
+ * pass it straight into the include's select). */
+export const THUMBNAIL_ELEMENT_SELECT = {
+  id: true,
+  type: true,
+  x: true,
+  y: true,
+  width: true,
+  height: true,
+  rotation: true,
+  scale: true,
+  opacity: true,
+  fill: true,
+  fillGradient: true,
+  fillImage: true,
+  fillImageFit: true,
+  stroke: true,
+  strokeWidth: true,
+  radius: true,
+  text: true,
+  fontSize: true,
+  fontWeight: true,
+  fontFamily: true,
+  textAlign: true,
+  visible: true,
+} as const;
+
 
 export const TEMPLATE_META: Record<string, { label: string; description: string; image: string }> = {
   blank: {
@@ -250,12 +306,9 @@ export function defaultElementFor(
     fontWeight: null,
     fontFamily: null,
     textAlign: null,
-    src: null,
-    path: null,
     fillGradient: null,
     fillImage: null,
     fillImageFit: null,
-    zIndex: sortOrder,
     visible: true,
     locked: false,
     sortOrder,
@@ -411,7 +464,12 @@ export type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
  * rotated element's selection outline, resize handles, and marquee
  * containment landed off its visual. The AABB folds the four rotated
  * corners; the zero-angle path returns the historical math exactly. */
-export function boundsOf(elements: DesignElementDTO[]): Bounds | null {
+export function boundsOf(
+  // Session 70 (S70-C): the signature widens to the structural geometry
+  // subset — full DTO rows AND the projected thumbnail rows both fit
+  // (the list routes ship the bounded projection).
+  elements: Array<Pick<DesignElementDTO, "x" | "y" | "width" | "height" | "rotation" | "scale">>,
+): Bounds | null {
   if (elements.length === 0) return null;
   let minX = Infinity;
   let minY = Infinity;
@@ -661,4 +719,116 @@ export function fillImageSizeFor(fit: string | null | undefined): string {
 export function clampFillImageFit(value: unknown): "cover" | "contain" | "auto" | "stretch" | null {
   if (value === "cover" || value === "contain" || value === "auto" || value === "stretch") return value;
   return null;
+}
+
+/** The Image tab's self-hosted fill cap — a ~500 KB data URL plus the
+ * base64 overhead (session 70 moved the constant here with the clamp it
+ * parameterizes; the elements route owned both before the row-builder
+ * dedup). */
+const FILL_IMAGE_MAX_CHARS = 700_000;
+
+/** The image-fill sanitize seam: only data-URLs of the five supported
+ * raster/SVG families within the size cap pass (the autosave PUT carries
+ * the full element list — an unbounded image would bloat every save);
+ * anything else nulls. (Session 70 moved this from the elements route —
+ * the ONE row-builder seam consumes it.) */
+export function clampFillImage(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (!/^data:image\/(png|jpeg|jpg|gif|svg\+xml|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return null;
+  if (value.length > FILL_IMAGE_MAX_CHARS) return null;
+  return value;
+}
+
+/** The element row shape the elements routes persist (session 70's
+ * S70-B / L-A2 — the three-convention row-builder dedup): every field
+ * clamp the POST and the PUT previously hand-rolled twice, in ONE seam.
+ * `mode: "create"` synthesizes the POST's omitted-field defaults (an
+ * omitted fill/stroke paints the brand defaults); `mode: "replace"`
+ * nulls omitted fields (the PUT's whole-list replace contract — the
+ * client is sovereign and sends exactly what the canvas carries). The
+ * name/type validation and the sortOrder source stay at the routes
+ * (they differ legitimately: the POST's sortOrder derives from the
+ * count-fallback clamp, the PUT's from the array index). */
+export function buildElementRow(
+  raw: Record<string, unknown>,
+  index: number,
+  mode: "create" | "replace",
+): {
+  type: string;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  scale: number;
+  opacity: number;
+  fill: string | null;
+  fillGradient: string | null;
+  fillImage: string | null;
+  fillImageFit: string | null;
+  stroke: string | null;
+  strokeWidth: number;
+  radius: number;
+  text: string | null;
+  fontSize: number | null;
+  fontWeight: string | null;
+  fontFamily: string | null;
+  textAlign: string | null;
+  visible: boolean;
+  locked: boolean;
+  sortOrder: number;
+} {
+  const type = typeof raw?.type === "string" ? raw.type : "";
+  const synthesize = mode === "create";
+  return {
+    type,
+    name: clampOptionalText(raw?.name, 80) ?? defaultNameFor(type as ElementType, index),
+    x: clampNumber(raw?.x, -100000, 100000, 0),
+    y: clampNumber(raw?.y, -100000, 100000, 0),
+    width: clampNumber(raw?.width, 0, 100000, 100),
+    height: clampNumber(raw?.height, 0, 100000, 100),
+    rotation: clampNumber(raw?.rotation, -3600, 3600, 0),
+    scale: clampNumber(raw?.scale, 0.05, 20, 1),
+    opacity: clampNumber(raw?.opacity, 0, 1, 1),
+    // THE ONE convention asymmetry, made explicit and parameterized: an
+    // EXPLICIT null clears in both modes (the historical POST contract);
+    // only an UNDEFINED field differs — create synthesizes the brand
+    // default, replace nulls (the whole-list contract).
+    fill:
+      raw?.fill === null
+        ? null
+        : raw?.fill === undefined
+          ? synthesize
+            ? "#3B82F6"
+            : null
+          : clampColor(String(raw.fill), "#3B82F6"),
+    fillGradient:
+      raw?.fillGradient === null || raw?.fillGradient === undefined
+        ? null
+        : (() => {
+            const g = parseGradient(String(raw.fillGradient));
+            return g ? JSON.stringify(g) : null;
+          })(),
+    fillImage: clampFillImage(raw?.fillImage),
+    fillImageFit: clampFillImageFit(raw?.fillImageFit),
+    stroke:
+      raw?.stroke === null
+        ? null
+        : raw?.stroke === undefined
+          ? synthesize
+            ? "#FFFFFF"
+            : null
+          : clampColor(String(raw.stroke), "#FFFFFF"),
+    strokeWidth: clampNumber(raw?.strokeWidth, 0, 100, 0),
+    radius: clampNumber(raw?.radius, 0, 2000, 0),
+    text: clampOptionalText(raw?.text, 2000),
+    fontSize: raw?.fontSize === null || raw?.fontSize === undefined ? null : clampNumber(raw?.fontSize, 1, 500, 16),
+    fontWeight: clampFontWeight(raw?.fontWeight),
+    fontFamily: clampFontFamily(raw?.fontFamily),
+    textAlign: clampTextAlign(raw?.textAlign),
+    visible: raw?.visible === undefined ? true : Boolean(raw?.visible),
+    locked: raw?.locked === undefined ? false : Boolean(raw?.locked),
+    sortOrder: index,
+  };
 }

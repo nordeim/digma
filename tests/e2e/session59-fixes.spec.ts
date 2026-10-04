@@ -21,7 +21,7 @@ const SEEDED_PROJECT = "Marketing Hero Banner";
 
 async function openSeededEditor(page: import("@playwright/test").Page) {
   await page.goto("/");
-  await page.getByText(SEEDED_PROJECT).filter({ visible: true }).first().click();
+  await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
   await expect(page).toHaveURL(/\/Editor\?projectId=/);
   await expect(page.getByRole("heading", { name: SEEDED_PROJECT })).toBeVisible();
 }
@@ -34,12 +34,15 @@ test.describe("session 59 — the layers-row keyboard exemption (S59-A / B-M-1)"
   test("a Space typed in the rename input inserts the character (multi-word names typeable)", async ({
     page,
   }) => {
-    const firstRow = page.locator("[role=button][aria-label^='Layer']").first();
+    const firstRow = page.locator("button[aria-label^='Layer']").first();
     const originalLabel = (await firstRow.getAttribute("aria-label")) ?? "";
 
-    // Enter rename mode (the reference's double-click contract).
+    // Enter rename mode (the reference's double-click contract). Session
+    // 70 (S70-A): the rename input is the select button's SIBLING — it
+    // targets the row container's data-layer-row marker (the button
+    // unmounts while renaming).
     await firstRow.dblclick();
-    const input = firstRow.locator("input");
+    const input = page.locator("[data-layer-row] input").first();
     await expect(input).toBeVisible();
 
     // Per-key typing — NOT fill() (the existing chrome pin's fill() sets
@@ -56,15 +59,15 @@ test.describe("session 59 — the layers-row keyboard exemption (S59-A / B-M-1)"
     // shared-e2e-DB hygiene convention — never leave a rename behind).
     await input.blur();
     await expect(
-      page.locator("[role=button][aria-label^='Layer']").first(),
+      page.locator("button[aria-label^='Layer']").first(),
     ).toContainText("Two Words");
 
-    const renamedRow = page.locator("[role=button][aria-label^='Layer']").first();
+    const renamedRow = page.locator("button[aria-label^='Layer']").first();
     await renamedRow.dblclick();
-    const restoreInput = renamedRow.locator("input");
+    const restoreInput = page.locator("[data-layer-row] input").first();
     await restoreInput.fill(originalLabel.replace(/^Layer /, ""));
     await restoreInput.blur();
-    await expect(page.locator("[role=button][aria-label^='Layer']").first()).toHaveAttribute(
+    await expect(page.locator("button[aria-label^='Layer']").first()).toHaveAttribute(
       "aria-label",
       originalLabel,
     );
@@ -73,11 +76,15 @@ test.describe("session 59 — the layers-row keyboard exemption (S59-A / B-M-1)"
   test("Space activates the focused eye button (the layer toggles visibility by keyboard)", async ({
     page,
   }) => {
-    const firstRow = page.locator("[role=button][aria-label^='Layer']").first();
+    const firstRow = page.locator("button[aria-label^='Layer']").first();
     const originalLabel = (await firstRow.getAttribute("aria-label")) ?? "";
+    // Session 70 (S70-A): the eye/lock/trash trio renders as the select
+    // button's SIBLINGS inside the row container — scope through the
+    // row's data-layer-row marker.
+    const firstRowContainer = page.locator("[data-layer-row]").first();
 
     // The eye button of the first row (visible layer → "Hide layer").
-    const eye = firstRow.locator("button[aria-label='Hide layer']").first();
+    const eye = firstRowContainer.locator("button[aria-label='Hide layer']").first();
     await eye.focus();
 
     // THE DEFECT PIN: pre-fix the bubbled keydown was preventDefault()ed
@@ -85,14 +92,14 @@ test.describe("session 59 — the layers-row keyboard exemption (S59-A / B-M-1)"
     // and the layer stayed visible.
     await eye.press(" ");
     await expect(
-      firstRow.locator("button[aria-label='Show layer']").first(),
+      firstRowContainer.locator("button[aria-label='Show layer']").first(),
     ).toBeAttached();
 
     // Toggle back (the shared-e2e-DB hygiene convention).
-    const eyeNow = firstRow.locator("button[aria-label='Show layer']").first();
+    const eyeNow = firstRowContainer.locator("button[aria-label='Show layer']").first();
     await eyeNow.focus();
     await eyeNow.press(" ");
-    await expect(firstRow.locator("button[aria-label='Hide layer']").first()).toBeAttached();
+    await expect(firstRowContainer.locator("button[aria-label='Hide layer']").first()).toBeAttached();
     await expect(firstRow).toHaveAttribute("aria-label", originalLabel);
   });
 });
@@ -108,8 +115,8 @@ test.describe("session 59 — the multi-selection fill clear (S59-E / A-L-3)", (
     // same run can leave the shared e2e DB's Glow element LOCKED by the
     // session-23 wall contract — the canvas click would hit the pointer
     // wall, while the row click selects regardless of lock state).
-    await page.locator("[role=button][aria-label='Layer Glow']").click();
-    await page.locator("[role=button][aria-label='Layer Accent Bar']").click({
+    await page.locator("button[aria-label='Layer Glow']").click();
+    await page.locator("button[aria-label='Layer Accent Bar']").click({
       modifiers: ["Shift"],
     });
     await expect(page.getByRole("heading", { name: "2 elements selected" })).toBeVisible();

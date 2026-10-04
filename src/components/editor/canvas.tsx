@@ -279,9 +279,17 @@ export function Canvas() {
         h = Math.max(y + vh - point.y, minV(1));
         y = y + vh - h;
       }
+      // Session 70 (S70-D / L-A7): the width floor is TYPE-AWARE now —
+      // the draw commit and the panel H field always were; a 0-extent
+      // line dimension previously snapped to 1 on any later resize.
       store.updateElements(
         [el.id],
-        { x, y, width: Math.max(w / s, 1), height: Math.max(h / s, el.type === "line" ? 0 : 1) },
+        {
+          x,
+          y,
+          width: Math.max(w / s, el.type === "line" ? 0 : 1),
+          height: Math.max(h / s, el.type === "line" ? 0 : 1),
+        },
         false,
       );
       setDrag({ ...drag, moved: true });

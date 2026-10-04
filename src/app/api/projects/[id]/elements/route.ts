@@ -2,17 +2,11 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import {
-  bodySizeRejected,
-  clampColor,
-  clampFontFamily,
-  clampFontWeight,
-  clampNumber,
-  clampOptionalText,
-  clampTextAlign,
-  isElementType,
-} from "@/lib/validation";
-import { clampFillImageFit, defaultNameFor, ELEMENT_LIMIT, parseGradient, type ElementType } from "@/lib/editor";
+import { bodySizeRejected, clampColor, clampNumber, isElementType } from "@/lib/validation";
+// Session 70 (S70-B): the row-builder family (buildElementRow +
+// clampFillImage + the field clamps) lives in the ONE seam —
+// src/lib/editor.ts — consumed by both handlers below.
+import { buildElementRow, ELEMENT_LIMIT } from "@/lib/editor";
 
 export const dynamic = "force-dynamic";
 
@@ -22,17 +16,6 @@ async function loadProject(id: string) {
   return db.project.findUnique({ where: { id } });
 }
 
-const FILL_IMAGE_MAX_CHARS = 700_000; // ~500 KB data URL + overhead — the Image tab's self-hosted cap
-
-/** The Image tab's data-URL sanitize: accepts ONLY well-formed image data
- * URLs within the size cap (the autosave PUT carries the full element list —
- * an unbounded image would bloat every save); anything else nulls it. */
-function clampFillImage(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  if (!/^data:image\/(png|jpeg|jpg|gif|svg\+xml|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return null;
-  if (value.length > FILL_IMAGE_MAX_CHARS) return null;
-  return value;
-}
 
 /** GET /api/projects/[id]/elements — the canvas element list. */
 export async function GET(_request: NextRequest, { params }: Params) {
@@ -89,39 +72,14 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
   const sortOrder = clampNumber(body?.sortOrder, 0, 999, count);
 
+  // Session 70 (S70-B / L-A2 — the row-builder dedup): the POST consumes
+  // the ONE shared seam (create mode synthesizes the omitted-field
+  // defaults; the clamps live in src/lib/editor.ts beside the domain
+  // types). The dead src/path/zIndex writes died with their columns.
   const element = await db.designElement.create({
     data: {
       projectId: id,
-      type,
-      name: clampOptionalText(body?.name, 80) ?? defaultNameFor(type as ElementType, sortOrder),
-      x: clampNumber(body?.x, -100000, 100000, 0),
-      y: clampNumber(body?.y, -100000, 100000, 0),
-      width: clampNumber(body?.width, 0, 100000, 100),
-      height: clampNumber(body?.height, 0, 100000, 100),
-      rotation: clampNumber(body?.rotation, -3600, 3600, 0),
-      scale: clampNumber(body?.scale, 0.05, 20, 1),
-      opacity: clampNumber(body?.opacity, 0, 1, 1),
-      fill: body?.fill === null ? null : clampColor(String(body?.fill ?? "#3B82F6"), "#3B82F6"),
-      fillGradient:
-        body?.fillGradient === null || body?.fillGradient === undefined
-          ? null
-          : (() => { const g = parseGradient(String(body.fillGradient)); return g ? JSON.stringify(g) : null; })(),
-      fillImage: clampFillImage(body?.fillImage),
-      fillImageFit: clampFillImageFit(body?.fillImageFit),
-      stroke: body?.stroke === null ? null : clampColor(String(body?.stroke ?? "#FFFFFF"), "#FFFFFF"),
-      strokeWidth: clampNumber(body?.strokeWidth, 0, 100, 0),
-      radius: clampNumber(body?.radius, 0, 2000, 0),
-      text: clampOptionalText(body?.text, 2000),
-      fontSize: body?.fontSize === null || body?.fontSize === undefined ? null : clampNumber(body?.fontSize, 1, 500, 16),
-      fontWeight: clampFontWeight(body?.fontWeight),
-      fontFamily: clampFontFamily(body?.fontFamily),
-      textAlign: clampTextAlign(body?.textAlign),
-      src: clampOptionalText(body?.src, 2000),
-      path: clampOptionalText(body?.path, 20000),
-      zIndex: clampNumber(body?.zIndex, 0, 99999, sortOrder),
-      visible: body?.visible === undefined ? true : Boolean(body?.visible),
-      locked: body?.locked === undefined ? false : Boolean(body?.locked),
-      sortOrder,
+      ...buildElementRow(body, sortOrder, "create"),
     },
   });
 
@@ -175,42 +133,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
   }
 
-  const rows = list.map((raw: Record<string, unknown>, index: number) => {
-    const type = typeof raw?.type === "string" ? raw.type : "";
-    return {
-      type,
-      name: clampOptionalText(raw?.name, 80) ?? defaultNameFor(type as ElementType, index),
-      x: clampNumber(raw?.x, -100000, 100000, 0),
-      y: clampNumber(raw?.y, -100000, 100000, 0),
-      width: clampNumber(raw?.width, 0, 100000, 100),
-      height: clampNumber(raw?.height, 0, 100000, 100),
-      rotation: clampNumber(raw?.rotation, -3600, 3600, 0),
-      scale: clampNumber(raw?.scale, 0.05, 20, 1),
-      opacity: clampNumber(raw?.opacity, 0, 1, 1),
-      fill: raw?.fill === null || raw?.fill === undefined ? null : clampColor(String(raw.fill), "#3B82F6"),
-      fillGradient: (() => {
-        if (raw?.fillGradient === null || raw?.fillGradient === undefined) return null;
-        const g = parseGradient(String(raw.fillGradient));
-        return g ? JSON.stringify(g) : null;
-      })(),
-      fillImage: clampFillImage(raw?.fillImage),
-      fillImageFit: clampFillImageFit(raw?.fillImageFit),
-      stroke: raw?.stroke === null || raw?.stroke === undefined ? null : clampColor(String(raw.stroke), "#FFFFFF"),
-      strokeWidth: clampNumber(raw?.strokeWidth, 0, 100, 0),
-      radius: clampNumber(raw?.radius, 0, 2000, 0),
-      text: clampOptionalText(raw?.text, 2000),
-      fontSize: raw?.fontSize === null || raw?.fontSize === undefined ? null : clampNumber(raw?.fontSize, 1, 500, 16),
-      fontWeight: clampFontWeight(raw?.fontWeight),
-      fontFamily: clampFontFamily(raw?.fontFamily),
-      textAlign: clampTextAlign(raw?.textAlign),
-      src: clampOptionalText(raw?.src, 2000),
-      path: clampOptionalText(raw?.path, 20000),
-      zIndex: clampNumber(raw?.zIndex, 0, 99999, index),
-      visible: raw?.visible === undefined ? true : Boolean(raw?.visible),
-      locked: raw?.locked === undefined ? false : Boolean(raw?.locked),
-      sortOrder: index,
-    };
-  });
+  const rows = list.map((raw: Record<string, unknown>, index: number) =>
+    // Session 70 (S70-B / L-A2 — the row-builder dedup): replace mode
+    // nulls omitted fields (the whole-list replace contract); the dead
+    // src/path/zIndex writes died with their columns.
+    buildElementRow(raw, index, "replace"),
+  );
 
   // Session 56 (S56-H — L-2): the response read runs INSIDE the interactive
   // transaction. The old outside-read could interleave with a concurrent

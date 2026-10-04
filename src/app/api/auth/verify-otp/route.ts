@@ -62,11 +62,49 @@ export async function POST(request: NextRequest) {
   // unmeasurable — the code is email-only — so the lock is the coherent
   // reading of the measured contract, the same superset convention as
   // ADR-014's delivery deviation).
+  // Session 70 (S70-D / L-A4): this PRE-READ check is the display
+  // fast-path only — the ENFORCEMENT is atomic, in the where-clauses of
+  // the two updateMany calls below (the success path's bound is the fix:
+  // a request that read 4 could previously sail past this check while a
+  // concurrent request tripped 5, then open a session past the ceiling
+  // through the non-conditional update).
   if (user.verifyAttempts >= MAX_VERIFY_ATTEMPTS) {
     return fail("VERIFY_LOCKED", EXHAUSTED_MESSAGE, 429);
   }
 
-  if (user.verifyCode !== code) {
+  // Session 70 (S70-D / L-A4): the ATOMIC SUCCESS — the conditional
+  // updateMany carries BOTH the code match AND the attempts bound, so
+  // the stale-read race is closed at the database (the S62-E increment's
+  // sibling fix the success path never received). count === 1 opens the
+  // session; count === 0 means the code is wrong OR concurrently stale
+  // (a Resend regenerated it) OR the ceiling tripped mid-flight — the
+  // wrong-code family below answers every one of those.
+  const verifiedResult = await db.user.updateMany({
+    where: { id: user.id, verifyCode: code, verifyAttempts: { lt: MAX_VERIFY_ATTEMPTS } },
+    data: { verified: true, verifyCode: null, verifyAttempts: 0 },
+  });
+  if (verifiedResult.count === 1) {
+    // Verified: clear the pending code and open the session (the register
+    // route never sets the cookie — this is the flow's session landing).
+    // Session 67 (S67-A): the select carries tokenVersion so the mint
+    // embeds the holder's live version (a later reset evicts this
+    // cookie).
+    const verified = await db.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, email: true, name: true, avatarColor: true, tokenVersion: true },
+    });
+    if (!verified) {
+      return fail("VALIDATION", "Enter the 6-digit code from your email", 400);
+    }
+    // The version rides the cookie, not the response body (shape
+    // unchanged).
+    const { tokenVersion: mintVersion, ...verifiedUser } = verified;
+    const response = ok({ user: verifiedUser });
+    await setSessionCookie(verified.id, mintVersion, response);
+    return response;
+  }
+
+  if (user.verifyCode !== code || verifiedResult.count === 0) {
     // Session 62 (S62-E / B-M2): the counter is a conditional
     // updateMany — the pre-fix read-modify-write (the findUnique read
     // above, then this update) UNDERCOUNTED under concurrency: N
@@ -82,7 +120,15 @@ export async function POST(request: NextRequest) {
     if (result.count === 0) {
       return fail("VERIFY_LOCKED", EXHAUSTED_MESSAGE, 429);
     }
-    const attempts = user.verifyAttempts + 1;
+    // Session 70 (S70-D): the display derives from the POST-INCREMENT
+    // read — the pre-fix `user.verifyAttempts + 1` reused the stale
+    // findUnique value, so a concurrent attempt made the "N attempts
+    // remaining" message lie.
+    const fresh = await db.user.findUnique({
+      where: { id: user.id },
+      select: { verifyAttempts: true },
+    });
+    const attempts = fresh?.verifyAttempts ?? MAX_VERIFY_ATTEMPTS;
     if (attempts >= MAX_VERIFY_ATTEMPTS) {
       // The fifth wrong code trips the ceiling (session 45, RA-62: the
       // reference answers 429 here, not 400).
@@ -93,18 +139,4 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", `Invalid verification code. ${MAX_VERIFY_ATTEMPTS - attempts} attempts remaining.`, 400);
   }
 
-  // Verified: clear the pending code and open the session (the register
-  // route never sets the cookie — this is the flow's session landing).
-  // Session 67 (S67-A): the select carries tokenVersion so the mint embeds
-  // the holder's live version (a later reset evicts this cookie).
-  const verified = await db.user.update({
-    where: { id: user.id },
-    data: { verified: true, verifyCode: null, verifyAttempts: 0 },
-    select: { id: true, email: true, name: true, avatarColor: true, tokenVersion: true },
-  });
-  // The version rides the cookie, not the response body (shape unchanged).
-  const { tokenVersion: mintVersion, ...verifiedUser } = verified;
-  const response = ok({ user: verifiedUser });
-  await setSessionCookie(verified.id, mintVersion, response);
-  return response;
 }

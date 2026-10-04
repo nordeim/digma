@@ -11,7 +11,7 @@ import { AppHeader, type HeaderUser } from "@/components/app-header";
 import { CreateProjectDialog, ProjectCard } from "@/components/project-card";
 import { toast } from "@/hooks/use-toast";
 import { greetingFor, greetingName } from "@/lib/greeting";
-import type { ProjectDTO } from "@/lib/editor";
+import type { ProjectSummaryDTO } from "@/lib/editor";
 // Session 65 (S65-E — the thirteenth audit's A-5): the single sanctioned
 // API client (the envelope unwrapper — failures degrade to a destructive
 // toast + null, never into React render) moved to its own seam. No view
@@ -28,7 +28,9 @@ type Stats = {
 
 export function DashboardView({ user }: { user: HeaderUser }) {
   const router = useRouter();
-  const [projects, setProjects] = React.useState<ProjectDTO[]>([]);
+  // Session 70 (S70-C): the list surface types as the summary shape (the
+  // route ships the bounded thumbnail projection).
+  const [projects, setProjects] = React.useState<ProjectSummaryDTO[]>([]);
   const [stats, setStats] = React.useState<Stats | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [createOpen, setCreateOpen] = React.useState(false);
@@ -41,7 +43,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
   // not the other). `ignore` lets the effect discard a stale completion.
   const load = React.useCallback(async (ignore?: () => boolean) => {
     const [projectsData, statsData] = await Promise.all([
-      call<{ projects: ProjectDTO[] }>("/api/projects"),
+      call<{ projects: ProjectSummaryDTO[] }>("/api/projects"),
       call<Stats>("/api/stats"),
     ]);
     if (ignore?.()) return;

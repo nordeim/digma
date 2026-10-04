@@ -122,7 +122,7 @@ test.describe("workspace parity pins (session 8)", () => {
 test.describe("editor parity pins (session 8)", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: "Open Marketing Hero Banner" }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
     // The RSC transition flips the URL before the editor streams in — wait
     // for the chrome (auto-retrying) before any raw evaluate below.
@@ -500,7 +500,7 @@ test.describe("session 37 parity pins (seventeenth audit — the editor avatar s
 
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: "Open Marketing Hero Banner" }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
     await expect(page.getByRole("heading", { name: "AI Assistant" })).toBeVisible();
   });
@@ -833,7 +833,7 @@ test.describe("session 39 parity pins (eighteenth audit — the Recent toolbar c
 
   test("the zoom clamps match the reference's [10%, 500%] (RA-50)", async ({ page }) => {
     await page.goto("/");
-    await page.getByText("Marketing Hero Banner").filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: "Open Marketing Hero Banner" }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
     await expect(page.getByRole("heading", { name: "AI Assistant" })).toBeVisible();
 

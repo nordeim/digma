@@ -519,7 +519,12 @@ function SliderRow({
   onChange: (value: number) => void;
   format?: (value: number) => string;
 }) {
-  const fill = `${(((value - min) / (max - min)) * 100).toFixed(2)}%`;
+  // Session 70 (S70-D / L-A8): the degenerate guard — max === min (a
+  // 0-dimension element) previously rendered "--range-fill: NaN%", and an
+  // out-of-range persisted value (a radius above a shrunken dynamic max)
+  // rendered >100% (or negative) fills.
+  const pct = max > min ? Math.min(Math.max(((value - min) / (max - min)) * 100, 0), 100) : 0;
+  const fill = `${pct.toFixed(2)}%`;
   return (
     <div>
       <span className="text-xs font-medium text-gray-300">{label}</span>
@@ -977,7 +982,15 @@ export function PositionSizeSection({
       <div className="grid grid-cols-2 gap-3">
         <NumberField label="X" value={element.x} onChange={(x) => update({ x })} />
         <NumberField label="Y" value={element.y} onChange={(y) => update({ y })} />
-        <NumberField label="W" value={element.width} onChange={(width) => update({ width: Math.max(width, 1) })} min={1} />
+        {/* Session 70 (S70-D / L-A7): the W floor is TYPE-AWARE now —
+            matching the H field and the draw commit (a 0-extent line
+            dimension stays 0 instead of snapping to 1). */}
+        <NumberField
+          label="W"
+          value={element.width}
+          onChange={(width) => update({ width: element.type === "line" ? Math.max(width, 0) : Math.max(width, 1) })}
+          min={element.type === "line" ? 0 : 1}
+        />
         <NumberField
           label="H"
           value={element.height}

@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
+import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
 import { bodySizeRejected, clampColor, clampText } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +64,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const project = await db.project.update({
       where: { id },
       data,
-      include: { elements: { orderBy: { sortOrder: "asc" } } },
+      // Session 70 (S70-C): the PATCH response ships the bounded
+      // thumbnail projection (the rename's consumer updates the
+      // in-memory card; the editor refetches the DETAIL route on mount —
+      // the full rows are that route's contract).
+      include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
     });
     return ok({ project });
   } catch (error) {

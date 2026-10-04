@@ -55,7 +55,6 @@ model Project {
   description     String?
   template        String   @default("blank") // blank | mobile | desktop | website
   backgroundColor String   @default("#0D1117") // canvas background
-  thumbnailSeed   Int      @default(0) // template preview art variant
   lastOpenedAt    DateTime @default(now())
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -89,9 +88,11 @@ model DesignElement {
   fontWeight  String? // 400 | 500 | 600 | 700
   fontFamily  String? // the reference's Font Family combobox (7 options, session 29)
   textAlign   String? // left | center | right
-  src         String? // image elements
-  path        String? // pen-tool path data
-  zIndex      Int      @default(0)
+  // Session 70 (S70-B / L-A1 — the eighteenth audit): the four dead
+  // columns dropped — thumbnailSeed (zero code references), src/path
+  // (written by the row-builders, zero read sites), zIndex (written +
+  // round-tripped through the DTO/store, zero read sites). The element
+  // order lives on sortOrder + the array order of the replace contract.
   visible     Boolean  @default(true)
   locked      Boolean  @default(false)
   sortOrder   Int      @default(0)
@@ -101,7 +102,10 @@ model DesignElement {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
-  @@index([sortOrder])
+  // Session 70 (S70-B): the composite serves the filter+order every
+  // element query actually runs (the old sortOrder-only index served no
+  // query and amplified every 2000-row replace).
+  @@index([projectId, sortOrder])
 }
 
 // Collaborator groups shown on the Teams page.

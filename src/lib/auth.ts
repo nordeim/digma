@@ -1,4 +1,11 @@
-import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
+// Session 70 (S70-D / L-A5): the pure crypto trio lives in
+// src/lib/password.ts (the node:crypto-only seam the seed script can
+// import); this module re-exports it so the routes' existing import
+// surface (import { hashPassword } from "@/lib/auth") survives
+// byte-identically.
+import { generateVerifyCode, hashPassword, verifyPassword } from "@/lib/password";
+export { generateVerifyCode, hashPassword, verifyPassword };
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "./db";
@@ -10,7 +17,6 @@ import { db } from "./db";
 
 const SESSION_COOKIE = "digma_session";
 const SESSION_TTL_DAYS = 7;
-const KEY_LENGTH = 64;
 
 // Dev-only fallback when AUTH_SECRET is unset — loudly documented. Production
 // MUST set AUTH_SECRET (openssl rand -hex 32); rotating it invalidates every
@@ -34,32 +40,6 @@ function secret(): string {
   return from || "digma-dev-only-insecure-secret";
 }
 
-export function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, KEY_LENGTH).toString("hex");
-  return `${salt}:${hash}`;
-}
-
-// Session 62 (S62-G / B-L1): the single crypto-random verify-code
-// generator. The pre-fix form was Math.random() triplicated across the
-// register/login/resend-otp routes while its own comment claimed
-// "crypto-random" — a doc-integrity defect on the OTP (the only
-// email-ownership proof). randomInt is the CSPRNG-backed, modulo-bias-
-// free form; the range [100000, 1000000) preserves the six-digit
-// leading-zero-free shape the reference's verify-email card consumes
-// (session 43, RA-58).
-export function generateVerifyCode(): string {
-  return String(randomInt(100000, 1000000));
-}
-
-export function verifyPassword(password: string, stored: string): boolean {
-  const [salt, hash] = stored.split(":");
-  if (!salt || !hash) return false;
-  const candidate = scryptSync(password, salt, KEY_LENGTH).toString("hex");
-  const a = Buffer.from(candidate, "hex");
-  const b = Buffer.from(hash, "hex");
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 function sign(payload: string): string {
   return createHmac("sha256", secret()).update(payload).digest("hex");

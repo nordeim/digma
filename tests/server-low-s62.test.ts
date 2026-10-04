@@ -53,11 +53,19 @@ describe("the server Low batch (session 62, S62-G)", () => {
   it("B-L1: one crypto-random generateVerifyCode helper in auth.ts", () => {
     // THE DEFECT PIN: pre-fix auth.ts had no such helper and the three
     // routes carried Math.random copies.
-    expect(authSource).toMatch(
+    // Session 70 (S70-D) contract re-anchor: the crypto trio moved to
+    // src/lib/password.ts (the node:crypto-only seam the seed script can
+    // import) — auth.ts RE-EXPORTS it, so the routes' import surface is
+    // pinned unchanged and the generator lives in exactly ONE place.
+    const passwordSource = readFileSync(
+      path.resolve(import.meta.dirname, "../src/lib/password.ts"),
+      "utf8",
+    );
+    expect(passwordSource).toMatch(
       /export function generateVerifyCode\(\): string \{\s*return String\(randomInt\(100000, 1000000\)\);\s*\}/,
     );
-    expect(authSource).toMatch(/randomInt/);
-    expect(authSource).toMatch(/from "node:crypto"/);
+    expect(passwordSource).toMatch(/from "node:crypto"/);
+    expect(authSource).toMatch(/export \{ generateVerifyCode, hashPassword, verifyPassword \}/);
   });
 
   it("B-L1: the three routes import the helper — no Math.random generators remain", () => {

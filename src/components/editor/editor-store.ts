@@ -253,7 +253,6 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         id: nextLocalId(),
         projectId: state.projectId,
         sortOrder: order,
-        zIndex: order,
       };
       return el;
     });
@@ -283,7 +282,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       const idSet = new Set(ids);
       const next = state.elements.map((el) =>
         idSet.has(el.id)
-          ? { ...el, width: Math.max(el.width * factor, 1), height: Math.max(el.height * factor, 0) }
+          // Session 70 (S70-D / L-A7): both floors are type-aware now
+          // (line → 0, non-line → 1) — the pre-fix width floored at 1
+          // for every type and the height at 0 for every type,
+          // disagreeing with each other AND the resize/panel forms.
+          ? {
+              ...el,
+              width: Math.max(el.width * factor, el.type === "line" ? 0 : 1),
+              height: Math.max(el.height * factor, el.type === "line" ? 0 : 1),
+            }
           : el,
       );
       return {
@@ -332,7 +339,6 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       const next = [...rest.slice(0, clamped), ...moving, ...rest.slice(clamped)].map((el, i) => ({
         ...el,
         sortOrder: i,
-        zIndex: i,
       }));
       return {
         past: [...state.past, snapshotOf(state)].slice(-60),
