@@ -32,15 +32,21 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "prefer-const": "off",
     "no-unused-vars": "off",
     "no-console": "off",
-    "no-debugger": "off",
+    // Session 71 (S71-D / L-A8 — the nineteenth audit's B-F8): the lint
+    // gate's re-enable ladder, cheapest rung first — no-unreachable,
+    // no-debugger, no-redeclare run as ERRORS (the auditor's full-file
+    // read of all 18 routes + 13 libs observed zero violations; the
+    // deeper rungs — unused-vars and friends — stay off until their debt
+    // is paid).
+    "no-debugger": "error",
     "no-empty": "off",
     "no-irregular-whitespace": "off",
     "no-case-declarations": "off",
     "no-fallthrough": "off",
     "no-mixed-spaces-and-tabs": "off",
-    "no-redeclare": "off",
+    "no-redeclare": "error",
     "no-undef": "off",
-    "no-unreachable": "off",
+    "no-unreachable": "error",
     "no-useless-escape": "off",
   },
 }, {

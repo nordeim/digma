@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 // the eighth Mode C audit's B-L-1).
 //
 // The Create-Team POST gated on a raw truthy body?.memberEmail and
-// wrote email: clampOptionalText(...) with NO format check, while the
+// wrote email: the text clamp with NO format check, while the
 // sibling invite route (members/route.ts) validates
 // /^[^\s@]+@[^\s@]+\.[^\s@]+$/ and 400s. The Create Team dialog sends
 // unvalidated input, so "abc" in the Create Team dialog silently
@@ -47,7 +47,8 @@ describe("the Create-Team inline member email validation (session 60, S60-C / B-
 
   it("an absent memberEmail still creates the team without members (the optional contract)", () => {
     // The members spread stays conditional — no email, no member. The
-    // S60-C fix normalizes memberEmail into a local (clampOptionalText)
+    // S60-C fix normalizes memberEmail into a local (the text clamp —
+    // session 71 folded the twin helpers into the ONE clampText)
     // before the validation gate, so the spread keys off the LOCAL, not
     // the raw body field (a line-break-aware ternary anchor — the spread's
     // `? {` sits on its own line, the F46 lesson).

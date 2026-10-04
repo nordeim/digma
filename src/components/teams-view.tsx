@@ -46,27 +46,31 @@ export function TeamsView({ user }: { user: HeaderUser }) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [inviteFor, setInviteFor] = React.useState<TeamDTO | null>(null);
 
-  const refresh = React.useCallback(async () => {
+  // Session 71 (S71-A / deferred #3a — the nineteenth audit's A-F7): the
+  // ONE load seam (the Dashboard's exact S67-D form) — pre-fix refresh
+  // and the initial effect each pasted the same fetch body verbatim (the
+  // drift-hazard class S65-E closed for the call seam itself).
+  const load = React.useCallback(async (ignore?: () => boolean) => {
     const data = await call<{ teams: TeamDTO[] }>("/api/teams");
+    if (ignore?.()) return;
     if (data) setTeams(data.teams);
     setLoading(false);
   }, []);
+
+  const refresh = React.useCallback(() => load(), [load]);
 
   // Initial fetch — the docs-approved effect pattern (async function inside
   // the effect; setState only in the awaited continuation).
   React.useEffect(() => {
     let ignore = false;
     async function run() {
-      const data = await call<{ teams: TeamDTO[] }>("/api/teams");
-      if (ignore) return;
-      if (data) setTeams(data.teams);
-      setLoading(false);
+      await load(() => ignore);
     }
-    run();
+    void run();
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [load]);
 
   return (
     <>

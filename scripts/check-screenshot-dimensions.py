@@ -369,6 +369,31 @@ S80 = {
 }
 
 
+# Session 71 (the nineteenth audit's evidence set — the S81 mapping): the
+# reference's standing failure datums + the clone's standing evidence +
+# the session's own S71-A/S71-C checks (clone-21/22 captured BY the
+# session71 e2e pins at the playwright default viewport).
+S81 = {
+    "ref-00-desktop-dashboard": (1440, 900),
+    "ref-01-mobile-dashboard": (390, 844),
+    "ref-02-mobile-editor": (390, 844),
+    "ref-03-desktop-recent": (1440, 900),
+    "ref-04-desktop-editor": (1440, 900),
+    "clone-01-mobile-nav-390": (390, 844),
+    "clone-04-mobile-nav-open-390": (390, 844),
+    "clone-05-present-desktop": (1440, 900),
+    "clone-06-editor-baseline-desktop": (1440, 900),
+    "clone-07-bell-44px-390": (390, 844),
+    "clone-08-destructive-aa-confirm": (1440, 900),
+    "clone-14-recent-list-thumbnail-fit": (1440, 900),
+    "clone-16-picker-one-undo": (1440, 900),
+    "clone-17-upload-keyboard-path": (1440, 900),
+    "clone-20-marquee-rotation-live": (1280, 800),
+    "clone-21-exit-single-put": (1280, 720),
+    "clone-22-login-403-fold": (1280, 720),
+}
+
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -385,6 +410,8 @@ def expected_for(name: str):
         return S76.get(Path(name).stem)
     if name.startswith("ref-audit-s80/"):
         return S80.get(Path(name).stem)
+    if name.startswith("ref-audit-s81/"):
+        return S81.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -444,6 +471,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s78").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s79").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s80").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s81").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

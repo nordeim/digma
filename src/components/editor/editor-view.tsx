@@ -65,6 +65,19 @@ function useAutosave(): () => void {
   // at the exit seam). The old exit() sent elements-only (a Background
   // change followed by Back inside the debounce window was silently
   // lost) and skipped Untitled mode entirely.
+  // A stable flush handle for exit() — the effect owns the real function.
+  // Session 71 (S71-B): the machine's in-flight descriptor — the CAPTURED
+  // { projectId, elements, backgroundColor } references, live while the
+  // machine's PUT is in flight. The soft-leave cleanup reads it to decide
+  // whether its own PUT is a pure duplicate (the machine's fetch SURVIVES
+  // the soft navigation — the S62-C rationale — and carries exactly this
+  // state) or the safety net for NEWER state (an edit landed after the
+  // machine's capture — the reference mismatch keeps the cleanup).
+  const inFlightRef = React.useRef<{
+    projectId: string;
+    elements: ProjectDTO["elements"];
+    backgroundColor: string;
+  } | null>(null);
   const flushRef = React.useRef<() => void>(() => {});
 
   React.useEffect(() => {
@@ -171,6 +184,16 @@ function useAutosave(): () => void {
       // (the untitled content was silently lost). The flush persists the
       // state it captured; a newer state re-arms via the reference guard.
       const capturedBackgroundColor = store.backgroundColor;
+      // Session 71 (S71-B — the nineteenth audit's L-A3): the in-flight
+      // descriptor goes live BEFORE setSaving() — exit() runs flushNow()'s
+      // synchronous prefix (captures + descriptor + setSaving + the PUT's
+      // first await) before router.push's unmount cleanup can read it, so
+      // the cleanup's reference compare sees THIS flight.
+      inFlightRef.current = {
+        projectId: capturedProjectId,
+        elements: capturedElements,
+        backgroundColor: capturedBackgroundColor,
+      };
       store.setSaving();
       try {
         const projectId = await ensureProject();
@@ -282,6 +305,9 @@ function useAutosave(): () => void {
         if (!disposed) useEditorStore.getState().setUnsaved();
       } finally {
         flushing = false;
+        // Session 71 (S71-B): the descriptor dies with the flight — a
+        // later cleanup must never skip against a stale flight.
+        inFlightRef.current = null;
         // The pending re-run is deliberately NOT disposed-gated: after
         // exit() navigates away, running the follow-up flush is the SAFE
         // direction (same project → an idempotent full-replace; another
@@ -367,14 +393,37 @@ function useAutosave(): () => void {
       // teardown only; this fetch has a live document behind it.
       const state = useEditorStore.getState();
       if (state.saveState !== "saved" && state.projectId) {
-        void fetch(`/api/projects/${state.projectId}/elements`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            elements: state.elements,
-            backgroundColor: state.backgroundColor,
-          }),
-        }).catch(() => null);
+        // Session 71 (S71-B — the nineteenth audit's L-A3): the exit()
+        // double-PUT closed. Pre-fix this cleanup fired its own PUT
+        // whenever saveState !== "saved" — but exit() ALREADY flushed
+        // through the machine, whose PUT is IN FLIGHT ("saving") when the
+        // unmount runs: the same pending edit persisted TWICE (a
+        // ≤2000-row delete+recreate transaction run twice; with a flush
+        // already in flight the interleaving reached THREE PUTs). The
+        // in-flight same-reference indicator: the machine's fetch
+        // SURVIVES the soft navigation (the S62-C rationale) and carries
+        // exactly the captured state — when the live store still holds
+        // the SAME references (projectId + elements + backgroundColor),
+        // the cleanup PUT is a pure duplicate and SKIPS. A reference
+        // mismatch (an edit landed after the machine's capture — the
+        // pending-requeue interleaving) keeps the cleanup as the safety
+        // net for the NEWER state.
+        const softLeaveDescriptor = inFlightRef.current;
+        const machineCarriesThisState =
+          softLeaveDescriptor !== null &&
+          softLeaveDescriptor.projectId === state.projectId &&
+          softLeaveDescriptor.elements === state.elements &&
+          softLeaveDescriptor.backgroundColor === state.backgroundColor;
+        if (!machineCarriesThisState) {
+          void fetch(`/api/projects/${state.projectId}/elements`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              elements: state.elements,
+              backgroundColor: state.backgroundColor,
+            }),
+          }).catch(() => null);
+        }
       }
       disposed = true;
       unsubscribe();

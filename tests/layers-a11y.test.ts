@@ -57,21 +57,31 @@ describe("the Low a11y batch (session 57, S57-F)", () => {
     // ONCE at the component top (const visible = elements.filter((el) =>
     // el.visible)) instead of inline in the handler — the flip still
     // reads exactly that family.
-    expect(handler).toContain("visible.length > 0");
-    expect(handler).toContain("visible.every(");
+    // Session 71 re-anchor (S71-A / A-F8): the flip condition itself
+    // hoisted into the ONE allVisibleSelected declaration (the
+    // computed-twice drift closed) — the handler consumes the hoisted
+    // constant; the visible-aware logic lives in the declaration.
+    expect(handler).toContain("allVisibleSelected");
     const hoisted = layersSource.indexOf("const visible = elements.filter((el) => el.visible);");
     expect(hoisted).toBeGreaterThan(-1);
+    const flipDecl = layersSource.indexOf("const allVisibleSelected =", hoisted);
+    expect(flipDecl).toBeGreaterThan(hoisted);
+    const declBody = layersSource.slice(flipDecl, flipDecl + 260);
+    expect(declBody).toContain("visible.length > 0");
+    expect(declBody).toContain("visible.every(");
     // …and the empty-canvas reference quirk (0 layers → "Deselect All")
     // is preserved.
-    expect(handler).toContain("elements.length === 0");
+    expect(declBody).toContain("elements.length === 0");
     // The rendered label computes from the same visible-aware condition
     // (not the old elements.length comparison) — anchor AFTER the
     // handler so header comments don't shadow the label expression.
+    // Session 71 re-anchor (S71-A / A-F8): the label is the plain
+    // ternary over the hoisted constant.
     const handlerIdx = layersSource.indexOf("store.selectAll();");
     const labelStart = layersSource.indexOf('"Deselect All"', handlerIdx);
     expect(labelStart).toBeGreaterThan(-1);
     const before = layersSource.slice(Math.max(0, labelStart - 400), labelStart);
-    expect(before).toContain("visible.length > 0");
+    expect(before).toContain("allVisibleSelected ?");
   });
 
   it("L-3: the layers row activates on Space as well as Enter", () => {

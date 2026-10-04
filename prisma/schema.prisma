@@ -101,10 +101,12 @@ model DesignElement {
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  @@index([projectId])
-  // Session 70 (S70-B): the composite serves the filter+order every
-  // element query actually runs (the old sortOrder-only index served no
-  // query and amplified every 2000-row replace).
+  // Session 71 (S71-C / L-A6 — the nineteenth audit's B-F9): the
+  // redundant single-column projectId index is dropped — the composite's
+  // leftmost prefix serves every projectId-filtered query the app runs,
+  // so the redundant sibling served NO query while adding write
+  // amplification to every 2000-row replace (the exact family S70-B
+  // set out to remove; the survivor was the S70-B swap's residue).
   @@index([projectId, sortOrder])
 }
 

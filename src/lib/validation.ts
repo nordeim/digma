@@ -37,14 +37,12 @@ export function clampNumber(value: unknown, min: number, max: number, fallback: 
 }
 
 export function clampText(value: unknown, maxLength: number): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.slice(0, maxLength);
-}
-
-export function clampOptionalText(value: unknown, maxLength: number): string | null {
-  if (value === null || value === undefined) return null;
+  // Session 71 (S71-D / L-A10 — the nineteenth audit's B-F4): the ONE
+  // text clamp. The deleted "optional" twin was behaviorally identical
+  // (both returned null for absent/non-string/empty; both trim+slice)
+  // — the names implied semantics that never existed, the hazard being
+  // a future edit "fixing" one twin. The 8 former call sites migrated
+  // unchanged.
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   if (!trimmed) return null;

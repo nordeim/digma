@@ -90,11 +90,14 @@ describe("the login screen's VERIFY_EMAIL knob-posture guard (S69-C / L-C)", () 
   });
 
   it("the code passes through the null-tolerant degrade form (register's exact sibling)", () => {
+    // Session 71 re-anchor (S71-C / L-A5): the code rides INSIDE the
+    // 403's error member (the envelope fold) — the degrade form is
+    // unchanged, the read moved.
     const guard = view.slice(
       view.indexOf('body?.error?.code === "VERIFY_EMAIL"') - 80,
-      view.indexOf('body?.error?.code === "VERIFY_EMAIL"') + 700,
+      view.indexOf('body?.error?.code === "VERIFY_EMAIL"') + 1100,
     );
-    expect(guard).toMatch(/enterVerify\(String\(body\?\.verificationCode \?\? ""\)\)/);
+    expect(guard).toMatch(/enterVerify\(String\(body\?\.error\?\.verificationCode \?\? ""\)\)/);
   });
 
   it("register's degrade form is PRESERVED (the S67-C knob contract untouched)", () => {

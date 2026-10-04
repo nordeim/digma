@@ -51,7 +51,7 @@ export function Toolbar() {
       aria-orientation="vertical"
     >
       <div className="flex flex-col gap-1 p-2">
-        {TOOL_META.map((entry, index) => {
+        {TOOL_META.map((entry) => {
           const Icon = entry.icon;
           const isActive = tool === entry.id;
           const label = LABEL_FOR.get(entry.id) ?? entry.id;

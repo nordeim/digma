@@ -33,6 +33,17 @@ export function LayersPanel() {
   // Session 61 (S61-D / A-L-4): the hidden-family state drives the Select
   // All disable — computed once beside the other derived sets.
   const visible = elements.filter((el) => el.visible);
+  // Session 71 (S71-A — the nineteenth audit's A-F8): the header's flip
+  // condition, declared ONCE and consumed by BOTH the label and the
+  // handler — pre-fix the identical expression was computed twice ~10
+  // lines apart (the drift-hazard class).
+  // Session 57 (S57-F / L-1 — the fifth Mode C audit): the flip condition
+  // is visible-elements-aware. selectAll selects the VISIBLE family only
+  // — comparing against elements.length meant the label could never flip
+  // while any layer was hidden (every click re-ran selectAll, a no-op).
+  const allVisibleSelected =
+    elements.length === 0 ||
+    (visible.length > 0 && visible.every((el) => selectedIds.includes(el.id)));
 
   function onRowClick(id: string, event: { shiftKey: boolean }) {
     const store = useEditorStore.getState();
@@ -64,14 +75,6 @@ export function LayersPanel() {
             disabled={elements.length > 0 && visible.length === 0}
             onClick={() => {
               const store = useEditorStore.getState();
-              // Session 57 (S57-F / L-1 — the fifth Mode C audit): the flip
-              // condition is visible-elements-aware. selectAll selects the
-              // VISIBLE family only — comparing against elements.length
-              // meant the label could never flip while any layer was
-              // hidden (every click re-ran selectAll, a no-op).
-              const allVisibleSelected =
-                elements.length === 0 ||
-                (visible.length > 0 && visible.every((el) => selectedIds.includes(el.id)));
               if (allVisibleSelected) {
                 store.deselectAll();
               } else {
@@ -80,12 +83,7 @@ export function LayersPanel() {
             }}
             className="text-xs text-gray-400 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {(() => {
-              return elements.length === 0 ||
-                (visible.length > 0 && visible.every((el) => selectedIds.includes(el.id)))
-                ? "Deselect All"
-                : "Select All";
-            })()}
+            {allVisibleSelected ? "Deselect All" : "Select All"}
           </button>
         </div>
         <div className="text-xs text-gray-400">
@@ -177,9 +175,10 @@ export function LayersPanel() {
                       autoFocus
                       aria-label={`Rename layer ${el.name ?? el.type}`}
                       // Session 63 (S63-D / B-L3): the server clamps names
-                      // at 80 (clampOptionalText(raw?.name, 80) in both
-                      // row-builders) — the input cap keeps the local edit
-                      // and the persisted row from diverging past 80 chars.
+                      // at 80 (the row-builder's text clamp — session 71
+                      // folded the twin into clampText) — the input cap
+                      // keeps the local edit and the persisted row from
+                      // diverging past 80 chars.
                       maxLength={80}
                       value={renameValue}
                       onChange={(e) => setRenameValue(e.target.value)}

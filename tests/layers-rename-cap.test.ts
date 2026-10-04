@@ -3,9 +3,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 // Session 63 (S63-D / B-L3 — the eleventh audit's Low): the layers
-// rename input had no maxLength — the server clamps names at 80
-// (clampOptionalText(raw?.name, 80) in both row-builders of the elements
-// route), so a >80-char rename showed locally and silently truncated
+// rename input had no maxLength — the server clamps names at 80 (the
+// row-builder's text clamp in the elements route — session 71 folded
+// the twin helpers into the ONE clampText), so a >80-char rename showed locally and silently truncated
 // after reload (the known name-cap drift family on a new surface). The
 // fix: maxLength={80} on the rename input, matching the server clamp
 // exactly.

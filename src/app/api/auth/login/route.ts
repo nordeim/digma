@@ -63,12 +63,21 @@ export async function POST(request: NextRequest) {
     // path's delivered code nulls under DIGMA_DISABLE_IN_APP_OTP=1, the
     // same form register's and resend's carry.
     const inAppOtpEnabled = process.env.DIGMA_DISABLE_IN_APP_OTP !== "1";
+    // Session 71 (S71-C / L-A5 — the nineteenth audit's B-F3): the
+    // envelope fold. Pre-fix this response carried TWO fields OUTSIDE
+    // the envelope member — email (read by nobody; the client renders
+    // its own local state) and verificationCode (the one consumed
+    // field, top-level). The code now rides INSIDE error — the response
+    // is a plain envelope shape; the single consumer
+    // (login-screen.tsx) reads error.verificationCode.
     return NextResponse.json(
       {
         ok: false as const,
-        error: { code: "VERIFY_EMAIL", message: "Verify your email to sign in — we've sent a fresh 6-digit code." },
-        email,
-        verificationCode: inAppOtpEnabled ? verifyCode : null,
+        error: {
+          code: "VERIFY_EMAIL",
+          message: "Verify your email to sign in — we've sent a fresh 6-digit code.",
+          verificationCode: inAppOtpEnabled ? verifyCode : null,
+        },
       },
       { status: 403 },
     );

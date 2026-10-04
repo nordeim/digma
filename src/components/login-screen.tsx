@@ -129,7 +129,10 @@ export function LoginScreen() {
           // answers the code null (the emailed-code delivery posture), and
           // the null must not lock the user out of the recovery flow.
           // Register's sibling uses the same null-tolerant degrade form.
-          enterVerify(String(body?.verificationCode ?? ""));
+          // Session 71 (S71-C / L-A5): the code rides INSIDE the 403's
+          // error member (the envelope fold — the route's top-level
+          // extras died).
+          enterVerify(String(body?.error?.verificationCode ?? ""));
           return;
         }
         // Session 43, RA-60: the sign-in failure renders the reference's

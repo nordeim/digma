@@ -11,7 +11,7 @@ import {
   clampFontFamily,
   clampFontWeight,
   clampNumber,
-  clampOptionalText,
+  clampText,
   clampTextAlign,
   isElementType,
 } from "@/lib/validation";
@@ -388,6 +388,18 @@ export type ElementStyle = Record<string, string>;
  * constant. */
 export function cornerRadiusMax(el: Pick<DesignElementDTO, "width" | "height">): number {
   return Math.min(el.width, el.height) / 2;
+}
+
+/** The ONE slider fill-percentage seam (session 71, S71-D / L-A9 — the
+ * nineteenth audit's A-F2): the panel's --range-fill custom property
+ * needs a clamped 0..100 percentage. The S70-D SliderRow guard covered
+ * ONE of the five sites — the rotation and scale INLINE sliders computed
+ * raw percentages (a persisted rotation 900 — server-clamped ±3600 —
+ * rendered a 300% fill; a persisted scale 0.05 — server-clamped [0.05,
+ * 20] — rendered a negative fill). The degenerate max === min (a
+ * 0-dimension element) answers 0 (never NaN). */
+export function rangeFillPercent(value: number, min: number, max: number): number {
+  return max > min ? Math.min(Math.max(((value - min) / (max - min)) * 100, 0), 100) : 0;
 }
 
 /** The font chain the canvas renders a text element with (session 33,
@@ -783,7 +795,7 @@ export function buildElementRow(
   const synthesize = mode === "create";
   return {
     type,
-    name: clampOptionalText(raw?.name, 80) ?? defaultNameFor(type as ElementType, index),
+    name: clampText(raw?.name, 80) ?? defaultNameFor(type as ElementType, index),
     x: clampNumber(raw?.x, -100000, 100000, 0),
     y: clampNumber(raw?.y, -100000, 100000, 0),
     width: clampNumber(raw?.width, 0, 100000, 100),
@@ -822,7 +834,7 @@ export function buildElementRow(
           : clampColor(String(raw.stroke), "#FFFFFF"),
     strokeWidth: clampNumber(raw?.strokeWidth, 0, 100, 0),
     radius: clampNumber(raw?.radius, 0, 2000, 0),
-    text: clampOptionalText(raw?.text, 2000),
+    text: clampText(raw?.text, 2000),
     fontSize: raw?.fontSize === null || raw?.fontSize === undefined ? null : clampNumber(raw?.fontSize, 1, 500, 16),
     fontWeight: clampFontWeight(raw?.fontWeight),
     fontFamily: clampFontFamily(raw?.fontFamily),

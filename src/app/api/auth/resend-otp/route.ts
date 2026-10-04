@@ -51,7 +51,18 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", "Enter a valid email address", 400);
   }
   if (user.verified) {
-    return fail("CONFLICT", "This account is already verified — sign in.", 409);
+    // Session 71 (S71-C / L-A4 — the nineteenth audit's B-F2): the
+    // account-state oracle closed. Pre-fix this branch answered a
+    // distinct CONFLICT status — known+verified / known+unverified /
+    // unknown emails were distinguishable by status code across the
+    // three branches, an enumeration the DIGMA_DISABLE_IN_APP_OTP
+    // production knob does NOT close (it nulls the payload, not the
+    // shape). The uniform answer mirrors the verify route's own
+    // verified-case convention: the same VALIDATION 400 as an unknown
+    // email, byte-identical — no remote reader can tell the three
+    // states apart. The client's resend path is only reachable from an
+    // unverified account's verify card, so no consumer changes.
+    return fail("VALIDATION", "Enter a valid email address", 400);
   }
 
   const verifyCode = generateVerifyCode();

@@ -94,7 +94,10 @@ describe("the SliderRow degenerate guard (S70-D / L-A8)", () => {
     // max === min and >100%/<0% for out-of-range values.
     const panel = src("src/components/editor/properties-panel.tsx");
     expect(panel).not.toMatch(/const fill = `\$\{\(\(\(value - min\) \/ \(max - min\)\) \* 100\)\.toFixed\(2\)\}%`;?/);
-    // The guarded form: the max > min ternary + the 0/100 clamp.
-    expect(panel).toMatch(/max > min \? Math\.min\(Math\.max\(/);
+    // Session 71 re-anchor (S71-D / L-A9): the guarded form graduated
+    // into the ONE shared rangeFillPercent seam (src/lib/editor.ts) —
+    // consumed here at the SliderRow AND at the four inline sliders.
+    expect(panel).toMatch(/const pct = rangeFillPercent\(value, min, max\)/);
+    expect(panel).not.toMatch(/max > min \? Math\.min\(Math\.max\(/);
   });
 });

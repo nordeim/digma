@@ -21,7 +21,22 @@ import { toast } from "@/hooks/use-toast";
  * plain GET) passes through unchanged — the files view's GET-only
  * call sites are behavior-identical through this form.
  */
-export async function call<T>(url: string, init?: RequestInit): Promise<T | null> {
+/**
+ * The per-call options (session 71, S71-A — the nineteenth audit's
+ * L-A1): `errorTitle` overrides the failure toast's title (the card
+ * family's per-site copy — "Rename failed" / "Delete failed" /
+ * "Could not create the project" — rides the seam instead of per-site
+ * hand-rolled branches); `silent` suppresses BOTH toast families — the
+ * fire-and-forget PATCH contract (the S61-H lastOpened family does not
+ * care about failures and must not spam destructive toasts on every
+ * network hiccup).
+ */
+export interface CallOptions {
+  errorTitle?: string;
+  silent?: boolean;
+}
+
+export async function call<T>(url: string, init?: RequestInit, opts?: CallOptions): Promise<T | null> {
   try {
     const response = await fetch(url, {
       ...init,
@@ -29,12 +44,16 @@ export async function call<T>(url: string, init?: RequestInit): Promise<T | null
     });
     const body = await response.json().catch(() => null);
     if (!response.ok || !body?.ok) {
-      toast.error("Something went wrong", body?.error?.message ?? `Request failed (${response.status}).`);
+      if (!opts?.silent) {
+        toast.error(opts?.errorTitle ?? "Something went wrong", body?.error?.message ?? `Request failed (${response.status}).`);
+      }
       return null;
     }
     return (body.data ?? null) as T | null;
   } catch {
-    toast.error("Network error", "Could not reach the server.");
+    if (!opts?.silent) {
+      toast.error("Network error", "Could not reach the server.");
+    }
     return null;
   }
 }

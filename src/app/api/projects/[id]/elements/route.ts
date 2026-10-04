@@ -70,7 +70,14 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (count >= ELEMENT_LIMIT) {
     return fail("VALIDATION", "Too many elements (max 2000)", 400);
   }
-  const sortOrder = clampNumber(body?.sortOrder, 0, 999, count);
+  // Session 71 (S71-C / L-A7 — the nineteenth audit's B-F11): the clamp
+  // max agrees with the 2000-element ceiling — pre-fix the stale 999
+  // clamped an explicit end-append past element #1000 to a 999 tie
+  // (unstable order), and the count fallback escaped the clamp entirely
+  // (an omitted sortOrder at count 1500 stored 1500 while an explicit
+  // 1500 clamped to 999). The count is bounded by the ceiling check
+  // above, so the fallback is always in range.
+  const sortOrder = clampNumber(body?.sortOrder, 0, ELEMENT_LIMIT - 1, count);
 
   // Session 70 (S70-B / L-A2 — the row-builder dedup): the POST consumes
   // the ONE shared seam (create mode synthesizes the omitted-field

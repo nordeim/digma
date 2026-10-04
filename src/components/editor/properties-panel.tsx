@@ -14,6 +14,7 @@ import {
   cornerRadiusMax,
   defaultGradient,
   parseGradient,
+  rangeFillPercent,
   removeGradientStop,
   type DesignElementDTO,
   type GradientFill,
@@ -523,7 +524,11 @@ function SliderRow({
   // 0-dimension element) previously rendered "--range-fill: NaN%", and an
   // out-of-range persisted value (a radius above a shrunken dynamic max)
   // rendered >100% (or negative) fills.
-  const pct = max > min ? Math.min(Math.max(((value - min) / (max - min)) * 100, 0), 100) : 0;
+  // Session 71 (S71-D / L-A9): the guard became the ONE shared
+  // rangeFillPercent seam (src/lib/editor.ts) — consumed by ALL FIVE
+  // --range-fill sites (this row + the angle/rotation/scale/opacity
+  // inline sliders).
+  const pct = rangeFillPercent(value, min, max);
   const fill = `${pct.toFixed(2)}%`;
   return (
     <div>
@@ -626,7 +631,7 @@ function GradientPanel({
                 apply({ ...gradient, angle: Number(event.target.value) });
               }}
               className="editor-range h-1.5 flex-1"
-              style={{ "--range-fill": `${((gradient.angle / 360) * 100).toFixed(2)}%` } as React.CSSProperties}
+              style={{ "--range-fill": `${rangeFillPercent(gradient.angle, 0, 360).toFixed(2)}%` } as React.CSSProperties}
             />
             <span className="w-10 text-right text-xs text-gray-300" aria-live="polite">
               {gradient.angle}&deg;
@@ -1154,7 +1159,7 @@ export function TransformSection({
             className="editor-range h-1.5 flex-1"
             style={
               {
-                "--range-fill": `${(((element.rotation + 180) / 360) * 100).toFixed(2)}%`,
+                "--range-fill": `${rangeFillPercent(element.rotation, -180, 180).toFixed(2)}%`,
               } as React.CSSProperties
             }
           />
@@ -1194,7 +1199,7 @@ export function TransformSection({
             className="editor-range h-1.5 flex-1"
             style={
               {
-                "--range-fill": `${((((element.scale ?? 1) - 0.1) / 2.9) * 100).toFixed(2)}%`,
+                "--range-fill": `${rangeFillPercent(element.scale ?? 1, 0.1, 3).toFixed(2)}%`,
               } as React.CSSProperties
             }
           />
@@ -1242,7 +1247,7 @@ export function OpacitySection({
             update({ opacity: Number(event.target.value) / 100 });
           }}
           className="editor-range h-1.5 flex-1"
-          style={{ "--range-fill": `${Math.round(element.opacity * 100)}%` } as React.CSSProperties}
+          style={{ "--range-fill": `${rangeFillPercent(element.opacity, 0, 1).toFixed(2)}%` } as React.CSSProperties}
         />
         <GuardedNumberInput
           label="Opacity value"

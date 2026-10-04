@@ -35,7 +35,7 @@ import { Label } from "@/components/ui/label";
 import { AppHeader, type HeaderUser } from "@/components/app-header";
 import { CanvasThumbnail, InlineProjectRename, ProjectCard } from "@/components/project-card";
 import { toast } from "@/hooks/use-toast";
-import type { ProjectDTO, ProjectSummaryDTO } from "@/lib/editor";
+import type { ProjectSummaryDTO } from "@/lib/editor";
 // Session 65 (S65-E — the thirteenth audit's A-5): the envelope-unwrap
 // client lives in its own seam now — the files view's GET-only local
 // copy (which had already lost the init parameter) is gone; its call
@@ -97,35 +97,34 @@ function RecentListCard({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
 
-  async function openProject() {
+  function openProject() {
     // Touch lastOpenedAt so Recent reorders — the grid card's PATCH.
     // Session 61 (S61-H / B-L-5): fire-and-forget — the navigation is
     // immediate (the grid-card variant's rationale).
-    fetch(`/api/projects/${project.id}`, {
+    // Session 71 (S71-A / L-A1): the PATCH rides the ONE call() seam's
+    // SILENT variant (the S61-H toast-less contract, now declared).
+    void call(`/api/projects/${project.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lastOpened: true }),
-    }).catch(() => null);
+    }, { silent: true });
     router.push(`/Editor?projectId=${project.id}`);
   }
 
   async function deleteProject() {
     setDeleting(true);
-    try {
-      const response = await fetch(`/api/projects/${project.id}`, { method: "DELETE" });
-      const body = await response.json().catch(() => null);
-      if (!response.ok || !body?.ok) {
-        toast.error("Delete failed", body?.error?.message ?? "Please try again.");
-        return;
-      }
+    // Session 71 (S71-A / L-A1): the DELETE rides the ONE call() seam
+    // with the list card's own error copy as the errorTitle.
+    const data = await call<{ project: { id: string } }>(
+      `/api/projects/${project.id}`,
+      { method: "DELETE" },
+      { errorTitle: "Delete failed" },
+    );
+    if (data) {
       onDeleted(project.id);
       setDeleteConfirmOpen(false);
       toast.success("Project deleted", project.name);
-    } catch {
-      toast.error("Network error", "Could not delete the project.");
-    } finally {
-      setDeleting(false);
     }
+    setDeleting(false);
   }
 
   // RA-48: the reference's list date is "Sep 30, 2026" — month short,

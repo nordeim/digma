@@ -77,6 +77,16 @@ export function DashboardView({ user }: { user: HeaderUser }) {
   }, [projects, search]);
 
   function openEditor(projectId: string) {
+    // Session 71 (S71-A / L-A2 — the nineteenth audit's A-F6): the
+    // LIST-row open now touches lastOpenedAt like the grid card's and
+    // the Recent list card's openers — pre-fix this was a bare
+    // router.push, so "Continue Working" and Recent ordering silently
+    // disagreed with the card-family paths. The PATCH rides the call()
+    // seam's SILENT variant (the S61-H fire-and-forget contract).
+    void call(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ lastOpened: true }),
+    }, { silent: true });
     router.push(`/Editor?projectId=${projectId}`);
   }
 

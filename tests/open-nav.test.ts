@@ -49,21 +49,28 @@ describe("the immediate card open (session 61, S61-H / B-L-5)", () => {
   it("the grid-card openProject navigates without awaiting the PATCH", () => {
     // THE DEFECT PIN: pre-fix the PATCH was awaited before
     // router.push — the click blocked on the round-trip.
-    const start = cardSource.indexOf("async function openProject() {");
+    // Session 71 re-anchor (S71-A / L-A1): the PATCH migrated onto
+    // the call() seam's silent variant (the S61-H fire-and-forget
+    // contract, now declared) — openProject is no longer async and
+    // the fetch is void-ed, never awaited.
+    const start = cardSource.indexOf("function openProject() {");
     expect(start).toBeGreaterThan(-1);
     const end = cardSource.indexOf("router.push(", start);
     const body = cardSource.slice(start, end);
-    expect(body).not.toMatch(/await fetch/);
-    expect(body).toContain("fetch(`/api/projects/${project.id}`, {");
+    expect(body).not.toMatch(/await\s+(fetch|call)\(/);
+    expect(body).toContain("void call(`/api/projects/${project.id}`, {");
+    expect(body).toContain("{ silent: true }");
   });
 
   it("the list-row openProject navigates without awaiting the PATCH", () => {
-    const start = recentSource.indexOf("async function openProject() {");
+    // Session 71 re-anchor (S71-A / L-A1): the same call()-seam form.
+    const start = recentSource.indexOf("function openProject() {");
     expect(start).toBeGreaterThan(-1);
     const end = recentSource.indexOf("router.push(", start);
     const body = recentSource.slice(start, end);
-    expect(body).not.toMatch(/await fetch/);
-    expect(body).toContain("fetch(`/api/projects/${project.id}`, {");
+    expect(body).not.toMatch(/await\s+(fetch|call)\(/);
+    expect(body).toContain("void call(`/api/projects/${project.id}`, {");
+    expect(body).toContain("{ silent: true }");
   });
 });
 

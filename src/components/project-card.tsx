@@ -38,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { call } from "@/lib/call";
 import {
   CANVAS_BACKGROUND_PRESETS,
   TEMPLATE_META,
@@ -71,10 +72,12 @@ export function CanvasThumbnail({
   project,
   elements,
 }: {
-  project: Pick<ProjectDTO, "backgroundColor" | "id">;
+  project: Pick<ProjectDTO, "backgroundColor">;
   // Session 70 (S70-C): the thumbnail consumes the PROJECTED rows (the
   // list-family routes ship the bounded projection; the detail/editor
   // rows are a structural superset and fit the same param).
+  // Session 71 (S71-A): the Pick drops the dead id — only the
+  // backgroundColor is read (the nineteenth audit's A-F12).
   elements: ThumbnailElementDTO[];
 }) {
   const bounds = boundsOf(elements);
@@ -249,25 +252,24 @@ export function InlineProjectRename({
       return;
     }
     setSaving(true);
-    try {
-      const response = await fetch(`/api/projects/${project.id}`, {
+    // Session 71 (S71-A / L-A1): the rename rides the ONE call() seam —
+    // the errorTitle option carries the card's own toast copy (the
+    // per-site hand-rolled unwrap + catch branches died with the
+    // migration; the unified fallback description is the seam's).
+    const renamed = await call<ProjectSummaryDTO>(
+      `/api/projects/${project.id}`,
+      {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok || !body?.ok) {
-        toast.error("Rename failed", body?.error?.message ?? "Please try again.");
-        return;
-      }
+      },
+      { errorTitle: "Rename failed" },
+    );
+    if (renamed) {
       toast.success("Project renamed", name);
       // Session 70 (S70-C): the PATCH response ships the summary shape.
-      onRenamed(body.data.project as ProjectSummaryDTO);
-    } catch {
-      toast.error("Network error", "Could not rename the project.");
-    } finally {
-      setSaving(false);
+      onRenamed(renamed);
     }
+    setSaving(false);
   }
 
   return (
@@ -355,38 +357,38 @@ export function ProjectCard({
     opened.toLocaleDateString()
   }`;
 
-  async function openProject() {
+  function openProject() {
     // Touch lastOpenedAt so "Continue Working" and Recent reorder.
     // Session 61 (S61-H / B-L-5 — the ninth audit's B-L-5): the PATCH is
     // fire-and-forget — pre-fix this await blocked the navigation on the
     // round-trip, and a slow network made the click look dead. The
     // failure path already degraded to navigate; the reorder is
     // server-side and unaffected by the unmount (the request is sent).
-    fetch(`/api/projects/${project.id}`, {
+    // Session 71 (S71-A / L-A1): the PATCH rides the ONE call() seam's
+    // SILENT variant — the fire-and-forget family never toasts (the
+    // S61-H contract, now declared instead of hand-rolled .catch).
+    void call(`/api/projects/${project.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lastOpened: true }),
-    }).catch(() => null);
+    }, { silent: true });
     router.push(`/Editor?projectId=${project.id}`);
   }
 
   async function deleteProject() {
     setDeleting(true);
-    try {
-      const response = await fetch(`/api/projects/${project.id}`, { method: "DELETE" });
-      const body = await response.json().catch(() => null);
-      if (!response.ok || !body?.ok) {
-        toast.error("Delete failed", body?.error?.message ?? "Please try again.");
-        return;
-      }
+    // Session 71 (S71-A / L-A1): the DELETE rides the ONE call() seam
+    // with the card's own error copy as the errorTitle.
+    const data = await call<{ project: { id: string } }>(
+      `/api/projects/${project.id}`,
+      { method: "DELETE" },
+      { errorTitle: "Delete failed" },
+    );
+    if (data) {
       onDeleted?.(project.id);
       setDeleteConfirmOpen(false);
       toast.success("Project deleted", project.name);
-    } catch {
-      toast.error("Network error", "Could not delete the project.");
-    } finally {
-      setDeleting(false);
     }
+    setDeleting(false);
   }
 
   return (
@@ -586,34 +588,31 @@ export function CreateProjectDialog({
   async function submit() {
     if (!valid || submitting) return;
     setSubmitting(true);
-    try {
-      const response = await fetch("/api/projects", {
+    // Session 71 (S71-A / L-A1): the create POST rides the ONE call()
+    // seam with the dialog's own error copy as the errorTitle (the
+    // hand-rolled unwrap + catch branches died with the migration).
+    const data = await call<{ project: ProjectSummaryDTO }>(
+      "/api/projects",
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim() || null,
           template,
           backgroundColor: background,
         }),
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok || !body?.ok) {
-        toast.error("Could not create the project", body?.error?.message ?? "Please try again.");
-        return;
-      }
+      },
+      { errorTitle: "Could not create the project" },
+    );
+    if (data) {
       // Session 70 (S70-C): the created project (no element include on
       // the POST) flows into the summary-typed list state.
-      const project = body.data.project as ProjectSummaryDTO;
-      onCreated(project);
+      onCreated(data.project);
       onOpenChange(false);
       reset();
-      toast.success("Project created", project.name);
-    } catch {
-      toast.error("Network error", "Could not create the project.");
-    } finally {
-      setSubmitting(false);
+      toast.success("Project created", data.project.name);
     }
+    setSubmitting(false);
   }
 
   function reset() {

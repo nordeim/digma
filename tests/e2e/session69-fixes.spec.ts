@@ -16,14 +16,15 @@ import { expect, test } from "@playwright/test";
 //
 // THE PIN: the login POST is intercepted and fulfilled with the
 // route's REAL documented response shape under the knob — 403 with
-// { ok: false, error: { code: "VERIFY_EMAIL", message: … }, email,
-// verificationCode: null } (byte-shape from login/route.ts:66-74) —
-// and the card must OPEN the verify state (the h2 + the six digit
-// inputs). Pre-fix: the inline error renders and the digits never
-// appear (the dead end). The route-mocked response carries the real
-// knob-posture shape; the route's own knob behavior is unit-pinned
-// (tests/ai-limit-otp-s67.test.ts), so this spec pins the CLIENT
-// contract exactly.
+// { ok: false, error: { code: "VERIFY_EMAIL", message: …,
+// verificationCode: null } } (byte-shape from login/route.ts — the
+// session-71 envelope fold moved the code INSIDE error and deleted
+// the dead top-level email field) — and the card must OPEN the verify
+// state (the h2 + the six digit inputs). Pre-fix: the inline error
+// renders and the digits never appear (the dead end). The route-mocked
+// response carries the real knob-posture shape; the route's own knob
+// behavior is unit-pinned (tests/ai-limit-otp-s67.test.ts), so this
+// spec pins the CLIENT contract exactly.
 //
 // This file OPTS OUT of the shared storageState (empty cookies) —
 // it tests the logged-out surface (the auth.spec.ts convention).
@@ -35,8 +36,8 @@ test.describe("session 69 — the login VERIFY_EMAIL recovery under the OTP knob
     page,
   }) => {
     // The route's real knob-posture response: 403, the VERIFY_EMAIL
-    // envelope, the email, and the code nulled (the emailed-code
-    // delivery posture — S67-C).
+    // envelope with the code nulled INSIDE error (the emailed-code
+    // delivery posture — S67-C; the session-71 envelope fold).
     await page.route("**/api/auth/login", async (route) => {
       await route.fulfill({
         status: 403,
@@ -46,9 +47,8 @@ test.describe("session 69 — the login VERIFY_EMAIL recovery under the OTP knob
           error: {
             code: "VERIFY_EMAIL",
             message: "Verify your email to sign in — we've sent a fresh 6-digit code.",
+            verificationCode: null,
           },
-          email: "knob-posture@example.com",
-          verificationCode: null,
         }),
       });
     });

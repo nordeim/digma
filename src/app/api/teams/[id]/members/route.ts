@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { bodySizeRejected, clampOptionalText, MEMBER_LIMIT } from "@/lib/validation";
+import { bodySizeRejected, clampText, MEMBER_LIMIT } from "@/lib/validation";
 import { memberColorFor, memberDisplayFor } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const body = await request.json().catch(() => null);
-  const email = clampOptionalText(body?.email, 200);
+  const email = clampText(body?.email, 200);
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return fail("VALIDATION", "Enter a valid email address", 400);
   }
@@ -48,9 +48,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     member = await db.teamMember.create({
       data: {
         teamId: id,
-        name: clampOptionalText(body?.name, 80) ?? memberDisplayFor(email),
+        name: clampText(body?.name, 80) ?? memberDisplayFor(email),
         email,
-        role: clampOptionalText(body?.role, 80),
+        role: clampText(body?.role, 80),
         avatarColor: memberColorFor(email),
       },
     });

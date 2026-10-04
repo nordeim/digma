@@ -64,10 +64,15 @@ describe("the Select All dead-state disable (session 61, S61-D / A-L-4)", () => 
     // The label logic keeps the elements.length === 0 branch first —
     // the empty canvas still shows "Deselect All" (reference parity,
     // the S57-F pin).
-    const labelStart = panelSource.indexOf("{(() => {");
+    // Session 71 re-anchor (S71-A / A-F8): the label's IIFE collapsed
+    // into the plain ternary over the ONE hoisted allVisibleSelected
+    // constant — the quirk lives in the declaration (elements.length
+    // === 0 || …).
+    const labelStart = panelSource.indexOf('{allVisibleSelected ? "Deselect All" : "Select All"}');
     expect(labelStart).toBeGreaterThan(-1);
-    const labelEnd = panelSource.indexOf("})()}", labelStart);
-    const labelLogic = panelSource.slice(labelStart, labelEnd);
-    expect(labelLogic).toContain("elements.length === 0 ||");
+    const flipDecl = panelSource.indexOf("const allVisibleSelected =");
+    expect(flipDecl).toBeGreaterThan(-1);
+    const declBody = panelSource.slice(flipDecl, flipDecl + 260);
+    expect(declBody).toContain("elements.length === 0 ||");
   });
 });

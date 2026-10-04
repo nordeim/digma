@@ -27,8 +27,11 @@ describe("the shared call() seam (session 65, S65-E / A-5)", () => {
   it("the client lib module exists with the init-aware form", () => {
     // THE DEFECT PIN: pre-fix no shared module existed — the form
     // lived (twice) inside the view files.
+    // Session 71 re-anchor (S71-A / L-A1): the signature gained the
+    // opts parameter (errorTitle + silent) — the options ride AFTER the
+    // init-aware form; every pre-existing call site is unchanged.
     const src = readFileSync(callModulePath, "utf8");
-    expect(src).toMatch(/export async function call<T>\(url: string, init\?: RequestInit\)/);
+    expect(src).toMatch(/export async function call<T>\(url: string, init\?: RequestInit, opts\?: CallOptions\)/);
     expect(src).toMatch(/toast\.error\(/);
     expect(src).toMatch(/"Content-Type": "application\/json"/);
   });

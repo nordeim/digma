@@ -78,7 +78,8 @@ VERIFIED_ME=$(curl -s -b /tmp/smoke-verify-cookies.txt "$BASE/api/auth/me")
 echo "$VERIFIED_ME" | grep -q '"ok":true' && ok "the verified account's session resolves" || bad "verified session: $VERIFIED_ME"
 
 # The resend round-trip on a SECOND unverified account (the first is now
-# verified — resend answers 409 there): a fresh code replaces the old one.
+# verified — resend answers the uniform VALIDATION 400 there since the
+# session-71 enumeration fix): a fresh code replaces the old one.
 SMOKE_TS2=$((SMOKE_TS + 1))
 REGISTER2=$(curl -s -X POST "$BASE/api/auth/register" \
   -H "Content-Type: application/json" \

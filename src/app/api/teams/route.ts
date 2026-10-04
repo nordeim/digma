@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { bodySizeRejected, clampColor, clampOptionalText, clampText, TEAM_LIMIT } from "@/lib/validation";
+import { bodySizeRejected, clampColor, clampText, TEAM_LIMIT } from "@/lib/validation";
 import { memberColorFor, memberDisplayFor } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -35,17 +35,17 @@ export async function POST(request: NextRequest) {
   const name = clampText(body?.name, 80);
   if (!name) return fail("VALIDATION", "Team name is required", 400);
 
-  const description = clampOptionalText(body?.description, 300);
+  const description = clampText(body?.description, 300);
   const color = clampColor(String(body?.color ?? "#8B5CF6"), "#8B5CF6");
 
   // Session 60 (S60-C — the eighth audit's B-L-1): the inline first-member
   // invitation validates the email with the SAME contract the members
-  // route enforces. Pre-fix the raw truthy gate wrote
-  // clampOptionalText(memberEmail) with NO format check, so "abc" in the
+  // route enforces. Pre-fix the raw truthy gate wrote the text-clamped
+  // memberEmail with NO format check, so "abc" in the
   // Create Team dialog silently created a garbage member while the same
   // input in the Invite Member dialog 400'd with "Enter a valid email
   // address" — the two invite paths must answer identically.
-  const memberEmail = clampOptionalText(body?.memberEmail, 200);
+  const memberEmail = clampText(body?.memberEmail, 200);
   if (memberEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(memberEmail)) {
     return fail("VALIDATION", "Enter a valid email address", 400);
   }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
               create: {
                 name: memberDisplayFor(memberEmail),
                 email: memberEmail,
-                role: clampOptionalText(body?.memberRole, 80),
+                role: clampText(body?.memberRole, 80),
                 // Session 64 (S64-F — the twelfth audit's B-7): the
                 // same derivation the invite-member route uses — the
                 // two member-creation paths must agree on the color

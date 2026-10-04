@@ -718,3 +718,62 @@ Work Log:
 
 Stage Summary:
 - Session 70 fully delivered and pushed to main: the two WAI-ARIA button-pattern violations the clone added unilaterally closed with the canonical restructures (the stretched-button card + the button-region layers row), the one-schema-push batch (four dead columns + the composite index + the ONE buildElementRow seam), the bounded list-payload projection (the three list-family routes ship exactly the thumbnail fields), and the server/client low batch (the verify-otp atomic success, the password seam, the reorder, the clamps, the guards, the doc riders); gate green at 625 unit / 58 smoke / 236 e2e; mobile nav 9/9 the 47th consecutive session; the deferred queue documented in docs/remediation-plan-session70.md
+
+---
+Task ID: digma-session-71
+Agent: Super Z (main agent)
+Task: The operator's session-99/100-cycle directive — refresh the workspace, re-validate against the mandated docs, the 47th reference audit against
+    https://digma-371dfd0d.base44.app/ with the mobile-nav focus, the nineteenth Mode C code audit with the repo skills, TDD remediation, the standing gates,
+    the screenshots, the .env.example, aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- Workspace re-cloned to main @ e00c811 (session-70 delivered at 351e56a + the operator's session-100 log push — the sandbox had been reset); the mandated docs reviewed
+    (README/AGENTS/CLAUDE/PAD v1.49.0, digma_SKILL v1.48.0, session_99/session_100/remediation-plan-session70/worklog tail, the skills catalog); all four S70 seams
+    verified intact in source; .env created with the mandated DATABASE_URL="file:../db/custom.db" + db/ at the repo root (schema pushed + seeded to the pristine
+    1/2/6/1/3 contract); the parent-shell DATABASE_URL trap neutralized
+- Baseline gate re-proven green pre-change: lint · typecheck · 625 unit / 102 files · build 23 routes · 58 smoke · 236 e2e — zero drift
+- 47th reference audit (agent-browser, desktop 1440x900 + mobile 390x844, the real CDP login): no drift, no new gaps — evidence docs/screenshots/ref-audit-s81/
+    (the editor probe needed the project-card ANCHOR retry — the standing first-attempt miss family); mobile nav 9/9 the 48th consecutive session
+    (scripts/verify-nav-s71.sh) + re-verified on the final S71 build
+- Nineteenth Mode C audit (two fresh-eyes subagents + the lead's hunk-by-hunk + the lead's source re-verification of every chosen finding): 0 Critical / 0 High
+    / 0 Medium / 17 Low / 9 Informational; the deferred backlog items all CONFIRMED and sharpened; docs/remediation-plan-session71.md written and validated
+- TDD: unit RED 34 defect pins + 7 preservation pins across five new spec files -> GREEN 666 = 625 + 41 (ten standing pins legitimately re-anchored onto the
+    restructured contracts, each with the contract-change comment); e2e RED 4/4 honestly reproduced against the pre-fix standalone build -> GREEN 240 = 236 + 4;
+    smoke unchanged 58
+- S71-A: the call() options surface (errorTitle + silent — both toast families suppressible) + the SIX card-level raw fetch sites migrated + the Dashboard
+    list-row lastOpened PATCH (pre-fix a bare router.push) + the teams-view ONE load(ignore?) seam + the riders (the dead ProjectDTO import, the dead toolbar
+    index param, the CanvasThumbnail Pick's dead id, the Layers-header flip hoisted into ONE allVisibleSelected)
+- S71-B: the exit() double-PUT closed — the in-flight same-reference indicator (the machine's CAPTURED { projectId, elements, backgroundColor } descriptor,
+    assigned at capture time, cleared in finally; the soft-leave cleanup PUT skips when the references match the live store — the machine's fetch survives the
+    soft navigation; a mismatch keeps the cleanup as the NEWER-state safety net)
+- S71-C: the resend-otp uniform VALIDATION 400 (the 200/409/400 account-state oracle that survived the OTP knob closed) + the login 403 envelope fold
+    (verificationCode inside error, the dead top-level email deleted, the one consumer + the session69 e2e mock + the PAD sentence updated) + the redundant
+    single-column projectId index dropped (db push + re-seed) + the elements POST sortOrder clamp agreeing with ELEMENT_LIMIT
+- S71-D: the lint ladder's cheapest rung (no-unreachable/no-debugger/no-redeclare at error — finding-free) + the exported rangeFillPercent seam at ALL FIVE
+    --range-fill sites (the rotation/scale inline forms rendered 300%/-1.7% fills for server-legal persisted values) + the clampText fold (the twin deleted, 8
+    call sites migrated, the stale comments updated) + the elementSummary prompt-injection posture pin (enum/geometry-only)
+- En-route (the F58 lessons): the comment-literal discipline's fourth appearance (twice — the removed 409 status + the removed index form quoted in new
+    comments), the segment-helper end-marker collision (anchor on stable CODE forms), the message-prose false absence (shape pins match the KEY's declaration
+    form), the empty-string CLI arg (agent-browser fill "" drops the value — re-navigate instead), one contention flake documented (the session62 soft-leave
+    spec failed once under post-chunk load, stable 4x after)
+- Full gate green: lint, typecheck, 666/666 unit / 107 files, build, 58/58 smoke, 240/240 e2e — zero regressions (the full e2e re-run in chunks under the
+    tool-call time limit)
+- Live verification: the mobile nav contract 9/9 on the final build; the capture (scripts/capture-session71.sh — the DB re-seeded + the server booted INSIDE the
+    script): the standard 32 + the ref-audit-s81 evidence set (clone-21/22 captured BY the e2e pins at the verified-assertion moments) + THREE NEW inline checks
+    (the list-row lastOpened PATCH live, the resend-otp uniform 400 byte-identical, the live PRAGMA index list answering the composite + autoindex only) + the
+    standing XFF rotation-bypass closure re-verified live in both directions — dimension-checked 250/250 (the checker extended with the S81 mapping), VLM
+    content-verified 21/21; the DB re-seeded pristine
+- .env.example verified unchanged (the source's seven digma env reads all covered — the four slices add no env vars); .env keeps
+    DATABASE_URL="file:../db/custom.db" with db/ at the repo root
+- Docs aligned: PAD v1.50.0 (the header summary + the revision block + the 7.1 table to the 107-file/666-unit + 30-file/240-e2e reality + the ADR-014
+    status-code-oracle rider), digma_SKILL v1.49.0 (lesson F58), AGENTS/CLAUDE/README counts + seam rows + feature riders, remediation-plan-session71 execution
+    status, docs/session_101.md, the repo worklog entry
+- Committed on main and pushed via docs/ssh_git_wrapper_v3.py (the paramiko shim — no OpenSSH binary in the sandbox); remote refs/heads/main == local HEAD
+    verified; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 71 fully delivered and pushed to main: the call-consolidation pass (the ONE call() seam's options surface + the six-site migration + the list-row
+    PATCH + the load seam + the riders), the exit() double-PUT closed through the in-flight same-reference indicator, the server enumeration/envelope pair
+    (the resend uniform 400 + the login fold + the index drop + the sortOrder clamp), and the pins/guards batch (the lint ladder's first rung + the
+    rangeFillPercent five-site seam + the clampText fold + the elementSummary posture pin); gate green at 666 unit / 58 smoke / 240 e2e; mobile nav 9/9 the 48th
+    consecutive session; the deferred queue documented in docs/remediation-plan-session71.md

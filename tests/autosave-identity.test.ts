@@ -41,7 +41,11 @@ const viewSource = readFileSync(
 /** The useAutosave effect body (from `function useAutosave` to its return). */
 function autosaveSegment(): string {
   const start = viewSource.indexOf("function useAutosave");
-  const end = viewSource.indexOf("// A stable flush handle for exit()", start);
+  // Session 71 re-anchor (the S71-B in-flight descriptor landed its own
+  // comment above the refs — the historical "stable flush handle" marker
+  // now precedes the effect instead of following it). The segment ends
+  // at the hook's return statement.
+  const end = viewSource.indexOf("return React.useCallback(() => flushRef.current()", start);
   expect(start).toBeGreaterThan(-1);
   expect(end).toBeGreaterThan(start);
   return viewSource.slice(start, end);
