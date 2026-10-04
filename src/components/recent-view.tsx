@@ -178,6 +178,19 @@ function RecentListCard({
           <a
             href={`/Editor?projectId=${project.id}`}
             onClick={(event) => {
+              // Session 77 (S77-B / A-L1 — the twenty-fifth audit's
+              // A-L1): a modified click (Cmd/Ctrl = new tab, Shift = new
+              // window, Alt = download) must keep the BROWSER's native
+              // anchor behavior — the pre-fix unconditional
+              // preventDefault() swallowed it into a same-tab SPA
+              // navigation, on a FILE LIST, the exact surface where
+              // tab-opening is a habit. Every other navigation surface
+              // here is a Button or a Next Link (modifier-aware); this
+              // was the only hand-rolled intercept. The SPA navigation
+              // + the silent lastOpened PATCH run on the plain path.
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+              }
               event.preventDefault();
               void openProject();
             }}

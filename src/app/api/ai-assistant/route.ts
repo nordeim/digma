@@ -42,15 +42,23 @@ export async function POST(request: NextRequest) {
   }
   const body = parsed.value;
   const message = typeof body?.message === "string" ? body.message.trim().slice(0, 1000) : "";
+  // Session 77 (S77-F / B-L1): the per-string clamp joins the count cap
+  // — pre-fix the filter checked only typeof, so a scripted caller could
+  // pad the system prompt with up to ~32 MB of id-shaped prose (100
+  // strings x ~320 KB) beside the bounded siblings (message 1000,
+  // elementSummary sanitized to 500). Real element ids are cuid-length
+  // (~25); 64 is the generous bound. The fallback's ids echo inherits
+  // the clamp automatically (the same array flows).
   const targetIds = Array.isArray(body?.targetIds)
-    ? (body.targetIds as unknown[]).filter((i): i is string => typeof i === "string").slice(0, 100)
+    ? (body.targetIds as unknown[]).filter((i): i is string => typeof i === "string" && i.length <= 64).slice(0, 100)
     : [];
   // The selected ids whose elements are LOCKED (session 27): the fallback's
   // delete branch skips them (the wall's AI contract, S27-1) and the LLM's
   // system prompt is told to leave them alone — an instruction-level delete
   // never removes what the wall protects.
+  // Session 77 (S77-F): the twin filter carries the same per-string clamp.
   const lockedTargetIds = Array.isArray(body?.lockedTargetIds)
-    ? (body.lockedTargetIds as unknown[]).filter((i): i is string => typeof i === "string").slice(0, 100)
+    ? (body.lockedTargetIds as unknown[]).filter((i): i is string => typeof i === "string" && i.length <= 64).slice(0, 100)
     : [];
   // Session 75 (S75-F): the summary rides the system role, so it passes
   // through the server-side sanitizer first — one line, control-free,

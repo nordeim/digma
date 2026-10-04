@@ -305,7 +305,17 @@ export function AiAssistant() {
         <WandSparkles className="h-3 w-3 text-purple-400" aria-hidden />
       </div>
 
-      <div className="editor-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+      {/* Session 77 (S77-C / A-L2 — the S76-D complementary gap): the
+          transcript carries role="log" — the implicit polite arrival
+          region. S76-D correctly removed the per-TICK live regions
+          (the zoom chip / slider readouts); ARRIVAL announcements are
+          the legitimate use, and messages append atomically (never a
+          per-tick stream). Pre-fix a screen-reader user submitted a
+          prompt and heard silence until manually navigating into the
+          list. No per-message live attribute rides the bubbles — the
+          exactly-one-live-region-in-the-editor-DOM contract holds (the
+          log role does not serialize as a DOM live attribute). */}
+      <div role="log" className="editor-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {messages.map((message) =>
           message.role === "user" ? (
             /* User rows: right-aligned bubble, timestamp below (the reference

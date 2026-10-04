@@ -63,8 +63,13 @@ describe("S73-C — the row-heavy transaction timeouts (B-F2)", () => {
   });
 
   it("the duplicate copy transaction carries the 30s timeout", () => {
+    // Session 77 (S77-G / B-I2): RE-ANCHORED onto the helper form — the
+    // transaction body moved into runCopyTx() so the P2024/P2028 catch
+    // can wrap it (the transactional shape is unchanged: same body,
+    // same sentinel, same timeout). The pre-S77 form anchored on
+    // `const copy = await db.$transaction(...)` inline.
     const route = src("src/app/api/projects/[id]/duplicate/route.ts");
-    const tx = route.indexOf("const copy = await db.$transaction(async (tx) => {");
+    const tx = route.indexOf("return db.$transaction(async (tx) => {");
     expect(tx).toBeGreaterThan(-1);
     const tail = route.slice(tx, tx + 2400);
     expect(tail).toMatch(/,\s*\{ timeout: 30_000 \}\s*\)/);

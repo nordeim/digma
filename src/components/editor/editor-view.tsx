@@ -1211,6 +1211,19 @@ export function EditorView({ user }: { user: HeaderUser }) {
           return;
         }
         try {
+          // Session 77 (S77-E / A-L5 — the twenty-fifth audit's A-L5,
+          // reachability-caveated): a DIFFERENT project's soft swap
+          // (same component instance — programmatic/URL-level
+          // navigation) re-arms the loading gate BEFORE the fetch. The
+          // pre-fix branch never set loading, so project A kept
+          // painting (the header, the canvas) for the whole GET window
+          // — data integrity was never at risk (the S57-B swap guards
+          // drop late responses), but the flash was stale content. The
+          // call sits in the async prefix after the same-project skip's
+          // early return (the adoption re-run must not flash the gate
+          // — the S61-I contract), and never on the Untitled fallback
+          // (a failed load falls through WITH the gate armed).
+          setLoading(true);
           const response = await fetch(`/api/projects/${projectId}`);
           const body = await response.json().catch(() => null);
           if (!cancelled && response.ok && body?.ok) {
@@ -1387,7 +1400,13 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 title={user.name}
                 style={{ backgroundColor: "#3B82F6" }}
               >
-                {user.name.charAt(0)}
+                {/* Session 77 (S77-D / A-L3 — the user-initial family's
+                    fourth site): the guarded form — trim + upper + the
+                    "Designer" fallback. The pre-fix bare
+                    user.name.charAt(0) rendered a blank chip on a
+                    whitespace-leading name (the family's other three
+                    sites are pinned by tests/user-initial.test.ts). */}
+                {user.name.trim().charAt(0).toUpperCase() || "D"}
               </div>
               {/* Second collaborator chip — the reference's VERBATIM identity
                   (session 37, RA-41, bundle-decoded): its avatar stack renders

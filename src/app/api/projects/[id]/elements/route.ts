@@ -227,10 +227,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
     // fillImage data-URLs under the 32 MB body cap. Prisma's DEFAULT
     // interactive-transaction timeout is 5s; a max-ceiling save on a
     // slow self-hosted disk (the documented deploy posture) can exceed
-    // it, and the P2028-family abort matches neither P2025 nor P2003 —
-    // it would rethrow through the catch below as an unstructured 500,
-    // exactly the no-bare-throw family this route's own comments
-    // enforce. 30s covers the documented worst case with margin.
+    // it, and the P2028-family abort matched neither P2025 nor P2003 —
+    // through session 76 it rethrowed through the catch below as an
+    // unstructured 500, exactly the no-bare-throw family this route's
+    // own comments enforce. 30s covers the documented worst case with
+    // margin.
+    // Session 77 (S77-G / B-I2 — the twenty-fifth audit's honesty
+    // loop): that residual CLOSED — the P2024 (pool-wait) and P2028
+    // (transaction-timeout) families now answer the structured 503
+    // UNAVAILABLE envelope instead of the bare 500. Both are transient
+    // server-side conditions (retryable by the caller); the client's
+    // call() seam surfaces the envelope's message as the toast copy.
     return ok({ elements });
   } catch (error) {
     if (
@@ -238,6 +245,16 @@ export async function PUT(request: NextRequest, { params }: Params) {
       (error.code === "P2025" || error.code === "P2003")
     ) {
       return fail("NOT_FOUND", "Project not found", 404);
+    }
+    // Session 77 (S77-G / B-I2): the transaction-abort family —
+    // P2024 = timed out waiting for a pool connection, P2028 = the
+    // interactive transaction timed out. Transient by nature; the
+    // envelope answers 503 with the human copy.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The board took too long to save — the database timed out. Try again.", 503);
     }
     throw error;
   }

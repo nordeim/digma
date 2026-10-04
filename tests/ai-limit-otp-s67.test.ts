@@ -64,13 +64,21 @@ describe("aiRateLimit — the dedicated assistant bucket (S67-C / M-2)", () => {
 // The route wiring (the source contracts)
 // ---------------------------------------------------------------------------
 describe("the ai-assistant route carries the limiter BEFORE the body parse (S67-C / M-2)", () => {
-  it("the limiter call sits right after the session gate, before request.json()", () => {
+  it("the limiter call sits right after the session gate, before the parse seam", () => {
     // THE DEFECT PIN: pre-fix requireSession is the only gate.
+    // Session 77 (S77-F / B-L2 — the twenty-fifth audit's pin-honesty
+    // Low): the marker RE-ANCHORED onto readBoundedJson( — the real
+    // parse call. The pre-S77 form asserted on indexOf("request.json()")
+    // which, post-S68-A, matched only the DOC COMMENT above the seam:
+    // a pin that passes on a comment occurrence (moving the real parse
+    // above the limiter while leaving the comment would false-pass).
+    // A legitimate re-anchor — the current source satisfies the real
+    // contract; the request-surface-s68 form.
     const source = src("src/app/api/ai-assistant/route.ts");
     expect(source).toMatch(/aiRateLimit\(clientIpOf\(request\.headers\)\)/);
     const sessionGate = source.indexOf("requireSession()");
     const limiterCall = source.indexOf("aiRateLimit(");
-    const firstParse = source.indexOf("request.json()");
+    const firstParse = source.indexOf("readBoundedJson(");
     expect(limiterCall).toBeGreaterThan(sessionGate);
     expect(firstParse).toBeGreaterThan(limiterCall);
   });

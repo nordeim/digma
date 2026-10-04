@@ -1148,3 +1148,64 @@ Stage Summary:
     the GET consumer note), and the rate-limit eviction amortization implemented from the deferred queue (the watermark + lazy reset — zero pins re-anchored)
     + the deferred-queue decisions (the AI-panel closure with evidence, the fillImageThumb decision tree); gate green at 820 unit / 58 smoke / 246 e2e;
     mobile nav 9/9 the 53rd consecutive session; the deferred queue documented in docs/remediation-plan-session76.md
+
+---
+Task ID: digma-session-77
+Agent: Super Z (main agent)
+Task: The operator's session-cycle directive — refresh the workspace, re-validate the codebase against the mandated docs, the 53rd reference audit against
+    https://digma-371dfd0d.base44.app/, the twenty-fifth Mode C code audit with the repo skills, TDD remediation, the standing gates, the screenshots,
+    the .env.example, aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- Workspace refreshed (the sandbox HAD been reset — the repo re-cloned from the operator's session-112 log push 99f8db3); the environment re-established (bun
+    install, prisma generate + db:push + db:seed to the pristine 1/2/6/1/3 contract, .env recreated with the mandated DATABASE_URL="file:../db/custom.db" +
+    db/ at the repo root, the parent shell's exported DATABASE_URL neutralized with the unset discipline); the mandated docs reviewed (README/AGENTS/CLAUDE/
+    PAD v1.55.0, digma_SKILL v1.54.0, session_111/session_112/remediation-plan-session76/worklog tail, the skills catalog); all seven S76 seams verified
+    intact in source; .env.example covers all seven env reads
+- BASELINE GATE RE-PROVEN GREEN — the prior session's claims HELD (the F59 corollary satisfied): lint/typecheck/820 unit/123 files/build/58 smoke/246 e2e —
+    zero regressions
+- 53rd reference audit (agent-browser, desktop 1440x900 + mobile 390x844, the real CDP login): NO DRIFT on the standing datums (nav 124/96/92x36, the greeting,
+    Quick Stats 1/0/Pro, the Recent sort, kbd 0 via the JSON-wrapped re-probe, the Create-Team dead chrome, the class-A mobile nav, Share L385-R458/Present
+    L466-R551 byte-identical the 14th consecutive session, the board at 9 layers — all nine names text-verified); mobile nav 9/9 the 54th consecutive session
+    (scripts/verify-nav-s77.sh) + re-verified on the final S77 build
+- Twenty-fifth Mode C audit (the lead's seam re-verification + two fresh-eyes subagents — auditor A over the editor/client layer ~11k lines, auditor B over
+    the server/infra side, all 18 routes): 0 Critical / 0 High / 0 Medium / 7 Low / 5 Informational; docs/remediation-plan-session77.md written and validated;
+    the deferred-queue judgments: the fillImageThumb kept queued (unchanged), the canvas aria-label closed as posture (the layers panel is the a11y surface),
+    the read-side stored-board twin a posture row, the P2024/P2028 escape CHOSEN for the honesty slice, the shared-buckets pin DELIVERED
+- TDD: unit RED 11 defect pins + 9 preservation pins across two new spec files -> GREEN 840 = 820 + 20 / 125 files (one standing pin legitimately re-anchored —
+    the s73 duplicate-transaction timeout onto the runCopyTx helper form; one stale pin re-anchored — the s67 AI-route ordering onto the readBoundedJson marker);
+    e2e 249 (+3 the session77-fixes discriminators — the Ctrl+Click new-tab via the context pages() enumeration + the plain-click preservation + the dialog
+    close-floor measurement with the animation settle; one transient s62 flake, green in isolation and the re-run); smoke unchanged 58
+- S77-A (the headline): the vendored Sheet/Dialog primitives' built-in close buttons carry h-11 w-11 — the 44px close floor becomes a PRIMITIVE guarantee
+    (the ten call-site [&>button]:h-11 overrides inert; the rendered geometry unchanged at every existing consumer)
+- S77-B: the Recent title anchor bails before preventDefault on modifier clicks (the browser's native new-tab/new-window preserved; the SPA navigation + the
+    silent lastOpened PATCH on the plain path)
+- S77-C: the AI transcript container carries role="log" (the implicit polite arrival region; no per-message live attribute — the exactly-one-live-region
+    contract holds)
+- S77-D: the editor header avatar renders the guarded initial (the user-initial family's fourth site)
+- S77-E: the different-project load branch re-arms setLoading(true) before its fetch (the soft-swap stale-project flash)
+- S77-F: the AI route's targetIds/lockedTargetIds filters carry the per-string clamp (i.length <= 64 — the last unbounded system-prompt interpolation) + the
+    stale ordering pin re-anchored onto the readBoundedJson marker
+- S77-G: the honesty batch (the reorderElements Set form — the S74-B family's last member; the shared-buckets rate-limit pin delivered; the P2024/P2028
+    transaction-abort families answer the structured 503 UNAVAILABLE envelope on the elements PUT + the duplicate route — the transaction body in a helper,
+    the transactional shape unchanged)
+- En-route (the F64 lessons): the modifier-click semantics probe (no opener relationship -> no popup event; the context pages() enumeration; the synthetic
+    event proves only the handler discipline), the session-eviction ordering rule (the reset-replay check evicts the browser session — new inline checks run
+    BEFORE it), the mid-animation measurement trap (zoom-in-95 scales 44 -> 42.7 mid-flight; settle before measuring), the evidence-shot ordering rule's
+    second appearance (the shot BETWEEN the check and the cleanup); corollary: the loose-matcher false-positive family re-observed and documented
+- Full gate green: lint, typecheck, 840/840 unit / 125 files, build, 58/58 smoke, 249/249 e2e — zero regressions
+- Live verification: the mobile nav 9/9 on the final build; the capture (scripts/capture-session77.sh + the clone-24 tail re-capture): the standard 32 + the
+    ref-audit-s87 evidence set + the standing inline checks re-verified + FOUR NEW inline checks (the primitive close floor 44x44; the modifier-click bail;
+    the transcript role=log; the avatar guarded initial) — dimension-checked 342/342 (the S87 mapping added), VLM 25/25 in one complete passing run
+- .env.example verified unchanged (the session's slices add no env vars)
+- Docs aligned: PAD v1.56.0 (header + revision block + 7.1 + the four 10 rows + 11 line counts + the command-table counts), digma_SKILL v1.55.0 (lesson F64),
+    AGENTS/CLAUDE/README counts + the session-77 seam bullet, remediation-plan-session77 execution status, docs/session_113.md, the repo worklog entry
+- Committed on main and pushed via docs/ssh_git_wrapper_v3.py; remote refs/heads/main == local HEAD verified; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 77 fully delivered and pushed to main: the primitive 44px close floor (the headline — the ten-override convention converted into a structural
+    guarantee, the S76-E toaster form generalized to the family's root), the modifier-click preservation on the Recent title anchor, the AI transcript's
+    role=log arrival announcements, the editor avatar's guarded initial, the project-swap loading re-arm, the server pair (the per-string id clamp + the
+    stale pin re-anchor), and the honesty batch (the Set form, the delivered shared-buckets pin, the P2024/P2028 envelope arms) + the deferred-queue
+    decisions; gate green at 840 unit / 58 smoke / 249 e2e; mobile nav 9/9 the 54th consecutive session; the deferred queue documented in
+    docs/remediation-plan-session77.md

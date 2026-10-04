@@ -433,6 +433,18 @@ S86.update({
     "clone-23-toast-dismiss-44px": (1440, 900),
 })
 
+# Session 77 (the 53rd reference audit): the s87 evidence set mirrors the
+# s86 form (the standing ref family + the standing clone evidence) + the
+# session's own clone-24 (the S77-A primitive close floor evidence — the
+# shortcuts dialog at the desktop editor viewport) and clone-25 (the
+# S77-C AI transcript role=log evidence — the assistant panel at the
+# desktop editor viewport).
+S87 = dict(S86)
+S87.update({
+    "clone-24-primitive-close-44px": (1440, 900),
+    "clone-25-ai-transcript-log-role": (1440, 900),
+})
+
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -462,6 +474,8 @@ def expected_for(name: str):
         return S85.get(Path(name).stem)
     if name.startswith("ref-audit-s86/"):
         return S86.get(Path(name).stem)
+    if name.startswith("ref-audit-s87/"):
+        return S87.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -527,6 +541,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s84").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s85").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s86").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s87").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

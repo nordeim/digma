@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
@@ -35,37 +36,60 @@ export async function POST(_request: NextRequest, { params }: Params) {
   // half-populated "(Copy)" project) and the name could reach 127 chars
   // from a 120-char source — a later rename PATCH would silently
   // truncate it while the create POST rejects at 120.
-  let overCap = false;
-  const copy = await db.$transaction(async (tx) => {
-    const projectCount = await tx.project.count();
-    if (projectCount >= PROJECT_LIMIT) {
-      overCap = true;
-      return null;
-    }
-    const created = await tx.project.create({
-      data: {
-        name: `${source.name} (Copy)`.slice(0, 120),
-        description: source.description,
-        template: source.template,
-        backgroundColor: source.backgroundColor,
-      },
-    });
-    if (source.elements.length > 0) {
-      await tx.designElement.createMany({
-        data: source.elements.map((el) => {
-          const { id: _id, projectId: _projectId, createdAt: _c, updatedAt: _u, ...rest } = el;
-          return { ...rest, projectId: created.id };
-        }),
-      });
-    }
-    return created;
-  }, { timeout: 30_000 });
   // Session 73 (S73-C — B-F2): the copy transaction recreates up to
   // ELEMENT_LIMIT full element rows; Prisma's default 5s interactive-
   // transaction timeout can abort a max-ceiling copy on a slow
-  // self-hosted disk — the P2028-family escape would surface as an
-  // unstructured 500 outside the envelope. 30s covers the documented
-  // worst case (2000 rows under the 32 MB body cap) with margin.
+  // self-hosted disk — the P2028-family escape surfaced as an
+  // unstructured 500 outside the envelope through session 76 (this
+  // route had NO catch at all on the transaction). 30s covers the
+  // documented worst case (2000 rows under the 32 MB body cap) with
+  // margin.
+  // Session 77 (S77-G / B-I2 — the twenty-fifth audit's honesty loop):
+  // the escape CLOSED — the P2024 (pool-wait) and P2028 (transaction-
+  // timeout) families answer the structured 503 UNAVAILABLE envelope
+  // (the elements PUT's sibling arm; both transient, retryable). The
+  // transaction body moves into a helper so the catch wraps it without
+  // changing the transactional shape (the over-cap sentinel, the
+  // atomicity, and the 30s timeout all ride unchanged).
+  let overCap = false;
+  const runCopyTx = async (): Promise<{ id: string } | null> => {
+    return db.$transaction(async (tx) => {
+      const projectCount = await tx.project.count();
+      if (projectCount >= PROJECT_LIMIT) {
+        overCap = true;
+        return null;
+      }
+      const created = await tx.project.create({
+        data: {
+          name: `${source.name} (Copy)`.slice(0, 120),
+          description: source.description,
+          template: source.template,
+          backgroundColor: source.backgroundColor,
+        },
+      });
+      if (source.elements.length > 0) {
+        await tx.designElement.createMany({
+          data: source.elements.map((el) => {
+            const { id: _id, projectId: _projectId, createdAt: _c, updatedAt: _u, ...rest } = el;
+            return { ...rest, projectId: created.id };
+          }),
+        });
+      }
+      return created;
+    }, { timeout: 30_000 });
+  }
+  let copy: { id: string } | null = null;
+  try {
+    copy = await runCopyTx();
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The copy took too long — the database timed out. Try again.", 503);
+    }
+    throw error;
+  }
   if (overCap) {
     return fail("VALIDATION", "Too many projects (max 500)", 400);
   }

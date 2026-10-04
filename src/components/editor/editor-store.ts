@@ -333,8 +333,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   reorderElements: (fromIds, toIndex) =>
     set((state) => {
-      const moving = state.elements.filter((el) => fromIds.includes(el.id));
-      const rest = state.elements.filter((el) => !fromIds.includes(el.id));
+      // Session 77 (S77-G / A-I2): the S74-B Set-membership family's
+      // last member — the pre-fix includes() scans were the O(n*k)
+      // form the canvas/panels retired in S73-H/S74-B (once per
+      // drag-drop, so the cost was negligible at ELEMENT_LIMIT; the
+      // family form is the Set).
+      const fromIdSet = new Set(fromIds);
+      const moving = state.elements.filter((el) => fromIdSet.has(el.id));
+      const rest = state.elements.filter((el) => !fromIdSet.has(el.id));
       const clamped = clamp(toIndex, 0, rest.length);
       const next = [...rest.slice(0, clamped), ...moving, ...rest.slice(clamped)].map((el, i) => ({
         ...el,
