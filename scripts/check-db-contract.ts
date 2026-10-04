@@ -1,7 +1,48 @@
 // Session-59 baseline: verify the dev DB is at the pristine seed contract.
 // Usage: cd /home/z/my-project/digma && unset DATABASE_URL && bun run scripts/check-db-contract.ts
+import { readFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { resolveDatabaseUrl, candidateRoots } from "../src/lib/db-path";
+
+// Session 74 (S74-E — B74-F2): the refusal guard joins the smoke
+// script's S73-D mechanism — a shell-exported DATABASE_URL pointing at
+// a foreign checkout's database (the parent-env trap: the exported var
+// re-inherits from the parent shell on every tool invocation, and a
+// REAL env var overrides bun's auto-loaded .env) would false-green
+// this check against the wrong DB. The operator discipline "unset
+// DATABASE_URL && ..." is now enforced by BOTH siblings: refuse
+// before any count runs.
+//
+// THE DISTINCTION (why the value is COMPARED, not just checked for
+// presence): `bun run` auto-loads the repo's own .env into
+// process.env — the RELATIVE "file:../db/custom.db" form is the repo's
+// own config, not the trap. A real shell export WINS over .env, so the
+// live value differing from the .env file's own value is exactly the
+// foreign-export signature. An export equal to the .env value targets
+// the same database either way — proceed.
+function repoEnvDatabaseUrl(): string | null {
+  try {
+    const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
+    const match = env.match(/^DATABASE_URL=("?)([^"\r\n]+)\1\s*$/m);
+    return match ? match[2] : null;
+  } catch {
+    return null;
+  }
+}
+
+const liveDatabaseUrl = process.env.DATABASE_URL ?? "";
+const ownDatabaseUrl = repoEnvDatabaseUrl();
+if (liveDatabaseUrl.trim() !== "" && liveDatabaseUrl !== ownDatabaseUrl) {
+  console.error(
+    "REFUSED: DATABASE_URL (" +
+      liveDatabaseUrl.slice(0, 60) +
+      ") is a foreign export — it differs from the repo's own .env value" +
+      (ownDatabaseUrl ? " (" + ownDatabaseUrl + ")" : "") +
+      " — so this check would run against the WRONG database. " +
+      "Run it as: unset DATABASE_URL && bun run scripts/check-db-contract.ts"
+  );
+  process.exit(1);
+}
 
 const url = resolveDatabaseUrl(process.env.DATABASE_URL ?? "file:../db/custom.db", candidateRoots());
 console.log("[db] URL ->", url);

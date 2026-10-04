@@ -97,6 +97,13 @@
   --color-slate-700: #334155;
   --color-slate-800: #1e293b;
   --color-slate-900: #0f172a;
+  /* Session 74 (S74-G / A74-I2): the view-toggle surfaces' dark chip
+     (bg-neutral-900 — dashboard-view + recent-view grid/list toggles).
+     The one consumed-but-unpinned scale: v4's achromatic neutral-900
+     round-trips to this hex today, but the pins block's own rule (every
+     consumed scale pinned to the v3 value) is what keeps a FUTURE
+     neutral-500/700 use from silently taking the oklch default. */
+  --color-neutral-900: #171717;
 
   /* Fonts — LITERAL names only (the v1.5.0 font-bug fix). next/font's
      @font-face families ("Inter" + the metric-compatible "Inter Fallback")

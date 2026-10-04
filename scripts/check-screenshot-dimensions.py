@@ -400,6 +400,20 @@ S82 = dict(S81)
 # s82 form (ref-00/ref-03/ref-04 desktop 1440x900, ref-01/ref-02 mobile
 # 390x844).
 S83 = dict(S82)
+# Session 74 (the 50th reference audit): the s84 evidence set mirrors the
+# s83 form + the rotated-resize PROBE family (five desktop editor shots
+# captured during the live reference probe — all 1440x900).
+S84 = dict(S83)
+S84.update({
+    "probe-01-unselected-click": (1440, 900),
+    "probe-02-locked-rect2-selected": (1440, 900),
+    "probe-03-rect1-selected-zoom74": (1440, 900),
+    "probe-04-rect1-rot90": (1440, 900),
+    "ref-05-probe-editor-initial": (1440, 900),
+    # The 3x-upscaled crop of the rotated selection (probe-05): the
+    # (400,130)-(580,350) crop of the 1440x900 shot, upscaled 3x.
+    "probe-05-rot90-crop-3x": (540, 660),
+})
 
 
 def png_size(path: Path):
@@ -424,6 +438,8 @@ def expected_for(name: str):
         return S82.get(Path(name).stem)
     if name.startswith("ref-audit-s83/"):
         return S83.get(Path(name).stem)
+    if name.startswith("ref-audit-s84/"):
+        return S84.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -486,6 +502,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s81").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s82").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s83").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s84").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

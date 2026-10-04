@@ -2,8 +2,14 @@ import { PrismaClient } from "@prisma/client";
 import { resolveDatabaseUrl, candidateRoots, redactDatabaseUrl } from "./db-path";
 
 // Normalize the SQLite URL BEFORE the first client is constructed (Pattern B
-// in the architecture doc): the CLI anchors relative file: URLs against
-// prisma/schema.prisma, the engine against the CWD. One rule, applied here.
+// in the architecture doc). Session 74 (S74-D — B74-F1): the mechanism
+// corrected to match db-path.ts — the Prisma CLI AND the Prisma 6 runtime
+// both anchor relative file: URLs against the schema directory (the CLI
+// against prisma/schema.prisma; the runtime against the schema directory
+// the client was GENERATED against, NOT the process CWD — session 73's
+// live probes). The standalone trap is the TRACED SCHEMA COPY into
+// .next/standalone/prisma/, which relocates the engine's anchor; the
+// chdir was causally irrelevant. One rule, applied here.
 const rawEnv = process.env.DATABASE_URL;
 const roots = candidateRoots();
 const resolvedUrl = resolveDatabaseUrl(rawEnv, roots);

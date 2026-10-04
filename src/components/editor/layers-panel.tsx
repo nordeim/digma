@@ -41,9 +41,14 @@ export function LayersPanel() {
   // is visible-elements-aware. selectAll selects the VISIBLE family only
   // — comparing against elements.length meant the label could never flip
   // while any layer was hidden (every click re-ran selectAll, a no-op).
+  // Session 74 (S74-B — A74-L2): the flip consumes the selectedSet the
+  // panel already builds above (the row checks' own seam) — the
+  // visible.every(selectedIds.includes) form was the O(n·m) scan the
+  // canvas's S73-H fix retired, re-running on every elements-committed
+  // re-render.
   const allVisibleSelected =
     elements.length === 0 ||
-    (visible.length > 0 && visible.every((el) => selectedIds.includes(el.id)));
+    (visible.length > 0 && visible.every((el) => selectedSet.has(el.id)));
 
   function onRowClick(id: string, event: { shiftKey: boolean }) {
     const store = useEditorStore.getState();

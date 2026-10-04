@@ -366,7 +366,13 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       {/* Session 61 (S61-B — the ninth audit's M-2): AA at
                           12px — gray-500, not the 2.54:1 gray-400. */}
                       <span className="hidden text-xs text-gray-500 sm:block">
-                        {new Date(project.lastOpenedAt).toLocaleDateString()}
+                        {/* Session 74 (S74-C — A74-L3): the corrupt-date
+                            guard joins the project-card's S73-H form (the
+                            family's third site) — a NaN timestamp renders
+                            the bare slot, never "Invalid Date". */}
+                        {Number.isNaN(new Date(project.lastOpenedAt).getTime())
+                          ? "—"
+                          : new Date(project.lastOpenedAt).toLocaleDateString()}
                       </span>
                     </button>
                   ))}

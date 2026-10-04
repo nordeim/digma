@@ -146,4 +146,14 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", `Invalid verification code. ${MAX_VERIFY_ATTEMPTS - attempts} attempts remaining.`, 400);
   }
 
+  // Session 74 (S74-H — B74-F6): the terminal return. A unique-id
+  // updateMany answers exactly 0 or 1, and both counts returned above —
+  // but noImplicitReturns is off, so nothing but a source pin holds the
+  // function's totality. The impossible-count fall-through previously
+  // returned undefined (an empty 200). The vanished-user race family's
+  // own form answers here: the user row the handler read at the top can
+  // only be gone through an out-of-band DB mutation mid-request (no
+  // user-delete endpoint exists), and the family's every sibling
+  // answers 404 through the envelope.
+  return fail("NOT_FOUND", "User not found", 404);
 }

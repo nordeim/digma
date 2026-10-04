@@ -939,3 +939,96 @@ Stage Summary:
     the smoke-gate mechanism, the name-cap symmetry, the list bound + the upload downscale, the honesty batch, and the rotated-resize design-space closure;
     gate green at 724 unit / 58 smoke / 243 e2e; mobile nav 9/9 the 50th consecutive session; the deferred queue documented in
     docs/remediation-plan-session73.md
+
+---
+Task ID: digma-s74-b
+Agent: Auditor B (fresh-eyes server/infra audit)
+Task: The 22nd Mode C audit — server + lib/config/infra
+
+Work Log:
+- Context loaded first: worklog tail (the session-72/73 entries), AGENTS.md (cut-truncated full read), docs/remediation-plan-session73.md (the last audit's findings + the deferred queue), skills/code-review-checklist/SKILL.md; repo verified clean vs HEAD a20f90b in src/scripts/prisma/configs (only screenshot PNGs + two untracked session-74 capture scripts drift)
+- Full-file reads of ALL 18 route files (ai-assistant, auth login/register/verify-otp/resend-otp/forgot-password/reset-password/logout/me, health, projects, projects/[id], duplicate, elements, stats, teams, teams/[id], members — 1,580 lines), ALL 14 src/lib files (api, auth, call, db, db-path, editor 897, export-png, greeting, password, rate-limit, team, validation, ai-assistant, utils), prisma/schema.prisma + prisma/seed.ts, the 8 configs (next/vitest/playwright/eslint/tsconfig/package/postcss/proxy), .env.example, scripts/smoke-test.sh, scripts/check-db-contract.ts, tests/e2e global-setup + auth.setup + backdate-portfolio, tests/server-lows-s73.test.ts + tests/e2e/session73-fixes.spec.ts (the S73 pins)
+- Grep-verified the cross-cutting invariants: requireSession first-line on all 16 protected handlers; bodySizeRejected BEFORE all 14 request.json() sites (14 guards/14 parses, counted); limiter-first on the six public auth POSTs + the dedicated ai: bucket after session; the five TOCTOU ceilings inside transactions; the P2002/P2003/P2025 catches; every named lib seam grepped for existence (zero phantom citations in src); THUMBNAIL_ELEMENT_SELECT consumers counted (now FOUR); throw-sites audited (only the documented rethrow family)
+- Verified each session-73 server change in source: S73-B duplicate null guard (route:93), S73-C timeouts (elements:213 + duplicate:62; cosmetic txs default), S73-D refusal (smoke:16-22) + fifth count (check-db-contract:24), S73-E name-cap symmetry (PATCH:57-59 mirrors POST:66-67; descriptions truncate at both), S73-F take: PROJECT_LIMIT (route:34) + pure downscale helpers (editor.ts:770-791), S73-H POST projection (route:94) + client comment (project-card:634-638) + verify-otp live condition (route:107) + PAD B-F4 deviation row (PAD:2245)
+- Hunted the specific targets: envelope discipline (every 4xx via fail(); raw 429s documented), timing oracles (login equalizer holds; forgot/resend residuals documented in the PAD row), seed FK-safe wipe order, config hygiene (skills/ excluded from all four gates; playwright env-override ordering correct), dead code (ProjectDTO/DesignElementDTO/standaloneRepoRoot consumers checked)
+
+Stage Summary:
+- NEW: 0 Critical / 0 High / 2 Low / 5 Informational
+  - B74-F1 (Low — the S73-H fix is one site short): src/lib/db.ts:4-6 still asserts the RETIRED wrong mechanism ("the engine [anchors] against the CWD") — the session-73 correction fixed db-path.ts's header + AGENTS + the skill but missed db.ts's own header (last touched session 64); the S73-H pin scans only db-path.ts so the residual is unpinned; comment-only, but it is the exact "steers path debugging toward chdir-based non-fixes" hazard B-F5 documented
+  - B74-F2 (Low — the S73-D mechanism closed one of two siblings): scripts/check-db-contract.ts:6 still resolves the parent-exported DATABASE_URL against a foreign DB — the prior audit's B-F3 named this sibling; under the sandbox's documented persistently-exported var the script false-greens "PRISTINE CONTRACT OK" against a second seeded checkout (the exact family the smoke refusal killed)
+  - B74-F3 (Info): editor.ts:187-190's "one source for the three list-family routes" is stale — S73-H made the projects POST the FOURTH THUMBNAIL_ELEMENT_SELECT consumer
+  - B74-F4 (Info): the S73-E name-cap doctrine (names-reject/prose-truncate) implemented for the project family only — teams POST/PATCH and buildElementRow still silently truncate names at 80; scriptable-only
+  - B74-F5 (Info): the auth family's four user-row updates (login:69, resend:69, forgot:74, reset:76) carry no P2025 envelope catch — unreachable without out-of-band user deletion (no user-delete API exists), the resource family's residue
+  - B74-F6 (Info): verify-otp's post-simplification structural fall-through — no terminal return after the count===0 block; count outside {0,1} is impossible (unique-id updateMany) and noImplicitReturns is off
+  - B74-F7 (Info): PAD:931's historical S58-E bullet still cites the phantom canvasStyleFor (the retirement pin scans src/tests only)
+- Verified clean: all 16 protected handlers session-gated first-line; 14/14 parse guards; the five transactional ceilings + register's P2002; the duplicate/elements 30s timeouts + the post-commit 404 guard; the name-cap symmetry + take: PROJECT_LIMIT + the POST projection + the verify-otp live condition + the smoke refusal + the fifth count (all S73 seams intact and pinned); limiter-first + ai: bucket + DIGMA_PROXY_HOPS fail-closed depth logic; timingSafeEqual on both crypto comparisons; the tokenVersion eviction chain end-to-end; login constant-work + byte-identical 401 family; resend/verify uniform 400s; safeFromUrl; clampFillImage allowlist + export-png XML escaping; the schema's composite index + cascades + the seed's FK-safe wipe order and shared password seam; skills/ excluded from vitest/playwright/eslint/tsconfig; playwright env-override ordering + anchored pre-kill; .env.example covers all seven env reads; ?template= zero-consumer / ?search= e2e-only confirmed
+- Deferred-queue candidates (ranked): (1) B74-F2 the check-db-contract refusal guard (cheapest, live sandbox hazard); (2) B74-F1 the db.ts mechanism comment + pin extension; (3) B74-F4 the name-cap doctrine's cross-family decision; (4) B74-F5 the auth user-update P2025 catches or a documented deviation row; (5) the honesty micro-batch (B74-F3 stale count, B74-F6 verify-otp totality, B74-F7 PAD citation, standaloneRepoRoot's missing TEST-ONLY marker); plus the standing queue (rate-limit eviction amortization, at-rest token hashing, elementSummary server re-derivation, the zero-consumer API-surface decisions)
+
+---
+Task ID: digma-s74-a
+Agent: Auditor A (fresh-eyes editor/client audit)
+Task: The 22nd Mode C audit — editor core + client view layer
+
+Work Log:
+- Context loaded: the worklog tail (the session-72/73 entries), AGENTS.md's documented contracts (cut to 600 cols), docs/remediation-plan-session73.md (the last audit's findings + the deferred queue), and the 12-category checklist in skills/code-review-checklist/SKILL.md
+- Audit surface read COMPLETELY: editor-store.ts (438), editor-view.tsx (1635), canvas.tsx (763), toolbar.tsx (89), properties-panel.tsx (1496), layers-panel.tsx (313), components-panel.tsx (42), project-card.tsx (832 incl. CanvasThumbnail), app-header.tsx (299), dashboard-view.tsx (409), recent-view.tsx (450), teams-view.tsx (517), use-toast.ts (90), call.ts (59), editor.ts (897), export-png.ts (354), globals.css (220) + the Editor/Recent page Suspense wrappers
+- Cross-verified the four+1 render surfaces of the S73-A headline class (canvas / PresentOverlay / CanvasThumbnail / export-png SVG / the elementToStyle TEST-ONLY seam) field by field (textAlign, fill/gradient/image precedence, stroke, opacity, radius, transform chain, visible/locked filters)
+- Verified the S73 seams in source: textAlignToJustify's three consumption sites + the phantom canvasStyleFor retirement; FILL_IMAGE_MAX_DIM/shouldDownscale/downscaledDimensions + downscaleDataUrl's wiring, min-length guard, and the 500KB-file/700k-char interplay (no server-null path); thumbnailFit + the ResizeObserver consumer; boundsOf's rotation-AWARE AABB; rangeFillPercent's five --range-fill sites; clampText's row-builder sites
+- Traced the autosave machine's full race lattice (flushing/pending serialization, disposed gates, the 401 terminal, the Untitled adoption guard, the response-time element/background/gesture deferrals, pagehide keepalive byte cap, the S71-B soft-leave in-flight descriptor compare)
+- Grepped the repo for the audit classes: v3 opacity remnants (none), var() chains in @theme (none), unpinned consumed palette scales (neutral-900 — 4 sites, unpinned), the phantom seam (retired), dead code / dishonest comment candidates, date-formatting sites, O(n·m) selection scans, every useEffect body for React 19 set-state-in-effect violations
+- Verified the unit pins' honesty for the S73 work (text-align-parity-s73 8 checks, upload-downscale-s73, editor.test.ts's elementToStyle describe) against the shipped source
+
+Stage Summary:
+- 0 Critical / 0 High / 3 Low / 3 Informational. L1 (Low): elementToStyle — the TEST-ONLY style seam in src/lib/editor.ts:469-479 — still pins the text branch WITHOUT the justifyContent mapping (display:flex + alignItems:center + textAlign only), so post-S73-A the seam no longer reproduces the canvas text chain its own doc comment claims to pin ("the unit suite pins the geometry the canvas must reproduce"); the S73-A migration reached the three DOM render sites but not this fourth (test-only) surface — the exact render-surface-divergence class the session hunted, surviving INSIDE the parity fix itself. L2 (Low): the A-F5 O(n·m) selection-membership family is only ONE-THIRD closed — canvas.tsx:95-99 got the Set (S73-H), but properties-panel.tsx:1460 (elements.filter(... selectedIds.includes)) and layers-panel.tsx:44-46 (visible.every(... selectedIds.includes)) still run the ~4M-includes worst case on EVERY drag tick (both panels subscribe to elements and re-render per moveElements). L3 (Low): the A-F4 corrupt-date guard landed on ONE of THREE date-formatting sites — project-card.tsx:377 is guarded, but recent-view.tsx:135 and dashboard-view.tsx:369 still render "Invalid Date" on a corrupt lastOpenedAt. I1 (Info): CanvasThumbnail sets overflow:"hidden" unconditionally (project-card.tsx:193) while canvas/present clip ONLY text — a line's round-cap stroke overhang (the SVG child is overflow-visible) is clipped in thumbnails only. I2 (Info): bg-neutral-900 (dashboard-view 304/318, recent-view 340/354) is the one CONSUMED-but-UNPINNED palette scale — the @theme contract says every consumed scale is pinned to the v3 hex; the achromatic v4 default (oklch 20.5% 0) round-trips to the same #171717 so there is no visible drift today, but a future neutral-500/700 use would silently drift (contract hygiene). I3 (Info): a same-route projectId switch (manual URL edit) never re-arms `loading`, so the OLD canvas renders until the new project's GET lands — cosmetic, vanishing-rare path. Verified clean: the S73-A parity fix HOLDS at all three DOM render sites + the SVG export's anchor mapping; the phantom citation is fully retired; the autosave machine's race lattice is coherent as documented; the gesture/ownership closure and its five terminal seams; the store's immutability + memoization identity contract; the ELEMENT_LIMIT client ceiling; the downscale's server-cap interplay; the toast store's useSyncExternalStore/globalThis form; the call() seam's adoption (the raw fetches are the documented auth/AI/machine transports); Tailwind v4 hygiene (no v3 opacity forms, no var() chains, the pins block); the a11y surfaces (SheetDescriptions, PresentOverlay's dialog contract + Tab trap + focus return, the stretched-button card, the layer-row button restructure, the upload label's keyboard path); the descending name sort and the empty-state gates. Deferred-queue candidates ranked: (1) the elementToStyle justifyContent line + pin (closes S73-A's family completely — one line); (2) the Set membership for the properties panel + the layers flip condition (finishes A-F5); (3) the shared date-format guard for the two unguarded sites (finishes A-F4); (4) the neutral-900 pin (or the arbitrary-value swap) for the @theme contract's own rule.
+
+---
+Task ID: digma-session-74
+Agent: Super Z (main agent)
+Task: The operator's session-105/106-cycle directive — refresh the workspace, re-validate the codebase against the mandated docs, the 50th reference audit against
+    https://digma-371dfd0d.base44.app/ INCLUDING the rotated-resize probe (the session-73 deferral's mandated first probe), the twenty-second Mode C code audit
+    with the repo skills, TDD remediation, the standing gates, the screenshots, the .env.example, aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- Workspace refreshed (git pull — the sandbox was NOT reset; the repo at the operator's session-106 log push a20f90b); the mandated docs reviewed (README/AGENTS/
+    CLAUDE/PAD v1.52.0, digma_SKILL v1.51.0, session_105/session_106/remediation-plan-session73/worklog tail, the skills catalog); all eight S73 seams verified
+    intact in source; .env verified with the mandated DATABASE_URL="file:../db/custom.db" + db/ at the repo root (the pristine 1/2/6/1/3 contract)
+- BASELINE GATE RE-PROVEN GREEN — the prior session's claims HELD (the F59 corollary satisfied): lint/typecheck/724 unit/113 files/build/58 smoke/the full e2e
+    suite in chunks — zero regressions
+- 50th reference audit (agent-browser, desktop 1440x900 + mobile 390x844, the real CDP login): no drift on the standing datums; the board restored pristine after
+    the probe's mutations; mobile nav 9/9 the 51st consecutive session (scripts/verify-nav-s74.sh) + re-verified on the final S74 build
+- THE ROTATED-RESIZE PROBE (real CDP mouse drags): the reference has NO resize interaction AT ALL — ring-only selection (zero resize cursors in the whole DOM;
+    pixel-verified 0.0% light at the corners), edge drags MOVE (+75px drag -> translate +75px, width unchanged), and the reference's own hit-test IGNORES
+    ROTATION (a click 15px east of a 90deg-rotated element's AABB selects it through the unrotated footprint — a reference bug joining its dead-chrome family);
+    the design-space resolution: the clone's world-axis rotated growth becomes the documented known limitation (no reference semantics to copy)
+- Twenty-second Mode C audit (the lead's hunk-by-hunk + two fresh-eyes subagents + the lead's source re-verification): 0 Critical / 0 High / 5 Low / 8
+    Informational; docs/remediation-plan-session74.md written and validated
+- TDD: unit RED 13 defect pins across three new spec files -> GREEN 746 = 724 + 22 / 116 files (zero standing pins re-anchored); e2e unchanged 243 (the full
+    suite re-ran green in chunks); smoke unchanged 58 (the check-db-contract refusal two-way proven)
+- S74-A: elementToStyle's text branch consumes textAlignToJustify (the render-surface family's FOURTH surface closed)
+- S74-B: the properties-panel selected filter + the layers-panel Select-All flip join the canvas's Set membership
+- S74-C: the corrupt-date guard reaches recent-view's openedLabel + the Dashboard's list-row date (all three formatting sites guard)
+- S74-D: db.ts's header joins the schema-anchoring mechanism correction (the second code site)
+- S74-E: check-db-contract.ts refuses a foreign DATABASE_URL export (the value COMPARED against the repo's own .env — bun auto-loads .env, so a presence-only
+    guard would refuse every run; a real shell export wins over .env, so a differing value is the foreign-export signature)
+- S74-F: the honesty batch (the FOUR-consumer count; the PAD 931 phantom citation retired; the PAD 10 known-gaps rows — the rotated-resize known limitation,
+    the name-cap scope, the auth-P2025 posture)
+- S74-G: --color-neutral-900: #171717 joins the @theme pins block (the one consumed-but-unpinned scale; live-verified rgb(23, 23, 23))
+- S74-H: verify-otp's terminal NOT_FOUND return (the impossible-count fall-through answers the envelope)
+- En-route (the F61 lessons): the incomplete-family lesson (grep the whole family before declaring a fix complete), the probe-before-design reward, the
+    reference's-own-bugs-are-parity-data principle, the doc-source pin gap; corollaries: the VLM unreliability on handle-like chrome (the pixel analysis is the
+    reliable form), the bun-.env conflation in guard scripts
+- Full gate green: lint, typecheck, 746/746 unit / 116 files, build, 58/58 smoke, 243/243 e2e — zero regressions
+- Live verification: the mobile nav 9/9 on the final build; the capture (scripts/capture-session74.sh): the standard 32 + the ref-audit-s84 evidence set (5
+    reference + 10 clone + 6 probe shots) + the standing inline checks re-verified + TWO NEW inline checks (the neutral-900 pin; the check-db-contract refusal)
+    — dimension-checked 301/301, VLM 21/21 (two complete passing runs recorded; the probe's decisive datum verified programmatically)
+- .env.example verified unchanged (the session's slices add no env vars)
+- Docs aligned: PAD v1.53.0 (header + revision block + 7.1 + the three 10 rows + the 11 line counts + the 931 retirement), digma_SKILL v1.52.0 (lesson F61),
+    AGENTS/CLAUDE/README counts + the session-74 seam bullet, remediation-plan-session74 execution status, docs/session_107.md, the repo worklog entry
+- Committed on main and pushed via docs/ssh_git_wrapper_v3.py; remote refs/heads/main == local HEAD verified; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 74 fully delivered and pushed to main: the family-completion pass (the render-surface family's fourth surface, the Set family's two panel siblings,
+    the date-guard family's two formatting siblings, the mechanism-comment family's second code site, the refusal mechanism's sibling script), the neutral-900
+    palette pin, the verify-otp totality, and the rotated-resize question CLOSED by the reference probe (the reference has no resize interaction at all — the
+    clone's world-axis rotated growth documented as the known limitation); gate green at 746 unit / 58 smoke / 243 e2e; mobile nav 9/9 the 51st consecutive
+    session; the deferred queue documented in docs/remediation-plan-session74.md

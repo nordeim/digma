@@ -314,7 +314,7 @@ Status colors: blue `#3B82F6` (default fill/active tool), green `#10B981` (Saved
 ## Testing
 
 ```bash
-bun run test              # unit tests — 724 checks on the pure domain seams
+bun run test              # unit tests — 746 checks on the pure domain seams
 bun run test:e2e          # Playwright — 243 browser checks (needs `bun run build` first)
 ./scripts/smoke-test.sh   # curl E2E — 58 checks against the production build
 ```

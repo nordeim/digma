@@ -1457,7 +1457,14 @@ export function PropertiesPanel() {
     return () => resetSliderGesture();
   }, []);
 
-  const selected = elements.filter((el) => selectedIds.includes(el.id));
+  // Session 74 (S74-B — A74-L2): membership through a Set — the
+  // elements.filter(selectedIds.includes) form was the O(n·m) scan the
+  // canvas's S73-H fix retired, re-running on EVERY drag tick (this
+  // panel subscribes to `elements`, so every moveElements commit
+  // re-renders it through the full includes() pass). The panel joins
+  // the canvas's form.
+  const selectedIdSet = new Set(selectedIds);
+  const selected = elements.filter((el) => selectedIdSet.has(el.id));
   const single = selected.length === 1 ? selected[0] : null;
 
   const update = (patch: Parameters<ReturnType<typeof useEditorStore.getState>["updateElements"]>[1]) =>

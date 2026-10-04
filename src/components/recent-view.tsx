@@ -132,11 +132,17 @@ function RecentListCard({
 
   // RA-48: the reference's list date is "Sep 30, 2026" — month short,
   // day, YEAR (the grid's "Opened Sep 30" carries no year).
-  const openedLabel = new Date(project.lastOpenedAt).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  // Session 74 (S74-C — A74-L3): the corrupt-date guard joins the
+  // project-card's S73-H form (the family's third site) — a NaN
+  // timestamp renders the bare date slot, never "Invalid Date".
+  const opened = new Date(project.lastOpenedAt);
+  const openedLabel = Number.isNaN(opened.getTime())
+    ? "—"
+    : opened.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
 
   return (
     <div className="group flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 transition-all duration-200 hover:shadow-sm">

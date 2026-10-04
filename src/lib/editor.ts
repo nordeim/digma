@@ -185,9 +185,10 @@ export type ThumbnailElementDTO = Omit<DesignElementDTO, "name" | "locked" | "so
 export type ProjectSummaryDTO = Omit<ProjectDTO, "elements"> & { elements: ThumbnailElementDTO[] };
 
 /** The shared Prisma select object for the projection — one source for
- * the three list-family routes (list GET, PATCH response, duplicate
- * response). A plain const (no Prisma type import — the route files
- * pass it straight into the include's select). */
+ * the four list-family routes (list GET, PATCH response, duplicate
+ * response, and — since session 73's S73-H/B-F8 — the POST response).
+ * A plain const (no Prisma type import — the route files pass it
+ * straight into the include's select). */
 export const THUMBNAIL_ELEMENT_SELECT = {
   id: true,
   type: true,
@@ -474,6 +475,12 @@ export function elementToStyle(el: DesignElementDTO): ElementStyle {
     style.display = "flex";
     style.alignItems = "center";
     style.textAlign = el.textAlign ?? "left";
+    // Session 74 (S74-A — A74-L1): the TEST-ONLY seam joins the S73-A
+    // family — the canvas maps textAlign onto justify-content through
+    // the one seam (canvas.tsx) and this export claims to pin "the
+    // geometry the canvas must reproduce", so the mapping belongs here
+    // too (pre-fix the text-alignment half of that claim was false).
+    style.justifyContent = textAlignToJustify(el.textAlign);
     style.whiteSpace = "pre-wrap";
     style.overflow = "hidden";
   }
