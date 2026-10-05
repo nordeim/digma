@@ -163,7 +163,7 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
       // Tap the button rectangle's exposed strip (screen y 377–389 —
       // inside the rect but ABOVE its label, which spans 389–409 and
       // would otherwise win the topmost hit-test).
-      await page.mouse.click(300, 382);
+      await page.mouse.click(300, 410); // S78-F: +28 (the header floor's canvas shift)
       const chip = page.getByRole("button", { name: "Edit properties" });
       await expect(chip).toBeVisible();
       await chip.click();
@@ -200,7 +200,7 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
     // reload re-renders it). Pre-fix this path did not exist at mobile.
     const fixture = await openFixtureEditor(page);
     try {
-      await page.mouse.click(300, 382);
+      await page.mouse.click(300, 410); // S78-F: +28 (the header floor's canvas shift)
       const chip = page.getByRole("button", { name: "Edit properties" });
       await chip.click();
       const sheet = page.getByRole("dialog");
@@ -222,7 +222,7 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
       await waitForSaved(page);
       await page.reload();
       await expect(page.getByText("Fixture headline").first()).toBeVisible();
-      await page.mouse.click(300, 382);
+      await page.mouse.click(300, 410); // S78-F: +28 (the header floor's canvas shift)
       await page.getByRole("button", { name: "Edit properties" }).click();
       await expect(page.getByRole("dialog").getByLabel("Fill Color hex")).toHaveValue("#EF4444");
     } finally {
@@ -384,7 +384,7 @@ test.describe("mobile properties — the chip geometry + guards (390×844)", () 
     // value still commits.
     const fixture = await openFixtureEditor(page);
     try {
-      await page.mouse.click(300, 382);
+      await page.mouse.click(300, 410); // S78-F: +28 (the header floor's canvas shift)
       const chip = page.getByRole("button", { name: "Edit properties" });
       await chip.click();
       const sheet = page.getByRole("dialog");

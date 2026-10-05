@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { readBoundedJson, clampColor, clampText, TEAM_LIMIT } from "@/lib/validation";
@@ -12,6 +13,14 @@ export async function GET(_request: NextRequest) {
   if (!user) return fail("UNAUTHENTICATED", "Sign in to view teams", 401);
 
   const teams = await db.team.findMany({
+    // Session 78 (S78-E / B-L1 — the S73-F list-bound family's missed
+    // sibling): take: TEAM_LIMIT — the projects list GET's own form.
+    // Pre-fix NOTHING stood between the caller and an unbounded scan;
+    // the creation ceiling (100) bounds it today, but the bound is
+    // now enforced at the read seam too (the include's members stay
+    // take-less — MEMBER_LIMIT bounds them, matching the projects
+    // GET's include form).
+    take: TEAM_LIMIT,
     orderBy: { createdAt: "asc" },
     include: { members: { orderBy: { createdAt: "asc" } } },
   });
@@ -59,38 +68,58 @@ export async function POST(request: NextRequest) {
   // serializes writers, so the transaction closes the window). The
   // envelope is byte-identical.
   let overCap = false;
-  const team = await db.$transaction(async (tx) => {
-    const teamCount = await tx.team.count();
-    if (teamCount >= TEAM_LIMIT) {
-      overCap = true;
-      return null;
-    }
-    return tx.team.create({
-      data: {
-        name,
-        description,
-        color,
-        ...(memberEmail
-          ? {
-              members: {
-                create: {
-                  name: memberDisplayFor(memberEmail),
-                  email: memberEmail,
-                  role: clampText(body?.memberRole, 80),
-                  // Session 64 (S64-F — the twelfth audit's B-7): the
-                  // same derivation the invite-member route uses — the
-                  // two member-creation paths must agree on the color
-                  // seed (the same email, the same chip, whichever
-                  // dialog created it).
-                  avatarColor: memberColorFor(memberEmail),
+  // Session 78 (S78-B / B-M1 — the transaction-abort family
+  // completion): the teams POST's count+create transaction gains the
+  // S77-G catch arm (the projects POST's twin this session) — the
+  // P2024/P2028 abort families are not row-size-dependent, and the
+  // abort previously rethrew past the { ok, error } envelope as an
+  // unstructured 500. The structured 503 UNAVAILABLE answers with the
+  // human copy; the helper keeps the transactional shape unchanged.
+  const runCreateTx = () =>
+    db.$transaction(async (tx) => {
+      const teamCount = await tx.team.count();
+      if (teamCount >= TEAM_LIMIT) {
+        overCap = true;
+        return null;
+      }
+      return tx.team.create({
+        data: {
+          name,
+          description,
+          color,
+          ...(memberEmail
+            ? {
+                members: {
+                  create: {
+                    name: memberDisplayFor(memberEmail),
+                    email: memberEmail,
+                    role: clampText(body?.memberRole, 80),
+                    // Session 64 (S64-F — the twelfth audit's B-7): the
+                    // same derivation the invite-member route uses — the
+                    // two member-creation paths must agree on the color
+                    // seed (the same email, the same chip, whichever
+                    // dialog created it).
+                    avatarColor: memberColorFor(memberEmail),
+                  },
                 },
-              },
-            }
-          : {}),
-      },
-      include: { members: { orderBy: { createdAt: "asc" } } },
+              }
+            : {}),
+        },
+        include: { members: { orderBy: { createdAt: "asc" } } },
+      });
     });
-  });
+  let team: Awaited<ReturnType<typeof runCreateTx>>;
+  try {
+    team = await runCreateTx();
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The team took too long to create — the database timed out. Try again.", 503);
+    }
+    throw error;
+  }
   if (overCap) {
     return fail("VALIDATION", "Too many teams (max 100)", 400);
   }

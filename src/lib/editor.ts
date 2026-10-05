@@ -819,11 +819,17 @@ export function clampFillImage(value: unknown): string | null {
  * clamp the POST and the PUT previously hand-rolled twice, in ONE seam.
  * `mode: "create"` synthesizes the POST's omitted-field defaults (an
  * omitted fill/stroke paints the brand defaults); `mode: "replace"`
- * nulls omitted fields (the PUT's whole-list replace contract — the
- * client is sovereign and sends exactly what the canvas carries). The
- * name/type validation and the sortOrder source stay at the routes
- * (they differ legitimately: the POST's sortOrder derives from the
- * count-fallback clamp, the PUT's from the array index). */
+ * nulls omitted PAINT/TEXT fields (the PUT's whole-list replace
+ * contract — the client is sovereign and sends exactly what the canvas
+ * carries). The NAME is the honest exception in both modes (session 78,
+ * S78-G / B-L7 — this doc previously claimed the validation "stays at
+ * the routes"): an omitted or empty name falls back to the sequential
+ * default (`defaultNameFor` — "Rectangle 3" by type+index) in create AND
+ * replace, and the name clamp (80) lives HERE in the seam; only the
+ * TYPE check stays at the routes (the PUT's pre-validation loop / the
+ * POST's isElementType). The sortOrder source stays at the routes too
+ * (they differ legitimately: the POST's derives from the count-fallback
+ * clamp, the PUT's from the array index). */
 export function buildElementRow(
   raw: Record<string, unknown>,
   index: number,

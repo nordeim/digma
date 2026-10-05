@@ -1209,3 +1209,66 @@ Stage Summary:
     stale pin re-anchor), and the honesty batch (the Set form, the delivered shared-buckets pin, the P2024/P2028 envelope arms) + the deferred-queue
     decisions; gate green at 840 unit / 58 smoke / 249 e2e; mobile nav 9/9 the 54th consecutive session; the deferred queue documented in
     docs/remediation-plan-session77.md
+
+---
+Task ID: digma-session-78
+Agent: Super Z (main agent)
+Task: The operator's session-cycle directive — refresh the workspace, re-validate the codebase against the mandated docs, the 54th reference audit against
+    https://digma-371dfd0d.base44.app/, the twenty-sixth Mode C code audit with the repo skills, TDD remediation, the standing gates, the screenshots,
+    the .env.example, aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- Workspace refreshed (the sandbox HAD been reset — the repo re-cloned from the operator's session-114 log push ac5d9e1); the environment re-established (bun
+    install, prisma generate + db:push + db:seed to the pristine 1/2/6/1/3 contract, .env recreated with the mandated DATABASE_URL="file:../db/custom.db" +
+    db/ at the repo root, the parent shell's exported DATABASE_URL neutralized + the stale parent .env deleted); the mandated docs reviewed (README/AGENTS/
+    CLAUDE/PAD v1.56.0, digma_SKILL v1.55.0, session_113/session_114/remediation-plan-session77/worklog tail, the skills catalog); all seven S77 seams
+    verified intact in source; .env.example covers all seven env reads
+- BASELINE GATE RE-PROVEN GREEN — the prior session's claims HELD (the F59 corollary satisfied): lint/typecheck/840 unit/125 files/build/58 smoke/249 e2e —
+    zero regressions
+- 54th reference audit (agent-browser, desktop 1440x900 + mobile 390x844, the real CDP login): NO DRIFT on the standing datums (nav 124/96/92x36, the greeting,
+    Quick Stats 1/0/Pro, the Recent sort, kbd 0 via the JSON-wrapped re-probe, the Create-Team dead chrome, the class-A mobile nav, Share L385-R458/Present
+    L466-R551 byte-identical the 15th consecutive session, the board at 9 layers — all nine names text-verified); mobile nav 9/9 the 55th consecutive session
+    (scripts/verify-nav-s78.sh) + re-verified on the final S78 build
+- Twenty-sixth Mode C audit (the lead's seam re-verification + two fresh-eyes subagents — auditor A over the editor/client layer ~11k lines, auditor B over
+    the server/infra side, all 18 routes): 0 Critical / 0 High / 2 Medium / 14 Low / 7 Informational; docs/remediation-plan-session78.md written and validated;
+    the deferred-queue judgments: the layers-row shift-click add-only CLOSED as posture, the LLM server timeout KEPT QUEUED, the verify-otp race/duplicate
+    members/auth P2025 POSTURE ROWS
+- TDD: unit RED 34 defect pins + 3 preservation pins across two new spec files -> GREEN 876 = 840 + 36 / 127 files (three standing pins legitimately
+    re-anchored — the s58 dashboard seam, the s59 multi-fill form, the s68 sanitizer clamp); e2e 253 (+4 the session78-fixes discriminators — the soft-swap
+    transcript-reset + the Back/Undo/Redo/Share/Present floor measurements; five raw-coordinate selection clicks re-anchored +28 onto the header-floor
+    geometry); smoke unchanged 58
+- S78-A (the headline): the AI transcript is project-scoped — the send-time scopeId belt on every applied reply (a NAMED scope never reverts cross-project;
+    an Untitled scope follows the adoption), the mid-flight refusal in send() (a stale-scope batch never applies — the honest reply replaces it), and the
+    store subscription's transcript reset on a NAMED-scope transition (the Untitled adoption exempted)
+- S78-B: the transaction-abort envelope family completed — all six transaction-carrying routes answer the structured 503 UNAVAILABLE (the projects/teams
+    POSTs via the runCreateTx helper catch; the elements/members POSTs beside their P2003; the family-completeness pin counts the arm across the six files)
+- S78-C: the no-op commit family (the rename blur no-change guard + the WebKit Escape-discard ref + the reorder identity bail — no inert history, no
+    byte-identical PUT)
+- S78-D: the multi-selection Fill row mirrors the Solid tab's clearing form (the fillPaintFor precedence — image > gradient > solid)
+- S78-E: the server pair (the teams GET take: TEAM_LIMIT + the sanitizer's LLM-chosen ids clamp i.length <= 64 — the S68-C mirror re-run)
+- S78-F: the mobile editor-header 44px floor in the PHONE band (max-[480px]: — Back 28x28 pre-fix, Undo/Redo 32x32, Share/Present 32px tall; the session-55
+    tablet pins and the desktop row byte-identical; the 390 header grew 73->101px and the five raw-coordinate e2e clicks re-anchored +28)
+- S78-G: the honesty batch (the clamp twin fold, the standaloneRepoRoot TEST-ONLY doc, the DEPLOYMENT NODE_ENV cookie-scheme reword, the redacted
+    check-db-contract print, the buildElementRow replace-mode name doc, the two-live-regions-by-design reword, the Dashboard's ONE handleDeleted seam, the
+    member avatar guarded initial, the MobileNav dead span dropped)
+- En-route (the F65 lessons): the phone-band-vs-tablet-pins floor scoping (a touch floor is a LAYOUT change — scope it to the band the evidence covered), the
+    raw-coordinate re-anchor discipline (order-dependent failures, enumerate by file), the VLM mobile-geometry unreliability corollary (geometry stays
+    deterministic, the prompts went content-only), the extract-then-flatten pin refinement (F58 ninth appearance), the VLM burst-quota pacing (6s pacing +
+    the recovery probe; one complete passing run), the evidence-shot ordering rule's third appearance (the tail re-capture re-applied)
+- Full gate green: lint, typecheck, 876/876 unit / 127 files, build, 58/58 smoke, 253/253 e2e — zero regressions
+- Live verification: the mobile nav 9/9 on the final build; the capture (scripts/capture-session78.sh + the clone-24 tail re-capture): the standard 32 + the
+    ref-audit-s88 evidence set + the standing inline checks re-verified + FOUR NEW inline checks (the soft-swap transcript reset; the no-op rename blur Saved
+    badge; the mobile header 44px floor; the member avatar guarded initials) — dimension-checked 364/364 (the S88 mapping added), VLM 28/28 in one complete
+    passing run
+- .env.example verified unchanged (the session's slices add no env vars)
+- Docs aligned: PAD v1.57.0 (header + revision block + 7.1 + the P2024/P2028 family row + the five new 10 posture rows + 11 line counts + the command-table
+    counts), digma_SKILL v1.56.0 (lesson F65), AGENTS/CLAUDE/README counts + the session-78 seam bullet, remediation-plan-session78 execution status,
+    docs/session_115.md, the repo worklog entry
+- Committed on main and pushed via docs/ssh_git_wrapper_v3.py; remote refs/heads/main == local HEAD verified; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 78 fully delivered and pushed to main: the project-scope guard on the AI transcript and its revert carriers (the headline — the soft-swap
+    cross-project clobber closed at three coordinated layers: the scopeId belt, the mid-flight refusal, the subscription reset with the adoption exemption),
+    the transaction-abort envelope family completion (all six routes answer the 503), the no-op commit family, the multi-selection Fill precedence parity,
+    the server pair, the phone-band header touch floor, and the honesty batch + the deferred-queue decisions; gate green at 876 unit / 58 smoke / 253 e2e;
+    mobile nav 9/9 the 55th consecutive session; the deferred queue documented in docs/remediation-plan-session78.md

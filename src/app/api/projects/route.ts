@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
@@ -76,24 +77,48 @@ export async function POST(request: NextRequest) {
   // the ceiling; SQLite serializes writers, so the transaction closes
   // the window). The envelope is byte-identical.
   let overCap = false;
-  const project = await db.$transaction(async (tx) => {
-    const projectCount = await tx.project.count();
-    if (projectCount >= PROJECT_LIMIT) {
-      overCap = true;
-      return null;
-    }
-    return tx.project.create({
-      data: { name, description: description || null, template, backgroundColor },
-      // Session 73 (S73-H — B-F8): the one list-family reply still on
-      // the full-row element form flips onto the S70-C bounded
-      // projection — a create seeds no elements (the array is always
-      // []), so the payload is byte-identical TODAY, but the include
-      // stays honest if template-seeding ever lands (the three siblings
-      // — the list GET, the PATCH response, the duplicate response —
-      // already ship this exact form).
-      include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
+  // Session 78 (S78-B / B-M1 — the transaction-abort family
+  // completion): the count+create transaction gains the S77-G catch
+  // arm — P2024 (pool-wait) and P2028 (interactive-transaction
+  // timeout) are not row-size-dependent (a concurrent small create
+  // queues behind a row-heavy 30s-allowed writer on a slow self-hosted
+  // disk and hits Prisma's DEFAULT 5s interactive timeout), and the
+  // abort previously rethrew PAST the { ok, error } envelope as an
+  // unstructured 500 — the no-bare-throw discipline this route family's
+  // own comments enforce. The structured 503 UNAVAILABLE answers with
+  // the human copy; both families are transient and retryable. The
+  // runCopyTx-style helper keeps the transactional shape unchanged.
+  const runCreateTx = () =>
+    db.$transaction(async (tx) => {
+      const projectCount = await tx.project.count();
+      if (projectCount >= PROJECT_LIMIT) {
+        overCap = true;
+        return null;
+      }
+      return tx.project.create({
+        data: { name, description: description || null, template, backgroundColor },
+        // Session 73 (S73-H — B-F8): the one list-family reply still on
+        // the full-row element form flips onto the S70-C bounded
+        // projection — a create seeds no elements (the array is always
+        // []), so the payload is byte-identical TODAY, but the include
+        // stays honest if template-seeding ever lands (the three siblings
+        // — the list GET, the PATCH response, the duplicate response —
+        // already ship this exact form).
+        include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
+      });
     });
-  });
+  let project: Awaited<ReturnType<typeof runCreateTx>>;
+  try {
+    project = await runCreateTx();
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The project took too long to create — the database timed out. Try again.", 503);
+    }
+    throw error;
+  }
   if (overCap) {
     return fail("VALIDATION", "Too many projects (max 500)", 400);
   }

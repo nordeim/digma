@@ -66,6 +66,18 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
       return fail("NOT_FOUND", "Team not found", 404);
     }
+    // Session 78 (S78-B / B-M1 — the transaction-abort family
+    // completion): the members POST joins the S77-G arm — the P2024
+    // (pool-wait) / P2028 (interactive-transaction timeout) families
+    // previously rethrew past the envelope as an unstructured 500. The
+    // structured 503 UNAVAILABLE answers with the human copy; both
+    // families are transient and retryable.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The invite took too long to save — the database timed out. Try again.", 503);
+    }
     throw error;
   }
   if (overCap) {

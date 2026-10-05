@@ -55,13 +55,17 @@ describe("the session-58 Low batch (S58-F)", () => {
   });
 
   it("A-L-3: the Dashboard's in-page delete refreshes the stats (not just the list)", () => {
-    // Both ProjectCard onDeleted sites (the recent grid + the hero grid)
-    // refresh alongside the local filter.
-    const onDeletedWithRefresh = dashboardSource.match(
-      /onDeleted=\{\(id\) => \{[\s\S]{0,600}?setProjects\(\(prev\) => prev\.filter\(\(p\) => p\.id !== id\)\);[\s\S]{0,120}?refresh\(\);[\s\S]{0,80}?\}\}/g,
+    // Session 78 (S78-G / A-I1) RE-ANCHOR: the two inline onDeleted
+    // twins were hoisted into ONE handleDeleted useCallback seam (the
+    // drift-hazard fold) — the CONTRACT is unchanged (the delete
+    // filters the local list AND refreshes the hero's stats), only the
+    // pin's form moved from the inline twin to the seam.
+    expect(dashboardSource).toMatch(
+      /const handleDeleted = React\.useCallback\(\s*\(id: string\) => \{[\s\S]{0,200}?setProjects\(\(prev\) => prev\.filter\(\(p\) => p\.id !== id\)\);[\s\S]{0,120}?void refresh\(\);/,
     );
-    expect(onDeletedWithRefresh).not.toBeNull();
-    expect(onDeletedWithRefresh!.length).toBeGreaterThanOrEqual(2);
+    // Both card surfaces consume the seam:
+    const consumers = dashboardSource.match(/onDeleted=\{handleDeleted\}/g);
+    expect(consumers?.length ?? 0).toBe(2);
   });
 
   it("B-L-2: the reset-password 429 carries Retry-After (the sibling convention)", () => {

@@ -161,8 +161,11 @@ test.describe("session 65 — the mid-drag Sheet close (S65-B / B-1)", () => {
       await expect(page.getByText("Fixture headline").first()).toBeVisible();
 
       // Tap the button rectangle's exposed strip (canvas y 300-344;
-      // screen y = canvas + 77 — the wrapped mobile header).
-      await page.mouse.click(300, 382);
+      // screen y = canvas + 105 — the wrapped mobile header. Session 78
+      // (S78-F) geometry re-anchor: the header grew 73 -> 101px (the
+      // 44px touch floor on Back/Undo/Redo/Share/Present), the canvas
+      // offset 77 -> 105 — 382 -> 410).
+      await page.mouse.click(300, 410);
 
       const chip = page.getByRole("button", { name: "Edit properties" });
       await expect(chip).toBeVisible();

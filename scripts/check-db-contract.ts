@@ -2,7 +2,7 @@
 // Usage: cd /home/z/my-project/digma && unset DATABASE_URL && bun run scripts/check-db-contract.ts
 import { readFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
-import { resolveDatabaseUrl, candidateRoots } from "../src/lib/db-path";
+import { resolveDatabaseUrl, candidateRoots, redactDatabaseUrl } from "../src/lib/db-path";
 
 // Session 74 (S74-E — B74-F2): the refusal guard joins the smoke
 // script's S73-D mechanism — a shell-exported DATABASE_URL pointing at
@@ -45,7 +45,12 @@ if (liveDatabaseUrl.trim() !== "" && liveDatabaseUrl !== ownDatabaseUrl) {
 }
 
 const url = resolveDatabaseUrl(process.env.DATABASE_URL ?? "file:../db/custom.db", candidateRoots());
-console.log("[db] URL ->", url);
+// Session 78 (S78-G / B-L6): the db.ts startup line's sibling — the
+// resolved URL routes through redactDatabaseUrl so a Postgres-backed
+// checkout never prints its credentialed connection string to the
+// terminal (resolveDatabaseUrl passes non-SQLite URLs through
+// UNTOUCHED — the S64-F redaction contract).
+console.log("[db] URL ->", redactDatabaseUrl(url));
 const prisma = new PrismaClient({ datasources: { db: { url } } });
 
 async function main() {

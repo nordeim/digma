@@ -39,7 +39,13 @@ describe("the multi-selection fill clear (session 59, S59-E / A-L-3)", () => {
     // The truthiness guard is GONE…
     expect(fillRow).not.toMatch(/fill && update\(\{ fill \}\)/);
     // …the row commits the value as-is (null clears, a hex paints).
-    expect(fillRow).toMatch(/onChange=\{\(fill\) => update\(\{ fill \}\)\}/);
+    // Session 78 (S78-D / A-L3) RE-ANCHOR: the multi Fill row gained the
+    // single-selection Solid tab's clearing form (fillGradient/fillImage/
+    // fillImageFit null beside the fill — the paint precedence parity).
+    // The S59-E CONTRACT is unchanged: null still commits as-is (the
+    // value leads the update object, never a truthiness guard) — the
+    // pin's form now matches the clearing update.
+    expect(fillRow).toMatch(/onChange=\{\(fill\) => update\(\{ fill, fillGradient: null, fillImage: null, fillImageFit: null \}\)\}/);
   });
 
   it("the Stroke row's contract is unchanged (the sibling seam preserved)", () => {

@@ -1354,7 +1354,14 @@ export function EditorView({ user }: { user: HeaderUser }) {
             type="button"
             onClick={exit}
             aria-label="Back to dashboard"
-            className="rounded p-1 text-gray-400 transition-colors hover:text-white"
+            // Session 78 (S78-F / A-L4): the 44px touch floor in the phone band —
+            // the phone's primary in-app exit was the smallest touch
+            // target in the whole client layer (p-1 + h-5 w-5 = 28x28).
+            // The max-[480px]: phone-band scoping keeps the tablet band
+            // (567-640, the session-55 sweep's pinned single-row geometry)
+            // and the desktop row byte-identical (the glyph stays h-5 w-5
+            // — only the phone's hit area grows).
+            className="max-[480px]:min-h-11 max-[480px]:min-w-11 rounded p-1 text-gray-400 transition-colors hover:text-white"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden />
           </button>
@@ -1378,7 +1385,10 @@ export function EditorView({ user }: { user: HeaderUser }) {
             onClick={() => useEditorStore.getState().undo()}
             disabled={!canUndo}
             aria-label="Undo"
-            className="p-2 text-gray-400 transition-colors hover:text-white disabled:opacity-50"
+            // Session 78 (S78-F / A-L4): the 44px floor in the phone band
+            // (p-2 + h-4 w-4 = 32x32 pre-fix); the tablet band and the
+            // desktop form are unchanged (the 600px single-row pins).
+            className="max-[480px]:min-h-11 max-[480px]:min-w-11 p-2 text-gray-400 transition-colors hover:text-white disabled:opacity-50"
           >
             <Undo2 className="h-4 w-4" aria-hidden />
           </button>
@@ -1387,7 +1397,8 @@ export function EditorView({ user }: { user: HeaderUser }) {
             onClick={() => useEditorStore.getState().redo()}
             disabled={!canRedo}
             aria-label="Redo"
-            className="p-2 text-gray-400 transition-colors hover:text-white disabled:opacity-50"
+            // Session 78 (S78-F / A-L4): the Undo twin's phone-band floor.
+            className="max-[480px]:min-h-11 max-[480px]:min-w-11 p-2 text-gray-400 transition-colors hover:text-white disabled:opacity-50"
           >
             <Redo2 className="h-4 w-4" aria-hidden />
           </button>
@@ -1445,7 +1456,12 @@ export function EditorView({ user }: { user: HeaderUser }) {
             type="button"
             onClick={onShare}
             aria-label="Share"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            // Session 78 (S78-F / A-L4): the 44px height floor in the
+            // phone band (px-4 py-2 = 32px tall pre-fix; the icon-only
+            // mobile form from S48-2). The phone band only — the tablet
+            // band's pinned wrap geometry (77px wrapped) is unchanged;
+            // the reachability pins (right <= 390) stay green.
+            className="max-[480px]:min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
             <Share2 className="inline h-4 w-4" aria-hidden />
             <span className="ml-2 hidden sm:inline">Share</span>
@@ -1454,7 +1470,8 @@ export function EditorView({ user }: { user: HeaderUser }) {
             type="button"
             onClick={() => setPresenting(true)}
             aria-label="Present"
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
+            // Session 78 (S78-F / A-L4): the Share twin's phone-band floor.
+            className="max-[480px]:min-h-11 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
           >
             <Play className="inline h-4 w-4" aria-hidden />
             <span className="ml-2 hidden sm:inline">Present</span>

@@ -99,10 +99,12 @@ test.describe("session 64 — the mobile Sheet's gesture-aware commit (S64-A / A
       // The F36c hydration gate — the elements load asynchronously.
       await expect(page.getByText("Fixture headline").first()).toBeVisible();
 
-      // Tap the button rectangle's exposed strip (screen y 377–389 —
-      // inside the rect but ABOVE its label, which spans 389–409 and
-      // would otherwise win the topmost hit-test).
-      await page.mouse.click(300, 382);
+      // Tap the button rectangle's exposed strip (inside the rect but
+      // ABOVE its label, which would otherwise win the topmost
+      // hit-test). Session 78 (S78-F) geometry re-anchor: the 390
+      // header grew 73 -> 101px (the 44px touch floor) — the canvas
+      // offset moved 77 -> 105, the strip shifted +28 (382 -> 410).
+      await page.mouse.click(300, 410);
 
       // Open the mobile properties Sheet (the S52-2 surface).
       const chip = page.getByRole("button", { name: "Edit properties" });
@@ -162,7 +164,7 @@ test.describe("session 64 — the mobile Sheet's gesture-aware commit (S64-A / A
       // while the restored snapshot carries the pre-save ids; the undo's
       // survival filter then empties selectedIds. The VALUE contract is
       // what this pin owns — re-tap, re-open, read.)
-      await page.mouse.click(300, 382);
+      await page.mouse.click(300, 410); // S78-F: +28 (the header floor's canvas shift)
       const chip2 = page.getByRole("button", { name: "Edit properties" });
       await expect(chip2).toBeVisible();
       await chip2.click();

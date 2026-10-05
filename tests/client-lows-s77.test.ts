@@ -37,7 +37,10 @@ import { describe, expect, it } from "vitest";
 //
 // THE FIX: role="log" on the messages container (the implicit polite
 // region — no per-message aria-live attribute, so the S76-D
-// exactly-one-live-region contract in the editor DOM is preserved).
+// per-tick-stream retirement stands. Session 78 (S78-G / A-L6)
+// reworded: the editor DOM carries TWO live regions BY DESIGN (the
+// transcript's atomic arrivals + the save-state badge's discrete
+// flips) — the old exactly-one phrasing here was the drifted form.)
 //
 // S77-D — THE DEFECT: the editor header's avatar initial was the one
 // site without the guarded form — user.name.charAt(0) with no
@@ -168,10 +171,11 @@ describe("the AI transcript's arrival announcements (S77-C / A-L2)", () => {
   it("no per-message live attribute was reintroduced (the S76-D contract holds)", () => {
     // PRESERVATION: role=log on the CONTAINER is the arrival form; the
     // per-message bubbles must not carry their own live attributes (the
-    // exactly-one-live-region-in-the-editor-DOM discipline). Scoped to
-    // the element openings — the comment-literal discipline (F58): a
-    // whole-file absence grep would false-fail on this spec's own
-    // explanatory comments in the source.
+    // no-per-tick-stream discipline; the editor DOM's two live regions
+    // by design — the transcript + the badge — both stay atomic).
+    // Scoped to the element openings — the comment-literal discipline
+    // (F58): a whole-file absence grep would false-fail on this spec's
+    // own explanatory comments in the source.
     const bubbleOpens = assistant.match(/<(div|p) className="[^"]*"[^>]*>/g) ?? [];
     for (const open of bubbleOpens) {
       expect(open).not.toMatch(/aria-live/);

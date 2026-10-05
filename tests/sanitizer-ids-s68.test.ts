@@ -65,7 +65,14 @@ describe("the sanitizer caps the LLM-chosen ids (S68-C / L-A)", () => {
 
   it("the source carries the slice form on the ids filter", () => {
     const source = src("src/lib/ai-assistant.ts");
-    expect(source).toMatch(/rawIds\.filter\(\(i\): i is string => typeof i === "string"\)\n?\s*\.slice\(0, 100\)/);
+    // Session 78 (S78-E / B-L2) RE-ANCHOR: the filter gained the S77-F
+    // per-string clamp (i.length <= 64 — the route-side mirror re-run);
+    // the S68-C CONTRACT (the count cap via .slice(0, 100) beside the
+    // string filter) is unchanged — the pin's form now matches the
+    // clamped filter.
+    expect(source).toMatch(
+      /rawIds\.filter\(\(i\): i is string => typeof i === "string" && i\.length <= 64\)\n?\s*\.slice\(0, 100\)/,
+    );
   });
 });
 

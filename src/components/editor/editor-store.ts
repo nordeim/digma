@@ -346,6 +346,21 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         ...el,
         sortOrder: i,
       }));
+      // Session 78 (S78-C / A-L2): the no-op bail. A drop onto the
+      // neighbor's own lower half computes an insertion index that
+      // reproduces the IDENTICAL order (verified by index math: elements
+      // [A,B,C], dragging A onto B-lower-half -> reorderElements([A], 0)
+      // -> [A,B,C]). Pre-fix the store still pushed an inert history
+      // entry (the next Ctrl+Z visibly did nothing), destroyed the redo
+      // stack, flipped the badge to Unsaved, and autosaved a
+      // byte-identical list — the no-op class the gesture seam exists to
+      // prevent. The identity check compares the FULL id sequences
+      // (\u0001 joins — a separator no element id carries); an identical
+      // sequence returns the state untouched.
+      const nextIds = next.map((el) => el.id);
+      if (nextIds.join("\u0001") === state.elements.map((el) => el.id).join("\u0001")) {
+        return {};
+      }
       return {
         past: [...state.past, snapshotOf(state)].slice(-60),
         future: [],

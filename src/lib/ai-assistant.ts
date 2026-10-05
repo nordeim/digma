@@ -3,6 +3,15 @@
 // provides. "AI features degrade, never fail" (inherited doctrine): every
 // assistant utterance resolves to element operations + a reply string.
 
+import { clampNumber } from "@/lib/validation";
+
+// Session 78 (S78-G / B-L3): the S71-D fold's numeric leftover — this
+// module's private clamp() was a byte-identical twin of validation.ts's
+// clampNumber() (the drift hazard a future edit to one twin silently
+// diverging the other). The import aliases the shared seam; the
+// behavioral pins (the sanitizer's exact clamped values) stay green.
+const clamp = clampNumber;
+
 export type AiOperation =
   | {
       op: "add";
@@ -323,8 +332,14 @@ export function sanitizeLlmOperations(
       // route already enforces on the CLIENT's targetIds (100), mirrored
       // onto the model's reply — a hallucinated ids array can no longer
       // drive an O(ids x elements) membership filter at the client seam.
+      // Session 78 (S78-E / B-L2): the S77-F per-string clamp re-runs on
+      // the mirror — i.length <= 64 (real element ids are cuid-length
+      // ~25; a longer string is padding a scripted completion shaped),
+      // exactly the route-side filter's form. The fallback's own ids
+      // flow from the already-clamped targetIds — no legit behavior
+      // change.
       const ids = Array.isArray(rawIds)
-        ? rawIds.filter((i): i is string => typeof i === "string").slice(0, 100)
+        ? rawIds.filter((i): i is string => typeof i === "string" && i.length <= 64).slice(0, 100)
         : targetIds;
       if (ids.length === 0) continue;
       if (op === "delete") {
@@ -361,10 +376,4 @@ export function sanitizeLlmOperations(
   // (applied = 0); only an empty/missing reply still rejects.
   if (!reply) return null;
   return { reply, operations };
-}
-
-function clamp(value: unknown, min: number, max: number, fallback: number): number {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(Math.max(n, min), max);
 }

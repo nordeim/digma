@@ -24,10 +24,17 @@ import { fileURLToPath } from "node:url";
 // untouched. A missing/blank env value falls back to <anchor>/db/custom.db.
 
 /**
- * Recognizes Next.js's standalone output directory — <repo>/.next/standalone,
- * identifiable by its server.js — and returns the REAL repo root two levels
- * up. Returns null for anything else (a deployed standalone copy with no repo
- * above it, or a plain directory that merely contains prisma/schema.prisma).
+ * TEST-ONLY (zero production consumers — the S63-G/S68-D honest-doc
+ * family's missed member, closed session 78 / S78-G): candidateRoots()
+ * deliberately re-implements this detection INLINE (the minifier drops
+ * unused cross-module returns, the comment below candidateRoots), so
+ * this export affects nothing at runtime — it exists for
+ * tests/db-path.test.ts's unit pins. Recognizes Next.js's standalone
+ * output directory — <repo>/.next/standalone, identifiable by its
+ * server.js — and returns the REAL repo root two levels up. Returns
+ * null for anything else (a deployed standalone copy with no repo
+ * above it, or a plain directory that merely contains
+ * prisma/schema.prisma).
  */
 export function standaloneRepoRoot(dir: string): string | null {
   const normalized = path.resolve(dir);

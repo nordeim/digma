@@ -81,7 +81,12 @@ function MobileNav() {
         aria-controls="mobile-nav-sheet"
       >
         {open ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
-        <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+        {/* Session 78 (S78-G / A-I3): the dynamic visually-hidden
+            "Open/Close menu" label span is GONE — aria-label wins the
+            accessible-name computation, so the span never reached AT
+            (dead duplication beside the documented stable-label +
+            aria-expanded contract; the state is carried by
+            aria-expanded). */}
       </SheetTrigger>
       <SheetContent
         id="mobile-nav-sheet"

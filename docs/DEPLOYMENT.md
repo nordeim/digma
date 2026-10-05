@@ -26,8 +26,13 @@ bun run start          # NODE_ENV=production bun .next/standalone/server.js
 The server listens on port 3000 by default (`PORT` overrides). Always start
 it from the repo root via the npm/bun script — the scripts guarantee the
 working directory that the SQLite path resolution and the standalone trace
-rely on. Behind a reverse proxy, forward `X-Forwarded-Proto` so cookie
-attributes derive the right scheme.
+rely on. Session 78 (S78-G / B-L5) corrected this line to the code's real
+mechanism: cookies are marked `Secure` whenever `NODE_ENV=production` (the
+ONLY scheme logic in the repo — `src/lib/auth.ts`; no forwarded header is
+read). Serve the app over HTTPS, or behind a TLS-terminating proxy that
+speaks HTTPS to the browser — plain-HTTP self-hosting (even behind a
+proxy that forwards `X-Forwarded-Proto`) will not retain the session
+cookie.
 
 **Proxy topology and rate limiting (session 69, S69-A):** the per-IP rate
 limiter derives its client key from `x-forwarded-for` using the trust depth

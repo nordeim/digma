@@ -89,15 +89,15 @@ Demo login: `demo@digma.app` / `Digma1234!`. Dev server: http://localhost:3000.
 | `bun run dev` | Start development server (:3000, logs to `dev.log`) |
 | `bun run build` | Production build (+ copies static/public into standalone) |
 | `bun run start` | Production standalone server (`.next/standalone/server.js`) |
-| `bun run test` | Unit tests (840 checks, Vitest) |
-| `bun run test:e2e` | Browser EE (249 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db` — the global setup seeds then BACKDATES one project's `lastOpenedAt` 11 days so the access-based stats pin discriminates — with `DIGMA_DISABLE_AI_LLM=1` — the deterministic AI seam) |
+| `bun run test` | Unit tests (876 checks, Vitest) |
+| `bun run test:e2e` | Browser EE (253 Playwright checks; needs a build; boots :3100 with its own `db/e2e.db` — the global setup seeds then BACKDATES one project's `lastOpenedAt` 11 days so the access-based stats pin discriminates — with `DIGMA_DISABLE_AI_LLM=1` — the deterministic AI seam) |
 | `bun run lint` | ESLint 9 + next config |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bunx prisma generate` | Prisma client after schema change |
 | `bun run db:push` / `db:seed` | Recreate DB / seed demo workspace |
 | `./scripts/smoke-test.sh` | 58-check HTTP smoke suite against standalone server (incl. the register→verify→resend round-trip, the session-45 verify-otp ceiling section — the 429 exhaustion, the lock, the post-lock resend recovery — and the session-46 password-reset round-trip section — under their own `X-Forwarded-For` rate-limit buckets; now REFUSING an exported DATABASE_URL by itself (session 73's mechanism; still run as `unset DATABASE_URL && ./scripts/smoke-test.sh` — the smoke server inherits the parent shell's exported URL otherwise and opens an EMPTY database) |
 
-**Gate order before every push:** `bun run lint` → `bun run typecheck` → `bun run test` → `bun run build` → `./scripts/smoke-test.sh` → `bun run test:e2e` (840 unit / 58 smoke / 249 e2e).
+**Gate order before every push:** `bun run lint` → `bun run typecheck` → `bun run test` → `bun run build` → `./scripts/smoke-test.sh` → `bun run test:e2e` (876 unit / 58 smoke / 253 e2e).
 
 ## Testing Strategy
 

@@ -20,6 +20,12 @@ type ChatMessage = {
   actionCount?: number;
   revertSnapshot?: EditorSnapshot;
   reverted?: boolean;
+  // Session 78 (S78-A / A-M1 — the twenty-sixth audit's headline): the
+  // project scope the message was sent under (the store's projectId at
+  // send time). The revert carriers are the ONLY scope-carrying members
+  // — a plain bubble is transcript history, but a carrier can mutate
+  // the canvas, so its scope is what the belt checks at revert time.
+  scopeId?: string;
 };
 
 // The reference's measured example prompts — rendered under the input as
@@ -82,6 +88,39 @@ export function AiAssistant() {
   const [input, setInput] = React.useState("");
   const [sending, setSending] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Session 78 (S78-A / A-M1 — the twenty-sixth audit's headline): the
+  // transcript's project-scope guard. The messages state and its revert
+  // carriers were previously initialized once and NEVER project-scoped —
+  // after a soft /Editor?projectId=A -> /Editor?projectId=B swap (the
+  // same component instance; the S77-E fix established the path and
+  // re-armed the loading gate), the transcript kept project A's
+  // conversation while the user edited B, a surviving Revert restored
+  // A's elements into B's live store (the autosave machine PUT A's board
+  // into B — persisted cross-project clobber), and a mid-await send
+  // landed A's batch into B. The subscription resets the transcript on a
+  // NAMED-scope transition (either direction, including -> Untitled);
+  // the Untitled ADOPTION ("" -> id, the attachProject first-save flow)
+  // is exempt — the canvas lineage is the same, and the conversation
+  // that built the user's own Untitled board must survive its project's
+  // creation. The setState lives in the subscription callback — the
+  // sanctioned event-callback form (the app-header bell pattern), never
+  // an effect body.
+  React.useEffect(() => {
+    return useEditorStore.subscribe((state, prevState) => {
+      if (state.projectId === prevState.projectId) return;
+      const adoption = prevState.projectId === "" && state.projectId !== "";
+      if (adoption) return;
+      setMessages([
+        {
+          id: "intro",
+          role: "assistant",
+          text: "Hi! I'm your AI design assistant. I can make changes directly to your canvas. Try asking me to create shapes, modify elements, or organize your design.",
+          time: nowLabel(),
+        },
+      ]);
+    });
+  }, []);
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -195,6 +234,14 @@ export function AiAssistant() {
   function revertMessage(id: string) {
     const message = messages.find((m) => m.id === id);
     if (!message?.revertSnapshot || message.reverted) return;
+    // Session 78 (S78-A): the scope belt — a revert carrier captured under
+    // a NAMED project never restores into a different project's store (or
+    // a fresh Untitled). A carrier captured under Untitled ("") follows
+    // the canvas through the adoption transition — the same lineage, the
+    // first save's attachProject never changed the elements.
+    if (message.scopeId && message.scopeId !== useEditorStore.getState().projectId) {
+      return;
+    }
     useEditorStore.getState().restoreSnapshot(message.revertSnapshot);
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, reverted: true } : m)));
   }
@@ -206,6 +253,9 @@ export function AiAssistant() {
     setSending(true);
 
     const state = useEditorStore.getState();
+    // Session 78 (S78-A): the send-time scope — the belt and the
+    // mid-flight guard both compare against this capture.
+    const sendScopeId = state.projectId;
     const userMessage: ChatMessage = {
       id: `u-${Date.now()}`,
       role: "user",
@@ -260,6 +310,27 @@ export function AiAssistant() {
       // other mutations) BEFORE the operations run, so Revert restores exactly
       // what the user saw when they hit send (session 27, S27-2).
       const preApply = useEditorStore.getState();
+      // Session 78 (S78-A): the mid-flight guard — a NAMED send-scope that
+      // no longer matches means the user swapped projects while the
+      // assistant worked (the S77-E soft-swap path). The operations were
+      // computed against project A's request (its elementSummary, its
+      // targetIds); applying them into B is the cross-project clobber —
+      // the honest refusal replaces the apply. An Untitled ("")
+      // send-scope still applies through the adoption transition (the
+      // canvas lineage is the same — the first save's attachProject never
+      // changed the elements).
+      if (sendScopeId !== "" && preApply.projectId !== sendScopeId) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a-${Date.now()}`,
+            role: "assistant",
+            text: "The project changed while I was working — nothing was applied to the new canvas. Please try again here.",
+            time: nowLabel(),
+          },
+        ]);
+        return;
+      }
       const revertSnapshot: EditorSnapshot = {
         elements: preApply.elements.map((el) => ({ ...el })),
         backgroundColor: preApply.backgroundColor,
@@ -286,6 +357,7 @@ export function AiAssistant() {
           time: nowLabel(),
           actionCount,
           revertSnapshot: actionCount > 0 ? revertSnapshot : undefined,
+          scopeId: sendScopeId,
         },
       ]);
     } catch {
@@ -312,9 +384,14 @@ export function AiAssistant() {
           the legitimate use, and messages append atomically (never a
           per-tick stream). Pre-fix a screen-reader user submitted a
           prompt and heard silence until manually navigating into the
-          list. No per-message live attribute rides the bubbles — the
-          exactly-one-live-region-in-the-editor-DOM contract holds (the
-          log role does not serialize as a DOM live attribute). */}
+          list. Session 78 (S78-G / A-L6 — the F58 honesty reword): the
+          editor DOM carries TWO live regions BY DESIGN — this
+          transcript (atomic message arrivals) and the save-state
+          badge's discrete aria-live flips (editor-view.tsx) — and no
+          per-tick announcement streams (the S76-D retirement stands).
+          The old single-region claim here was false as written; this
+          is the honest form. No per-message live attribute rides the
+          bubbles. */}
       <div role="log" className="editor-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {messages.map((message) =>
           message.role === "user" ? (

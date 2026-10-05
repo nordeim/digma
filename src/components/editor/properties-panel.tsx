@@ -1435,7 +1435,15 @@ export function MultiSelectionSection({
         // tab's too). The old truthiness guard silently dropped the
         // clear: the field showed the "transparent" placeholder,
         // then visibly snapped back on the next resync.
-        onChange={(fill) => update({ fill })}
+        // Session 78 (S78-D / A-L3 — the twenty-sixth audit's
+        // paint-precedence parity): setting a SOLID fill now also
+        // clears the higher-precedence paint siblings — the paint
+        // seam's order is image > gradient > solid (fillPaintFor), so
+        // committing fill alone on a selection containing a gradient-
+        // or image-filled member never painted (an apparently dead
+        // control for that member). The single-selection Solid tab's
+        // documented form (session 33) mirrored here.
+        onChange={(fill) => update({ fill, fillGradient: null, fillImage: null, fillImageFit: null })}
       />
       <HexColorRow label="Stroke" value={first.stroke ?? null} onChange={(stroke) => update({ stroke })} />
     </section>

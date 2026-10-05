@@ -28,6 +28,13 @@ export function LayersPanel() {
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const [renaming, setRenaming] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
+  // Session 78 (S78-C / A-L5): the WebKit blur-on-removal guard. Escape
+  // clears the renaming state, UNMOUNTING the focused input — WebKit
+  // dispatches blur on focused-node removal (Chromium does not; the e2e
+  // matrix is Chromium-only), so the draft the user meant to DISCARD
+  // could commit through the blur handler. The ref marks the discard;
+  // the blur commit honors it. Harmless belt in Chromium.
+  const renameDiscarded = React.useRef(false);
 
   const selectedSet = new Set(selectedIds);
   // Session 61 (S61-D / A-L-4): the hidden-family state drives the Select
@@ -155,6 +162,9 @@ export function LayersPanel() {
                     // still opens the rename (the reference's measured
                     // contract — double-click on a layer row's name).
                     if ((event.target as HTMLElement).closest("[data-layer-action], input")) return;
+                    // Session 78 (S78-C / A-L5): re-arm the discard guard
+                    // for the fresh rename session.
+                    renameDiscarded.current = false;
                     setRenaming(el.id);
                     setRenameValue(el.name ?? "");
                   }}
@@ -188,14 +198,34 @@ export function LayersPanel() {
                       value={renameValue}
                       onChange={(e) => setRenameValue(e.target.value)}
                       onBlur={() => {
-                        if (renameValue.trim()) {
+                        // Session 78 (S78-C / A-L1): the no-change guard —
+                        // the InlineProjectRename sibling's form. A
+                        // rename-open-then-blur with an UNCHANGED name
+                        // previously pushed a full history snapshot, wiped
+                        // redo, flipped the badge to Unsaved, and fired a
+                        // redundant PUT for a byte-identical value — the
+                        // "a gesture that changed nothing cancels"
+                        // doctrine (S56-A) violated. The commit runs only
+                        // when the trimmed draft differs (and never when
+                        // Escape discarded it — the ref guard below).
+                        if (
+                          !renameDiscarded.current &&
+                          renameValue.trim() &&
+                          renameValue.trim() !== (el.name ?? "")
+                        ) {
                           useEditorStore.getState().updateElements([el.id], { name: renameValue.trim() });
                         }
                         setRenaming(null);
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        if (e.key === "Escape") setRenaming(null);
+                        // Session 78 (S78-C / A-L5): Escape DISCARDS — the
+                        // ref arms the blur guard before the unmount (the
+                        // WebKit focusout-on-removal path), then clears.
+                        if (e.key === "Escape") {
+                          renameDiscarded.current = true;
+                          setRenaming(null);
+                        }
                       }}
                       // Session-19 fix (S19-1) — the reference's measured
                       // chrome (double-click on a layer row name, live DOM):

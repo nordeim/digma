@@ -445,6 +445,16 @@ S87.update({
     "clone-25-ai-transcript-log-role": (1440, 900),
 })
 
+# Session 78 (the 54th reference audit): the s88 evidence set mirrors the
+# s87 mapping (the standing clone evidence re-captured on the S78 code)
+# plus the session's OWN three evidence shots.
+S88 = dict(S87)
+S88.update({
+    "clone-26-ai-swap-scope": (1440, 900),
+    "clone-27-rename-noop-saved": (1440, 900),
+    "clone-28-header-44px": (390, 844),
+})
+
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -476,6 +486,8 @@ def expected_for(name: str):
         return S86.get(Path(name).stem)
     if name.startswith("ref-audit-s87/"):
         return S87.get(Path(name).stem)
+    if name.startswith("ref-audit-s88/"):
+        return S88.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -542,6 +554,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s85").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s86").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s87").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s88").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

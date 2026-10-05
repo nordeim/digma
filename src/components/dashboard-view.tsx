@@ -54,6 +54,22 @@ export function DashboardView({ user }: { user: HeaderUser }) {
 
   const refresh = React.useCallback(() => load(), [load]);
 
+  // Session 78 (S78-G / A-I1): the delete handler hoisted to ONE seam —
+  // pre-fix two byte-identical 9-line inline bodies (the grid + the
+  // list branches) drifted together, the exact duplication class the
+  // S67-D/S71-A one-seam discipline retires (a future edit landing in
+  // one copy silently diverging the two surfaces' delete behavior).
+  // Session 58's stats-refresh contract (S58-F / A-L-3) is unchanged:
+  // the local list filters beside the hero's refresh — the create path
+  // already refreshed.
+  const handleDeleted = React.useCallback(
+    (id: string) => {
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+      void refresh();
+    },
+    [refresh],
+  );
+
   // Initial fetch — the docs-approved effect pattern (async function inside
   // the effect; setState only in the awaited continuation). The local
   // runner keeps the lint gate's set-state-in-effect analysis honest: the
@@ -224,15 +240,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       // the greetingName convention.
                       userInitial={user.name.trim().charAt(0).toUpperCase() || "D"}
                       onRenamed={() => refresh()}
-                      onDeleted={(id) => {
-                        // Session 58 (S58-F — the sixth audit's A-L-3): the
-                        // stats refresh beside the list filter — the hero's
-                        // counts previously kept the pre-delete values until
-                        // the next navigation (the create path already
-                        // refreshed).
-                        setProjects((prev) => prev.filter((p) => p.id !== id));
-                        void refresh();
-                      }}
+                      onDeleted={handleDeleted}
                     />
                   ))}
                 </div>
@@ -335,15 +343,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       project={project}
                       userInitial={user.name.trim().charAt(0).toUpperCase() || "D"}
                       onRenamed={() => refresh()}
-                      onDeleted={(id) => {
-                        // Session 58 (S58-F — the sixth audit's A-L-3): the
-                        // stats refresh beside the list filter — the hero's
-                        // counts previously kept the pre-delete values until
-                        // the next navigation (the create path already
-                        // refreshed).
-                        setProjects((prev) => prev.filter((p) => p.id !== id));
-                        void refresh();
-                      }}
+                      onDeleted={handleDeleted}
                     />
                   ))}
                 </div>
