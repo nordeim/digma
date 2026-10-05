@@ -114,9 +114,11 @@ describe("the gate counts are aligned across the docs (S80-E / B-L1)", () => {
     // one; the pin's intent (the delivery count pinned at the
     // command-table site) is unchanged.
     // Session 82: re-anchored to 260 — the open-Select tool-switch
+    // Session 85 (S85-F): re-anchored to 262 (+2 — the session85-fixes
+    // re-entry discriminators); the intent unchanged.
     // discriminator grew the suite by one; intent unchanged.
     expect(claude).not.toMatch(/253 Playwright/);
-    expect(claude).toMatch(/260 Playwright/);
+    expect(claude).toMatch(/262 Playwright/);
   });
 
   it("README.md's command table carries the current e2e count", () => {
@@ -125,8 +127,9 @@ describe("the gate counts are aligned across the docs (S80-E / B-L1)", () => {
     // legitimately re-anchored to 259 (the mount double-PUT
     // discriminator) — intent unchanged.
     // Session 82: re-anchored to 260 (the open-Select discriminator).
+    // Session 85 (S85-F): re-anchored to 262 (+2); the intent unchanged.
     expect(readme).not.toMatch(/253 browser/);
-    expect(readme).toMatch(/260 browser/);
+    expect(readme).toMatch(/262 browser/);
   });
 
   it("digma_SKILL.md's project_state frontmatter carries the current counts", () => {

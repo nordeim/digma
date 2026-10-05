@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FONT_FAMILIES } from "@/lib/validation";
+import { clampText, FONT_FAMILIES } from "@/lib/validation";
 import {
   addGradientStop,
   clampFontSizeField,
@@ -959,7 +959,34 @@ export function TextSection({
         <input
           type="text"
           value={element.text ?? ""}
-          onBlur={() => sliderGesture.finish("text")}
+          // Session 85 (S85-B / A85-L1 — the thirty-third audit's missed
+          // member of the S84-B teleport family): the server's
+          // buildElementRow clamps text through clampText(raw?.text, 2000)
+          // (trim + slice, all-whitespace → null) and the PUT response
+          // REPLACES the store list — an unclamped value rendered locally
+          // then visibly teleported on save (a >2000-char paste silently
+          // truncating a second later; edge whitespace lost on the
+          // round-trip — the canvas renders whiteSpace: pre-wrap, edge
+          // whitespace is real content). The layers-rename sibling's own
+          // form: the input cap closes the length teleport at typing
+          // time; the trim-at-commit below closes the whitespace
+          // teleport at commit time. The onChange stays RAW — a
+          // per-keystroke trim would delete a trailing space AS IT IS
+          // TYPED (the controlled value re-rendering from the trimmed
+          // store).
+          maxLength={2000}
+          onBlur={() => {
+            sliderGesture.finish("text");
+            // The no-change guard (the S78-C sibling's form): the commit
+            // runs only when the clamped draft DIFFERS — a blur with an
+            // unchanged value must not push a history snapshot, wipe
+            // redo, flip the badge, and fire a redundant PUT for a
+            // byte-identical value.
+            const clamped = clampText(element.text, 2000) ?? "";
+            if (clamped !== (element.text ?? "")) {
+              update({ text: clamped });
+            }
+          }}
           onChange={(event) => {
             sliderGesture.textTick();
             update({ text: event.target.value });
@@ -1078,7 +1105,11 @@ export function PositionSizeSection({
           label="H"
           value={element.height}
           onChange={(height) => update({ height: clampSizeField(height, element.type) })}
-          min={0}
+          // Session 85 (S85-E / A85-I3): the displayed floor aligns with
+          // the enforced type-aware clamp (the W sibling's own form) — the
+          // H field previously rendered min={0} while clampSizeField
+          // floors non-line types at 1.
+          min={element.type === "line" ? 0 : 1}
         />
       </div>
     </section>

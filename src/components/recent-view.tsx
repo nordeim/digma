@@ -77,7 +77,12 @@ function sortProjects(projects: ProjectSummaryDTO[], sort: SortKey): ProjectSumm
       // followed Z > T > A on the discriminating probe set. All four sorts
       // carry the - (descending) prefix; the three date branches above
       // already sorted descending.
-      return copy.sort((a, b) => b.name.localeCompare(a.name));
+      // Session 85 (S85-E / A85-I4): the explicit locale — bare
+      // localeCompare collates per the runtime locale (diacritic names
+      // order differently per device). The S84-D family pinned the date
+      // siblings to "en-US"; the sort sibling pins "en" (the same
+      // per-device determinism rationale).
+      return copy.sort((a, b) => b.name.localeCompare(a.name, "en"));
   }
 }
 

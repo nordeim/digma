@@ -83,8 +83,13 @@ describe("the unload keepalive flush (session 61, S61-I / A-3)", () => {
     expect(effectStart).toBeGreaterThan(-1);
     const effectEnd = viewSource.indexOf("function onShare()", effectStart);
     const effect = viewSource.slice(effectStart, effectEnd);
+// Session 85 (S85-A / A85-M1): re-anchored onto the !isMountRun form —
+    // the adoption-clobber guard gained the mount discriminator (a fresh
+    // re-entry mount LOADS; the replaceState re-run keeps its skip). The
+    // intent (the adoption re-run must not clobber the live store)
+    // unchanged.
     expect(effect).toMatch(
-      /if \(useEditorStore\.getState\(\)\.projectId === projectId\) \{/,
+      /if \(!isMountRun && useEditorStore\.getState\(\)\.projectId === projectId\) \{/,
     );
   });
 });

@@ -134,7 +134,9 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     // instead. The blur terminal stays (the early end of a live
     // burst; a no-op when nothing is armed).
     expect(input).not.toMatch(/onFocus=\{\(\) => sliderGesture\.begin/);
-    expect(input).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\("text"\)\}/);
+    // Session 85 (S85-B / A85-L1): re-anchored onto the block form (the
+    // gesture finish still runs first; the S85-B clamped commit follows).
+    expect(input).toMatch(/onBlur=\{\(\) => \{\s*sliderGesture\.finish\("text"\);/);
     expect(input).toMatch(/sliderGesture\.textTick\(\)/);
     // The idle-coalescing machinery: the timer, the re-arm, the
     // begin-on-demand for a fresh burst. Session 64 (S64-B): the timer

@@ -45,6 +45,18 @@ const UNTITLED_PROJECT: ProjectDTO = {
   elements: [],
 };
 
+// Session 85 (S85-A / A85-M1 — the thirty-third audit's headline): the
+// leave-transport registry. The S62-C at-unmount PUT is fire-and-forget —
+// a same-project re-entry mount's GET can otherwise answer FIRST and
+// load pre-transport state (the next local edit would then full-list-PUT
+// over the final save). The cleanup records its transport here; the
+// re-entry mount's load boundary drains the slot (one-shot) and awaits
+// it only when it targets the project being loaded. The machine's own
+// in-flight PUT (the S71-B same-reference case) predates the unmount and
+// is covered by navigation latency — the same semantics the accepted
+// refresh path (the pagehide keepalive PUT vs the fresh GET) carries.
+let leaveTransportFor: { projectId: string; done: Promise<unknown> } | null = null;
+
 // ---------------------------------------------------------------------------
 // Autosave: PUT the full element list (plus project meta) whenever the store
 // goes unsaved; debounced 800ms. On success the server's fresh ids replace
@@ -475,14 +487,20 @@ function useAutosave(): AutosaveHandle {
           softLeaveDescriptor.elements === state.elements &&
           softLeaveDescriptor.backgroundColor === state.backgroundColor;
         if (!machineCarriesThisState) {
-          void fetch(`/api/projects/${state.projectId}/elements`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              elements: state.elements,
-              backgroundColor: state.backgroundColor,
-            }),
-          }).catch(() => null);
+          // Session 85 (S85-A): the at-unmount transport records itself —
+          // a same-project re-entry mount awaits it before its GET (the
+          // PUT/GET race closure; see the registry's module-level note).
+          leaveTransportFor = {
+            projectId: state.projectId,
+            done: fetch(`/api/projects/${state.projectId}/elements`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                elements: state.elements,
+                backgroundColor: state.backgroundColor,
+              }),
+            }).catch(() => null),
+          };
         }
       }
       disposed = true;
@@ -1328,6 +1346,20 @@ export function EditorView({ user }: { user: HeaderUser }) {
       }
       firstRunRef.current = false;
       if (projectId) {
+        // Session 85 (S85-A / A85-M1): the at-unmount leave transport is
+        // awaited when re-entering the SAME project — the registry's PUT
+        // and this mount's GET can otherwise interleave with the GET
+        // answering first (loading pre-transport state; the next local
+        // edit would then full-list-PUT over the final save — the refresh
+        // path's pagehide race, closed here because the registry is
+        // readable at this boundary). The slot is one-shot: any mount
+        // drains it, only a same-project match awaits it.
+        const transport = leaveTransportFor;
+        leaveTransportFor = null;
+        if (transport && transport.projectId === projectId) {
+          await transport.done;
+          if (cancelled) return;
+        }
         // Session 61 (S61-I, en-route — the adoption-clobber guard): Next
         // 14.1+ integrates window.history.replaceState into the App
         // Router, so the Untitled adoption's replaceState (inside
@@ -1341,9 +1373,29 @@ export function EditorView({ user }: { user: HeaderUser }) {
         // keepalive, which faithfully persisted the clobbered empty
         // state through the unload). The store already holding THIS
         // project IS the adoption case — the editor is live, the URL is
-        // just catching up. Skip the re-load; a refresh (fresh store)
-        // and a soft navigation to ANOTHER project both still load.
-        if (useEditorStore.getState().projectId === projectId) {
+        // just catching up. Skip the re-load; a refresh (fresh store), a
+        // soft navigation to ANOTHER project, and — since session 85 —
+        // a soft re-entry to the SAME project (a FRESH mount over the
+        // stale singleton store) all load.
+        //
+        // Session 85 (S85-A / A85-M1 — the thirty-third audit's headline):
+        // the guard previously keyed on STORE IDENTITY ALONE — and the
+        // zustand store is a module singleton with NO reset on unmount
+        // (the autosave cleanup flushes but never clears projectId), so
+        // Editor(X) → Back/dashboard → open X again mounted a FRESH
+        // EditorView over the stale store, this guard fired, and the
+        // load GET was SKIPPED entirely: the STALE project name showed
+        // (an out-of-editor rename never appeared; exportFilename kept
+        // the old name for the whole session), STALE elements (another
+        // surface's writes invisible until the next local full-list PUT
+        // wrote over them — deleting them), and cross-session undo
+        // history (the "load is a lineage break" doctrine violated).
+        // The isMountRun discriminator (captured BEFORE the boundary
+        // block flips firstRunRef — the S81-B capture) separates the
+        // cases: only the ADOPTION re-run (an in-instance effect re-run,
+        // isMountRun=false) keeps the skip; a fresh mount — same project
+        // or not — routes through the standard GET + loadProject.
+        if (!isMountRun && useEditorStore.getState().projectId === projectId) {
           setLoading(false);
           // Session 62 (S62-C — the tenth audit's A-L2/I4): normalize a
           // stale non-"saved" state. A disposed flush's terminal

@@ -55,7 +55,11 @@ describe("the soft-leave flush + the stale-saving normalization (session 62, S62
     expect(disposedIdx).toBeGreaterThan(flushIdx);
     // A regular fetch (NOT keepalive — the document persists through
     // soft navigation; keepalive exists for real teardown only).
-    const fetchIdx = cleanup.indexOf("void fetch(");
+    // Session 85 (S85-A / A85-M1): re-anchored onto the registry record
+    // form — the same fetch now rides `done:` inside leaveTransportFor
+    // (the at-unmount transport records itself for the re-entry mount's
+    // PUT/GET race closure); the no-keepalive intent unchanged.
+    const fetchIdx = cleanup.indexOf("done: fetch(");
     expect(fetchIdx).toBeGreaterThan(-1);
     expect(cleanup.slice(fetchIdx, cleanup.indexOf(")", cleanup.indexOf("keepalive", fetchIdx) === -1 ? cleanup.length : cleanup.indexOf("keepalive", fetchIdx)) + 1)).not.toContain("keepalive");
   });
@@ -74,7 +78,10 @@ describe("the soft-leave flush + the stale-saving normalization (session 62, S62
     // THE DEFECT PIN: pre-fix the skip branch only set setLoading(false)
     // and returned — a stale "saving" (disposed flush terminal state)
     // or "unsaved" (re-mount) never re-armed.
-    const guardIdx = viewSource.indexOf("if (useEditorStore.getState().projectId === projectId) {");
+    // Session 85 (S85-A): the guard gained the !isMountRun discriminator —
+    // a fresh re-entry mount LOADS; only the in-instance adoption re-run
+    // keeps the skip. The normalization intent unchanged.
+    const guardIdx = viewSource.indexOf("if (!isMountRun && useEditorStore.getState().projectId === projectId) {");
     expect(guardIdx).toBeGreaterThan(-1);
     const guardEnd = viewSource.indexOf("try {", guardIdx);
     const guard = viewSource.slice(guardIdx, guardEnd);
@@ -87,7 +94,10 @@ describe("the soft-leave flush + the stale-saving normalization (session 62, S62
     // PRESERVATION PINS: the pagehide keepalive flush and the
     // adoption-clobber guard themselves are untouched.
     expect(viewSource).toMatch(/addEventListener\("pagehide", onUnload\)/);
-    expect(viewSource).toMatch(/if \(useEditorStore\.getState\(\)\.projectId === projectId\) \{/);
+    // Session 85 (S85-A): re-anchored onto the !isMountRun form (the
+    // adoption-clobber guard itself is untouched in intent — the store
+    // identity check just gained the mount discriminator).
+    expect(viewSource).toMatch(/if \(!isMountRun && useEditorStore\.getState\(\)\.projectId === projectId\) \{/);
     expect(viewSource).toMatch(/keepalive: true/);
   });
 });

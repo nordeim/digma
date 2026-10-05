@@ -129,9 +129,12 @@ const skill = readFileSync(
 // / 63 smoke (unchanged) / 260 e2e (unchanged — the RA-59
 // re-bucketing moves a test between describes, adds none); the
 // intents (the docs carry the DELIVERED counts) unchanged.
-const UNIT = "1024";
+// Session 85 (S85-F): re-anchored again — 1047 unit / 143 files /
+// 63 smoke (unchanged) / 262 e2e (+2 — the session85-fixes re-entry
+// discriminators); the intents unchanged.
+const UNIT = "1047";
 const SMOKE = "63";
-const E2E = "260";
+const E2E = "262";
 
 describe("the stale-count family is corrected (S81-E / B81-L-family)", () => {
   it("README: the tech-stack table's unit row and e2e row carry the real counts", () => {

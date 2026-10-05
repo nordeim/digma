@@ -96,6 +96,9 @@ describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
   });
 
   it("the verification checklist carries the real counts (63 smoke / 260 e2e)", () => {
+    // Session 85 (S85-F): re-anchored to 262 — the session85-fixes re-entry
+    // discriminators added 2 e2e checks; the intent (DEPLOYMENT carries
+    // the delivered count) unchanged.
     // Session 81: legitimately re-anchored from 58/230 (the s69-era
     // counts) — the smoke suite grew 58 -> 61 (the S80-D runtime
     // header trio) and the e2e suite 230 -> 259 (the session-80/81
@@ -109,7 +112,7 @@ describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
     // only the doctrine files). The red pin broke the unit gate at
     // 960/961 — this re-anchor repairs it.
     expect(doc).toMatch(/63 .*smoke|smoke.*63|63 checks/);
-    expect(doc).toMatch(/260 .*Playwright|Playwright.*260|260 checks/);
+    expect(doc).toMatch(/262 .*Playwright|Playwright.*262|262 checks/);
     expect(doc.includes("28 E2E checks")).toBe(false);
     expect(doc.includes("51 Playwright checks")).toBe(false);
     expect(doc.includes("61 smoke")).toBe(false);

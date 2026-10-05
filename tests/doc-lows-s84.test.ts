@@ -23,10 +23,19 @@ const PAD = readFileSync(
 );
 const SKILL = readFileSync(path.resolve(import.meta.dirname, "../digma_SKILL.md"), "utf8");
 
-const UNIT = "1024";
-const FILES = "140";
+// Session 85 (S85-F): re-anchored to the session-85 delivery counts —
+// 1047 unit (1024 + the FILES pin +1 here, editor-lows-s85 +13,
+// doc-lows-s85 +9) / 143 files (+2) / 63 smoke (unchanged) / 262 e2e
+// (+2 — the session85-fixes re-entry discriminators); the intents (the
+// docs carry the DELIVERED counts) unchanged.
+const UNIT = "1047";
+// Session 85 (S85-E / A85-I1): the constant was "140" — dead (never
+// asserted) AND wrong — a dead wrong copy one edit away from becoming
+// a live wrong pin. Corrected and made LIVE (the pin below asserts it
+// against the PAD §7.1 total row DYNAMICALLY).
+const FILES = "143";
 const SMOKE = "63";
-const E2E = "260";
+const E2E = "262";
 
 // ---------------------------------------------------------------------------
 // The auth-call budget's honest enumeration (S84-A's doctrine half)
@@ -74,6 +83,17 @@ describe("the delivery counts are honest (S84-E — 1024 unit / 141 files / 63 s
   it("digma_SKILL's project_state carries the 1024 delivery count", () => {
     expect(SKILL).toMatch(new RegExp(`${UNIT} unit`));
     expect(SKILL).toMatch(new RegExp(`\\| Unit tests \\| Vitest \\| [^|]*\\| ${UNIT} checks`));
+  });
+
+  it("the 141-files claims — AGENTS' seam bullet and PAD's §7.1 total row (S85-E / A85-I1: the FILES constant made live)", () => {
+    // Session 85: the FILES constant was "140" — dead AND wrong. It now
+    // pins the live file-count family DYNAMICALLY (the constant must
+    // always equal the PAD §7.1 total row's file count — the same
+    // totals the row-sum pin in doc-lows-s85.test.ts guards
+    // structurally); AGENTS carries the same count in its seam bullet.
+    const padTotalFiles = PAD.match(/\| \*\*Unit total\*\* \| \*\*(\d+) files\*\*/)?.[1];
+    expect(FILES).toBe(padTotalFiles);
+    expect(AGENTS).toMatch(new RegExp(`${padTotalFiles} files`));
   });
 
   it("the negative forms — no stale 994 claims survive outside historical records", () => {

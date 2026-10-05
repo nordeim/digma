@@ -242,7 +242,12 @@ describe("the editor's project-swap loading re-arm (S77-E / A-L5)", () => {
   it("the same-project skip path never arms the loading gate (no flash on the adoption re-run)", () => {
     // PRESERVATION: the S61-I adoption-clobber skip keeps its
     // setLoading(false) form — the URL catching up must not flash.
-    const m = editor.match(/if \(useEditorStore\.getState\(\)\.projectId === projectId\) \{\s*setLoading\(false\);/);
+    // Session 85 (S85-A / A85-M1): re-anchored onto the !isMountRun
+    // discriminator form — the guard now keys on BOTH the mount
+    // discriminator AND store identity (a fresh re-entry mount LOADS;
+    // only the in-instance adoption re-run keeps the skip). The intent
+    // (the adoption re-run never arms the loading gate) unchanged.
+    const m = editor.match(/if \(!isMountRun && useEditorStore\.getState\(\)\.projectId === projectId\) \{\s*setLoading\(false\);/);
     expect(m).not.toBeNull();
   });
 });

@@ -117,12 +117,20 @@ describe("the focus-begin retirement (session 66, S66-A / A-4)", () => {
     // autosave deferral with nothing typed.
     const start = panelSource.indexOf('aria-label="Text content"');
     expect(start).toBeGreaterThan(-1);
-    const w = panelSource.slice(start - 400, start + 400);
+    // Session 85 (S85-B): the window anchors on the <input open tag —
+    // the clamp comment block widened the element past the old fixed
+    // 400-char window; the no-focus-arm intent unchanged.
+    const inputStart = panelSource.lastIndexOf("<input", start);
+    const w = panelSource.slice(inputStart, start + 200);
     expect(w).not.toMatch(/onFocus=\{\(\) => sliderGesture\.begin\("text"\)\}/);
     // PRESERVATION: the blur terminal stays — it ends a live burst
     // immediately instead of waiting out the 150ms idle, and no-ops
     // when nothing is armed.
-    expect(w).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\("text"\)\}/);
+    // Session 85 (S85-B / A85-L1): re-anchored onto the block form — the
+    // gesture finish still runs FIRST (the idle-coalesced burst ends at
+    // blur); the S85-B clamped commit follows it in the same block. The
+    // intent (the blur terminal) unchanged.
+    expect(w).toMatch(/onBlur=\{\(\) => \{\s*sliderGesture\.finish\("text"\);/);
   });
 
   it("the number fields keep their blur terminal and their committing tick", () => {

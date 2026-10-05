@@ -510,6 +510,13 @@ S94.update({
     "clone-38-panel-clamp-family": (1440, 900),
     "clone-39-derived-name-cap": (1440, 900),
 })
+# Session 85 (S85-A/B): the re-entry fresh-name witness + the Text
+# Content clamp witness (both desktop editor shots).
+S95 = dict(S94)
+S95.update({
+    "clone-40-reentry-fresh-name": (1440, 900),
+    "clone-41-text-content-clamp": (1440, 900),
+})
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -555,6 +562,8 @@ def expected_for(name: str):
         return S93.get(Path(name).stem)
     if name.startswith("ref-audit-s94/"):
         return S94.get(Path(name).stem)
+    if name.startswith("ref-audit-s95/"):
+        return S95.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -628,6 +637,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s92").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s93").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s94").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s95").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

@@ -79,4 +79,21 @@ async function main() {
   process.exit(ok ? 0 : 1);
 }
 
-main().finally(() => prisma.$disconnect());
+// Session 85 (S85-D / B85-L2 — the thirty-third audit's diagnostic-quality
+// fix): main() previously had NO .catch — a missing SQLite file at the
+// resolved URL (the checker's MOST LIKELY failure mode: a fresh checkout,
+// or a seed trapped by a parent-shell DATABASE_URL export — observed live
+// this session) rejected the first count() and bun printed a minified
+// PrismaClientInitializationError stack while the script's designed
+// instruction line never printed. The catch answers the clean diagnostic;
+// the exit code stays non-zero either way (fails closed, no false-green).
+main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(
+    "DATABASE FILE MISSING (or unreachable): " + message.slice(0, 200)
+  );
+  console.error(
+    "Re-seed the pristine contract with: unset DATABASE_URL && bun run db:push && bun run db:seed"
+  );
+  process.exit(1);
+}).finally(() => prisma.$disconnect());

@@ -1472,3 +1472,20 @@ Work Log:
 
 Stage Summary:
 - Session 84 delivered on main: gate green at 1024/63/260, the mobile nav contract held the 61st consecutive session, no reference drift, the deferred queue documented in docs/remediation-plan-session84.md (the F71 lesson set: the eval-invocation form, the budget's own arithmetic, the web-server-env merge semantics, the clamp asymmetry)
+
+---
+Task ID: digma-s85
+Agent: lead (Super Z)
+
+Task: the operator's session-cycle directive — refresh, review the mandated docs (session_127/128 + remediation-plan-session84 + worklog), audit, remediate TDD-first, capture, align docs, push to main.
+
+Work Log:
+- Workspace re-cloned at HEAD 3a8081a; the mandated docs reviewed; the environment rebuilt — with the M-B85-1 en-route repair (the parent shell's DATABASE_URL export trapped the first seed outside the repo; re-seeded with the unset form, PRISTINE CONTRACT OK)
+- The baseline gate re-proven green (1024 unit / 141 files / 63 smoke / 260 e2e — the F59 corollary HOLDS, the second consecutive)
+- The 61st reference audit vs https://digma-371dfd0d.base44.app/ (the real CDP login): NO DRIFT on any standing datum (the Share/Present clipping byte-identical the 22nd consecutive session); mobile nav 9/9 the 62nd consecutive session (baseline + the final S85 build)
+- The 33rd Mode C audit (two fresh-eyes subagents — A over the editor/client layer, B over the server/infra side): 0 Critical / 0 High / 1 Medium / 4 Low / 4 Informational; the chosen set remediated TDD-first: the same-project re-entry fresh load (the headline — the S61-I guard keyed on store identity alone; the !isMountRun discriminator + the leaveTransportFor registry; the e2e RED proof ran BOTH ways live via a guard revert + rebuild), the Text Content clamp (the S84-B teleport family's missed member), the PAD §7.1 row-sum pin (two stale rows corrected; the pin's first run caught FOUR more never-rowed files, all added retroactively), the check-db-contract clean diagnostic (live-witnessed), and the small-honesty batch
+- Full gate green at 1047 unit / 143 files / 63 smoke / 262 e2e (16 code defect pins + 9 doc pins RED pre-fix; 6 survival pins; EIGHT standing pins legitimately re-anchored with intents documented); the capture with two new inline checks (clone-40 the re-entry fresh-name witness, clone-41 the text-clamp witness) + the missing-file diagnostic witness; dimensions 444/444; docs aligned (PAD v1.64.0, digma_SKILL v1.63.0 + lesson F72, AGENTS/CLAUDE/README/DEPLOYMENT, session_129, remediation-plan-session85)
+- Committed and pushed to git@github.com:nordeim/digma.git main via docs/ssh_git_wrapper_v3.py; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 85 delivered on main: gate green at 1047/63/262, the mobile nav contract held the 62nd consecutive session, no reference drift, the deferred queue documented in docs/remediation-plan-session85.md (the F72 lesson set: the singleton-store re-entry trap, the totals-only pin's blind spot, the dead-constant hazard, the at-boundary transport registry, the generated-script escape strip)
