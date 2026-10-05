@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite traced-schema trap trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.60.0
+version: 1.61.0
 last_updated: 2026-10-05
-project_state: "961 unit checks green · 260 Playwright checks green · 63 smoke checks green · build 23 routes"
+project_state: "994 unit checks green · 260 Playwright checks green · 63 smoke checks green · build 25 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -64,11 +64,11 @@ project_state: "961 unit checks green · 260 Playwright checks green · 63 smoke
 | Language | TypeScript (fully strict) | ≥5.9.3 | `bun run typecheck` is the type gate (build has `ignoreBuildErrors`) |
 | Styling | Tailwind CSS (CSS-first) | ≥4.3.3 | NO `tailwind.config.js`; `@theme` in `globals.css` |
 | Animation | tw-animate-css | ≥1.4.0 | CSS import, not a JS plugin |
-| Primitives | shadcn/ui on Radix | Radix ^1.x per package.json | dialog, dropdown-menu, sheet, tabs, toaster (custom), button, input, label, textarea |
+| Primitives | shadcn/ui on Radix | Radix ^1.x per package.json | dialog, dropdown-menu, select, sheet, tabs, toaster (custom), button, input, label, textarea |
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.1 | 961 checks; `*.test.ts` only |
+| Unit tests | Vitest | ≥5.0.1 | 994 checks; `*.test.ts` only |
 | E2E tests | Playwright | ≥1.63.0 | 260 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
@@ -123,7 +123,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 
 ## §5 Component Architecture & Patterns
 
-**Counts:** 23 component files under `src/components/` (19 marked `"use client"`; the pages stay server components). 5-layer model (details in PAD §3.1): Persistence → pure domain (`src/lib`) → API routes → server pages → client views. Dependencies point downward only.
+**Counts:** 26 component files under `src/components/` (25 .tsx + editor-store.ts; 22 marked `"use client"`; the pages stay server components). 5-layer model (details in PAD §3.1): Persistence → pure domain (`src/lib`) → API routes → server pages → client views. Dependencies point downward only.
 
 **Route map (v1.1.0, ADR-008):** `/` and `/Dashboard` (same view — the reference's links point at the capitalized one), `/login` (lowercase, like the reference), `/Recent`, `/Teams`, `/Editor?projectId=` (unknown/missing id → Untitled mode, ADR-009). Legacy lowercase `/recent|/teams|/editor|/dashboard` 307 via `src/proxy.ts`.
 
@@ -184,7 +184,7 @@ client applies operations: add | update (may carry scale) | delete
 
 ## §8 Auth & Security Implementation
 
-**Hand-rolled (ADR-003), ~101 lines in `src/lib/auth.ts`:** scrypt password hashes (N=16384, salt:hash format, constant-time compare) + HMAC-SHA256 stateless tokens `userId.expiry.signature` in an httpOnly `digma_session` cookie (7-day TTL, `secure` in production). `getSessionUser()` verifies signature + expiry + user existence on every request.
+**Hand-rolled (ADR-003), 127 lines in `src/lib/auth.ts`:** scrypt password hashes (N=16384, salt:hash format, constant-time compare) + HMAC-SHA256 stateless tokens `userId.expiry.signature` in an httpOnly `digma_session` cookie (7-day TTL, `secure` in production). `getSessionUser()` verifies signature + expiry + user existence on every request.
 
 **Gates:** every page calls `getSessionUser()` + `redirect("/login?from_url=…")`; every data route's first statement is `requireSession()` → 401 envelope. Only `/api/health` and `/api/auth/*` are public.
 
@@ -239,8 +239,8 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 961/961
-bun run build         # 23 routes; static+public copied into standalone
+bun run test          # 994/994
+bun run build         # 25 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 63/63 (health, auth gate, CRUD, AI, rate limit, logout, the S82-D body-cap pair)
 bun run test:e2e      # 260/260 (39 spec files; the mobile-nav 10-check suite, the sessionNN-fixes discriminators)
 git status            # no .env, *.key, db/*.db, dev.log, server.log staged
@@ -357,6 +357,8 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 
 
 69. **F69 — the session-82 family: the portal-role taxonomy for stand-down guards, the honest-idle terminal state in busy predicates, the curl stdin-buffering trap, and the racy toBeHidden locator on eventually-rendering elements. (1) THE PORTAL-ROLE TAXONOMY: a global-keyboard stand-down guard keyed on specific ARIA roles must enumerate the role family of EVERY overlay library in the app — Radix renders Dialog (role="dialog"), DropdownMenu (role="menu"), and SELECT (role="listbox" content + role="combobox" trigger) as THREE different role shapes, and a guard covering only the first two lets the third's letter keys fall through (the vendored Select dist carries zero stopPropagation and its typeahead does NOT preventDefault plain letters — every keydown over an open list propagates to the window listener). The guard selector is the family's single point of closure: `[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"], [role="combobox"][aria-expanded="true"]` — the combobox half is the belt (either alone covers the open state, both pin the family). The audit question for every global keydown handler: which overlay libraries does the app use, and what role does EACH render when open? (2) THE HONEST-IDLE TERMINAL STATE: a busy predicate that gained a data-state disjunct (saveState === "unsaved") to see the debounce-ARMED state assumed unsaved is always TRANSIENT — the 401 terminal breaks the assumption (every later flush early-returns on the dead session; the "unsaved" badge is HONEST but nothing will ever drain it, so the drain polls its full deadline). When a busy predicate keys on a state that has a TERMINAL variant, the predicate must exempt the terminal (the state's honesty and the predicate's progress are different questions — !sessionDead && (...) keeps the badge honest while letting the drain resolve). (3) THE CURL STDIN-BUFFERING TRAP: piping a body through stdin does NOT force Transfer-Encoding: chunked — curl 8.x BUFFERS the unknown-size pipe and declares content-length, so a "chunked probe" written as `cat file | curl --data-binary @-` silently tests the content-length fast path a second time. The honest chunked form carries the EXPLICIT header (`-H "Transfer-Encoding: chunked"` — curl then omits content-length; verified against a raw socket listener printing the request headers). Any probe claiming to exercise a specific HTTP transfer path must be verified against a listener that PRINTS the wire form. (4) THE RACY toBeHidden ON EVENTUALLY-RENDERING ELEMENTS: `expect(locator).toBeHidden()` passes the moment ONE poll sees the element absent — if the element RENDERS LATER (the Dashboard's project cards hydrating after the /api/projects fetch), the assertion passed on the pre-hydration window and the NEXT suite run fails on timing (the s81 mount spec's B-heading check matched the dashboard card h3, an element that ALWAYS eventually renders; it passed standalone when the poll beat hydration and failed in the warm-server full suite). The deterministic forms: assert an element that is NEVER present on the target page (the editor's [data-element-id] nodes on the Dashboard — count 0 forever), or assert the POSITIVE landing surface (the section heading visible). Corollary: a locator that matches BOTH the page you left and the page you landed on (the editor's h2 and the dashboard card's h3 share the accessible name) is an intent-vs-locator mismatch — check what the locator matches on BOTH pages before using it as a transition assertion. (5) THE RADIX ARIA-HIDDEN BLINDING (the mobile-nav lesson, now the e2e form): while a Radix portal overlay is open, the app root is marked aria-hidden and `getByRole` locators find NOTHING — mid-open assertions must use CSS locators (button[aria-label=...]), the role-based locator only works pre-open.**
+
+70. **F70 — the session-83 family: the no-text-input taxonomy for typing-target predicates, the pin-grep closure of the count-drift family, and the hermetic-env inheritance leak. (1) THE NO-TEXT-INPUT TAXONOMY (the S64-G lesson's own recurrence): a typing-target predicate that exempts `<input>` wholesale and carves out no-text types must enumerate the WHOLE no-text family — S64-G carved `range` (a slider accepts no text) and left `color` behind: after the native color picker closes, focus RESTS on the swatch, and the blanket input exemption stands Ctrl+Z/Delete/tool keys down behind it (the most likely next action after a Fill pick is UNDO). The audit question mirrors F69's portal-role question: which input types does the app render, and which of them accept NO text? (range, color — and the carve-out is `type !== "range" && type !== "color"`.) The predicate is PURE — the family's first honest BEHAVIORAL pin calls it with stub elements (`{tagName: "INPUT", type: "color"}`) instead of pinning only the source text. (2) THE PIN-GREP CLOSURE of the count-drift family (F68's own hazard, realized): the S82-E docs pass grepped every DOCTRINE file for stale counts and re-anchored the s81 count pins — but never grepped the OTHER PINS; the s69 pin (an older, quieter sibling pinning the same DEPLOYMENT.md counts) stayed at 61/259 while the doc said 63/260, and the unit gate sat RED at 960/961 for an entire session cycle, contradicting the delivery's own "full gate green" claim. The closure: when a delivery changes any count a doc carries, grep BOTH the doctrine files AND `tests/*lows*.test.ts` for every number that moved — a pin that pins a doc's count is a SECOND copy of that count, and the family grep must reach both copies. The red-gate discovery came from the NEXT session's baseline re-proof (the F59 corollary's payoff — but only if the lead actually RUNS the baseline before planning, which caught it one cycle late because the prior session's claim was trusted instead of re-run at the start). (3) THE HERMETIC-ENV INHERITANCE LEAK: a "hermetic" test server built as `{...process.env, ...overrides}` inherits EVERY exported var of the parent shell — the overrides pin what the suite NEEDS but nothing DELETES what the suite must not see (an operator's exported DIGMA_PROXY_HOPS=0 collapses the auth rate-limit budget and breaks auth arithmetic; the OTP/RESET suppression knobs null pins). The hermetic form: copy the env, DELETE the app-knob keys, then apply the pinned overrides (PATH/HOME survive for the spawn). The same leak exists in any execSync/global-setup that spreads the parent env. (4) THE SYNC-COST-IN-TRANSACTION smell: a count-guarded creation transaction that computes a scrypt hash inside its callback holds the SQLite writer window open for sync CPU work with no transaction dependency — compute constants BEFORE `db.$transaction`, consume them inside (behavior identical, the writer window shorter).**
 
 
 ## §13 Pitfalls to Avoid
@@ -507,7 +509,7 @@ Rule: portal layers stack Radix-default (`z-50`); the Toaster outranks dialogs s
 
 ## §19 Color & Token Reference (Complete)
 
-The single source is the `@theme` block in `src/app/globals.css` (162 lines). Full table in PAD §5.2. Editor accent colors used on canvas elements (fill defaults): `DEFAULT_FILL` and named colors in `src/lib/editor.ts` — clamped/verified through `src/lib/validation.ts` (hex regex) and `sanitizeLlmOperations` for AI-originated values.
+The single source is the `@theme` block in `src/app/globals.css` (138 lines). Full table in PAD §5.2. Editor accent colors used on canvas elements (fill defaults): `DEFAULT_FILL` and named colors in `src/lib/editor.ts` — clamped/verified through `src/lib/validation.ts` (hex regex) and `sanitizeLlmOperations` for AI-originated values.
 
 Contrast (measured): foreground `#0f172a` on white ≈ 15.9:1 (AAA); muted-foreground `#6b7280` ≈ 5.9:1 (AA); editor text `#e6edf3` on `#0d1117` ≈ 13.4:1 (AAA). Top-bar avatars: `#3B82F6` (user) + `#10B981` ("S") on white text.
 
@@ -564,7 +566,7 @@ Prisma models (5): `User` (email unique, scrypt passwordHash, avatarColor), `Pro
 
 | Thing | Where |
 |---|---|
-| Route folders (capitalized) | `src/app/{Dashboard,Recent,Teams,Editor}/page.tsx` + root `page.tsx` + `login/` |
+| Route folders (capitalized) | `src/app/{Dashboard,Recent,Teams,Editor}/page.tsx` + root `page.tsx` + `login/` + `reset-password/` |
 | Legacy redirects | `src/proxy.ts` |
 | THE editor store | `src/components/editor/editor-store.ts` |
 | Autosave + Untitled seam | `src/components/editor/editor-view.tsx` (`useAutosave`, `ensureProject`, `UNTITLED_PROJECT`) |
@@ -579,7 +581,7 @@ Prisma models (5): `User` (email unique, scrypt passwordHash, avatarColor), `Pro
 | GuardedNumberInput — the S21-2 empty-draft guard on the inline value inputs (session 53: Rotation value / Opacity value / gradient stop positions) + the CanvasBackgroundSection mobile surface (the Edit-canvas-properties chip, mutually exclusive with the element chip) | `src/components/editor/properties-panel.tsx` + `src/components/editor/editor-view.tsx` (MobileCanvasProperties) + `tests/guarded-number-input.test.ts` + `tests/canvas-background-section.test.ts` |
 | The export format menu (session 54: the honest “Download” trigger opening the PNG + SVG items; `downloadSvg` prepends the XML declaration — the saved file carries no HTTP charset header; both formats share the one `triggerBlobDownload` anchor) + the three Sheets' `SheetDescription` purpose wiring | `src/components/editor/editor-view.tsx` (the zoom-cluster menu) + `src/lib/export-png.ts` (`downloadSvg`/`triggerBlobDownload`) + `tests/export-menu.test.ts` + `tests/sheet-descriptions.test.ts` |
 | Per-element Scale + transform chain `translate scale rotate` (ADR-012) | `src/lib/editor.ts` (model + bounds), `canvas.tsx` (render + visual-space resize) |
-| Smoke suite | `scripts/smoke-test.sh` (58 checks) |
+| Smoke suite | `scripts/smoke-test.sh` (63 checks) |
 | Design tokens | `src/app/globals.css` `@theme` |
 | Push procedure | `docs/ssh_git_wrapper_v3.py` + `docs/how-to-git-push-using-ssh-wrapper_SKILL.md` |
 | Demo login | `demo@digma.app` / `Digma1234!` |

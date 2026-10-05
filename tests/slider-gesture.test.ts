@@ -171,7 +171,11 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
       "utf8",
     );
     expect(editorLibSource).toMatch(/export function isTypingTarget\(/);
-    expect(editorLibSource).toMatch(/const type = \(el as HTMLInputElement\)\.type;\s*return type !== "range";/);
+    // Session 83 (S83-A): legitimately re-anchored from the single-carve-out
+    // form — the S64-G carve-out family grew its second no-text member
+    // (type="color", the A83-M1 fix); the intent (the no-text inputs let
+    // the shortcuts through, text inputs keep the exemption) is unchanged.
+    expect(editorLibSource).toMatch(/const type = \(el as HTMLInputElement\)\.type;\s*return type !== "range" && type !== "color";/);
     expect(viewSource).toMatch(/import \{[^}]*isTypingTarget[^}]*\} from "@\/lib\/editor"/);
   });
 

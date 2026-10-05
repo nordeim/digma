@@ -75,6 +75,13 @@ export async function POST(request: NextRequest) {
   // transaction unchanged (the S64-E contract survives the re-shape).
   let overCap = false;
   let user;
+  // Session 83 (S83-D — the thirty-first audit's B83-L2): the scrypt
+  // hash is computed BEFORE the transaction opens — the S82-C re-shape
+  // had placed hashPassword() inside the interactive callback, sync
+  // CPU work inside the SQLite writer window (lengthening both the
+  // held transaction and the event-loop block mid-transaction). The
+  // hash has no transaction dependency; behavior is identical.
+  const passwordHash = hashPassword(password);
   try {
     user = await db.$transaction(async (tx) => {
       const userCount = await tx.user.count();
@@ -86,7 +93,7 @@ export async function POST(request: NextRequest) {
         data: {
           email,
           name: name || email.split("@")[0] || "Designer",
-          passwordHash: hashPassword(password),
+          passwordHash,
           avatarColor: "#3B82F6",
           verified: false,
           verifyCode,

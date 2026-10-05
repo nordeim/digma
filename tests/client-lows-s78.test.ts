@@ -336,9 +336,17 @@ describe("the S77-C comment's honest two-live-regions form (S78-G / A-L6)", () =
     // discrete save-state flips) AND the transcript's role="log" (the
     // implicit polite arrival region). Two live-region semantics BY
     // DESIGN; no per-tick streams (the S76-D retirement stands).
+    // Session 83 (S83-E / A83-I1): legitimately re-anchored — the
+    // comment's honest form now says "TWO PERSISTENT live regions"
+    // (the root-layout Toaster's TRANSIENT polite regions joined the
+    // honest accounting); the intent (the transcript + the badge are
+    // the DESIGNED live regions, the one-region claim stays retired)
+    // is unchanged.
     const m = assistant.match(/Session 77 \(S77-C[\s\S]*?\*\//);
     expect(m).not.toBeNull();
-    expect(m?.[0]).toMatch(/two live regions by design|badge.*transcript|transcript.*badge/i);
+    expect(m?.[0]).toMatch(
+      /two persistent live regions|two live regions by design|badge.*transcript|transcript.*badge/i,
+    );
     // The retired false claim is gone:
     expect(m?.[0]).not.toMatch(/exactly-one-live-region/);
   });

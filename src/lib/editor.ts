@@ -271,6 +271,12 @@ export const ELEMENT_LIMIT = 2000;
  * stand down behind it. The pre-fix blanket input exemption left the
  * undo shortcut dead with focus resting on a slider: the drag's own
  * undo entry existed but was unreachable from the keyboard.
+ * Session 83 (S83-G — the thirty-first audit's A83-M1): the same
+ * carve-out reaches type="color" — a native color swatch input accepts
+ * no text either, and after the picker closes, focus rests on the
+ * swatch: the Fill/Stroke/Text/Background pickers would otherwise
+ * stand Ctrl+Z down behind a focused color input (the S64-G defect
+ * class on the one input type the carve-out never reached).
  * Text/password/email inputs keep the exemption (typing must never
  * trigger shortcuts). */
 export function isTypingTarget(target: EventTarget | null): boolean {
@@ -279,7 +285,7 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   const tag = el.tagName?.toLowerCase();
   if (tag === "input") {
     const type = (el as HTMLInputElement).type;
-    return type !== "range";
+    return type !== "range" && type !== "color";
   }
   return tag === "textarea" || tag === "select" || el.isContentEditable;
 }

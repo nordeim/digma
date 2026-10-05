@@ -73,7 +73,26 @@ export default defineConfig({
     timeout: 60_000,
     reuseExistingServer: false,
     env: {
-      ...process.env,
+      // Session 83 (S83-C — the thirty-first audit's B83-L1): the env
+      // copy DELETES the operator-exportable app knobs before the
+      // pinned overrides below apply. The raw `...process.env` spread
+      // leaked the parent shell into the "hermetic" server: an
+      // exported DIGMA_PROXY_HOPS=0 collapses the whole auth budget
+      // into the shared "unknown" bucket and breaks auth.spec's
+      // arithmetic; DIGMA_DISABLE_IN_APP_OTP=1 /
+      // DIGMA_DISABLE_IN_APP_RESET=1 fail the register/verify pins
+      // spuriously; DIGMA_REPO_ROOT misroutes the db-path anchors.
+      // PATH/HOME survive for the spawn; the five pinned overrides
+      // stand. The smoke suite's parent-DATABASE_URL refusal (S73-D)
+      // is the sibling discipline.
+      ...(() => {
+        const hermetic = { ...process.env } as Record<string, string>;
+        delete hermetic.DIGMA_PROXY_HOPS;
+        delete hermetic.DIGMA_DISABLE_IN_APP_RESET;
+        delete hermetic.DIGMA_DISABLE_IN_APP_OTP;
+        delete hermetic.DIGMA_REPO_ROOT;
+        return hermetic;
+      })(),
       PORT: String(PORT),
       NODE_ENV: "production",
       DATABASE_URL: E2E_DATABASE_URL,

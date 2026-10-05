@@ -466,13 +466,16 @@ export function AiAssistant() {
           per-tick stream). Pre-fix a screen-reader user submitted a
           prompt and heard silence until manually navigating into the
           list. Session 78 (S78-G / A-L6 — the F58 honesty reword): the
-          editor DOM carries TWO live regions BY DESIGN — this
-          transcript (atomic message arrivals) and the save-state
-          badge's discrete aria-live flips (editor-view.tsx) — and no
+          editor DOM carries TWO PERSISTENT live regions BY DESIGN —
+          this transcript (atomic message arrivals) and the save-state
+          badge's discrete aria-live flips (editor-view.tsx) — with no
           per-tick announcement streams (the S76-D retirement stands).
-          The old single-region claim here was false as written; this
-          is the honest form. No per-message live attribute rides the
-          bubbles. */}
+          Session 83 (S83-E / A83-I1): the root-layout Toaster ALSO
+          renders TRANSIENT polite live regions while toasts are up
+          (the autosave-failure family fires during editing) — the
+          honest count is "two persistent plus the toaster's transient
+          regions", not "exactly two". No per-message live attribute
+          rides the bubbles. */}
       <div role="log" className="editor-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {messages.map((message) =>
           message.role === "user" ? (

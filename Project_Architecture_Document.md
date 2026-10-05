@@ -1,14 +1,27 @@
-# Digma — Master Project Architecture Document (PAD) v1.61.0
+# Digma — Master Project Architecture Document (PAD) v1.62.0
 
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Document:** `README.md` (user-facing), `AGENTS.md` (operator quick-reference), `CLAUDE.md` (agent instructions)
-**Last Updated:** 2026-10-05 (v1.61.0 — the open-Select-stand-down/terminal-drain-exemption/refusal-redaction/user-ceiling/body-cap-runtime/docs-honesty pass: S82-A the shortcuts guard stands down behind an open Radix Select (the S57-C family never reached the listbox/combobox roles the Select renders — the vendored dist carries zero stopPropagation and its typeahead does NOT preventDefault plain letters, so with the Font Family list open I/R/A/H/T/V armed the tool behind the list and Delete deleted the selection behind the listbox; the selector gains the two-role belt), S82-B the drain exempts the 401 terminal (the S81-B disjunct made machineBusy permanently true on the S68-D dead-session path — both boundary drains burned the full 5s deadline; the honest-idle exemption), S82-C the check-db-contract refusal redacts both interpolations (the S64-F family missed sibling — a credentialed foreign export printed its password) + the register route gains the USER_LIMIT ceiling (the only unbounded creation surface — the TOCTOU-safe count-guarded transaction, the family grows to seven members), S82-D the smoke gate probes the 32 MB body cap at RUNTIME (the content-length fast path + the chunked stream counter — the S80-D runtime form; 61 -> 63), S82-E the docs honesty batch (the S81-E survivors: AGENTS/CLAUDE 924-sites, PAD 58/35-sites, the digma_SKILL ancient §11 counts + the noImplicitAny/346-lines/fontSize stale claims, README 16-route/5-page-route phrasing, the .env.example test-infra block); the 58th reference audit: no drift; the mobile nav 9/9 the 59th consecutive session — see the v1.61.0 revision block; the prior summary — the foreign-gesture-guard pass — see the v1.60.0 revision block)**Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
+**Last Updated:** 2026-10-05 (v1.62.0 — the color-swatch-carve-out/gate-repair/e2e-hermeticity/hash-before-tx/docs-honesty pass: S83-A the isTypingTarget carve-out reaches input[type="color"] (the S64-G no-text family's missed member — with focus resting on a Fill/Stroke swatch after the picker closes, Ctrl+Z/Delete/tool keys were dead behind the blanket input exemption; one widened line, pinned behaviorally + at the source), S83-B the gate repair (the session-82 S82-E docs pass updated DEPLOYMENT.md to 63/260 and re-anchored the s81 count pins but MISSED the older s69 pin — the unit gate sat RED at 960/961, the F68 hazard named precisely: the family grep must include the TESTS THAT PIN THE NUMBERS; the pin re-anchored + the DEPLOYMENT birth-miscount 6-pages/23-routes corrected to the real 7/25), S83-C the e2e server's hermetic env (the ...process.env spread leaked operator exports into the "hermetic" webServer — DIGMA_PROXY_HOPS=0 collapses the auth budget, the OTP/RESET knobs fail pins spuriously; the env copy now DELETES the four app knobs before the pinned overrides, in both playwright.config.ts and global-setup.ts), S83-D the register scrypt hash moves above the $transaction (sync CPU work out of the SQLite writer window), S83-E the docs honesty batch (~25 stale sites: the PAD §7.1 table's missing session-82 rows, the Appendix-B/line-count/env-table/API-table/per-spec-count sites, the "exactly two live regions" comment, AGENTS/CLAUDE seven-page-routes), S83-F the logs; the 59th reference audit: no drift (the Share/Present clipping byte-identical the 20th consecutive session); the mobile nav 9/9 the 60th consecutive session; unit 961 -> 994 / 138 files; smoke 63 and e2e 260 unchanged — see the v1.62.0 revision block; the prior summary — the open-Select-stand-down pass — see the v1.61.0 revision block)**
+
+**Audience:** Senior Engineers, Tech Leads, DevOps, and Onboarding Engineers
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
 This PAD documents the Digma clone codebase — a collaborative design workspace replicating the reference app at `https://digma-371dfd0d.base44.app/` on the Next.js 16 / React 19 / Tailwind 4 / Prisma-SQLite stack. It is the single source of truth for system structure; when code and this document disagree, the code wins and this document must be updated in the same commit.
 
 Every change is tagged with its source: `[RES]` = validated by web research, `[SR]` = self-review, `[CA]` = critical analysis, `[SYN]` = synthesis, `[SAN]` = sanitization pass, `[AUTH]` = auth alignment.
+
+#### Revision Block — v1.62.0 (Tracked Changes)
+
+**Date:** 2026-10-05 · **Session 83 (the thirty-first Mode C audit)**
+
+1. **S83-A (A83-M1, the headline): the isTypingTarget carve-out reaches the color swatch.** `src/lib/editor.ts` — the S64-G no-text carve-out (`return type !== "range"`) never reached `input[type="color"]`: the Fill/Stroke/Text/Background pickers render native color inputs, and after the picker closes focus rests on the swatch — the blanket input exemption stood Ctrl+Z (the most likely next action after a color pick), Delete, tool keys, and `?` down behind it. The one-line widening (`type !== "range" && type !== "color"`), pinned BEHAVIORALLY (the predicate is pure — the color stub asserted false, the range sibling false, the text-family survivors true) + at the source; the standing S64-G pin re-anchored onto the widened form. The live capture check (clone-37): with focus on the Fill swatch, "r" ARMS the Rectangle tool — the S64-G contract extended.
+2. **S83-B (B83-H1 — the gate repair): the s69 doc pin re-anchored + the DEPLOYMENT birth-miscount corrected.** The session-82 S82-E docs pass updated `docs/DEPLOYMENT.md` to the 63-smoke/260-e2e delivery counts and re-anchored the s81 count pins but missed the older s69 pin (`tests/doc-lows-s69.test.ts:89-99` still expected "61 smoke / 259 e2e") — the unit gate sat deterministically RED at 960/961, contradicting the session-82 "full gate green" claim. The F68 hazard named precisely: the family grep must include the TESTS THAT PIN THE NUMBERS, not only the doctrine files. The pin re-anchored to 63/260 with the miss documented in the pin; the same file's route-count block re-anchored 23 -> 25 routes with DEPLOYMENT.md:14-15 corrected to the real 7-page/18-file/25-route arithmetic (a birth miscount, not later drift).
+3. **S83-C (B83-L1): the e2e server's hermetic env.** `playwright.config.ts`'s webServer (and `tests/e2e/global-setup.ts`) spread `...process.env` into the "hermetic" standalone server — only DATABASE_URL/PORT/NODE_ENV/AUTH_SECRET/DIGMA_DISABLE_AI_LLM were pinned. An operator-exported `DIGMA_PROXY_HOPS=0` collapses the whole auth budget into the shared bucket and breaks auth.spec's arithmetic; `DIGMA_DISABLE_IN_APP_OTP=1` / `DIGMA_DISABLE_IN_APP_RESET=1` / `DIGMA_REPO_ROOT` all leak and fail the gate spuriously. The env copy now DELETES the four app knobs before the pinned overrides apply (PATH/HOME survive for the spawn) — the smoke suite's parent-DATABASE_URL refusal (S73-D) is the sibling discipline. The full e2e suite re-ran green under the new discipline (260/260).
+4. **S83-D (B83-L2): the register hash above the transaction.** `hashPassword(password)` computed before `db.$transaction` (a const consumed by the create) — the S82-C re-shape had placed the scrypt cost inside the SQLite writer window; behavior identical, the sync CPU work leaves the transaction.
+5. **S83-E (B83-L3 + A83-I1): the docs honesty batch.** ~25 stale sites corrected: the PAD §7.1 table's three missing session-82 rows (client-lows-s82 7 / server-lows-s82 11 / session82-fixes 1), PAD §3.2's "56 HTTP checks" + the primitives list (select) + the §11 line counts (editor-view 1870 / db-path 172 / smoke-test 490 / validation 242), digma_SKILL's project_state/§2/§11 "23 routes" -> 25 (twice) + "23 component files" -> 26 + "~101 auth lines" -> 127 + "(162 @theme lines)" -> 138 + Appendix B "(58 checks)" -> 63 + the route-folder list (+ reset-password) + the primitives list, AGENTS/CLAUDE "five page routes" -> seven (+ /reset-password), AGENTS' per-spec counts (auth.spec 16, mobile-properties 14), README's "6 models" -> 5 + "3 states" -> five (twice) + the mobile-nav pin phrasing (10 checks: 9 mobile + 1 tablet) + the env tables' missing knobs (README +IN_APP_OTP +PROXY_HOPS; CLAUDE +DISABLE_AI_LLM +PROXY_HOPS) + the "All endpoints" -> health carve-out + the API table's four missing auth endpoints, and the in-code "exactly two live regions" comment -> the honest "two persistent + the toaster's transient" form (the s78 pin re-anchored onto the same intent).
+6. **The 59th reference audit: NO DRIFT** (all standing datums byte-identical — the Share L385-R458/Present L466-R551 clipping the 20th consecutive session; the plain-number eval quirk hit a FOURTH time — the string-concatenation re-probe is the reliable form, the JSON-wrapped form also failed this cycle). The clone's mobile nav 9/9 the **60th consecutive session** (re-verified on the final S83 build). Unit **994 = 961 + 33 / 138 files** (24 defect pins deterministically RED pre-fix; 9 GREEN-by-design survival pins; THREE standing pins legitimately re-anchored — the s64 slider-gesture source pin onto the widened carve-out, the s78 live-regions pin onto the honest persistent/transient form, the s81 count pin onto 994/63/260 — all intents unchanged, all documented in the pins); smoke **63** and e2e **260** unchanged by design (the color carve-out rides the unit behavioral pin — the S64-G sibling's own form). **Docs aligned:** this revision block + the §7.1 table (the three s82 rows + 138/994) + the §7.4 checklist + §9.2 + §10 posture rows + the count-family honesty batch.
 
 #### Revision Block — v1.61.0 (Tracked Changes)
 
@@ -1770,7 +1783,7 @@ digma/
 │   │   │                          # PresentOverlay (S47-1: 44px exit, scroll
 │   │   │                          # lock, focus move/return, aria-modal)
 │   │   └── ui/                    # shadcn primitives: button, input, textarea,
-│   │                              # label, dialog, dropdown-menu, sheet, tabs, toaster
+│   │                              # label, dialog, dropdown-menu, select, sheet, tabs, toaster
 │   ├── hooks/use-toast.ts         # globalThis-backed toast store (useSyncExternalStore)
 │   └── lib/                       # Layer 1 pure domain + tests (see 3.3)
 ├── tests/
@@ -1778,9 +1791,9 @@ digma/
 │   └── e2e/                       # Playwright: auth, workspace, mobile-navigation,
 │                                  # present-mode, untitled-editor, editor-panels,
 │                                  # reset-password, parity
-├── scripts/smoke-test.sh          # 56 HTTP checks against the standalone build
+├── scripts/smoke-test.sh          # 63 HTTP checks against the standalone build
 ├── docs/
-│   ├── screenshots/               # 20 captured PNGs (desktop/mobile/tablet/panels/auth/present)
+│   ├── screenshots/               # session evidence PNGs (the standard 32 + per-session ref-audit/capture sets, 600+ total across subdirs)
 │   ├── Tailwind-V4-Validation-Report.md
 │   ├── ssh_git_wrapper_v3.py      # SSH push wrapper (runbook in docs/)
 │   └── how-to-git-push-using-ssh-wrapper_SKILL.md
@@ -2035,7 +2048,7 @@ Contrast: body text `#0f172a` on `#ffffff` ≈ 15.9:1 (AAA); `--color-muted-fore
 
 ### 5.3 Component Primitives
 
-shadcn/ui (Radix) primitives in `src/components/ui/`: button (cva variants), input, textarea, label, dialog, dropdown-menu, sheet, tabs, toaster. Custom-built beyond the catalog: `logo.tsx` (gradient mark), `project-card.tsx` (thumbnail art + ellipsis menu), and the entire editor surface. Icons: lucide-react at default stroke; editor panel headers use smaller sizes for a softer look. The Toaster is deliberately NOT Radix Toast (ADR-007).
+shadcn/ui (Radix) primitives in `src/components/ui/`: button (cva variants), input, textarea, label, dialog, dropdown-menu, select, sheet, tabs, toaster. Custom-built beyond the catalog: `logo.tsx` (gradient mark), `project-card.tsx` (thumbnail art + ellipsis menu), and the entire editor surface. Icons: lucide-react at default stroke; editor panel headers use smaller sizes for a softer look. The Toaster is deliberately NOT Radix Toast (ADR-007).
 
 ### 5.4 Motion / Animation
 
@@ -2220,7 +2233,9 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | Unit — the runtime smoke-header pins + the docs-honesty absence pins (S80-D/E) | `tests/server-lows-s80.test.ts` | 12 | tests | Vitest |
 | Unit — the foreign-gesture coalesce guard + the behavioral foreign-ride pin + the machineBusy disjunct + the mount-guard pins (S81-A/B) | `tests/client-lows-s81.test.ts` | 7 | tests | Vitest |
 | Unit — the smoke-knob boot pin + the hermeticity note pin + the docs-honesty count pins (S81-C/E) | `tests/server-lows-s81.test.ts` | 12 | tests | Vitest |
-| **Unit total** | **135 files** | **961** | | Vitest |
+| Unit — the open-Select stand-down selector pins + the drain predicate pin (S82-A/B) | `tests/client-lows-s82.test.ts` | 7 | tests | Vitest |
+| Unit — the refusal-redaction pins + the USER_LIMIT family pins + the smoke-probe pins (S82-C/D/E) | `tests/server-lows-s82.test.ts` | 11 | tests | Vitest |
+| **Unit total** | **138 files** | **994** | | Vitest |
 | E2E — auth journeys + card states + from_url guard | `tests/e2e/auth.spec.ts` | 16 | tests/e2e | Playwright |
 | E2E — reset-password journeys | `tests/e2e/reset-password.spec.ts` | 7 | tests/e2e | Playwright |
 | E2E — session setup | `tests/e2e/auth.setup.ts` | 1 | tests/e2e | Playwright |
@@ -2259,6 +2274,7 @@ Residual risks (accepted for a demo-scale app): in-process rate limiter resets o
 | E2E — the Untitled-boundary soft-swap reset + the swap-boundary flush persistence (order-independent) + the hidden-selection chrome (S79-A/B/E) | `tests/e2e/session79-fixes.spec.ts` | 3 | tests/e2e | Playwright |
 | E2E — the in-flight boundary race (the route-delayed PUT — order-independent self-relative values) + the Untitled-to-Untitled transcript reset (S80-A/B) | `tests/e2e/session80-fixes.spec.ts` | 2 | tests/e2e | Playwright |
 | E2E — the mount double-PUT guard (the route-counted transports through the mount navigation — pre-fix 2, post-fix 1) (S81-B) | `tests/e2e/session81-fixes.spec.ts` | 1 | tests/e2e | Playwright |
+| E2E — the open-Select tool-switch discriminator (the S82-A stand-down guard — mid-open assertions use CSS locators, the Radix aria-hidden blinding) (S82-A) | `tests/e2e/session82-fixes.spec.ts` | 1 | tests/e2e | Playwright |
 | **E2E total** | **39 files** | **260** | | Playwright |
 | Smoke — HTTP surface | `scripts/smoke-test.sh` | 63 | scripts | bash + curl + jq |
 
@@ -2277,7 +2293,7 @@ No numeric coverage tooling is configured (deliberate: the check counts are the 
 
 - [ ] `bun run lint` clean (React 19 hook rules are errors, not warnings)
 - [ ] `bun run typecheck` clean (build has `ignoreBuildErrors` — this is the type gate)
-- [ ] `bun run test` → 961/961
+- [ ] `bun run test` → 994/994
 - [ ] `bun run build` succeeds; standalone assets copied
 - [ ] `./scripts/smoke-test.sh` → 63/63 (dev server STOPPED — the script's own standalone boot must own :3000; run with `unset DATABASE_URL &&` in the SAME command — the smoke server inherits the parent shell's exported URL otherwise and opens an EMPTY database)
 - [ ] `bun run test:e2e` → 260/260 (fresh e2e DB incl. the backdated-portfolio seed amendment; :3100; the webServer sets DIGMA_DISABLE_AI_LLM=1 — the deterministic AI seam)
@@ -2341,7 +2357,7 @@ Demo login: `demo@digma.app` / `Digma1234!`. Ensure no exported `DATABASE_URL` a
 | `bun run dev` | repo root | dev server :3000, logs tee'd to `dev.log` |
 | `bun run build` / `bun run start` | repo root | production standalone |
 | `bun run lint` / `bun run typecheck` | repo root | quality gates |
-| `bun run test` / `bun run test:watch` | repo root | unit tests (961 checks / 135 files) |
+| `bun run test` / `bun run test:watch` | repo root | unit tests (994 checks / 138 files) |
 | `bun run test:e2e` | repo root | Playwright suite (:3100, own DB) |
 | `./scripts/smoke-test.sh` | scripts/ | 63 HTTP checks (needs build; unset DATABASE_URL in the same command) |
 | `bunx prisma generate` | repo root | regenerate client after schema edits |
@@ -2365,6 +2381,10 @@ Enforced by ESLint 9 (`eslint-config-next`): React 19 hook rules including `set-
 | Priority | Issue | Impact | Status |
 |----------|-------|--------|--------|
 | HIGH | The forgot-password route returns the live reset URL in the response body when DIGMA_DISABLE_IN_APP_RESET is unset (the shipped default) — an unauthenticated caller knowing any email receives the single-use token (B82-H1, the 30th audit; the impact rated High, the posture triple-documented) | Account takeover of any known email on a knob-unset PUBLIC deploy; the local self-hosted production story (the primary documented deployment) depends on the in-band delivery — no email infra exists there | Open (documented posture — ADR-0014 / S64-D / DEPLOYMENT.md §2 "Yes for public deploys"; the mitigation knob ships; the candidate fixes all break the local-production story or grow the env surface; the posture row STRENGTHENED with the auditor's reasoning in remediation-plan-session82.md §deferred-queue #1) |
+| LOW | Cross-tab re-authentication never revives the autosave terminal: sessionDead lives in the useAutosave effect closure and clears only on remount — a user re-authenticating in a SECOND tab and returning to the still-open editor tab finds every edit re-armed into a no-op flush (A83-L1) | The recovered-session work is never persisted despite the live cookie; the badge honestly reads "Unsaved"; manual export remains the escape hatch; the same-tab flow (the /login navigation unmounts the editor) works | Open (posture — the honest fix needs a session-revival signal the cookie layer does not expose; a re-validation flush risks the S57-B swap-guard family; documented with the auditor's reasoning in remediation-plan-session83.md §deferred-queue #1) |
+| LOW | The mobile Sheets' selection-empty early-return (`return null` with open still true) unmounts the portal without a controlled close — focus drops to document.body, no focus return to the trigger (A83-L2) | Keyboard users' next Tab restarts from the page top; the trigger path is rare (selection emptying behind a modal scrim); the same component's lg-crossing close is the correct controlled form | Open (posture — a controlled-close re-shape touches the S65-B gesture-terminal seam; cosmetic against a documented-stable surface) |
+| LOW | The Components panel's "New component" button renders focusable + enabled with no onClick — the reference's own dead chrome carried by the clone (A83-L3) | A keyboard user reaches a button that does nothing; component authoring is the documented scope cut | Open (posture — the reference-parity question; the header comment's PAD citation fixed in S83-E to name this row; a working implementation is a feature decision) |
+| INFO | The "exactly two live regions" comment claim (A83-I1) FOLDED into S83-E (the honest persistent/transient form); the template-preview raw `<img>` (A83-I2), the per-instance "Session expired" re-toast (A83-I3), the smoke chunked probe's HTTP/1.1-only form (B83-I2 — curl rejects manual TE headers over h2; the script never passes --http2), and check-db-contract's whitespace-padded over-refusal (B83-I3 — safe direction) | Benign/deliberate/bounded — each documented with the audit's reasoning | Open (posture rows) |
 | LOW | The vendored Select primitive hardcodes the editor's dark app chrome (border-[#30363d] bg-[#0d1117]/bg-[#161b22]) at the primitive level, breaking the vendored-family token norm (A82-L2) | Maintainability/consistency only — every current consumer is the dark properties panel; a future light-surface consumer silently renders dark chrome (the F35e drift-hazard class at a primitive boundary) | Open (posture — the token migration queued; explains why RecentView uses a native select) |
 | LOW | Reset tokens and OTP codes are stored recoverable (plaintext) in the User row (B82-L6) | DB-file/backup compromise yields live account-takeover within the 60-minute window | Open (posture — consistent with the in-band delivery posture B82-H1; token-at-rest hashing — sha256(token) lookup — is the standard complement when the delivery model changes) |
 | LOW | The tool rail's 32px buttons sit below the repo's 44px touch floor on the phone band (A82-I4; the zoom cluster documented the same parity posture) | Touch-target ergonomics on the mobile editor's primary surface; no functional defect | Open (parity posture — the reference-measured geometry; the S78-F floor extension awaits a forcing function) |
@@ -2421,7 +2441,7 @@ None of the above are release blockers for the deliverable; all are consciously 
 | File | Lines | Purpose |
 |------|-------|---------|
 | `src/components/editor/editor-store.ts` | 483 | THE Zustand store: elements, selection, tool, zoom/pan ([0.1, 5] clamps — RA-50), undo/redo, saveState; moveElements skips locked ids (S23) |
-| `src/components/editor/editor-view.tsx` | 1844 | Editor layout + 800ms-debounced autosave PUT + id remap + chip responsive guard + the avatar stack (the reference's verbatim "Sarah UI" second chip + the UNGATED counter, S37) + the MOBILE-HEADER WRAP (S48-2: flex-wrap below sm, icon-only Share/Present with aria-labels, sm:h-12 keeps the desktop single-row pixel-identical) + the single-source toolForShortcut wiring (S48-1) |
+| `src/components/editor/editor-view.tsx` | 1870 | Editor layout + 800ms-debounced autosave PUT + id remap + chip responsive guard + the avatar stack (the reference's verbatim "Sarah UI" second chip + the UNGATED counter, S37) + the MOBILE-HEADER WRAP (S48-2: flex-wrap below sm, icon-only Share/Present with aria-labels, sm:h-12 keeps the desktop single-row pixel-identical) + the single-source toolForShortcut wiring (S48-1) |
 | `src/components/editor/canvas.tsx` | 776 | Pointer events: draw/move/resize/select; zoom/pan; scale-aware transforms + visual-space resize; renders only VISIBLE elements (S19); the LOCKED pointer wall (S23) + the fill paint seam's four keys incl. backgroundSize/Position (S43) |
 | `src/components/editor/properties-panel.tsx` | 1528 | Reference five-section layout + Transform scale (ADR-011/012); NumberField empty-draft semantics (S21); the Gradient tab's Angle gate (Linear-only, RA-56) + the stop-remove control (RA-55) + the Image tab's Background Size select (RA-61); the per-tick readout spans carry no live region (S76-D — the native range input announces its own value) |
 | `src/components/editor/components-panel.tsx` | 42 | Reference Components column + empty state (ADR-010) |
@@ -2438,7 +2458,7 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `src/lib/editor.ts` | 915 | Pure element domain: types, geometry, clamps, scale-aware bounds + the fill seams (defaultGradient/gradientCss/addGradientStop/REMOVE-STOP/parseGradient/fillPaintFor/fillImageSizeFor/clampFillImageFit, sessions 41-43) |
 | `src/lib/ai-assistant.ts` | 379 | LLM sanitizer + deterministic fallback parser |
 | `src/lib/auth.ts` | 127 | scrypt + HMAC sessions, cookie helpers |
-| `src/lib/db-path.ts` | 165 | Minifier-safe SQLite URL anchoring (ADR-002/002a) |
+| `src/lib/db-path.ts` | 172 | Minifier-safe SQLite URL anchoring (ADR-002/002a) |
 | `src/app/api/projects/[id]/elements/route.ts` | 273 | Full-list transactional replace (Pattern 3); the GET docstring carries the honest consumer note (S76-F) |
 | `src/hooks/use-toast.ts` | 90 | globalThis toast infra + `useSyncExternalStore` (ADR-007) |
 | `src/hooks/use-media-query.ts` | 38 | The media-query subscription hook (S75-E — `useSyncExternalStore` + the desktop-first getServerSnapshot; gates the three editor panel mounts below md/lg so the invisible trees stop re-rendering per drag tick) |
@@ -2455,9 +2475,9 @@ None of the above are release blockers for the deliverable; all are consciously 
 | `tests/db-path.test.ts` | 228 | db-path resolution contract (19 checks, incl. DIGMA_REPO_ROOT) |
 | `src/proxy.ts` | 43 | Legacy lowercase → canonical 307 redirects (ADR-008; Next 16 `proxy` convention) |
 | `tests/e2e/untitled-editor.spec.ts` | 57 | Untitled-editor contract: bogus/missing id, create-on-first-save (ADR-009) |
-| `scripts/smoke-test.sh` | 430 | 63 HTTP checks against the standalone build (incl. the register→verify→resend round-trip, session 43) |
+| `scripts/smoke-test.sh` | 490 | 63 HTTP checks against the standalone build (incl. the register→verify→resend round-trip, session 43) |
 | `src/lib/rate-limit.ts` | 147 | Fixed-window in-process limiter; the AMORTIZED eviction (S76-G — the min-resetAt watermark gates the sweep, the lazy per-entry reset keeps per-key observables identical) |
-| `src/lib/validation.ts` | 234 | Caps, enums, hex checks, clamps + the `readBoundedJson` seam (S75-B — the content-length fast path + the stream counter bounding the chunked-transfer family; S76-F — the fast path cancels the unconsumed stream, the ceiling comment carries the honest 1.45 GB arithmetic) |
+| `src/lib/validation.ts` | 242 | Caps, enums, hex checks, clamps + the `readBoundedJson` seam (S75-B — the content-length fast path + the stream counter bounding the chunked-transfer family; S76-F — the fast path cancels the unconsumed stream, the ceiling comment carries the honest 1.45 GB arithmetic) |
 
 ---
 

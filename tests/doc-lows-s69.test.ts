@@ -79,23 +79,41 @@ describe("the layers-row double-cast removal (S69-D / L-F)", () => {
 describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
   const doc = src("docs/DEPLOYMENT.md");
 
-  it("the route counts match the shipped build (18 route files / 23 routes)", () => {
+  it("the route counts match the shipped build (18 route files / 25 routes)", () => {
+    // Session 83 (S83-B): legitimately re-anchored from the birth
+    // miscount "23 routes" (6 pages + 18 files — the app has always
+    // shipped 7 page routes and 25 exported handlers across the 18
+    // files; the figure was a miscount at birth, not later drift).
+    // The pin's intent (DEPLOYMENT.md carries the REAL build
+    // arithmetic) is unchanged — now actually true.
     expect(doc).toMatch(/18 API route/);
-    expect(doc).toMatch(/23\s+routes/);
+    expect(doc).toMatch(/25\s+routes/);
+    expect(doc).toMatch(/7 page routes/);
     expect(doc.includes("14 API route")).toBe(false);
     expect(doc.includes("(20 routes")).toBe(false);
+    expect(doc.includes("6 page routes")).toBe(false);
+    expect(doc.includes("23 routes")).toBe(false);
   });
 
-  it("the verification checklist carries the real counts (61 smoke / 259 e2e)", () => {
+  it("the verification checklist carries the real counts (63 smoke / 260 e2e)", () => {
     // Session 81: legitimately re-anchored from 58/230 (the s69-era
     // counts) — the smoke suite grew 58 -> 61 (the S80-D runtime
     // header trio) and the e2e suite 230 -> 259 (the session-80/81
     // discriminators); the pin's intent (DEPLOYMENT.md carries the
     // DELIVERY counts) is unchanged.
-    expect(doc).toMatch(/61 .*smoke|smoke.*61|61 checks/);
-    expect(doc).toMatch(/259 .*Playwright|Playwright.*259|259 checks/);
+    // Session 83 (S83-B — the thirty-first audit's B83-H1): re-anchored
+    // 61/259 -> 63/260 — the S82-E docs pass updated DEPLOYMENT.md to
+    // the session-82 delivery counts and re-anchored the s81 count
+    // pins but MISSED this older s69 pin (the exact F68 hazard: the
+    // family grep must include the TESTS THAT PIN THE NUMBERS, not
+    // only the doctrine files). The red pin broke the unit gate at
+    // 960/961 — this re-anchor repairs it.
+    expect(doc).toMatch(/63 .*smoke|smoke.*63|63 checks/);
+    expect(doc).toMatch(/260 .*Playwright|Playwright.*260|260 checks/);
     expect(doc.includes("28 E2E checks")).toBe(false);
     expect(doc.includes("51 Playwright checks")).toBe(false);
+    expect(doc.includes("61 smoke")).toBe(false);
+    expect(doc.includes("259 Playwright")).toBe(false);
   });
 
   it("§5 documents the one-time cookie eviction a tokenVersion deploy performs", () => {

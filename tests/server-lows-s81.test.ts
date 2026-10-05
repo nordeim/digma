@@ -115,7 +115,14 @@ const skill = readFileSync(
 // 961 unit (+18) / 63 smoke (+2 the body-cap probes) / 260 e2e
 // (+1 the open-Select discriminator); the intents (the docs carry
 // the DELIVERED counts) unchanged.
-const UNIT = "961";
+// Session 83: re-anchored to the session-83 delivery counts —
+// 994 unit (+33: the client-lows-s83 isTypingTarget behavioral
+// family 6, the server-lows-s83 hermeticity + hash-before-tx pins
+// 6, the doc-lows-s83 docs-honesty pins 21) / 63 smoke (unchanged)
+// / 260 e2e (unchanged — the color carve-out rides the unit
+// behavioral pin, the S64-G sibling's own form); the intents
+// unchanged.
+const UNIT = "994";
 const SMOKE = "63";
 const E2E = "260";
 

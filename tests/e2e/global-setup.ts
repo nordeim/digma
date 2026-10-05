@@ -11,8 +11,18 @@ import path from "node:path";
  */
 export default function globalSetup(): void {
   const repo = path.resolve(__dirname, "..", "..");
+  // Session 83 (S83-C — the thirty-first audit's B83-L1): the seed
+  // commands' env DELETES the operator-exportable app knobs before the
+  // pinned DATABASE_URL applies — the same hermeticity discipline the
+  // webServer env gained this session (the raw `...process.env` spread
+  // leaked the parent shell's exports into the e2e tooling).
+  const hermetic = { ...process.env } as NodeJS.ProcessEnv;
+  delete hermetic.DIGMA_PROXY_HOPS;
+  delete hermetic.DIGMA_DISABLE_IN_APP_RESET;
+  delete hermetic.DIGMA_DISABLE_IN_APP_OTP;
+  delete hermetic.DIGMA_REPO_ROOT;
   const env = {
-    ...process.env,
+    ...hermetic,
     DATABASE_URL: "file:../db/e2e.db",
   } as NodeJS.ProcessEnv;
 
