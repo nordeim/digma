@@ -487,8 +487,15 @@ export function Canvas() {
           />
         ))}
 
-        {/* Selection outline + handles (single selection only) */}
-        {selected.length === 1 && selectionBounds && (
+        {/* Selection outline + handles (single selection only).
+            Session 79 (S79-E / A-I2 — the twenty-seventh audit's A-I2): the
+            chrome gates on VISIBILITY — the element render above filters
+            `el.visible` (the repo's own S23 coherence contract), but the
+            outline/handles derived from the UNFILTERED selection, so an
+            eye-hidden selected element kept a floating outline with 8
+            live draggable handles over blank canvas (invisible resizing —
+            the row's eye state and the canvas chrome disagreed). */}
+        {selected.length === 1 && selectionBounds && selected[0]!.visible && (
           <div
             className="pointer-events-none absolute"
             style={{
@@ -547,7 +554,13 @@ export function Canvas() {
             ))}
           </div>
         )}
-        {selected.length > 1 && selectionBounds && (
+        {/* Session 79 (S79-E / A-I2): the multi-selection dashed box
+            gates on visibility too — the marquee only ever selects
+            VISIBLE elements, but the eye toggle can hide selected
+            members; an all-hidden selection renders no box (the same
+            eye/canvas coherence contract as the single-selection chrome
+            above). */}
+        {selected.length > 1 && selectionBounds && selected.some((el) => el.visible) && (
           <div
             className="pointer-events-none absolute border border-dashed border-blue-400"
             style={{

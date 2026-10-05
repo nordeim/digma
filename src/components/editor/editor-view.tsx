@@ -1168,6 +1168,16 @@ export function EditorView({ user }: { user: HeaderUser }) {
   // Session 56 (S56-C): the flush handle — exit() routes through it.
   const flushNow = useAutosave();
 
+  // Session 79 (S79-B / A-M2 — the twenty-seventh audit's A-M2): the
+  // mount/swap discriminator for the load effect's outgoing flush. The
+  // effect runs on mount AND on every same-instance projectId change
+  // (the soft swap); only the SWAP needs the flush — a mount's previous
+  // instance already owned its boundary through the unmount cleanup's
+  // own captured-state PUT (flushing again here would double-PUT the
+  // same pending body — the S71-B discipline). The ref is consumed on
+  // the first run and stays false for the instance's lifetime.
+  const firstRunRef = React.useRef(true);
+
   // Load the project once — setState lands in the async continuation only.
   // Unknown or missing projectId NEVER dead-ends: the editor opens in
   // "Untitled" mode (reference parity, ADR-009) and the first autosave
@@ -1175,6 +1185,38 @@ export function EditorView({ user }: { user: HeaderUser }) {
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Session 79 (S79-B / A-M2): the swap-boundary flush of the
+      // OUTGOING project's pending edits. Pre-fix every flush transport
+      // was wired to a different boundary — exit()'s flushNow, the
+      // unmount cleanup's captured-state PUT (the autosave effect is
+      // keyed [] and never re-runs on a same-route swap), pagehide — and
+      // the 800ms timer's flush early-returns once loadProject stamps
+      // saveState "saved"; an edit inside the debounce window before the
+      // swap was silently lost (unrecoverable — loadProject also clears
+      // past/future). The fix routes through THE MACHINE at the boundary:
+      // flushNow's synchronous prefix captures the outgoing state
+      // (capturedElements/capturedProjectId + the in-flight descriptor
+      // BEFORE setSaving — the S71-B ordering), ensureProject returns the
+      // named id with NO network call (the verified fast path), and the
+      // machine's own swap guard (capturedProjectId && now.projectId !==
+      // capturedProjectId → return) drops the stale response after the B
+      // load lands — the exact S57-B/S71-B design the exit() path
+      // already exercises. The pending requeue reads the loaded "saved"
+      // and early-returns. Guards: only a NON-first run (the mount
+      // boundary belongs to the previous instance's unmount cleanup —
+      // no double-PUT), only a NAMED outgoing project (Untitled skips —
+      // the documented ADR-009/S61-I/S62-C leave-scope contract the
+      // unmount cleanup's own skip mirrors), and only when the incoming
+      // load actually replaces it (the same-project adoption re-run is
+      // the S61-I skip below — it never reaches a loadProject).
+      if (!firstRunRef.current) {
+        const outgoing = useEditorStore.getState();
+        const willReplace = projectId ? outgoing.projectId !== projectId : true;
+        if (outgoing.projectId && willReplace) {
+          flushNow();
+        }
+      }
+      firstRunRef.current = false;
       if (projectId) {
         // Session 61 (S61-I, en-route — the adoption-clobber guard): Next
         // 14.1+ integrates window.history.replaceState into the App

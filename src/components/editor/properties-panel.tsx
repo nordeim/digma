@@ -300,6 +300,19 @@ function HexColorRow({
               onChange(next);
             }
           }}
+          // Session 79 (S79-E / A-L1 — the twenty-seventh audit's A-L1):
+          // the abandoned-draft blur-restore (the GuardedNumberInput /
+          // NumberField doctrine). The Canvas Background row DELIBERATELY
+          // swallows a null clear (a canvas cannot be transparent — the
+          // color && onChange(color) guard), so a cleared field never
+          // changed the model, never triggered the external-value resync,
+          // and sat showing an empty input while the canvas kept painting
+          // the old color — the control lied about its state. The blur
+          // restores the draft from the model's real value. Sibling rows
+          // (Fill/Stroke/Text) commit the null clear for real (their
+          // value changes — the resync fires), and an INVALID non-empty
+          // draft (an abandoned "#gg") restores the same way.
+          onBlur={() => setDraft(value ?? "")}
           className="h-8 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
         />
       </div>

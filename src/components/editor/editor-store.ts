@@ -46,6 +46,20 @@ type EditorStore = {
   saveState: SaveState;
   past: Snapshot[];
   future: Snapshot[];
+  // Session 79 (S79-A / A-M1 — the twenty-seventh audit's headline):
+  // the BOARD LINEAGE discriminator. loadProject and attachProject both
+  // transition the store's projectId "" -> id, but they are OPPOSITE
+  // lineage events: a load REPLACES the canvas (a different board's
+  // elements), an adoption binds the id of the board the canvas already
+  // IS (the Untitled first-save flow). The S78-A scope guards keyed off
+  // the projectId shape alone, so an Untitled editor soft-swapping to a
+  // named project passed every guard at the "" boundary — the Untitled
+  // transcript (and its revert carriers) rode into the loaded project.
+  // boardEpoch increments ONLY on loadProject; attachProject deliberately
+  // leaves it alone. Consumers: the AI transcript's reset subscription
+  // (the load-aware adoption exemption), the revert belt (scopeEpoch),
+  // and the mid-flight send guard (sendEpoch).
+  boardEpoch: number;
   // Session 56 (S56-A — the Mode C audit's H-1): the transient
   // PRE-gesture snapshot. beginGesture() captures it at pointer-down;
   // endGesture() pushes it into `past` at pointer-up (one history entry
@@ -141,13 +155,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   zoom: 1,
   panX: 0,
   panY: 0,
+  boardEpoch: 0,
   saveState: "saved",
   past: [],
   future: [],
   gestureSnapshot: null,
 
   loadProject: (project) =>
-    set({
+    set((state) => ({
       projectId: project.id,
       projectName: project.name,
       projectDescription: project.description,
@@ -157,6 +172,11 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       past: [],
       future: [],
       saveState: "saved",
+      // Session 79 (S79-A / A-M1): a load is a LINEAGE BREAK — the
+      // epoch moves (attachProject's adoption deliberately does not —
+      // the same canvas, freshly bound). The AI transcript's scope
+      // guards read this to tell the two "" -> id transitions apart.
+      boardEpoch: state.boardEpoch + 1,
       // Session 61 (S61-C — the ninth audit's A-L-2): the load boundary
       // resets the VIEWPORT and the armed tool too. The store is a module
       // singleton surviving App Router soft navigation, so the previous
@@ -174,7 +194,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       // session — the autosave machine's gesture-deferral would otherwise
       // loop forever on the stale snapshot (PUT → setUnsaved → 800ms → …).
       gestureSnapshot: null,
-    }),
+    })),
 
   attachProject: (id) => set({ projectId: id }),
 

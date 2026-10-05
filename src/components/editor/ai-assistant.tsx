@@ -26,6 +26,16 @@ type ChatMessage = {
   // — a plain bubble is transcript history, but a carrier can mutate
   // the canvas, so its scope is what the belt checks at revert time.
   scopeId?: string;
+  // Session 79 (S79-A / A-M1 — the twenty-seventh audit's headline):
+  // the BOARD LINEAGE epoch the message was sent under (the store's
+  // boardEpoch at send time — loadProject increments it, attachProject's
+  // adoption does not). The S78-A scopeId belt keyed on the projectId
+  // shape alone, so a carrier captured under Untitled ("") passed the
+  // belt as falsy — the epoch is the discriminator a ""-scoped carrier
+  // needs: a revert on ANY board other than the one it was captured on
+  // (named OR Untitled) is a no-op, while the genuine adoption (the
+  // epoch never moves) still reverts.
+  scopeEpoch?: number;
 };
 
 // The reference's measured example prompts — rendered under the input as
@@ -110,7 +120,15 @@ export function AiAssistant() {
     return useEditorStore.subscribe((state, prevState) => {
       if (state.projectId === prevState.projectId) return;
       const adoption = prevState.projectId === "" && state.projectId !== "";
-      if (adoption) return;
+      // Session 79 (S79-A / A-M1): the exemption is LOAD-AWARE. A
+      // loadProject "" -> id transition is projectId-shaped EXACTLY like
+      // the adoption — but the epoch moves (a different board's elements
+      // replaced the canvas). Pre-fix the Untitled transcript (and its
+      // revert carriers) rode a soft swap into the loaded project through
+      // this hole; now only the genuine adoption (attachProject — the
+      // epoch unchanged, the same canvas freshly bound) keeps its
+      // exemption.
+      if (adoption && state.boardEpoch === prevState.boardEpoch) return;
       setMessages([
         {
           id: "intro",
@@ -239,7 +257,18 @@ export function AiAssistant() {
     // a fresh Untitled). A carrier captured under Untitled ("") follows
     // the canvas through the adoption transition — the same lineage, the
     // first save's attachProject never changed the elements.
+    // Session 79 (S79-A / A-M1): the EPOCH belt — the ""-scoped carrier's
+    // discriminator. Pre-fix an Untitled carrier passed the scopeId belt
+    // as falsy and reverted into ANY later board (a soft swap into a
+    // named project put the Untitled board's elements into the loaded
+    // project's store — unsaved — the autosave PUT into it). The epoch
+    // comparison closes the hole at every boundary: the carrier reverts
+    // ONLY on the board it was captured on (named OR Untitled; the
+    // genuine adoption never moves the epoch).
     if (message.scopeId && message.scopeId !== useEditorStore.getState().projectId) {
+      return;
+    }
+    if (message.scopeEpoch !== useEditorStore.getState().boardEpoch) {
       return;
     }
     useEditorStore.getState().restoreSnapshot(message.revertSnapshot);
@@ -256,6 +285,13 @@ export function AiAssistant() {
     // Session 78 (S78-A): the send-time scope — the belt and the
     // mid-flight guard both compare against this capture.
     const sendScopeId = state.projectId;
+    // Session 79 (S79-A / A-M1): the send-time lineage epoch — the
+    // ""-boundary half of the same capture. An Untitled send whose board
+    // was LOAD-swapped mid-await (the epoch moved) must refuse exactly
+    // like a named-scope mismatch; an Untitled send whose board was
+    // ADOPTED mid-await (attachProject — the epoch never moves) still
+    // applies, the lineage-correct behavior.
+    const sendEpoch = state.boardEpoch;
     const userMessage: ChatMessage = {
       id: `u-${Date.now()}`,
       role: "user",
@@ -319,7 +355,15 @@ export function AiAssistant() {
       // send-scope still applies through the adoption transition (the
       // canvas lineage is the same — the first save's attachProject never
       // changed the elements).
-      if (sendScopeId !== "" && preApply.projectId !== sendScopeId) {
+      // Session 79 (S79-A / A-M1): the epoch half — an Untitled send
+      // whose board was LOAD-swapped mid-await (a soft /Editor ->
+      // /Editor?projectId=B swap through the "" boundary) refused
+      // NOTHING pre-fix; the epoch mismatch is that boundary's honest
+      // refusal (the adoption mid-await never moves the epoch — applies).
+      if (
+        (sendScopeId !== "" && preApply.projectId !== sendScopeId) ||
+        sendEpoch !== preApply.boardEpoch
+      ) {
         setMessages((prev) => [
           ...prev,
           {
@@ -358,6 +402,7 @@ export function AiAssistant() {
           actionCount,
           revertSnapshot: actionCount > 0 ? revertSnapshot : undefined,
           scopeId: sendScopeId,
+          scopeEpoch: sendEpoch,
         },
       ]);
     } catch {
