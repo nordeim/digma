@@ -453,6 +453,37 @@ done
 [ "$RATE_HIT" = "1" ] && ok "login rate limit engages (429 RATE_LIMITED)" || bad "login rate limit engages — never saw 429"
 
 # ---------------------------------------------------------------------------
+step "== Request body cap (session 82 — the 32 MB bound at RUNTIME, S82-D / B82-L5) =="
+# The S80-D form: the bounded-input doctrine's flagship control was
+# covered only by the unit seam (tests/request-surface-s75.test.ts) — a
+# regression in the seam's WIRING (a route reverting to bare
+# request.json(), a Next/undici stream-semantics change) would fail
+# only source-regex pins. Two probes against the live server, each on
+# its own XFF identity (the auth limiter runs BEFORE the body parse —
+# one rate call each):
+#   1. the content-length fast path: a 33 MB --data-binary body (the
+#      header declares over the cap — readBoundedJson rejects before
+#      ANY byte is read);
+#   2. the chunked stream counter: the same body with an explicit
+#      "Transfer-Encoding: chunked" (curl then carries NO
+#      content-length — the S75-B stream-counter family's only
+#      runtime witness; a plain stdin pipe does NOT force chunked,
+#      curl buffers it and declares the length).
+dd if=/dev/zero of=/tmp/smoke-bigbody.bin bs=1024 count=33000 2>/dev/null  # 33 MB of zeros
+BIGBODY=$(curl -s -m 30 -X POST "$BASE/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -H "X-Forwarded-For: 10.9.8.7" \
+  --data-binary @/tmp/smoke-bigbody.bin)
+echo "$BIGBODY" | grep -q 'Request body too large (max 32 MB)' && ok "33 MB body rejected (content-length fast path)" || bad "content-length cap probe: $BIGBODY"
+CHUNKBODY=$(cat /tmp/smoke-bigbody.bin | curl -s -m 60 -X POST "$BASE/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -H "Transfer-Encoding: chunked" \
+  -H "X-Forwarded-For: 10.9.8.8" \
+  --data-binary @-)
+echo "$CHUNKBODY" | grep -q 'Request body too large (max 32 MB)' && ok "33 MB chunked body rejected (stream counter)" || bad "chunked cap probe: $CHUNKBODY"
+rm -f /tmp/smoke-bigbody.bin
+
+# ---------------------------------------------------------------------------
 step ""
 step "RESULT: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] || exit 1

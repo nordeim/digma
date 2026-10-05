@@ -33,11 +33,18 @@ function repoEnvDatabaseUrl(): string | null {
 const liveDatabaseUrl = process.env.DATABASE_URL ?? "";
 const ownDatabaseUrl = repoEnvDatabaseUrl();
 if (liveDatabaseUrl.trim() !== "" && liveDatabaseUrl !== ownDatabaseUrl) {
+  // Session 82 (S82-C / B82-M3): both interpolations route through
+  // redactDatabaseUrl() — the resolved-URL line below has done so
+  // since S78-G precisely because "a Postgres-backed checkout never
+  // prints its credentialed connection string"; the REFUSAL path was
+  // the family's missed sibling (a credentialed foreign export — or
+  // the repo's own .env Postgres value — printed its password to the
+  // terminal on refusal). The diagnostic shape is unchanged.
   console.error(
     "REFUSED: DATABASE_URL (" +
-      liveDatabaseUrl.slice(0, 60) +
+      redactDatabaseUrl(liveDatabaseUrl).slice(0, 60) +
       ") is a foreign export — it differs from the repo's own .env value" +
-      (ownDatabaseUrl ? " (" + ownDatabaseUrl + ")" : "") +
+      (ownDatabaseUrl ? " (" + redactDatabaseUrl(ownDatabaseUrl) + ")" : "") +
       " — so this check would run against the WRONG database. " +
       "Run it as: unset DATABASE_URL && bun run scripts/check-db-contract.ts"
   );

@@ -1389,3 +1389,20 @@ Work Log:
 
 Stage Summary:
 - Session 81 delivered on main: gate green at 943/61/259, the mobile nav contract held the 58th consecutive session, no reference drift, the deferred queue documented in docs/remediation-plan-session81.md
+
+---
+Task ID: digma-session-82
+Agent: Super Z (main agent)
+Task: The operator's session-cycle directive on the digma repo — refresh the workspace, re-validate against the mandated docs, the 58th reference audit, the 30th Mode C code audit with the repo skills, TDD remediation, the standing gates, the screenshots, the `.env.example`, the aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- The digma repo re-cloned (the sandbox reset — a fresh clone at 9ede741, the session-122 transcript push); the environment rebuilt (bun install, prisma generate, schema push, the DB seeded to the pristine 1/2/6/1/3 contract, .env recreated from .env.example at the mandated DATABASE_URL="file:../db/custom.db" with a fresh AUTH_SECRET); the exported parent-shell DATABASE_URL trap neutralized with the unset discipline
+- The mandated docs reviewed (AGENTS/CLAUDE/README/PAD v1.60.0/digma_SKILL v1.59.0 + session_121/session_122/remediation-plan-session81/worklog — the deep review delegated to two research subagents in parallel); all four S81 seams verified intact; the baseline gate re-proven green (943 unit / 61 smoke / 259 e2e)
+- The 58th reference audit vs https://digma-371dfd0d.base44.app/ (the real CDP login): NO DRIFT on any standing datum (the Share/Present clipping byte-identical the 19th consecutive session; the kbd/dead-chrome re-probes through the JSON-wrapped eval form — the plain-number quirk hit a third time); mobile nav 9/9 the 59th consecutive session (re-verified on the final S82 build)
+- The 30th Mode C audit (the lead's doc-review findings + two fresh-eyes subagents — A over the editor/client layer ~10.7k lines, B over the server/infra side all 18 routes + libs + configs): 0 Critical / 1 High (documented posture — the in-band reset delivery default, B82-H1) / 3 Medium / 6 Low / 10 Informational; the chosen set remediated TDD-first: the open-Select stand-down guard (the headline — the S57-C family never reached the Radix Select's listbox/combobox roles; letter keys armed tools behind the open list and Delete deleted the selection), the drain's 401-terminal exemption (the S81-B disjunct parked the drain at the 5s deadline on the dead-session path), the check-db-contract refusal redaction + the register USER_LIMIT ceiling, the smoke body-cap runtime probes (61 -> 63), the docs honesty batch (the S81-E survivors)
+- The e2e RED proven against the REBUILT pre-fix standalone (the F68 build discipline); the s81 mount spec's racy toBeHidden locator diagnosed with a pre-fix A/B (flaky, not a regression) and re-anchored onto the deterministic [data-element-id] count-0 form
+- Full gate green at 961 unit / 135 files / 63 smoke / 260 e2e; the capture with three new inline checks (the open-Select guard, the refusal redaction, the body-cap pair); dimensions 407/407; the VLM quota window still exhausted (429 — the fourth consecutive session; the run the documented follow-up); docs aligned (PAD v1.61.0, digma_SKILL v1.60.0 + lesson F69, AGENTS/CLAUDE/README + the route-count honesty, session_123)
+- Committed and pushed to git@github.com:nordeim/digma.git main via docs/ssh_git_wrapper_v3.py; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 82 delivered on main: gate green at 961/63/260, the mobile nav contract held the 59th consecutive session, no reference drift, the deferred queue documented in docs/remediation-plan-session82.md (B82-H1 the posture row strengthened with the auditor's reasoning; the LLM timeout note upgraded to "verified absent in the SDK")

@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite traced-schema trap trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.59.0
+version: 1.60.0
 last_updated: 2026-10-05
-project_state: "943 unit checks green · 259 Playwright checks green · 61 smoke checks green · build 23 routes"
+project_state: "961 unit checks green · 260 Playwright checks green · 63 smoke checks green · build 23 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -61,15 +61,15 @@ project_state: "943 unit checks green · 259 Playwright checks green · 61 smoke
 |---|---|---|---|
 | Framework | Next.js (App Router, Turbopack, standalone output) | ≥16.3.6 | Server components for pages; route handlers double as the API |
 | UI runtime | React | ≥19.3.0 | `useSyncExternalStore` for cross-chunk stores |
-| Language | TypeScript (strict except `noImplicitAny: false`) | ≥5.9.3 | `bun run typecheck` is the type gate (build has `ignoreBuildErrors`) |
+| Language | TypeScript (fully strict) | ≥5.9.3 | `bun run typecheck` is the type gate (build has `ignoreBuildErrors`) |
 | Styling | Tailwind CSS (CSS-first) | ≥4.3.3 | NO `tailwind.config.js`; `@theme` in `globals.css` |
 | Animation | tw-animate-css | ≥1.4.0 | CSS import, not a JS plugin |
 | Primitives | shadcn/ui on Radix | Radix ^1.x per package.json | dialog, dropdown-menu, sheet, tabs, toaster (custom), button, input, label, textarea |
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.1 | 943 checks; `*.test.ts` only |
-| E2E tests | Playwright | ≥1.63.0 | 259 checks; standalone server on :3100 with its own `db/e2e.db` |
+| Unit tests | Vitest | ≥5.0.1 | 961 checks; `*.test.ts` only |
+| E2E tests | Playwright | ≥1.63.0 | 260 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
 
@@ -97,7 +97,7 @@ bun run build && ./scripts/smoke-test.sh && bun run test:e2e   # full gates
 |---|---|
 | `next.config.ts` | `output: "standalone"`, `outputFileTracingRoot` pinned to the repo (ADR-007: prevents nested standalone paths when a parent lockfile exists), images remotePatterns (unsplash), `typescript.ignoreBuildErrors` (typecheck is the manual gate) |
 | `postcss.config.mjs` | `@tailwindcss/postcss` v4 — CSS-first pipeline |
-| `tsconfig.json` | strict TS (except `noImplicitAny: false`), `@/*` → `src/*`, **excludes `skills/`** |
+| `tsconfig.json` | strict TS, `@/*` → `src/*`, **excludes `skills/`** |
 | `eslint.config.mjs` | next/core-web-vitals + next/typescript; **ignores `skills/`** (the operator's skill catalog is not app code) |
 | `vitest.config.ts` | includes `src/**/*.test.ts` + `tests/**/*.test.ts` only — skills/ never tested |
 | `playwright.config.ts` | testDir `./tests/e2e`; :3100; own DB; setup project saves the session cookie once (rate-limiter friendly) |
@@ -153,7 +153,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 
 ## §6 State Management Deep Dive (the ONE Zustand store)
 
-`src/components/editor/editor-store.ts` (346 lines) owns ALL editor state: `projectId`, `projectName`, `backgroundColor`, `elements[]`, `selectedIds[]`, `tool`, `zoom/panX/panY`, `saveState`, `past[]/future[]` undo snapshots (plus `restoreSnapshot` — the AI reply's per-message Revert, session 27: an UNDOABLE restore that pushes the current state onto `past` first, so Ctrl+Z undoes the revert itself). Views and panels READ the store and CALL actions; nothing else owns canvas state.
+`src/components/editor/editor-store.ts` (483 lines) owns ALL editor state: `projectId`, `projectName`, `backgroundColor`, `elements[]`, `selectedIds[]`, `tool`, `zoom/panX/panY`, `saveState`, `past[]/future[]` undo snapshots (plus `restoreSnapshot` — the AI reply's per-message Revert, session 27: an UNDOABLE restore that pushes the current state onto `past` first, so Ctrl+Z undoes the revert itself). Views and panels READ the store and CALL actions; nothing else owns canvas state.
 
 **The replace contract (ADR-005).** Elements are client-sovereign rows: local ids (`local-…`) are created optimistically by `addElements`; the autosave debounces 800ms and `PUT`s the FULL element list to `/api/projects/[id]/elements`; the handler transactionally `deleteMany` + `createMany` (array order = `sortOrder` = z-draw order) and returns fresh server ids; the store remaps ids by index so selection survives. NEVER add per-element PATCH autosave — partial-failure complexity for zero user-visible gain, and it breaks undo/redo and AI batch operations.
 
@@ -190,7 +190,7 @@ client applies operations: add | update (may carry scale) | delete
 
 **Rate limiting:** fixed-window in-process, 10 attempts/IP/15 min → `429 RATE_LIMITED` + `Retry-After` (`src/lib/rate-limit.ts`). Per-process only (restart clears it; N instances track separately — accepted, documented).
 
-**Validation:** hand-rolled in `src/lib/validation.ts` + per-route clamps — trim, length caps, enum membership, hex regex, numeric clamps (opacity 0–1, fontSize ceiling 32). NO schema library; do not introduce Zod halfway.
+**Validation:** hand-rolled in `src/lib/validation.ts` + per-route clamps — trim, length caps, enum membership, hex regex, numeric clamps (opacity 0–1, fontSize 1–200 with fallback 16). NO schema library; do not introduce Zod halfway.
 
 **Security rules S1–S9 and the threat model live in PAD §6.** Highlights: React escapes canvas text by default (no `dangerouslySetInnerHTML` anywhere); Prisma parameterized queries only; same-site cookies + JSON-only APIs (CSRF); the LLM sanitizer (S7).
 
@@ -239,10 +239,10 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 72/72
-bun run build         # 20 routes; static+public copied into standalone
-./scripts/smoke-test.sh   # 28/28 (health, auth gate, CRUD, AI, rate limit, logout)
-bun run test:e2e      # 54/54 (setup 1, auth 11, workspace 9, mobile-nav 9, untitled 3, editor-panels 12, parity 9)
+bun run test          # 961/961
+bun run build         # 23 routes; static+public copied into standalone
+./scripts/smoke-test.sh   # 63/63 (health, auth gate, CRUD, AI, rate limit, logout, the S82-D body-cap pair)
+bun run test:e2e      # 260/260 (39 spec files; the mobile-nav 10-check suite, the sessionNN-fixes discriminators)
 git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 ```
 
@@ -354,6 +354,9 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 
 
 68. **F68 — the session-81 family: a new consumer of a guarded mechanism inherits the FULL guard contract (the gesture arm-site discipline), a machine-idle predicate must see the TIMER-ARMED state, and the e2e RED proof runs against the BUILD, not the source. (1) THE ARM-SITE DISCIPLINE: every beginGesture consumer is an ARM SITE, and every arm site carries the interleave discipline — the canvas flushes a live panel burst before arming; the panel closure's begin carries the S66-B foreign-ride guard (rides UNDER a foreign store gesture, never over it). S80-C added the editor's THIRD arm site (the AI apply's coalescing pair) with NO guard — the only unguarded site, and a reply landing mid-drag CLOBBERED the drag's snapshot (the AI's endGesture pushed a mid-drag state; the drag's terminal no-op'd through the ownership guard; the later ticks flooded per-entry). The fix is one condition — arm only when gestureSnapshot === null, and under a foreign gesture fall back to the explicit commit paths (which the store's commit semantics keep correct) — but the LESSON is the enumeration: adding a consumer of a guarded seam means inheriting the guard, and the audit's job is to grep EVERY call site of the seam (the sibling-count family, F61's echo) before declaring the family closed. (2) THE MACHINE-IDLE PREDICATE: a drain that polls `flushing || pending` sees the MACHINE's state, not the DATA's state — an edit that landed during a flush's flight left the store "unsaved" with the 800ms timer armed while the machine itself read idle (the response's elements-reference guard re-armed the timer; the finally cleared the flags). The drain resolved, the load wiped the store, the timer's later flush early-returned on the loaded "saved". When the boundary's correctness depends on the DATA having been persisted, the busy predicate must include the armed-debounce state (`saveState === "unsaved"`) — bounded by the SAME deadline so a continuously-editing user cannot block navigation. (3) THE E2E RED RUNS AGAINST THE BUILD: the session's first RED verification of the mount double-PUT discriminator PASSED on the "pre-fix" source — because the playwright webServer boots the STANDALONE BUILD, and the source revert had not been rebuilt. Any RED→GREEN proof that goes through the e2e layer requires: revert → REBUILD → run (the honest RED) → restore → REBUILD → run (the GREEN). The build step is part of the test, not an optimization. (4) THE MOUNT/SWAP DISCRIMINATION AT EVERY BOUNDARY: the first-run guard (firstRunRef) that skips the FIRST boundary on mounts must also gate the SECOND boundary (the post-GET pair) — a mount's outgoing state was already transported by the previous instance's unmount cleanup, and re-flushing it is a redundant full-replace transaction (the S71-B class). The discrimination is captured BEFORE the boundary flips the ref (const isMountRun = firstRunRef.current), so every transport point can share it. (5) THE EXACT-OUTPUT ASSERTION REQUIRES THE DETERMINISTIC PATH FORCED: the smoke suite asserted the AI fallback's EXACT output (three add operations) while booting without the AI knob — the LLM was live, and a differently-shaped reply failed the gate spuriously while a coincidentally-shaped one tested the wrong path. A gate that pins EXACT output must force the deterministic path (the e2e webServer's DIGMA_DISABLE_AI_LLM=1 posture, extended to the smoke boot). (6) THE COUNT-DRIFT FAMILY (the S80-E follow-on): a docs-honesty batch that corrects the counts it NOTICED leaves the ones it didn't — S80-E fixed four count sites and left eleven behind (README's tech-stack table, AGENTS's commands table, CLAUDE's pyramid bullets, PAD's §7.1/§7.4, digma_SKILL's §2, DEPLOYMENT's block). The batch must grep every file for every stale number in the family (`grep -n "724\|245\|796\|58-check\|117/117" ...`), not fix the sites a single doc review surfaced; and the pins must target the DELIVERY counts, written after the realized totals are known (never a planned count — the planned 940 vs the realized 943 gap was caught by writing the pins at delivery time).**
+
+
+69. **F69 — the session-82 family: the portal-role taxonomy for stand-down guards, the honest-idle terminal state in busy predicates, the curl stdin-buffering trap, and the racy toBeHidden locator on eventually-rendering elements. (1) THE PORTAL-ROLE TAXONOMY: a global-keyboard stand-down guard keyed on specific ARIA roles must enumerate the role family of EVERY overlay library in the app — Radix renders Dialog (role="dialog"), DropdownMenu (role="menu"), and SELECT (role="listbox" content + role="combobox" trigger) as THREE different role shapes, and a guard covering only the first two lets the third's letter keys fall through (the vendored Select dist carries zero stopPropagation and its typeahead does NOT preventDefault plain letters — every keydown over an open list propagates to the window listener). The guard selector is the family's single point of closure: `[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"], [role="combobox"][aria-expanded="true"]` — the combobox half is the belt (either alone covers the open state, both pin the family). The audit question for every global keydown handler: which overlay libraries does the app use, and what role does EACH render when open? (2) THE HONEST-IDLE TERMINAL STATE: a busy predicate that gained a data-state disjunct (saveState === "unsaved") to see the debounce-ARMED state assumed unsaved is always TRANSIENT — the 401 terminal breaks the assumption (every later flush early-returns on the dead session; the "unsaved" badge is HONEST but nothing will ever drain it, so the drain polls its full deadline). When a busy predicate keys on a state that has a TERMINAL variant, the predicate must exempt the terminal (the state's honesty and the predicate's progress are different questions — !sessionDead && (...) keeps the badge honest while letting the drain resolve). (3) THE CURL STDIN-BUFFERING TRAP: piping a body through stdin does NOT force Transfer-Encoding: chunked — curl 8.x BUFFERS the unknown-size pipe and declares content-length, so a "chunked probe" written as `cat file | curl --data-binary @-` silently tests the content-length fast path a second time. The honest chunked form carries the EXPLICIT header (`-H "Transfer-Encoding: chunked"` — curl then omits content-length; verified against a raw socket listener printing the request headers). Any probe claiming to exercise a specific HTTP transfer path must be verified against a listener that PRINTS the wire form. (4) THE RACY toBeHidden ON EVENTUALLY-RENDERING ELEMENTS: `expect(locator).toBeHidden()` passes the moment ONE poll sees the element absent — if the element RENDERS LATER (the Dashboard's project cards hydrating after the /api/projects fetch), the assertion passed on the pre-hydration window and the NEXT suite run fails on timing (the s81 mount spec's B-heading check matched the dashboard card h3, an element that ALWAYS eventually renders; it passed standalone when the poll beat hydration and failed in the warm-server full suite). The deterministic forms: assert an element that is NEVER present on the target page (the editor's [data-element-id] nodes on the Dashboard — count 0 forever), or assert the POSITIVE landing surface (the section heading visible). Corollary: a locator that matches BOTH the page you left and the page you landed on (the editor's h2 and the dashboard card's h3 share the accessible name) is an intent-vs-locator mismatch — check what the locator matches on BOTH pages before using it as a transition assertion. (5) THE RADIX ARIA-HIDDEN BLINDING (the mobile-nav lesson, now the e2e form): while a Radix portal overlay is open, the app root is marked aria-hidden and `getByRole` locators find NOTHING — mid-open assertions must use CSS locators (button[aria-label=...]), the role-based locator only works pre-open.**
 
 
 ## §13 Pitfalls to Avoid

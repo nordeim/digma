@@ -35,7 +35,7 @@ function src(rel: string): string {
   return readFileSync(path.join(ROOT, rel), "utf8");
 }
 
-// The six transaction-carrying route files (the F61 enumeration — the
+// The seven transaction-carrying route files (the F61 enumeration — the
 // family is the unit, not the member).
 const TX_ROUTES = [
   "src/app/api/projects/route.ts",
@@ -43,6 +43,12 @@ const TX_ROUTES = [
   "src/app/api/projects/[id]/elements/route.ts",
   "src/app/api/projects/[id]/duplicate/route.ts",
   "src/app/api/teams/[id]/members/route.ts",
+  // Session 82 (S82-C / B82-L4): the register route's create moved
+  // into the count-guarded transaction (the USER_LIMIT ceiling) — the
+  // route JOINS the family list (the F61 discipline: the enumeration
+  // itself is the pin; the family grows, the intent unchanged — every
+  // $transaction site carries its own abort arm).
+  "src/app/api/auth/register/route.ts",
 ];
 
 // ---------------------------------------------------------------------------

@@ -360,8 +360,21 @@ function useAutosave(): AutosaveHandle {
     // same 5s deadline — a continuously-editing user cannot block
     // navigation either; on timeout the documented no-worse residual
     // covers both windows now).
+    // Session 82 (S82-B — the thirtieth audit's A82-L1): the predicate
+    // EXEMPTS the 401 terminal. The S68-D terminal parks saveState at
+    // "unsaved" forever (every later flush early-returns on the dead
+    // session — the work is NOT saved and CANNOT be until the user
+    // signs in again), so the S81-B disjunct made machineBusy()
+    // permanently true on that path and BOTH boundary drains burned
+    // the full 5-second deadline before their timeout on any later
+    // same-instance swap. A dead session's "unsaved" is honest-IDLE:
+    // nothing will ever drain it. The exemption keeps the badge's
+    // honest terminal contract (the terminal is about flushes, not
+    // the drain) and returns the drains to their sub-100ms common
+    // case on the dead-session path.
     const machineBusy = () =>
-      flushing || pending || useEditorStore.getState().saveState === "unsaved";
+      !sessionDead &&
+      (flushing || pending || useEditorStore.getState().saveState === "unsaved");
     drainRef.current = async () => {
       const deadline = Date.now() + 5_000;
       while (machineBusy() && Date.now() < deadline) {
@@ -549,8 +562,21 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
       // match the session-56 M-3 fix relied on), so tool keys switched
       // tools behind the menu, Delete deleted the invisible selection, ?
       // stacked the shortcuts dialog over it, and Escape double-actioned.
+      // Session 82 (S82-A — the thirtieth audit's A82-M1): the guard also
+      // stands down behind an open SELECT — the Radix Select's open
+      // content renders role="listbox" with data-state="open" and its
+      // trigger role="combobox" with aria-expanded="true" (the vendored
+      // dist carries ZERO stopPropagation calls and its typeahead handler
+      // does NOT preventDefault plain letter keys), so with the Font
+      // Family list open, I/R/A/H/T/V ALSO armed the tool behind the
+      // list and Delete deleted the selection behind the listbox — the
+      // one portal family the S57-C form never reached. The combobox
+      // selector is the belt: either alone covers the open state.
       if (
-        document.querySelector('[role="dialog"][data-state="open"], [role="menu"][data-state="open"]')
+        document.querySelector(
+          '[role="dialog"][data-state="open"], [role="menu"][data-state="open"], ' +
+            '[role="listbox"][data-state="open"], [role="combobox"][aria-expanded="true"]',
+        )
       ) {
         return;
       }

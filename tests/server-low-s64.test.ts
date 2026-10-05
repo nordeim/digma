@@ -33,7 +33,11 @@ describe("the register race + the reset cap (session 64, S64-E / B-4 + B-12)", (
   it("the register create is guarded for the unique-constraint code and answers the conflict envelope", () => {
     // THE DEFECT PIN: pre-fix the create carried no guard — a racing
     // duplicate escaped as a raw 500.
-    const createIdx = registerSource.indexOf("db.user.create(");
+    // Session 82 re-anchor: the create moved INSIDE the S82-C
+    // count-guarded transaction (the USER_LIMIT ceiling) — the
+    // `db.user.create(` form became `tx.user.create(`; the intent
+    // (the P2002 guard + the CONFLICT envelope) is unchanged.
+    const createIdx = registerSource.indexOf("tx.user.create(");
     expect(createIdx).toBeGreaterThan(-1);
     // The guard wraps the create (try/catch) and maps the unique
     // constraint code onto the same CONFLICT envelope the pre-check

@@ -111,9 +111,13 @@ const skill = readFileSync(
 // realized totals after the S81 slices land): 943 unit / 61 smoke /
 // 259 e2e. (Adjust here if the realized totals differ — the pins
 // must always match the DELIVERED reality.)
-const UNIT = "943";
-const SMOKE = "61";
-const E2E = "259";
+// Session 82: re-anchored to the session-82 delivery counts —
+// 961 unit (+18) / 63 smoke (+2 the body-cap probes) / 260 e2e
+// (+1 the open-Select discriminator); the intents (the docs carry
+// the DELIVERED counts) unchanged.
+const UNIT = "961";
+const SMOKE = "63";
+const E2E = "260";
 
 describe("the stale-count family is corrected (S81-E / B81-L-family)", () => {
   it("README: the tech-stack table's unit row and e2e row carry the real counts", () => {

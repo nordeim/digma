@@ -141,7 +141,12 @@ describe("the drain's busy predicate includes the debounce-armed state (S81-B / 
     // own flags — an edit landing during the second boundary's PUT
     // flight (unsaved + the 800ms timer armed) was invisible to the
     // drain, and loadProject wiped it.
-    const site = view.indexOf("machineBusy");
+    // Session 82 re-anchor: the predicate now carries the S82-B
+    // !sessionDead exemption prefix (the 401-terminal drain fix) and
+    // the S82-B comment block above it grew — the anchor moves from
+    // the first comment mention onto the `const machineBusy = () =>`
+    // declaration itself; the intent (the disjuncts) is unchanged.
+    const site = view.indexOf("const machineBusy = () =>");
     expect(site).toBeGreaterThanOrEqual(0);
     const predicate = view.slice(site, site + 300);
     expect(predicate).toMatch(/flushing\s*\|\|\s*pending/);

@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { generateVerifyCode, hashPassword } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
-import { readBoundedJson } from "@/lib/validation";
+import { readBoundedJson, USER_LIMIT } from "@/lib/validation";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -65,19 +65,35 @@ export async function POST(request: NextRequest) {
   // unique-constraint error as an unstructured 500. The catch answers
   // the SAME conflict envelope the pre-check path answers (the
   // bare-throw family the S56-H/S62-G passes closed elsewhere).
+  // Session 82 (S82-C / B82-L4): the create also gains the
+  // creation-ceiling family's TOCTOU-safe form — the PUBLIC register
+  // route was the only unbounded creation surface (every authenticated
+  // surface carries one: 500/100/100/2000), and each accepted request
+  // burns a scrypt hash. The count check and the create share ONE
+  // transaction (the projects route's own pattern) so a concurrent
+  // register cannot slip past the ceiling; the P2002 catch wraps the
+  // transaction unchanged (the S64-E contract survives the re-shape).
+  let overCap = false;
   let user;
   try {
-    user = await db.user.create({
-      data: {
-        email,
-        name: name || email.split("@")[0] || "Designer",
-        passwordHash: hashPassword(password),
-        avatarColor: "#3B82F6",
-        verified: false,
-        verifyCode,
-        verifyAttempts: 0,
-      },
-      select: { id: true, email: true, name: true, avatarColor: true },
+    user = await db.$transaction(async (tx) => {
+      const userCount = await tx.user.count();
+      if (userCount >= USER_LIMIT) {
+        overCap = true;
+        return null;
+      }
+      return tx.user.create({
+        data: {
+          email,
+          name: name || email.split("@")[0] || "Designer",
+          passwordHash: hashPassword(password),
+          avatarColor: "#3B82F6",
+          verified: false,
+          verifyCode,
+          verifyAttempts: 0,
+        },
+        select: { id: true, email: true, name: true, avatarColor: true },
+      });
     });
   } catch (error) {
     // Session 75 (S75-G / B75-F5): the catch joins the envelope-catch
@@ -86,7 +102,19 @@ export async function POST(request: NextRequest) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return fail("CONFLICT", "An account with this email already exists", 409);
     }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      // The transaction-abort envelope family (S77-G/S78-B): a
+      // concurrent row-heavy writer can queue this transaction past
+      // Prisma's interactive timeout — the structured 503 answers.
+      return fail("UNAVAILABLE", "Registration took too long — the database timed out. Try again.", 503);
+    }
     throw error;
+  }
+  if (overCap) {
+    return fail("VALIDATION", "Too many users (max 500)", 400);
   }
 
   // Session 67 (S67-C / M-3): the OTP half of the ADR-014 suppression

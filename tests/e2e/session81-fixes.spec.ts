@@ -77,7 +77,17 @@ test.describe("session 81 — the mount double-PUT guard (S81-B / A81-L2)", () =
     // captured-state PUT is transport #1 (the S62-C discipline).
     await page.goBack();
     await expect(page).toHaveURL(/\/(Dashboard)?$|\/$/);
-    await expect(page.getByRole("heading", { name: PROJECT_B }).first()).toBeHidden();
+    // Session 82 re-anchor (the F66 order-independent discipline): the
+    // original `getByRole("heading", { name: PROJECT_B }).first()
+    // .toBeHidden()` was a RACY locator — it matches the DASHBOARD's
+    // project-card h3 (B's card renders on the Dashboard once the
+    // projects fetch hydrates), so it passed only when the poll beat
+    // hydration — an order/timing-dependent assertion that failed
+    // intermittently in the full-suite runs. The deterministic form of
+    // the SAME intent (the Editor unmounted — its canvas surface is
+    // gone): the canvas element nodes exist ONLY in the Editor; on the
+    // Dashboard the count is deterministically 0 forever.
+    await expect(page.locator("[data-element-id]")).toHaveCount(0);
     // The Dashboard lands (the Editor unmounted — the cleanup ran).
     await expect(page.getByText("Continue Working").first()).toBeVisible();
 

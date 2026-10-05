@@ -232,3 +232,11 @@ export async function readBoundedJson(request: Request): Promise<BoundedJson> {
 export const PROJECT_LIMIT = 500;
 export const TEAM_LIMIT = 100;
 export const MEMBER_LIMIT = 100;
+/** Session 82 (S82-C / B82-L4): the register route's user ceiling —
+ * the PUBLIC route was the only unbounded creation surface (every
+ * authenticated surface carries one), and each accepted request also
+ * burns a scrypt hash. The self-hosted single-tenant story (ADR-003)
+ * sits far under 500 accounts; the bound also amortizes the
+ * credential-less loop the XFF-spoofable auth limiter cannot fully
+ * stop at the default trust depth. */
+export const USER_LIMIT = 500;
