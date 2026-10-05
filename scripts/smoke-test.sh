@@ -406,6 +406,19 @@ NOTFOUND=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/definitely-not-a-route"
 [ "$NOTFOUND" = "404" ] && ok "unknown path 404s" || bad "unknown path 404s (got $NOTFOUND)"
 
 # ---------------------------------------------------------------------------
+step "== Security headers (session 79/80 — the S79-D trio at RUNTIME) =="
+# Session 80 (S80-D / B-L2): the anti-clickjacking headers were pinned
+# as SOURCE TEXT ONLY (regexes over next.config.ts) — no runtime gate
+# verified the real response headers, so a next.config refactor or a
+# Next major change could silently drop the trio while every gate
+# stayed green. The live standalone server's own response is the drift
+# mechanism now.
+HEADERS=$(curl -sI "$BASE/login")
+echo "$HEADERS" | grep -qi "^x-frame-options: DENY" && ok "X-Frame-Options: DENY (runtime)" || bad "X-Frame-Options: DENY missing at runtime"
+echo "$HEADERS" | grep -qi "^x-content-type-options: nosniff" && ok "X-Content-Type-Options: nosniff (runtime)" || bad "X-Content-Type-Options: nosniff missing at runtime"
+echo "$HEADERS" | grep -qi "^referrer-policy: strict-origin-when-cross-origin" && ok "Referrer-Policy: strict-origin-when-cross-origin (runtime)" || bad "Referrer-Policy missing at runtime"
+
+# ---------------------------------------------------------------------------
 step "== Logout =="
 LOGOUT=$(curl -s -b /tmp/smoke-cookies.txt -c /tmp/smoke-cookies.txt -X POST "$BASE/api/auth/logout")
 echo "$LOGOUT" | grep -q '"ok":true' && ok "logout" || bad "logout: $LOGOUT"

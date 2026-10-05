@@ -147,8 +147,14 @@ describe("the AI transcript's project-scope guard (S78-A / A-M1 — the headline
     const body = m?.[1] ?? "";
     // The early-return form: an UNCHANGED projectId returns before any
     // state is touched (the equivalent of a !== branch, the idiomatic
-    // guard-first shape).
-    expect(body).toMatch(/state\.projectId === prevState\.projectId\) return;/);
+    // guard-first shape). Session 80 re-anchor (S80-B / A-L1): the
+    // guard widened to require BOTH an unchanged projectId AND an
+    // unchanged boardEpoch — an Untitled-to-Untitled load (a lineage
+    // break shaped like a no-op) now resets too; the NAMED-scope
+    // semantics this pin pins are unchanged.
+    expect(body).toMatch(
+      /state\.projectId === prevState\.projectId && state\.boardEpoch === prevState\.boardEpoch\) return;/,
+    );
     expect(body).toMatch(/prevState\.projectId\s*===\s*""/);
     expect(body).toMatch(/setMessages/);
   });

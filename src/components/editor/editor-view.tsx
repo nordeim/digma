@@ -58,7 +58,20 @@ const UNTITLED_PROJECT: ProjectDTO = {
 // saves the canvas SILENTLY into the most-recent project (a data bug this
 // clone deliberately does not copy).
 
-function useAutosave(): () => void {
+// Session 80 (S80-A / A-M1 — the twenty-eighth audit's headline): the
+// autosave handle carries a DRAIN half. The S79-B boundary flush was
+// fire-and-forget — flush() sets `pending` and returns when a flush is
+// already in flight, so the boundary captured NOTHING when the 800ms
+// timer's flush was mid-PUT, and the incoming GET could resolve before
+// the outgoing PUT's response (loadProject stamps "saved"; the machine's
+// swap guard drops the response BEFORE the elements-reference guard can
+// setUnsaved; the pending re-run early-returns on the loaded "saved") —
+// an edit that landed while a flush was in flight was silently lost.
+// The load boundary now AWAITS the machine's full idle through the
+// drain before fetching the incoming project.
+type AutosaveHandle = (() => void) & { drain: () => Promise<void> };
+
+function useAutosave(): AutosaveHandle {
   // Session 56 (S56-C — the M-2 fix): the hook exposes its flush so
   // exit() sends pending edits through the SAME serialized machine —
   // the full body (elements AND backgroundColor — the session-33 S33-3
@@ -80,6 +93,10 @@ function useAutosave(): () => void {
     backgroundColor: string;
   } | null>(null);
   const flushRef = React.useRef<() => void>(() => {});
+  // Session 80 (S80-A / A-M1): the drain trampoline — the effect assigns
+  // the real drain (a poll of the machine's busy closure, deadline-
+  // bounded) once its machinery is live.
+  const drainRef = React.useRef<() => Promise<void>>(() => Promise.resolve());
 
   React.useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -323,6 +340,22 @@ function useAutosave(): () => void {
 
     flushRef.current = () => void flush();
 
+    // Session 80 (S80-A / A-M1): the boundary DRAIN. The machine's busy
+    // closure — flushing (a PUT in flight) OR pending (a queued re-run
+    // that will capture the NEWER state the elements-reference guard
+    // kept "unsaved"). The drain polls it at 25ms with a 5-second
+    // deadline: a hung PUT cannot block navigation forever — on timeout
+    // the load proceeds into exactly the pre-fix race (the documented
+    // no-worse residual; the machine's own response handling is
+    // unaffected either way).
+    const machineBusy = () => flushing || pending;
+    drainRef.current = async () => {
+      const deadline = Date.now() + 5_000;
+      while (machineBusy() && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+    };
+
     // Session 61 (S61-I — session-60's deferred A-3, the design now
     // decided): the unload flush. The machine's only transports were the
     // 800ms timer and exit() — neither survives a refresh, tab close, or
@@ -434,7 +467,19 @@ function useAutosave(): () => void {
   }, []);
 
   // A stable flush handle for exit() — the effect owns the real function.
-  return React.useCallback(() => flushRef.current(), []);
+  // Session 80 (S80-A / A-M1): the handle gains the DRAIN half — the
+  // memoized composition keeps every existing `flushNow()` invocation
+  // (exit, the load boundary) byte-identical while exposing
+  // `flushNow.drain()` for the awaited boundary. Both halves read their
+  // refs only at CALL time (deferred — never during render).
+  const handle = React.useMemo((): AutosaveHandle => {
+    const fn = () => {
+      flushRef.current();
+    };
+    fn.drain = () => drainRef.current();
+    return fn;
+  }, []);
+  return handle;
 }
 
 // ---------------------------------------------------------------------------
@@ -1214,6 +1259,23 @@ export function EditorView({ user }: { user: HeaderUser }) {
         const willReplace = projectId ? outgoing.projectId !== projectId : true;
         if (outgoing.projectId && willReplace) {
           flushNow();
+          // Session 80 (S80-A / A-M1): the boundary is AWAITED. The
+          // S79-B form was fire-and-forget — flushNow() early-returns
+          // on `flushing` (it sets `pending` and captures NOTHING), so
+          // an edit that landed while the timer's PUT was in flight
+          // was lost when the incoming GET resolved first (loadProject
+          // stamped "saved"; the swap guard dropped the outgoing
+          // response before the elements-reference guard could
+          // setUnsaved; the pending re-run early-returned on the
+          // loaded "saved"). The drain waits for the machine's full
+          // idle — the in-flight PUT answered AND the pending re-run
+          // (which captures the NEWER state) answered — BEFORE the
+          // GET starts. A cancelled re-run/unmount during the drain
+          // hands the boundary to the next effect run (its own
+          // first-run-guarded flush) or the unmount cleanup's
+          // captured-state PUT; this instance must not load.
+          await flushNow.drain();
+          if (cancelled) return;
         }
       }
       firstRunRef.current = false;
@@ -1276,6 +1338,26 @@ export function EditorView({ user }: { user: HeaderUser }) {
             // skips arming entirely and every tick commits a full
             // snapshot (the one-entry-per-gesture contract regressing to
             // per-tick flooding). Heal the closure at the load seam.
+            // Session 80 (S80-A / A-M1): the post-GET pre-load flush. An
+            // edit that landed DURING the GET window (the 800ms timer
+            // may not have fired yet) flushes BEFORE loadProject wipes
+            // the store — the same boundary semantics at the last moment
+            // the outgoing state is still readable. The SAME named-
+            // outgoing guard as the boundary: the UNTITLED board
+            // deliberately skips — its first-save POST's adoption
+            // (attachProject + replaceState) would flip the searchParams
+            // mid-load, cancel THIS pending load, and the adoption
+            // re-run's skip would strand the page on the created
+            // project (the S79-B leave-scope contract, enforced here
+            // too). The named case pays nothing when idle: flushNow
+            // early-returns on "saved" and the drain resolves
+            // immediately.
+            const outgoingPost = useEditorStore.getState();
+            if (outgoingPost.projectId && outgoingPost.projectId !== projectId) {
+              flushNow();
+              await flushNow.drain();
+              if (cancelled) return;
+            }
             resetSliderGesture();
             useEditorStore.getState().loadProject(body.data.project as ProjectDTO);
             setLoading(false);

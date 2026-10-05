@@ -66,6 +66,18 @@ internet-facing deploy set BOTH delivery knobs (and declare
 account reads/mutates the whole workspace — the reference app's own model)
 is fine for self-hosted single-user use and is the only documented posture.
 
+**The resend-otp asymmetry (session 80, S80-E):** the three code-delivery
+sites do NOT share an ownership gate. Register delivers the code only to
+the registrant; login's unverified branch regenerates only after
+`verifyPassword`; but `POST /api/auth/resend-otp` regenerates and delivers
+the fresh code to ANY caller who knows the email — no password proof, no
+session — and `verify-otp` opens the session on that code. The chain only
+reaches UNVERIFIED accounts (a verified account's login goes through the
+password first), which bounds it to the window between register and verify.
+Single-tenant self-hosted: acceptable (the documented posture above). Any
+internet-facing deploy: the knobs close it — with `DIGMA_DISABLE_IN_APP_OTP=1`
+the delivered code is null and the chain is dead.
+
 ## 4. Database location (§4 — the `.env.example` reference)
 
 `DATABASE_URL` accepts three forms:

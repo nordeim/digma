@@ -88,7 +88,10 @@ describe("the AI apply boundary carries no never-cast (S68-C / L-3)", () => {
   it("the client applies the patch through the store's own type — no never loophole", () => {
     const source = src("src/components/editor/ai-assistant.tsx");
     expect(source).not.toMatch(/as never/);
-    expect(source).toMatch(/store\.updateElements\(targets, patch\)/);
+    // Session 80 re-anchor (S80-C / A-L2): the call gained the optional
+    // commit argument (coalesce ? false : true) — the patch still
+    // applies through the store's own type, never a cast.
+    expect(source).toMatch(/store\.updateElements\(targets, patch,/);
   });
 
   it("the sanitized patch VALUES are unchanged (the typing is not a behavior change)", () => {

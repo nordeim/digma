@@ -104,7 +104,7 @@ type EditorStore = {
   addElement: (partial: Partial<DesignElementDTO> & { type: ElementType }) => string | null;
   addElements: (partials: Array<Partial<DesignElementDTO> & { type: ElementType }>) => string[];
   updateElements: (ids: string[], patch: Partial<DesignElementDTO>, commit?: boolean) => void;
-  scaleElements: (ids: string[], factor: number) => void;
+  scaleElements: (ids: string[], factor: number, commit?: boolean) => void;
   moveElements: (ids: string[], dx: number, dy: number) => void;
   deleteElements: (ids: string[]) => void;
   reorderElements: (fromIds: string[], toIndex: number) => void;
@@ -297,7 +297,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       return base;
     }),
 
-  scaleElements: (ids, factor) =>
+  scaleElements: (ids, factor, commit = true) =>
     set((state) => {
       const idSet = new Set(ids);
       const next = state.elements.map((el) =>
@@ -313,12 +313,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
             }
           : el,
       );
-      return {
-        elements: next,
-        saveState: "unsaved",
-        past: [...state.past, snapshotOf(state)].slice(-60),
-        future: [],
-      };
+      // Session 80 (S80-C / A-L2): the optional commit mirrors
+      // updateElements' own form — the AI apply's combined scale+patch
+      // operation coalesces into ONE history entry through the gesture
+      // seam (beginGesture captures the pre-op snapshot; endGesture
+      // pushes it), instead of pushing TWO entries for one intent.
+      const base: Partial<EditorStore> = { elements: next, saveState: "unsaved" };
+      if (commit) {
+        return { ...base, past: [...state.past, snapshotOf(state)].slice(-60), future: [] };
+      }
+      return base;
     }),
 
   moveElements: (ids, dx, dy) =>

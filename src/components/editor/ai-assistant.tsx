@@ -118,7 +118,15 @@ export function AiAssistant() {
   // an effect body.
   React.useEffect(() => {
     return useEditorStore.subscribe((state, prevState) => {
-      if (state.projectId === prevState.projectId) return;
+      // Session 80 (S80-B / A-L1): the guard requires BOTH an unchanged
+      // projectId AND an unchanged epoch. The projectId alone could not
+      // see an Untitled-to-Untitled LOAD — a soft swap to an UNKNOWN
+      // projectId (both sides fall to the Untitled fallback's
+      // loadProject(UNTITLED_PROJECT)) is projectId-shaped like a no-op
+      // ("" === "") but the epoch moves — a lineage break that replaced
+      // the canvas while the stale conversation (and its belt-defused
+      // dead Revert) survived the load.
+      if (state.projectId === prevState.projectId && state.boardEpoch === prevState.boardEpoch) return;
       const adoption = prevState.projectId === "" && state.projectId !== "";
       // Session 79 (S79-A / A-M1): the exemption is LOAD-AWARE. A
       // loadProject "" -> id transition is projectId-shaped EXACTLY like
@@ -214,14 +222,26 @@ export function AiAssistant() {
         // bigger" applied only the scale). Both halves now apply, and the
         // operation counts once (the honest-count doctrine).
         let did = false;
+        // Session 80 (S80-C / A-L2): a combined scale+patch operation is
+        // ONE intent — the gesture seam coalesces it into ONE undo entry
+        // (beginGesture captures the pre-op snapshot; endGesture pushes
+        // it), matching the S56-A/S62-A one-entry-per-intent doctrine
+        // the properties-panel's slider seam already implements. The
+        // uncommitted halves (commit=false) defer the history push to
+        // endGesture; a single-half operation keeps its existing
+        // single-entry behavior.
+        const coalesce =
+          operation.patch.scale !== undefined && Object.keys(patch).length > 0;
+        if (coalesce) store.beginGesture();
         if (operation.patch.scale !== undefined) {
-          store.scaleElements(targets, operation.patch.scale);
+          store.scaleElements(targets, operation.patch.scale, coalesce ? false : true);
           did = true;
         }
         if (Object.keys(patch).length > 0) {
-          store.updateElements(targets, patch);
+          store.updateElements(targets, patch, coalesce ? false : true);
           did = true;
         }
+        if (coalesce) store.endGesture();
         if (did) applied += 1;
       } else if (operation.op === "delete") {
         // The wall's AI contract (S27-1): locked elements never ride along

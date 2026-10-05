@@ -468,6 +468,15 @@ S89.update({
     "clone-31-hidden-selection-chrome": (1440, 900),
 })
 
+# Session 80 (the 56th reference audit): the s90 evidence set mirrors
+# the s89 standing set + the session's own pair (the boundary-drain
+# persistence, the unknown-swap transcript reset).
+S90 = dict(S89)
+S90.update({
+    "clone-32-boundary-drain-persisted": (1440, 900),
+    "clone-33-unknown-swap-reset": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -502,6 +511,8 @@ def expected_for(name: str):
         return S88.get(Path(name).stem)
     if name.startswith("ref-audit-s89/"):
         return S89.get(Path(name).stem)
+    if name.startswith("ref-audit-s90/"):
+        return S90.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -570,6 +581,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s87").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s88").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s89").glob("*.png")]
+        + [p for p in (ROOT / "ref-audit-s90").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

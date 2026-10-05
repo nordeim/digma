@@ -45,7 +45,11 @@ function autosaveSegment(): string {
   // comment above the refs — the historical "stable flush handle" marker
   // now precedes the effect instead of following it). The segment ends
   // at the hook's return statement.
-  const end = viewSource.indexOf("return React.useCallback(() => flushRef.current()", start);
+  // Session 80 re-anchor (the S80-A drain handle composition replaced
+  // the bare `return React.useCallback(() => flushRef.current(), [])`
+  // with the useMemo handle — the segment now ends at the handle
+  // composition, which still follows the effect's closing `}, []);`).
+  const end = viewSource.indexOf("const handle = React.useMemo(", start);
   expect(start).toBeGreaterThan(-1);
   expect(end).toBeGreaterThan(start);
   return viewSource.slice(start, end);
