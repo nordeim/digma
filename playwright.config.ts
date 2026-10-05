@@ -67,32 +67,39 @@ export default defineConfig({
     // only a real bun server process — never this command's own shell,
     // whose cmdline carries the pattern text inside the full command
     // string (the naive unanchored form killed the shell itself).
+    //
+    // Session 84 (S84-C revision — the F71 runtime discovery): the
+    // hermetic knob removal moved INTO THE COMMAND. Playwright's
+    // webServer env MERGES the provided object OVER process.env —
+    // `delete` lines in the env object (the S83-C form) were
+    // INEFFECTIVE for parent-exported vars: the merged child env simply
+    // re-inherited them (proven live: a probe config with a deleted
+    // HOSTNAME still delivered it to the spawned server; an exported
+    // HOSTNAME binds the standalone server non-loopback and the health
+    // URL times out — the exact webServer timeout this session's
+    // runtime witness caught, falsifying the S83-C source-only pins).
+    // The command-level `env -u` form is the only effective removal:
+    // coreutils env execs bun directly (the process cmdline keeps the
+    // ^bun anchor the pre-kill needs) with the six knobs REMOVED — the
+    // four app knobs of S83-C plus the standalone runtime's own
+    // HOSTNAME (Docker exports it as the container id; a resolvable
+    // value binds a non-loopback address so the localhost health URL
+    // never answers) and KEEP_ALIVE_TIMEOUT.
     command:
-      'pkill -f "^bun .next/standalone" >/dev/null 2>&1 || true; bun .next/standalone/server.js',
+      'pkill -f "^bun .next/standalone" >/dev/null 2>&1 || true; exec env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u HOSTNAME -u KEEP_ALIVE_TIMEOUT bun .next/standalone/server.js',
     url: `${BASE_URL}/api/health`,
     timeout: 60_000,
     reuseExistingServer: false,
     env: {
-      // Session 83 (S83-C — the thirty-first audit's B83-L1): the env
-      // copy DELETES the operator-exportable app knobs before the
-      // pinned overrides below apply. The raw `...process.env` spread
-      // leaked the parent shell into the "hermetic" server: an
-      // exported DIGMA_PROXY_HOPS=0 collapses the whole auth budget
-      // into the shared "unknown" bucket and breaks auth.spec's
-      // arithmetic; DIGMA_DISABLE_IN_APP_OTP=1 /
-      // DIGMA_DISABLE_IN_APP_RESET=1 fail the register/verify pins
-      // spuriously; DIGMA_REPO_ROOT misroutes the db-path anchors.
-      // PATH/HOME survive for the spawn; the five pinned overrides
-      // stand. The smoke suite's parent-DATABASE_URL refusal (S73-D)
-      // is the sibling discipline.
-      ...(() => {
-        const hermetic = { ...process.env } as Record<string, string>;
-        delete hermetic.DIGMA_PROXY_HOPS;
-        delete hermetic.DIGMA_DISABLE_IN_APP_RESET;
-        delete hermetic.DIGMA_DISABLE_IN_APP_OTP;
-        delete hermetic.DIGMA_REPO_ROOT;
-        return hermetic;
-      })(),
+      // Session 84 (S84-C revision): the OVERRIDES below are the env
+      // object's real job — Playwright merges this object OVER the
+      // parent process.env (the F71 discovery), so overriding is
+      // effective while DELETING is not (a deleted key simply
+      // re-inherits the parent's value in the merged child env — the
+      // S83-C delete lines were removed for that reason; the
+      // removal now lives in the command's `env -u` prefix above).
+      // The five pinned overrides stand:
+      ...process.env as Record<string, string>,
       PORT: String(PORT),
       NODE_ENV: "production",
       DATABASE_URL: E2E_DATABASE_URL,

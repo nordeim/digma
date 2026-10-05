@@ -92,7 +92,11 @@ export async function POST(request: NextRequest) {
       return tx.user.create({
         data: {
           email,
-          name: name || email.split("@")[0] || "Designer",
+          // Session 84 (S84-D / B84-I2): the DERIVED name caps at the same
+          // 80-char bound the explicit name path enforces above — an email
+          // with a ~190-char local part (the 200-char email cap) previously
+          // stored a ~190-char User.name, the one path around S62-G's cap.
+          name: (name || email.split("@")[0] || "Designer").slice(0, 80),
           passwordHash,
           avatarColor: "#3B82F6",
           verified: false,

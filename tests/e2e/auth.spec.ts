@@ -156,11 +156,16 @@ test.describe("auth card state structure (reference parity)", () => {
   // Session 43 (RA-58/RA-59): the signup's verify-email follow-through and
   // the forgot submit's check-your-email success card. NOTE the auth-call
   // budget: the rate limiter allows 10 per IP per 15 minutes and the whole
-  // e2e run shares one window — this file keeps its total at 9 (setup 1 +
-  // wrong-password 1 + valid 1 + redirect 1 + envelope 1 + this journey's
-  // register/wrong-verify/login/verify 4). The Resend ROUND-TRIP lives in
-  // the smoke suite (its own server process, its own bucket) — this pin
-  // asserts the button's chrome only.
+  // e2e run shares one window — this file keeps its shared-bucket total at
+  // 9 of 10 (setup 1 + wrong-password 1 + valid 1 + redirect 1 + envelope
+  // 1 + this journey's register/wrong-verify/login/verify 4). The Resend
+  // ROUND-TRIP lives in the smoke suite (its own server process, its own
+  // bucket); session 45's exhaustion section (smoke) and weak-password pin
+  // (e2e) each declare a DEDICATED X-Forwarded-For bucket, session 46's
+  // reset spec declares its own, and session 84's RA-59 forgot round-trip
+  // declares its own (S84-A / B84-L1 — the miscount repair: the RA-59
+  // forgot POST previously rode the shared bucket, silently running the
+  // budget at 10 of 10 with zero headroom while this comment said 9).
   // -------------------------------------------------------------------------
   test("the signup transitions to the verify-email card and the code opens the session (RA-58)", async ({ page }) => {
     const probeEmail = `verify-probe-${Date.now()}@digma.app`;
@@ -224,6 +229,19 @@ test.describe("auth card state structure (reference parity)", () => {
       page.getByRole("heading", { level: 1 }).filter({ hasText: /Good (morning|afternoon|evening)/ }),
     ).toBeVisible();
   });
+});
+
+// -------------------------------------------------------------------------
+// Session 84 (S84-A / B84-L1 — the thirty-second audit's budget repair):
+// the RA-59 forgot round-trip fires a REAL POST /api/auth/forgot-password
+// — a rate-limited route. It previously sat inside the default context
+// (no X-Forwarded-For bucket), burning the SHARED bucket's 10th call at
+// zero headroom while the budget comment below enumerated only 9. The
+// describe now declares its own XFF bucket (the session-45/46 siblings'
+// own form) — the shared bucket honestly returns to 9 of 10.
+// -------------------------------------------------------------------------
+test.describe("the forgot submit round-trip (RA-59, session 43)", () => {
+  test.use({ extraHTTPHeaders: { "X-Forwarded-For": "198.51.100.84" } });
 
   test("the forgot submit transitions to the check-your-email success card (RA-59)", async ({ page }) => {
     await page.goto("/login");

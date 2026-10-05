@@ -290,6 +290,33 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return tag === "textarea" || tag === "select" || el.isContentEditable;
 }
 
+/** Session 84 (S84-B — the thirty-second audit's A84-L1): the panel
+ * number-field clamps, single-sourced. The properties panel's X/Y/W/H
+ * and Font Size fields lacked the server's bounds (buildElementRow
+ * clamps x/y to ±100000, width/height to 0..100000, fontSize to
+ * 1..500) while the Radius/Stroke/Rotation/Opacity siblings all clamped
+ * at their consumers — so an out-of-range value typed into the panel
+ * rendered locally until the autosave PUT's response replaced the store
+ * list and the value visibly teleported to the clamped form. These
+ * helpers mirror the server's bounds at the consumer; the mobile
+ * properties Sheet rides the SHARED PropertiesSections composition, so
+ * one seam covers both surfaces. */
+export function clampPositionField(value: number): number {
+  return Math.min(Math.max(value, -100000), 100000);
+}
+
+/** The W/H form: the type-aware floor survives (a line allows a 0
+ * extent, every other shape floors at 1 — the S70-D contract) and the
+ * server's 100000 ceiling joins it. */
+export function clampSizeField(value: number, type: ElementType): number {
+  const floor = type === "line" ? 0 : 1;
+  return Math.min(Math.max(value, floor), 100000);
+}
+
+export function clampFontSizeField(value: number): number {
+  return Math.min(Math.max(value, 1), 500);
+}
+
 /** Default geometry + styling for a freshly drawn element of each type. */
 export function defaultElementFor(
   type: ElementType,

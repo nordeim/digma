@@ -122,7 +122,14 @@ const skill = readFileSync(
 // / 260 e2e (unchanged — the color carve-out rides the unit
 // behavioral pin, the S64-G sibling's own form); the intents
 // unchanged.
-const UNIT = "994";
+// Session 84: re-anchored to the session-84 delivery counts —
+// 1024 unit (+29: the client-lows-s84 clamp behavioral + source +
+// survival family and the dashboard date pin 10, the server-lows-s84
+// hermetic-HOSTNAME + derived-name + auth.spec-carve-out pins 10)
+// / 63 smoke (unchanged) / 260 e2e (unchanged — the RA-59
+// re-bucketing moves a test between describes, adds none); the
+// intents (the docs carry the DELIVERED counts) unchanged.
+const UNIT = "1024";
 const SMOKE = "63";
 const E2E = "260";
 

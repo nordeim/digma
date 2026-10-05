@@ -370,9 +370,14 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                             guard joins the project-card's S73-H form (the
                             family's third site) — a NaN timestamp renders
                             the bare slot, never "Invalid Date". */}
+                        {/* Session 84 (S84-D / A84-I2): the list-row date pins
+                            en-US — the surface's own family form (the Recent
+                            list and every card date pin it); the bare
+                            locale-dependent form rendered a different shape
+                            on non-en-US devices. */}
                         {Number.isNaN(new Date(project.lastOpenedAt).getTime())
                           ? "—"
-                          : new Date(project.lastOpenedAt).toLocaleDateString()}
+                          : new Date(project.lastOpenedAt).toLocaleDateString("en-US")}
                       </span>
                     </button>
                   ))}

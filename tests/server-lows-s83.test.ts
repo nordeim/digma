@@ -50,14 +50,20 @@ const registerSource = readFileSync(
 // S83-C — the e2e server's hermetic env (B83-L1)
 // ---------------------------------------------------------------------------
 
-describe("the e2e server's env is hermetic against operator exports (S83-C / B83-L1)", () => {
-  it("the webServer deletes the four app knobs from the inherited env before the overrides", () => {
-    // THE DEFECT PIN: pre-fix the env is the raw `...process.env`
-    // spread — the knob-deletion discipline is absent.
-    expect(playwrightSource).toMatch(/delete .*DIGMA_PROXY_HOPS/);
-    expect(playwrightSource).toMatch(/delete .*DIGMA_DISABLE_IN_APP_RESET/);
-    expect(playwrightSource).toMatch(/delete .*DIGMA_DISABLE_IN_APP_OTP/);
-    expect(playwrightSource).toMatch(/delete .*DIGMA_REPO_ROOT/);
+describe("the e2e server's env is hermetic against operator exports (S83-C / B83-L1 — the S84-C revision form)", () => {
+  it("the webServer COMMAND strips the six knobs via env -u (the merge discovery's effective form)", () => {
+    // Session 84 (S84-C revision — the F71 runtime discovery): the
+    // S83-C delete-lines-in-the-env-object form was INEFFECTIVE —
+    // Playwright MERGES the webServer env object OVER process.env, so
+    // a deleted key re-inherits the parent's value (proven live with a
+    // probe config: a deleted HOSTNAME still reached the spawned
+    // server). The removal moved INTO THE COMMAND: the `env -u`
+    // prefix strips the four app knobs plus the standalone runtime's
+    // own HOSTNAME/KEEP_ALIVE_TIMEOUT — the only form that actually
+    // reaches the child process.
+    expect(playwrightSource).toMatch(
+      /exec env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u HOSTNAME -u KEEP_ALIVE_TIMEOUT bun \.next\/standalone\/server\.js/,
+    );
   });
 
   it("the webServer keeps the five pinned overrides (the standing hermeticity contract, unchanged)", () => {
@@ -67,7 +73,7 @@ describe("the e2e server's env is hermetic against operator exports (S83-C / B83
     expect(playwrightSource).toMatch(/AUTH_SECRET: "playwright-e2e-session-secret"/);
   });
 
-  it("the global-setup deletes the same knobs for the seed commands (the uniform discipline)", () => {
+  it("the global-setup deletes the same knobs for the seed commands (the uniform discipline — execSync env REPLACES, so deletes are effective there)", () => {
     expect(globalSetupSource).toMatch(/delete .*DIGMA_PROXY_HOPS/);
     expect(globalSetupSource).toMatch(/delete .*DIGMA_REPO_ROOT/);
     // The seed commands keep their own pinned DATABASE_URL.

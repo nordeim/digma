@@ -81,10 +81,20 @@ describe("the line-width clamp symmetry (S70-D / L-A7)", () => {
   it("the panel W field floors type-aware (matching the H field's form)", () => {
     // THE DEFECT PIN: pre-fix the W field floors at 1 for every type
     // (properties-panel.tsx:980).
+    // Session 84: legitimately re-anchored from the inline
+    // `element.type === "line" ? Math.max(width, 0) : Math.max(width, 1)`
+    // form — S84-B moved the SAME type-aware floor (unchanged) into the
+    // shared clampSizeField helper (src/lib/editor.ts) so the field could
+    // also gain the server's 100000 ceiling; the intent (a 0-extent line
+    // dimension stays 0, every other shape floors at 1 — the draw commit's
+    // own contract) is byte-identical inside the helper.
     const panel = src("src/components/editor/properties-panel.tsx");
-    expect(panel).toMatch(/label="W"[\s\S]{0,220}element\.type === "line" \? Math\.max\(width, 0\) : Math\.max\(width, 1\)/);
-    // The H field's standing type-aware form is preserved.
-    expect(panel).toMatch(/element\.type === "line" \? Math\.max\(height, 0\) : Math\.max\(height, 1\)/);
+    expect(panel).toMatch(/label="W"[\s\S]{0,220}clampSizeField\(width, element\.type\)/);
+    // The type-aware floor itself lives on in the shared helper (the
+    // H field consumes the same form).
+    const editorLib = src("src/lib/editor.ts");
+    expect(editorLib).toMatch(/const floor = type === "line" \? 0 : 1;/);
+    expect(panel).toMatch(/clampSizeField\(height, element\.type\)/);
   });
 });
 

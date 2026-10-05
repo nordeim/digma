@@ -502,6 +502,15 @@ S93.update({
     "clone-37-color-swatch-carveout": (1440, 900),
 })
 
+# Session 84 (the 60th reference audit + the S84 live inline checks): the
+# s94 evidence set mirrors the s93 standing set + the session's own two
+# entries (the panel clamp family + the derived-name cap).
+S94 = dict(S93)
+S94.update({
+    "clone-38-panel-clamp-family": (1440, 900),
+    "clone-39-derived-name-cap": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -544,6 +553,8 @@ def expected_for(name: str):
         return S92.get(Path(name).stem)
     if name.startswith("ref-audit-s93/"):
         return S93.get(Path(name).stem)
+    if name.startswith("ref-audit-s94/"):
+        return S94.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -616,6 +627,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s91").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s92").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s93").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s94").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

@@ -11,6 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FONT_FAMILIES } from "@/lib/validation";
 import {
   addGradientStop,
+  clampFontSizeField,
+  clampPositionField,
+  clampSizeField,
   cornerRadiusMax,
   defaultGradient,
   downscaledDimensions,
@@ -968,7 +971,7 @@ export function TextSection({
       <NumberField
         label="Font Size"
         value={element.fontSize ?? 16}
-        onChange={(fontSize) => update({ fontSize: Math.max(fontSize, 1) })}
+        onChange={(fontSize) => update({ fontSize: clampFontSizeField(fontSize) })}
         min={1}
       />
       {/* Session 64 (S64-G / A-8): the cleared color COMMITS the null —
@@ -1060,21 +1063,21 @@ export function PositionSizeSection({
     <section aria-label="Position and size">
       <SectionHeading icon="position">Position &amp; Size</SectionHeading>
       <div className="grid grid-cols-2 gap-3">
-        <NumberField label="X" value={element.x} onChange={(x) => update({ x })} />
-        <NumberField label="Y" value={element.y} onChange={(y) => update({ y })} />
+        <NumberField label="X" value={element.x} onChange={(x) => update({ x: clampPositionField(x) })} />
+        <NumberField label="Y" value={element.y} onChange={(y) => update({ y: clampPositionField(y) })} />
         {/* Session 70 (S70-D / L-A7): the W floor is TYPE-AWARE now —
             matching the H field and the draw commit (a 0-extent line
             dimension stays 0 instead of snapping to 1). */}
         <NumberField
           label="W"
           value={element.width}
-          onChange={(width) => update({ width: element.type === "line" ? Math.max(width, 0) : Math.max(width, 1) })}
+          onChange={(width) => update({ width: clampSizeField(width, element.type) })}
           min={element.type === "line" ? 0 : 1}
         />
         <NumberField
           label="H"
           value={element.height}
-          onChange={(height) => update({ height: element.type === "line" ? Math.max(height, 0) : Math.max(height, 1) })}
+          onChange={(height) => update({ height: clampSizeField(height, element.type) })}
           min={0}
         />
       </div>
