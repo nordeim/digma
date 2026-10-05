@@ -92,6 +92,17 @@ test.describe("session 80 — the in-flight swap-boundary race (S80-A / A-M1)", 
       })
       .toContain(`translate(${a2X}px`);
 
+    // THE PRECONDITION ASSERT (session 81, S81-D / A81-L3): pin the
+    // mid-flight state the discriminator depends on — the machine's
+    // setSaving runs in the flush's synchronous prefix, so the badge
+    // reads "Saving…" exactly while A1's PUT is in flight (its
+    // response is 700ms out). Without this assert, a slow fill/poll
+    // on a loaded machine could let the machine go idle before the
+    // pushState — the boundary flushNow() would then capture A2
+    // directly and the PRE-FIX build would also persist it (the
+    // discriminator silently losing its RED-ness).
+    await expect(page.getByText("Saving…", { exact: true })).toBeVisible();
+
     // THE SOFT SWAP — the true same-instance form (the Next-patched
     // pushState). The boundary flushNow() finds the machine mid-flight
     // (A1's PUT in flight) — pre-fix it captured NOTHING; B's GET

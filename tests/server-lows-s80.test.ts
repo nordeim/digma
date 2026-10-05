@@ -63,15 +63,22 @@ describe("the smoke suite asserts the anti-clickjacking headers at runtime (S80-
   });
 
   it("the X-Frame-Options DENY header is checked against the live server", () => {
-    expect(smoke).toMatch(/grep -qi "\^?x-frame-options: DENY"/i);
+    // Session 81 (S81-C / B81-I2 — the pin-precision tightening): the
+    // optional `\^?` anchor tightened to the literal `^` — a future edit
+    // dropping the shipped grep's line-start anchor would otherwise keep
+    // this pin green while weakening the runtime check to an unanchored
+    // substring match.
+    expect(smoke).toMatch(/grep -qi "\^x-frame-options: DENY"/i);
   });
 
   it("the X-Content-Type-Options nosniff header is checked against the live server", () => {
-    expect(smoke).toMatch(/grep -qi "\^?x-content-type-options: nosniff"/i);
+    // Session 81 (S81-C / B81-I2 — the pin-precision tightening): same.
+    expect(smoke).toMatch(/grep -qi "\^x-content-type-options: nosniff"/i);
   });
 
   it("the Referrer-Policy header is checked against the live server", () => {
-    expect(smoke).toMatch(/grep -qi "\^?referrer-policy: strict-origin-when-cross-origin"/i);
+    // Session 81 (S81-C / B81-I2 — the pin-precision tightening): same.
+    expect(smoke).toMatch(/grep -qi "\^referrer-policy: strict-origin-when-cross-origin"/i);
   });
 });
 
@@ -102,15 +109,21 @@ describe("the gate counts are aligned across the docs (S80-E / B-L1)", () => {
     // THE DEFECT PIN: CLAUDE.md:93 said "253 Playwright checks" while
     // its own gate-order line said 256. The session-80 delivery pins
     // the count at 258 (256 + the two session-80 discriminators).
+    // Session 81: legitimately re-anchored to 259 — the session-81
+    // discriminator (the mount double-PUT guard) grew the suite by
+    // one; the pin's intent (the delivery count pinned at the
+    // command-table site) is unchanged.
     expect(claude).not.toMatch(/253 Playwright/);
-    expect(claude).toMatch(/258 Playwright/);
+    expect(claude).toMatch(/259 Playwright/);
   });
 
   it("README.md's command table carries the current e2e count", () => {
     // THE DEFECT PIN: README.md:318 said "253 browser checks". The
-    // session-80 delivery pins the count at 258.
+    // session-80 delivery pins the count at 258. Session 81:
+    // legitimately re-anchored to 259 (the mount double-PUT
+    // discriminator) — intent unchanged.
     expect(readme).not.toMatch(/253 browser/);
-    expect(readme).toMatch(/258 browser/);
+    expect(readme).toMatch(/259 browser/);
   });
 
   it("digma_SKILL.md's project_state frontmatter carries the current counts", () => {

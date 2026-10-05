@@ -230,8 +230,24 @@ export function AiAssistant() {
         // uncommitted halves (commit=false) defer the history push to
         // endGesture; a single-half operation keeps its existing
         // single-entry behavior.
+        // Session 81 (S81-A / A81-M1): the coalesce arms ONLY when the
+        // store has NO live gesture — the S80-C form was the editor's
+        // only UNguarded gesture arm site. beginGesture overwrites
+        // gestureSnapshot unconditionally (editor-store), so a reply
+        // landing mid-slider-drag would have CLOBBERED the drag's
+        // pre-drag snapshot (the AI's endGesture pushed a MID-DRAG
+        // state, the drag's own terminal no-op'd, and every later
+        // slider tick committed per-entry — the S62-A flooding class).
+        // Under a live foreign gesture the pair falls back to the
+        // explicit commit=true paths (the pre-S80-C two-entry form —
+        // the documented programmatic-caller contract at
+        // properties-panel.tsx's update helper); the drag's snapshot
+        // stays INTACT. The canvas and panel arm sites carry the same
+        // interleave discipline (the S66-B foreign-ride family).
         const coalesce =
-          operation.patch.scale !== undefined && Object.keys(patch).length > 0;
+          operation.patch.scale !== undefined &&
+          Object.keys(patch).length > 0 &&
+          useEditorStore.getState().gestureSnapshot === null;
         if (coalesce) store.beginGesture();
         if (operation.patch.scale !== undefined) {
           store.scaleElements(targets, operation.patch.scale, coalesce ? false : true);

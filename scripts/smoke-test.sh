@@ -4,6 +4,22 @@
 # any failure and cleans up after itself.
 #
 # Prerequisites: `bun run build` (the standalone server must exist).
+#
+# Session 81 (S81-C / B81-L1): the server boots with DIGMA_DISABLE_AI_LLM=1
+# — the playwright webServer's own posture, extended to the smoke gate. The
+# AI checks pin the deterministic fallback's exact output (3 add ops), and
+# the z-ai SDK is REACHABLE from the standalone server with free-form,
+# non-deterministic replies (playwright.config.ts's documented rationale) —
+# without the knob a differently-shaped LLM reply fails the gate spuriously.
+#
+# Session 81 (S81-C / B81-I3 — the hermeticity note): the suite is NOT
+# hermetic against the dev database — it registers 3 users
+# (smoke-<ts>@digma.app), bumps the demo user's tokenVersion twice, and
+# creates/deletes its own fixture projects/teams. Projects/teams/members
+# clean up after themselves; the users and the tokenVersion bump persist —
+# re-seed the pristine contract (unset DATABASE_URL && bun prisma/seed.ts)
+# after every smoke run before any DB-count-sensitive work (screenshots,
+# check-db-contract, the next session's baseline).
 
 set -u
 
@@ -37,7 +53,7 @@ pkill -f "next start" >/dev/null 2>&1 || true
 sleep 1
 
 step "Booting the standalone production server on :${PORT}…"
-PORT="$PORT" NODE_ENV=production bun .next/standalone/server.js >/tmp/smoke-server.log 2>&1 &
+PORT="$PORT" NODE_ENV=production DIGMA_DISABLE_AI_LLM=1 bun .next/standalone/server.js >/tmp/smoke-server.log 2>&1 &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" >/dev/null 2>&1; pkill -f "standalone/server.js" >/dev/null 2>&1' EXIT
 

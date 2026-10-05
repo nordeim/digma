@@ -348,7 +348,20 @@ function useAutosave(): AutosaveHandle {
     // the load proceeds into exactly the pre-fix race (the documented
     // no-worse residual; the machine's own response handling is
     // unaffected either way).
-    const machineBusy = () => flushing || pending;
+    // Session 81 (S81-B / A81-L1): the busy predicate sees the
+    // DEBOUNCE-ARMED state too — an edit landing during the post-GET
+    // pair's PUT flight kept saveState "unsaved" with the 800ms
+    // subscriber timer armed while the machine itself went idle
+    // (flushing=false, pending=false — the response's
+    // elements-reference guard re-armed the timer). The old predicate
+    // resolved the drain on the idle machine and loadProject wiped
+    // the edit before its timer ever fired. The widened predicate
+    // waits for the timer's flush AND its response (bounded by the
+    // same 5s deadline — a continuously-editing user cannot block
+    // navigation either; on timeout the documented no-worse residual
+    // covers both windows now).
+    const machineBusy = () =>
+      flushing || pending || useEditorStore.getState().saveState === "unsaved";
     drainRef.current = async () => {
       const deadline = Date.now() + 5_000;
       while (machineBusy() && Date.now() < deadline) {
@@ -1254,6 +1267,15 @@ export function EditorView({ user }: { user: HeaderUser }) {
       // unmount cleanup's own skip mirrors), and only when the incoming
       // load actually replaces it (the same-project adoption re-run is
       // the S61-I skip below — it never reaches a loadProject).
+      // Session 81 (S81-B / A81-L2): the isMountRun capture — read
+      // BEFORE the boundary block flips firstRunRef below, so the
+      // post-GET pair can discriminate the MOUNT (the previous
+      // instance's unmount cleanup already transported the outgoing
+      // state — the S71-B no-double-PUT discipline, now carried to the
+      // second boundary too) from the SWAP (this instance's own
+      // boundary — the post-GET pair is the second half of ITS flush
+      // contract).
+      const isMountRun = firstRunRef.current;
       if (!firstRunRef.current) {
         const outgoing = useEditorStore.getState();
         const willReplace = projectId ? outgoing.projectId !== projectId : true;
@@ -1352,8 +1374,21 @@ export function EditorView({ user }: { user: HeaderUser }) {
             // too). The named case pays nothing when idle: flushNow
             // early-returns on "saved" and the drain resolves
             // immediately.
+            // Session 81 (S81-B / A81-L2): the mount guard — a MOUNT's
+            // outgoing state was already transported by the previous
+            // instance's unmount cleanup (the captured-state PUT; the
+            // machine's own in-flight PUT in the exit flow), so this
+            // pair must NOT re-PUT it (the S71-B double-PUT class — a
+            // redundant full-replace transaction). Only a SWAP run (this
+            // instance's own boundary fired above) reaches here now; the
+            // adoption re-run keeps its existing skip (the projectId
+            // identity guard below).
             const outgoingPost = useEditorStore.getState();
-            if (outgoingPost.projectId && outgoingPost.projectId !== projectId) {
+            if (
+              !isMountRun &&
+              outgoingPost.projectId &&
+              outgoingPost.projectId !== projectId
+            ) {
               flushNow();
               await flushNow.drain();
               if (cancelled) return;

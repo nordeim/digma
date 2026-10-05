@@ -86,9 +86,14 @@ describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
     expect(doc.includes("(20 routes")).toBe(false);
   });
 
-  it("the verification checklist carries the real counts (58 smoke / 230 e2e)", () => {
-    expect(doc).toMatch(/58 .*smoke|smoke.*58|58 checks/);
-    expect(doc).toMatch(/230 .*Playwright|Playwright.*230|230 checks/);
+  it("the verification checklist carries the real counts (61 smoke / 259 e2e)", () => {
+    // Session 81: legitimately re-anchored from 58/230 (the s69-era
+    // counts) — the smoke suite grew 58 -> 61 (the S80-D runtime
+    // header trio) and the e2e suite 230 -> 259 (the session-80/81
+    // discriminators); the pin's intent (DEPLOYMENT.md carries the
+    // DELIVERY counts) is unchanged.
+    expect(doc).toMatch(/61 .*smoke|smoke.*61|61 checks/);
+    expect(doc).toMatch(/259 .*Playwright|Playwright.*259|259 checks/);
     expect(doc.includes("28 E2E checks")).toBe(false);
     expect(doc.includes("51 Playwright checks")).toBe(false);
   });

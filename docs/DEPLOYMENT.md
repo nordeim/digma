@@ -115,6 +115,17 @@ bun run db:seed        # idempotent demo workspace (wipes domain tables)
 `db/*.db` is gitignored; every fresh clone recreates it from the two
 commands above (`cp .env.example .env` first).
 
+**Hazard (session 81, S81-E / B81-I4):** `db:push` runs with
+`--accept-data-loss` — the dev-sandbox convenience flag is on the
+documented provisioning path. Against a FRESH database it is harmless
+(schema creation only), but run against an EXISTING production
+database after a schema drift it DROPS columns/tables without
+prompting. A production host that needs a schema refresh should
+re-provision deliberately: stop the server, back up `db/custom.db`,
+then re-push and re-seed — the single-tenant self-hosted posture
+(the two-command story) is the intended flow, not an in-place
+migration.
+
 **Environment trap (bit the team repeatedly):** a parent workspace `.env`
 or an exported shell `DATABASE_URL` shadows the repo's relative URL with an
 absolute path to a different (or missing) file — symptom: `Error code 14:
@@ -151,8 +162,8 @@ password reset increments the version for an individual account).
 ```bash
 curl -s https://your-host/api/health          # {"status":"ok",...}
 bun run lint && bun run typecheck && bun run test
-./scripts/smoke-test.sh                       # 58 smoke checks (local, dev server stopped)
-bun run test:e2e                              # 230 Playwright checks (local, needs a build)
+./scripts/smoke-test.sh                       # 61 smoke checks (local, dev server stopped)
+bun run test:e2e                              # 259 Playwright checks (local, needs a build)
 ```
 
 ## 7. Common production issues

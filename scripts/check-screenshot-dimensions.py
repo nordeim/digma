@@ -477,6 +477,15 @@ S90.update({
     "clone-33-unknown-swap-reset": (1440, 900),
 })
 
+# Session 81 (the 57th reference audit): the s91 evidence set mirrors
+# the s90 standing set + the session's own pair (the scale+patch
+# one-undo coalescing, the mount single-PUT guard).
+S91 = dict(S90)
+S91.update({
+    "clone-34-mid-drag-ai-guard": (1440, 900),
+    "clone-35-mount-single-put": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -513,6 +522,8 @@ def expected_for(name: str):
         return S89.get(Path(name).stem)
     if name.startswith("ref-audit-s90/"):
         return S90.get(Path(name).stem)
+    if name.startswith("ref-audit-s91/"):
+        return S91.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -582,6 +593,7 @@ def main():
         + [p for p in (ROOT / "ref-audit-s88").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s89").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s90").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s91").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

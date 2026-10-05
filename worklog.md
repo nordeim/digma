@@ -1373,3 +1373,19 @@ Work Log:
 
 Stage Summary:
 - Session 80 delivered on main: gate green at 924/61/258, the mobile nav contract held the 57th consecutive session, no reference drift, the deferred queue documented in docs/remediation-plan-session80.md
+
+---
+Task ID: digma-session-81
+Agent: Super Z (main agent)
+Task: The operator's session-cycle directive on the digma repo — refresh the workspace, re-validate against the mandated docs, the 57th reference audit, the 29th Mode C code audit with the repo skills, TDD remediation, the standing gates, the screenshots, the `.env.example`, the aligned docs, and the SSH-wrapper push to main only.
+
+Work Log:
+- The digma repo re-cloned (the sandbox reset — a fresh clone at 33b988b, the session-120 transcript push); the environment rebuilt (bun install, prisma generate, schema push, the DB seeded to the pristine 1/2/6/1/3 contract, .env recreated from .env.example at the mandated DATABASE_URL="file:../db/custom.db"); the exported parent-shell DATABASE_URL trap neutralized with the unset discipline
+- The mandated docs reviewed (AGENTS/CLAUDE/README/PAD v1.59.0/digma_SKILL v1.58.0 + session_119/session_120/remediation-plan-session80/worklog); all six S80 seams verified intact; the baseline gate re-proven green (924 unit / 61 smoke / 258 e2e)
+- The 57th reference audit vs https://digma-371dfd0d.base44.app/ (the real CDP login): NO DRIFT on any standing datum; mobile nav 9/9 the 58th consecutive session (re-verified on the final S81 build)
+- The 29th Mode C audit (the lead's doc-review findings + two fresh-eyes subagents): 0 Critical / 0 High / 1 Medium / 5 Low / 8 Informational; the chosen set remediated TDD-first: the foreign-gesture guard on the AI apply's coalescing pair (the headline — the S80-C form was the editor's only unguarded gesture arm site; a reply landing mid-slider-drag clobbered the drag's pre-drag snapshot), the drain's armed-debounce disjunct + the post-GET mount guard, the smoke gate's AI knob + the anchor tightening, the S80-A e2e precondition assert, the eleven-site docs honesty batch + the db:push hazard note
+- Full gate green at 943 unit / 133 files / 61 smoke / 259 e2e; the capture with three new inline checks (the mid-drag AI apply guard, the mount single-PUT, the deterministic fallback); dimensions 394/394; the VLM quota window still exhausted (429 on the probe — the run is the documented follow-up); docs aligned (PAD v1.60.0, digma_SKILL v1.59.0 + lesson F68, AGENTS/CLAUDE/README/DEPLOYMENT, session_121)
+- Committed and pushed to git@github.com:nordeim/digma.git main via docs/ssh_git_wrapper_v3.py; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 81 delivered on main: gate green at 943/61/259, the mobile nav contract held the 58th consecutive session, no reference drift, the deferred queue documented in docs/remediation-plan-session81.md
