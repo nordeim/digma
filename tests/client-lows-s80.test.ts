@@ -171,7 +171,11 @@ describe("scaleElements gains the commit parameter (S80-C / A-L2)", () => {
   it("the implementation honors the commit flag (the updateElements form)", () => {
     const start = storeSource.indexOf("scaleElements: (ids, factor");
     expect(start).toBeGreaterThanOrEqual(0);
-    const body = storeSource.slice(start, start + 1400);
+    // Session 86: the slice window widened (1400 -> 2600) — S86-B's
+    // clampSizeField comment block sits between the signature and the
+    // commit branch; the intent (the uncommitted branch skips the past
+    // push) is unchanged.
+    const body = storeSource.slice(start, start + 2600);
     expect(body).toMatch(/commit(?:\s*=\s*true)?\s*,?/);
     // The uncommitted branch skips the past push.
     expect(body).toMatch(/if\s*\(commit\)/);

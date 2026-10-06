@@ -6,6 +6,7 @@
 
 import { create } from "zustand";
 import {
+  clampSizeField,
   defaultElementFor,
   ELEMENT_LIMIT,
   type DesignElementDTO,
@@ -302,14 +303,24 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       const idSet = new Set(ids);
       const next = state.elements.map((el) =>
         idSet.has(el.id)
-          // Session 70 (S70-D / L-A7): both floors are type-aware now
+          // Session 70 (S70-D / L-A7): both floors are type-aware
           // (line → 0, non-line → 1) — the pre-fix width floored at 1
           // for every type and the height at 0 for every type,
           // disagreeing with each other AND the resize/panel forms.
+          // Session 86 (S86-B / A86-L2): the products ride the shared
+          // clampSizeField (the S84-B helper mirroring the server's
+          // clampNumber(raw?.width, 0, 100000, …) bound) — the floor
+          // survives unchanged and the 100000 CEILING joins it. The
+          // sanitizer bounds the MULTIPLIER (0.05..20) but never the
+          // PRODUCT: an ×20 scale on a >5000-wide element reached
+          // 100000..400000, rendered locally, then visibly teleported
+          // to the server's bound when the store-replacing PUT landed
+          // (the S84-B teleport family's multiplicative member — every
+          // sibling path was already bounded).
           ? {
               ...el,
-              width: Math.max(el.width * factor, el.type === "line" ? 0 : 1),
-              height: Math.max(el.height * factor, el.type === "line" ? 0 : 1),
+              width: clampSizeField(el.width * factor, el.type),
+              height: clampSizeField(el.height * factor, el.type),
             }
           : el,
       );

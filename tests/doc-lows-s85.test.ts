@@ -139,11 +139,17 @@ describe("the S85-E small-honesty batch", () => {
     expect(recentSource).toMatch(/b\.name\.localeCompare\(a\.name, "en"\)/);
   });
 
-  it("DOC — the .env.example test-infra header names both readers honestly (the config AND the five spec files)", () => {
+  it("DOC — the .env.example test-infra header names both readers honestly (the config AND the spec files)", () => {
     // B85-I1: "read by the Playwright config, not the app" — E2E_BASE_URL
-    // is actually read by five spec files; only E2E_PORT is the config's.
+    // is actually read by the spec files; only E2E_PORT is the config's.
+    // Session 86 (S86-C / B86-L1): legitimately re-anchored — the pin
+    // asserted the literal "five spec files" while session85-fixes.spec.ts
+    // (itself a reader) had landed in the same commit as the S85-E
+    // correction; the header now says six and the COUNT lives in
+    // doc-lows-s86's reality-derived pin (grep the spec files, parse the
+    // header's number, assert equality — no second copy can rot).
     expect(ENV_EXAMPLE).toMatch(/read by the Playwright layer/i);
-    expect(ENV_EXAMPLE).toMatch(/five spec files/i);
+    expect(ENV_EXAMPLE).toMatch(/six spec files/i);
     expect(ENV_EXAMPLE).toMatch(/E2E_PORT/);
     expect(ENV_EXAMPLE).toMatch(/E2E_BASE_URL/);
   });

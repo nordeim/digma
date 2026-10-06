@@ -71,9 +71,16 @@ describe("the line-width clamp symmetry (S70-D / L-A7)", () => {
   it("scaleElements floors both dimensions type-aware (line 0 / non-line 1)", () => {
     // THE DEFECT PIN: pre-fix width floors at 1 for every type and height
     // at 0 for every type (editor-store.ts:286).
+    // Session 86: legitimately re-anchored from the inline
+    // `Math.max(el.width * factor, el.type === "line" ? 0 : 1)` form —
+    // S86-B moved the SAME type-aware floor (unchanged) into the shared
+    // clampSizeField helper so the multiplicative path could also gain
+    // the server's 100000 ceiling (the sanitizer bounds the multiplier,
+    // never the product); the intent (line → 0, non-line → 1 — the draw
+    // commit's own contract) is byte-identical inside the helper.
     const store = src("src/components/editor/editor-store.ts");
-    expect(store).toMatch(/width: Math\.max\(el\.width \* factor, el\.type === "line" \? 0 : 1\)/);
-    expect(store).toMatch(/height: Math\.max\(el\.height \* factor, el\.type === "line" \? 0 : 1\)/);
+    expect(store).toMatch(/width: clampSizeField\(el\.width \* factor, el\.type\)/);
+    expect(store).toMatch(/height: clampSizeField\(el\.height \* factor, el\.type\)/);
     expect(store).not.toMatch(/width: Math\.max\(el\.width \* factor, 1\)/);
     expect(store).not.toMatch(/height: Math\.max\(el\.height \* factor, 0\)/);
   });

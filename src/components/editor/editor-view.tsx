@@ -51,10 +51,13 @@ const UNTITLED_PROJECT: ProjectDTO = {
 // load pre-transport state (the next local edit would then full-list-PUT
 // over the final save). The cleanup records its transport here; the
 // re-entry mount's load boundary drains the slot (one-shot) and awaits
-// it only when it targets the project being loaded. The machine's own
-// in-flight PUT (the S71-B same-reference case) predates the unmount and
-// is covered by navigation latency — the same semantics the accepted
-// refresh path (the pagehide keepalive PUT vs the fresh GET) carries.
+// it only when it targets the project being loaded.
+// Session 86 (S86-A / A86-L3): the transport is now the SEQUENCE — the
+// machine's in-flight PUT₁ awaited first, the cleanup's newer-state PUT₂
+// chained strictly after it (the out-of-order landing closure: two
+// parallel same-project full-replace PUTs whose order HTTP never
+// guaranteed could regress the server to the pre-edit state). The mount
+// awaits BOTH legs through the registry's single done handle.
 let leaveTransportFor: { projectId: string; done: Promise<unknown> } | null = null;
 
 // ---------------------------------------------------------------------------
@@ -99,10 +102,17 @@ function useAutosave(): AutosaveHandle {
   // the soft navigation — the S62-C rationale — and carries exactly this
   // state) or the safety net for NEWER state (an edit landed after the
   // machine's capture — the reference mismatch keeps the cleanup).
+  // Session 86 (S86-A / A86-L3): the descriptor also carries the flight's
+  // COMPLETION handle — the cleanup can tell whether a flight is live but
+  // (pre-fix) could never tell WHEN it completes, so its newer-state PUT₂
+  // could land BEFORE the machine's older-state PUT₁ (an out-of-order
+  // regression the server happily persists — two parallel same-project
+  // full-replace PUTs whose landing order HTTP doesn't guarantee).
   const inFlightRef = React.useRef<{
     projectId: string;
     elements: ProjectDTO["elements"];
     backgroundColor: string;
+    flightDone: Promise<void>;
   } | null>(null);
   const flushRef = React.useRef<() => void>(() => {});
   // Session 80 (S80-A / A-M1): the drain trampoline — the effect assigns
@@ -219,10 +229,20 @@ function useAutosave(): AutosaveHandle {
       // synchronous prefix (captures + descriptor + setSaving + the PUT's
       // first await) before router.push's unmount cleanup can read it, so
       // the cleanup's reference compare sees THIS flight.
+      // Session 86 (S86-A / A86-L3): the flight's completion handle joins
+      // the descriptor — the boundary (the unmount cleanup) sequences its
+      // newer-state PUT₂ on this promise so the older PUT₁ always lands
+      // first. The resolver fires in the finally, the ONE completion site
+      // every path (success, failure, every early return) flows through.
+      let resolveFlightDone: () => void = () => {};
+      const flightDone = new Promise<void>((resolve) => {
+        resolveFlightDone = resolve;
+      });
       inFlightRef.current = {
         projectId: capturedProjectId,
         elements: capturedElements,
         backgroundColor: capturedBackgroundColor,
+        flightDone,
       };
       store.setSaving();
       try {
@@ -334,6 +354,10 @@ function useAutosave(): AutosaveHandle {
         // Session 57 (S57-B — M-1): live-instance retry only.
         if (!disposed) useEditorStore.getState().setUnsaved();
       } finally {
+        // Session 86 (S86-A): the flight's completion signal — the
+        // boundary that captured flightDone (the unmount cleanup's
+        // chained PUT₂) proceeds only after this.
+        resolveFlightDone();
         flushing = false;
         // Session 71 (S71-B): the descriptor dies with the flight — a
         // later cleanup must never skip against a stale flight.
@@ -490,16 +514,39 @@ function useAutosave(): AutosaveHandle {
           // Session 85 (S85-A): the at-unmount transport records itself —
           // a same-project re-entry mount awaits it before its GET (the
           // PUT/GET race closure; see the registry's module-level note).
+          // Session 86 (S86-A / A86-L3): the ordering closure. Pre-fix
+          // this cleanup fired its own newer-state PUT₂ IMMEDIATELY while
+          // the machine's older-state PUT₁ was still in flight — two
+          // parallel same-project full-replace PUTs whose landing order
+          // HTTP doesn't guarantee, and a PUT₁ landing LAST silently
+          // regressed the server to the pre-edit state (the sharpest
+          // edge: the re-entry mount awaited only PUT₂, so its GET could
+          // read PUT₁'s regressed result — the fresh-load fix loading the
+          // STALE state). The chain: PUT₂'s fetch runs strictly AFTER the
+          // machine's flight completes (the flightDone handle), and the
+          // registry's done carries the WHOLE sequence — the server sees
+          // the older PUT land first, the newer last, and the re-entry
+          // mount awaits BOTH legs before its GET. No live flight (or one
+          // targeting another project) degrades to the immediate PUT —
+          // there is nothing to order against.
+          const machineFlight =
+            softLeaveDescriptor !== null && softLeaveDescriptor.projectId === state.projectId
+              ? softLeaveDescriptor.flightDone
+              : Promise.resolve();
           leaveTransportFor = {
             projectId: state.projectId,
-            done: fetch(`/api/projects/${state.projectId}/elements`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                elements: state.elements,
-                backgroundColor: state.backgroundColor,
-              }),
-            }).catch(() => null),
+            done: machineFlight
+              .then(() =>
+                fetch(`/api/projects/${state.projectId}/elements`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    elements: state.elements,
+                    backgroundColor: state.backgroundColor,
+                  }),
+                }),
+              )
+              .catch(() => null),
           };
         }
       }

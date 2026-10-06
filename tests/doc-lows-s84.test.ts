@@ -28,12 +28,12 @@ const SKILL = readFileSync(path.resolve(import.meta.dirname, "../digma_SKILL.md"
 // doc-lows-s85 +9) / 143 files (+2) / 63 smoke (unchanged) / 262 e2e
 // (+2 — the session85-fixes re-entry discriminators); the intents (the
 // docs carry the DELIVERED counts) unchanged.
-const UNIT = "1047";
+const UNIT = "1076";
 // Session 85 (S85-E / A85-I1): the constant was "140" — dead (never
 // asserted) AND wrong — a dead wrong copy one edit away from becoming
 // a live wrong pin. Corrected and made LIVE (the pin below asserts it
 // against the PAD §7.1 total row DYNAMICALLY).
-const FILES = "143";
+const FILES = "145";
 const SMOKE = "63";
 const E2E = "262";
 
@@ -63,7 +63,7 @@ describe("the auth-call budget claims name the RA-59 carve-out (S84-A / B84-L1)"
 // The delivery counts (the F68 discipline — delivery-time reality)
 // ---------------------------------------------------------------------------
 
-describe("the delivery counts are honest (S84-E — 1024 unit / 141 files / 63 smoke / 260 e2e)", () => {
+describe("the delivery counts are honest (S84-E — the live UNIT/FILES/SMOKE/E2E constants)", () => {
   it("AGENTS' commands table and gate order carry 1024", () => {
     expect(AGENTS).toMatch(new RegExp(`\\| Unit tests \\(${UNIT} checks\\) \\|`));
     expect(AGENTS).toMatch(new RegExp("bun run test` \\(" + UNIT + "\\)"));

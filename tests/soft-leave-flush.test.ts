@@ -59,7 +59,11 @@ describe("the soft-leave flush + the stale-saving normalization (session 62, S62
     // form — the same fetch now rides `done:` inside leaveTransportFor
     // (the at-unmount transport records itself for the re-entry mount's
     // PUT/GET race closure); the no-keepalive intent unchanged.
-    const fetchIdx = cleanup.indexOf("done: fetch(");
+    // Session 86 (S86-A / A86-L3): re-anchored again — the fetch now
+    // rides the machineFlight chain (strictly AFTER the machine's
+    // older-state PUT₁; the out-of-order landing closure); the
+    // no-keepalive intent still unchanged.
+    const fetchIdx = cleanup.indexOf("done: machineFlight");
     expect(fetchIdx).toBeGreaterThan(-1);
     expect(cleanup.slice(fetchIdx, cleanup.indexOf(")", cleanup.indexOf("keepalive", fetchIdx) === -1 ? cleanup.length : cleanup.indexOf("keepalive", fetchIdx)) + 1)).not.toContain("keepalive");
   });

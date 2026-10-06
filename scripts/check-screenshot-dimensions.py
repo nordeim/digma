@@ -517,6 +517,14 @@ S95.update({
     "clone-40-reentry-fresh-name": (1440, 900),
     "clone-41-text-content-clamp": (1440, 900),
 })
+# s96 mapping (session 86 — the standing evidence re-captured on the S86
+# code + the two NEW inline witnesses: clone-42 the AI apply text clamp,
+# clone-43 the scale ceiling)
+S96 = dict(S95)
+S96.update({
+    "clone-42-ai-apply-text-clamp": (1440, 900),
+    "clone-43-scale-ceiling": (1440, 900),
+})
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -564,6 +572,8 @@ def expected_for(name: str):
         return S94.get(Path(name).stem)
     if name.startswith("ref-audit-s95/"):
         return S95.get(Path(name).stem)
+    if name.startswith("ref-audit-s96/"):
+        return S96.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -638,6 +648,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s93").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s94").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s95").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s96").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

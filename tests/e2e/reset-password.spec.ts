@@ -12,9 +12,12 @@ import { expect, test } from "@playwright/test";
 //
 // This file OPTS OUT of the shared storageState (the surface is public and
 // session-agnostic — the reference renders it while logged in) and declares
-// its own X-Forwarded-For bucket so its six auth calls (session 67: the
+// its own X-Forwarded-For bucket so its seven auth calls (session 67: the
 // scratch account's register + verify + the round-trip's forgot + reset +
-// old-login + new-login — the same budget the demo-account form carried)
+// old-login + new-login, plus the invalid-token submit's reset POST —
+// session 86's S86-C/B86-I1 count repair: the F71 enumeration discipline
+// had missed the sixth test's own rate-limited call; the same budget the
+// demo-account form carried)
 // never touch the auth.spec.ts shared budget (src/lib/rate-limit.ts keys
 // on XFF). Session 67 (S67-A) moved the round-trip onto the scratch
 // account: a demo-account reset now evicts the shared storageState's

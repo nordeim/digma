@@ -1489,3 +1489,20 @@ Work Log:
 
 Stage Summary:
 - Session 85 delivered on main: gate green at 1047/63/262, the mobile nav contract held the 62nd consecutive session, no reference drift, the deferred queue documented in docs/remediation-plan-session85.md (the F72 lesson set: the singleton-store re-entry trap, the totals-only pin's blind spot, the dead-constant hazard, the at-boundary transport registry, the generated-script escape strip)
+
+---
+Task ID: digma-s86
+Agent: lead (Super Z)
+
+Task: the operator's session-cycle directive — refresh, review the mandated docs (session_129/130 + remediation-plan-session85 + worklog), audit, remediate TDD-first, capture, align docs, push to main.
+
+Work Log:
+- Workspace refreshed at HEAD a003732 (git pull fast-forward — the session_130 transcript log); the mandated docs reviewed; the environment verified (.env at the mandated file:../db/custom.db, the parent-shell DATABASE_URL trap unset at every gate, PRISTINE CONTRACT OK 1/2/6/1/3)
+- The baseline gate re-proven green (1047 unit / 143 files / 63 smoke / 262 e2e — the F59 corollary HOLDS, the third consecutive)
+- The 62nd reference audit vs https://digma-371dfd0d.base44.app/ (the real CDP login): NO DRIFT on any standing datum (the Share/Present clipping byte-identical the 23rd consecutive session; the F63/F71 plain-number eval quirk re-probed with the string-concatenation form — kbd=0, dead-chrome dialogs=0); mobile nav 9/9 the 63rd consecutive session (baseline + the final S86 build; the first run hit a transient eval hiccup — the manual re-probe and the re-run both GREEN)
+- The 34th Mode C audit (two fresh-eyes subagents — A over the editor/client layer ~11.4k lines, B over the server/infra side): 0 Critical / 0 High / 0 Medium / 6 Low / 5 Informational (the second consecutive zero-severity-code-defect audit); the chosen set remediated TDD-first: the leave-transport ordering closure (the headline — the S71-B double-PUT's out-of-order landing window closed by the flightDone completion handle + the chained cleanup PUT + the registry carrying the whole sequence), the AI apply clamp family (clampText at both apply sites + clampSizeField on the scaleElements products), and the live-derived doc pins (the .env.example reader count REALITY-DERIVED, the PAD §11 line counts pinned LIVE — the pin's first run caught a SIXTH stale row beyond the audit)
+- Full gate green at 1076 unit / 145 files / 63 smoke / 262 e2e (18 code/doc defect pins deterministically RED pre-fix; 6 survival pins; SIX standing pins legitimately re-anchored with intents documented); the capture with two new inline checks (clone-42 the AI text-clamp witness {trimmed:1,raw:0}, clone-43 the scale-ceiling witness {after:100000}); dimensions 453/453; docs aligned (PAD v1.65.0, digma_SKILL v1.64.0 + lesson F73, AGENTS/CLAUDE/README, session_131, remediation-plan-session86)
+- Committed and pushed to git@github.com:nordeim/digma.git main via docs/ssh_git_wrapper_v3.py; the operator key shredded per the runbook
+
+Stage Summary:
+- Session 86 delivered on main: gate green at 1076/63/262, the mobile nav contract held the 63rd consecutive session, no reference drift, the deferred queue documented in docs/remediation-plan-session86.md (the F73 lesson set: the unsound ordering assumption, the multiplier-vs-product clamp gap, the doc-claim-as-second-copy, the live-derived doc pin)

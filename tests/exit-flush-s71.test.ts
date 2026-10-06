@@ -34,8 +34,11 @@ describe("the in-flight descriptor (S71-B / L-A3)", () => {
   it("the machine exposes the captured-body descriptor while its PUT is in flight", () => {
     // THE DEFECT PIN: pre-fix no in-flight descriptor exists — the
     // cleanup reads only saveState/projectId.
+    // Session 86 (S86-A): legitimately re-anchored — the descriptor
+    // gained the flightDone completion handle (the ordering closure's
+    // primitive); the captured-state intent is unchanged.
     expect(view).toMatch(/inFlightRef\s*=\s*React\.useRef/);
-    expect(view).toMatch(/inFlightRef\.current\s*=\s*\{\s*projectId:\s*capturedProjectId,\s*elements:\s*capturedElements,\s*backgroundColor:\s*capturedBackgroundColor,?\s*\}/);
+    expect(view).toMatch(/inFlightRef\.current\s*=\s*\{\s*projectId:\s*capturedProjectId,\s*elements:\s*capturedElements,\s*backgroundColor:\s*capturedBackgroundColor,\s*flightDone,\s*\};/);
   });
 
   it("the descriptor is assigned BEFORE the PUT issues (at capture time, before setSaving)", () => {
@@ -89,8 +92,13 @@ describe("the untouched transports (S71-B preservation)", () => {
     // THE PRESERVATION PIN: the soft-leave flush still fires when the
     // machine does NOT carry the live state (an edit landed after the
     // machine's capture — the pending-requeue interleaving).
+    // Session 86 (S86-A): legitimately re-anchored — the same PUT now
+    // rides the machineFlight chain (strictly AFTER the machine's
+    // older-state PUT₁, the out-of-order landing closure) and the
+    // .catch(() => null) closes the whole sequence; the
+    // newer-state-safety-net intent is unchanged.
     expect(view).toMatch(/saveState !== "saved" && state\.projectId/);
-    expect(view).toMatch(/method:\s*"PUT",\s*headers:\s*\{\s*"Content-Type":\s*"application\/json"\s*\},\s*body:\s*JSON\.stringify\(\{\s*elements:\s*state\.elements,\s*backgroundColor:\s*state\.backgroundColor,?\s*\}\),?\s*\}\)\.catch\(\(\)\s*=>\s*null\)/);
+    expect(view).toMatch(/done:\s*machineFlight\s*\.then\(\(\)\s*=>\s*fetch\([\s\S]{0,400}?method:\s*"PUT",\s*headers:\s*\{\s*"Content-Type":\s*"application\/json"\s*\},\s*body:\s*JSON\.stringify\(\{\s*elements:\s*state\.elements,\s*backgroundColor:\s*state\.backgroundColor,?\s*\}\),?\s*\}\),?\s*\)\s*\.catch\(\(\)\s*=>\s*null\)/);
   });
 
   it("the machine's pending re-run stays NOT disposed-gated (the S56-B contract)", () => {

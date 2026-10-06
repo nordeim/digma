@@ -132,7 +132,7 @@ const skill = readFileSync(
 // Session 85 (S85-F): re-anchored again — 1047 unit / 143 files /
 // 63 smoke (unchanged) / 262 e2e (+2 — the session85-fixes re-entry
 // discriminators); the intents unchanged.
-const UNIT = "1047";
+const UNIT = "1076";
 const SMOKE = "63";
 const E2E = "262";
 
@@ -144,7 +144,7 @@ describe("the stale-count family is corrected (S81-E / B81-L-family)", () => {
     expect(readme).toMatch(new RegExp(`\\| E2E tests \\| Playwright \\| [^|]*\\| ${E2E} browser checks`));
   });
 
-  it("README: the smoke count sites (173 / 319 / 326) carry 61", () => {
+  it("README: the smoke count sites (173 / 319 / 326) carry the live SMOKE constant", () => {
     // Pre-fix: "58-check" / "58 checks" x3.
     const count58 = readme.match(/58[- ]check|58 checks/g) ?? [];
     expect(count58.length).toBe(0);
@@ -153,7 +153,7 @@ describe("the stale-count family is corrected (S81-E / B81-L-family)", () => {
     expect(readme).toMatch(new RegExp(`runs ${SMOKE} checks`));
   });
 
-  it("AGENTS: the commands table's e2e row carries 259", () => {
+  it("AGENTS: the commands table's e2e row carries the live E2E constant", () => {
     // Pre-fix: "Browser E2E (256 checks" (AGENTS:16).
     expect(agents).toMatch(new RegExp(`Browser E2E \\(${E2E} checks`));
   });
@@ -166,7 +166,7 @@ describe("the stale-count family is corrected (S81-E / B81-L-family)", () => {
     expect(claude).toMatch(new RegExp(`Smoke Tests\\*+ \\(${SMOKE} checks`));
   });
 
-  it("CLAUDE: the commands table's smoke row carries 61", () => {
+  it("CLAUDE: the commands table's smoke row carries the live SMOKE constant", () => {
     // Pre-fix: "58-check HTTP smoke suite" (CLAUDE:98).
     expect(claude).toMatch(new RegExp(`${SMOKE}-check HTTP smoke suite`));
   });

@@ -6,6 +6,7 @@ import { Bot, RotateCcw, Send, WandSparkles } from "lucide-react";
 import { useEditorStore, type EditorSnapshot } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { AiOperation } from "@/lib/ai-assistant";
+import { clampText } from "@/lib/validation";
 import { ELEMENT_LIMIT, type DesignElementDTO } from "@/lib/editor";
 
 type ChatMessage = {
@@ -177,7 +178,15 @@ export function AiAssistant() {
           partial.fill = operation.element.fill;
         }
         if (operation.element.text !== null && operation.element.text !== undefined) {
-          partial.text = operation.element.text;
+          // Session 86 (S86-B / A86-L1): the AI path's text commits through
+          // the SAME clamp the server's buildElementRow applies — the
+          // fallback's quoted content and the sanitizer's slice never TRIM,
+          // so edge whitespace rendered locally (the canvas's pre-wrap
+          // makes it visible content) then visibly lost on the
+          // store-replacing PUT round-trip; a whitespace-only AI text
+          // nulled to empty after the save (the S85-B TextSection fix's
+          // AI-path sibling — one seam, both consumers).
+          partial.text = clampText(operation.element.text, 2000);
         }
         if (operation.element.fontSize !== null && operation.element.fontSize !== undefined) {
           partial.fontSize = operation.element.fontSize;
@@ -214,7 +223,12 @@ export function AiAssistant() {
         if (operation.patch.opacity !== undefined) patch.opacity = operation.patch.opacity;
         if (operation.patch.width !== undefined && operation.patch.width !== null) patch.width = operation.patch.width;
         if (operation.patch.height !== undefined && operation.patch.height !== null) patch.height = operation.patch.height;
-        if (operation.patch.text !== undefined) patch.text = operation.patch.text;
+        if (operation.patch.text !== undefined) {
+          // Session 86 (S86-B / A86-L1): the update path's patch.text rides
+          // the same clamp — the LLM's free-form edits arrive with edge
+          // whitespace the sanitizer's slice(0, 500) never trims.
+          patch.text = clampText(operation.patch.text, 2000);
+        }
         // Session 57 (S57-E — the fifth Mode C audit's M-6): the scale no
         // longer swallows its sibling fields. The old branch ended in
         // `continue` — any fill/opacity/width/height/text built into the
