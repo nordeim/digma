@@ -23,6 +23,11 @@ const PAD = readFileSync(
 );
 const SKILL = readFileSync(path.resolve(import.meta.dirname, "../digma_SKILL.md"), "utf8");
 
+// Session 90 (S90-D): re-anchored to the session-90 delivery counts —
+// 1131 unit (1123 + client-lows-s90 8 — the S90-A doc-honesty pins +
+// the S90-B calendar-independence pins) / 152 files (+1) / 63 smoke
+// (unchanged) / 262 e2e (unchanged); the intents (the docs carry the
+// DELIVERED counts) unchanged.
 // Session 89 (S89-C): re-anchored to the session-89 delivery counts —
 // 1123 unit (1112 + client-lows-s89 6 + doc-lows-s89 5 — the S89-A
 // cap-mirror pins + the S89-B marker-widening pins) / 151 files (+2)
@@ -38,12 +43,12 @@ const SKILL = readFileSync(path.resolve(import.meta.dirname, "../digma_SKILL.md"
 // doc-lows-s85 +9) / 143 files (+2) / 63 smoke (unchanged) / 262 e2e
 // (+2 — the session85-fixes re-entry discriminators); the intents (the
 // docs carry the DELIVERED counts) unchanged.
-const UNIT = "1123";
+const UNIT = "1131";
 // Session 85 (S85-E / A85-I1): the constant was "140" — dead (never
 // asserted) AND wrong — a dead wrong copy one edit away from becoming
 // a live wrong pin. Corrected and made LIVE (the pin below asserts it
 // against the PAD §7.1 total row DYNAMICALLY).
-const FILES = "151";
+const FILES = "152";
 const SMOKE = "63";
 const E2E = "262";
 

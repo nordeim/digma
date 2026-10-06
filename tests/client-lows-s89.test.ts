@@ -62,7 +62,7 @@ const assistantRouteSource = readFileSync(
 
 /** The layers-rename-cap locator form: slice the input tag out of the
  * component source by its anchor attribute (the id for the shadcn
- * Inputs, the aria-label for the bare textarea), bounded by the tag's
+ * Inputs, the aria-label for the bare input), bounded by the tag's
  * own self-closing bracket — the cap is asserted on the tag's own
  * attributes, never on a loose file-wide grep. */
 function tagAround(source: string, anchor: string): string {
@@ -104,7 +104,7 @@ describe("the member-email inputs mirror the server's 200 truncation (S89-A / A8
 
 describe("the assistant input mirrors the server's 1000 prompt slice (S89-A / A89-I2)", () => {
   it("SOURCE — the message input caps at 1000, matching the route's prompt slice exactly", () => {
-    // THE DEFECT PIN: pre-fix the textarea carried no maxLength — the
+    // THE DEFECT PIN: pre-fix the input carried no maxLength — the
     // transcript echoed the full message while the reply was computed
     // on the route's slice(0, 1000) truncation (a trailing instruction
     // silently never reached the model).

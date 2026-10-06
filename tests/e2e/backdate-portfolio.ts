@@ -7,10 +7,13 @@ import { PrismaClient } from "@prisma/client";
  * The reference's Quick Stats "Active this week" formula — decoded from its
  * shipped client bundle (RA-37) — counts projects whose
  * `last_accessed || created_date` falls within the last 7 days (ACCESS-based,
- * NOT edit-based). The seed's two fixed dates (Sep 26 / Sep 25) both sit
- * inside the window on fresh re-seeds, so the seeded data can never
- * discriminate the formula (the F26 lesson generalized: a formula pinned on
- * data that never exercises its boundary is unpinned).
+ * NOT edit-based). The seed's two lastOpenedAt dates are RELATIVE to the
+ * seed moment (2 and 3 days back — S90-B's calendar independence: the
+ * pre-S90-B fixed literals aged out of the window silently), so both sit
+ * inside the window on every fresh re-seed, calendar-independent, and
+ * the seeded data can never discriminate the formula (the F26 lesson
+ * generalized: a formula pinned on data that never exercises its
+ * boundary is unpinned).
  *
  * This step produces EXACTLY the discriminating state: Prisma's `@updatedAt`
  * bumps `updatedAt` to now on this write, so the project is

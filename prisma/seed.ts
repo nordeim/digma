@@ -11,9 +11,13 @@ import { hashPassword } from "../src/lib/password";
 
 const db = new PrismaClient();
 
-function d(iso: string): Date {
-  return new Date(iso);
-}
+// Calendar-independent demo dates (S90-B / B90-I1): every seeded date is
+// RELATIVE to the seed moment, so the stats route's 7-day "Active this
+// week" window and the backdate discriminator keep their designed shape
+// on any future re-seed, any calendar (the pre-S90-B fixed 2026-09
+// literals aged out of the window silently — the time-bomb form).
+const daysAgo = (days: number): Date =>
+  new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
 async function main() {
   // Idempotency: wipe domain data, keep schema.
@@ -39,8 +43,8 @@ async function main() {
       description: "Landing page hero concept for the Q3 campaign.",
       template: "blank",
       backgroundColor: "#0D1117",
-      lastOpenedAt: d("2026-09-26T10:00:00Z"),
-      createdAt: d("2026-09-20T09:00:00Z"),
+      lastOpenedAt: daysAgo(2),
+      createdAt: daysAgo(8),
     },
   });
 
@@ -108,8 +112,8 @@ async function main() {
       description: "Personal site refresh — dark theme, big type.",
       template: "website",
       backgroundColor: "#F9FAFB",
-      lastOpenedAt: d("2026-09-25T15:30:00Z"),
-      createdAt: d("2026-09-22T11:00:00Z"),
+      lastOpenedAt: daysAgo(3),
+      createdAt: daysAgo(6),
     },
   });
 
