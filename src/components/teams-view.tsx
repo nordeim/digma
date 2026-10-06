@@ -403,6 +403,7 @@ function CreateTeamDialog({
               <Input
                 id="team-member-email"
                 type="email"
+                maxLength={200}
                 value={memberEmail}
                 onChange={(e) => setMemberEmail(e.target.value)}
                 placeholder="teammate@example.com"
@@ -484,6 +485,7 @@ function InviteMemberDialog({
             <Input
               id="invite-email"
               type="email"
+              maxLength={200}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="teammate@example.com"

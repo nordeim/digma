@@ -583,6 +583,7 @@ export function AiAssistant() {
             onChange={(event) => setInput(event.target.value)}
             placeholder="Create a blue button, make it bigger, delete selected..."
             aria-label="Message the AI design assistant"
+            maxLength={1000}
             className="h-8 w-full flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-xs text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           />
           <button

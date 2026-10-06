@@ -1596,3 +1596,21 @@ Work Log:
 
 Stage Summary:
 - Session 88 delivered on main: the radius-ceiling-compose/enumerator-widening pass; gate green at 1112/63/262; the mobile nav contract held the 65th consecutive session; no reference drift; the deferred queue documented in docs/remediation-plan-session88.md (the F75 lesson set: the dynamic-bound composition gap, the pattern-shaped enumerator's coverage hole)
+
+---
+Task ID: digma-s89
+Agent: lead (Super Z)
+
+Task: the operator's session-cycle directive — refresh, review the mandated docs (session_135/136 + remediation-plan-session88 + worklog), audit, remediate TDD-first, capture, align docs, push to main only.
+
+Work Log:
+- Workspace refreshed by git pull (d1c8081 -> bf38d73 — the session_136 narrative transcript-log push); the mandated docs reviewed and the understanding validated against the codebase (both S88 seams verified intact in source at baseline)
+- The baseline gate re-proven green at 1112 unit / 149 files / 63 smoke / 262 e2e (the F59 corollary HOLDS, the sixth consecutive); the 65th reference audit NO DRIFT (the Share/Present clipping byte-identical the 26th consecutive session; the non-IIFE eval forms — zero {} returns); mobile nav 9/9 the 66th consecutive session (baseline AND the final S89 build)
+- The 37th Mode C audit (auditor A: the editor/client layer ~11.4k lines + a 37-check read-only arithmetic probe ALL PASS; auditor B: the server/infra side with a live gates re-run in the auditor's own environment): 0 Critical / 0 High / 0 Medium / 2 Low / 9 Informational; every chosen finding lead-verified in source
+- The TDD remediation: S89-A the member-email/message-input cap mirror (the headline, A89-L1 + A89-I2 — maxLength={200} on both teams-view email Inputs mirroring the server's clampText(_, 200) seams + maxLength={1000} on the assistant's message input mirroring the route's slice(0, 1000); the mirror table's last unmirrored fields — REQUEST-BODY string fields outside every element-field clamp enumeration; the register honest-rejection asymmetry documented), S89-B the assistant marker's route-path family (B89-L1, the F75 lesson one layer down — the coverage companion's own MARKER widened from the fetch( literal to ANY string literal naming the route path, complete by construction over every transport; the count unchanged at NINE, the exemption record riding through), S89-C the docs + the logs (PAD v1.68.0, digma_SKILL v1.67.0 + lesson F76, AGENTS/CLAUDE/README counts, session_137.md, the remediation plan's execution status + notes)
+- 4 defect pins deterministically RED pre-fix; full gate green at 1123 unit / 151 files / 63 smoke / 262 e2e; TWO §11 rows legitimately re-anchored onto the grown files (teams-view 517 -> 519, ai-assistant 603 -> 604 — the row-sum forcing function fired exactly as designed) + the doc-lows-s84/server-lows-s81 UNIT/FILES constants onto 1123/151
+- The capture with ONE NEW inline check (clone-47 the member-email cap live witness — a 254-char email inserted through the NATIVE text pipeline, the input reading back EXACTLY 200: {maxLength:200, typed:254, valueLen:200, capped:true}; the probe pre-tested standalone so the design could not burn the capture) + clone-46 re-verified standing ({sliderMax:2000, midEdit:2000, after:2000, composed:true}); dimensions 483/483 (the s99 mapping added); the DB pristine after every mutating phase; .env.example verified (the seven app reads + the six test-infra readers — the S89 remediation touched no env reader)
+- Committed and pushed to git@github.com:nordeim/digma.git main via docs/ssh_git_wrapper_v3.py
+
+Stage Summary:
+- Session 89 delivered on main: the silent-truncation-mirror/marker-widening pass; gate green at 1123/63/262; the mobile nav contract held the 66th consecutive session; no reference drift; the deferred queue documented in docs/remediation-plan-session89.md (the F76 lesson set: the forcing function's own pattern-shaped marker, the mirror table's request-body members, the source-pin's escaping trap)

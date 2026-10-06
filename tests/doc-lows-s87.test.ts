@@ -132,10 +132,15 @@ function liveAssistantSendCount(): { total: number; perFile: Record<string, numb
 
 /** The assistant-consumption family's marker: any spec file that could
  * consume the shared ai: bucket — a textbox locator, the askAssistant
- * helper, or a direct fetch to the assistant API. (S88-B: the
- * coverage-completeness forcing function's sweep — see the pin below.) */
+ * helper, or any string literal naming the assistant route path.
+ * (S88-B: the coverage-completeness forcing function's sweep — see the
+ * pin below. S89-B: the direct-API alternative widened from the
+ * pattern-shaped fetch( form to the ROUTE-PATH family — complete by
+ * construction over every transport: fetch(, request.post(,
+ * page.request.post(, whatever comes — the forcing function given the
+ * same family-widening its enumerator received.) */
 const ASSISTANT_MARKER =
-  /(?:getByRole|getByLabel|locator|getByPlaceholder)\([^)]*?(?:(?:textbox|input|textarea|Message|Ask|placeholder|aria-label)[^)]*?[Aa]ssistant|[Aa]ssistant[^)]*?(?:textbox|input|textarea|Message|Ask|placeholder|aria-label))|askAssistant\(|fetch\(["']\/api\/ai-assistant/;
+  /(?:getByRole|getByLabel|locator|getByPlaceholder)\([^)]*?(?:(?:textbox|input|textarea|Message|Ask|placeholder|aria-label)[^)]*?[Aa]ssistant|[Aa]ssistant[^)]*?(?:textbox|input|textarea|Message|Ask|placeholder|aria-label))|askAssistant\(|["']\/api\/ai-assistant/;
 
 /** The documented exemptions — files that touch the family's markers but
  * legitimately consume no budget headroom the comment's arithmetic
@@ -219,8 +224,9 @@ describe("the assistant-marker sweep is coverage-complete (S88-B / B88-L1)", () 
     // that touches the assistant in an unenumerated shape consumed the
     // real bucket while the count pin stayed green at a stale number
     // (exactly the B87-L2 drift one layer over). The companion sweeps
-    // the family's MARKERS (the textbox locator family, askAssistant, a
-    // direct API fetch) and demands every matching file either
+    // the family's MARKERS (the textbox locator family, askAssistant,
+    // any route-path literal naming the assistant API) and demands
+    // every matching file either
     // contributes at least one enumerated send or carries its exemption
     // here — an unaccounted file fails THIS pin even when the count pin
     // is green.

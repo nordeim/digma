@@ -540,6 +540,15 @@ S98 = dict(S97)
 S98.update({
     "clone-46-radius-ceiling-compose": (1440, 900),
 })
+# s99 mapping (session 89 — the 65th reference audit's evidence set + the
+# standing evidence re-captured on the S89 code (clone-46 re-verified as
+# standing) + the ONE NEW inline witness: clone-47 the member-email input
+# cap mirroring the server's 200 truncation)
+S99 = dict(S98)
+S99.update({
+    "clone-46-radius-ceiling-compose": (1440, 900),
+    "clone-47-member-email-cap": (1440, 900),
+})
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -593,6 +602,8 @@ def expected_for(name: str):
         return S97.get(Path(name).stem)
     if name.startswith("ref-audit-s98/"):
         return S98.get(Path(name).stem)
+    if name.startswith("ref-audit-s99/"):
+        return S99.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -670,6 +681,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s96").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s97").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s98").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s99").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
