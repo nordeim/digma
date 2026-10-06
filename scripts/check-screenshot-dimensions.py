@@ -533,6 +533,13 @@ S97.update({
     "clone-44-numberfield-draft-resync": (1440, 900),
     "clone-45-moveelements-position-clamp": (1440, 900),
 })
+# s98 mapping (session 88 — the standing evidence re-captured on the S88
+# code + the ONE NEW inline witness: clone-46 the radius dynamic-max
+# composing with the server's 2000 ceiling)
+S98 = dict(S97)
+S98.update({
+    "clone-46-radius-ceiling-compose": (1440, 900),
+})
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -584,6 +591,8 @@ def expected_for(name: str):
         return S96.get(Path(name).stem)
     if name.startswith("ref-audit-s97/"):
         return S97.get(Path(name).stem)
+    if name.startswith("ref-audit-s98/"):
+        return S98.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -660,6 +669,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s95").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s96").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s97").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s98").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

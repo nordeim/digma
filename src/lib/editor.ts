@@ -424,9 +424,21 @@ export type ElementStyle = Record<string, string>;
  * 11.68298487339743 = 23.366/2; a 156x117 frame reads 58.41492436698704 =
  * 117/2). The historical "fixed 75" reading was the 200x150-class audit
  * rectangle's own min/2 — the cap is a FUNCTION of the element, never a
- * constant. */
+ * constant.
+ *
+ * Session 88 (S88-A / A88-L1): the dynamic max COMPOSES with the server's
+ * radius ceiling — buildElementRow clamps the field at 2000
+ * (clampNumber(raw?.radius, 0, 2000, 0)), and min/2 alone exceeds 2000 for
+ * any element whose smaller side tops 4000 (fully legal since S87-B widened
+ * the W/H panel fields to the server's 100000 ceiling): a radius typed to
+ * min/2 past 2000 rendered locally, then visibly TELEPORTED to the server's
+ * clamp on the store-replacing autosave PUT (the S84-B teleport family's
+ * residual member — the dynamic bound escaped the clamp enumeration because
+ * no literal number sat at the consumer). The composition caps at 2000
+ * INSIDE the one seam every consumer rides; the reference-measured dynamic
+ * behavior is untouched (every measured element is far below the cap). */
 export function cornerRadiusMax(el: Pick<DesignElementDTO, "width" | "height">): number {
-  return Math.min(el.width, el.height) / 2;
+  return Math.min(Math.min(el.width, el.height) / 2, 2000);
 }
 
 /** The ONE slider fill-percentage seam (session 71, S71-D / L-A9 — the

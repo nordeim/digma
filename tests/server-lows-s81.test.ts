@@ -129,13 +129,17 @@ const skill = readFileSync(
 // / 63 smoke (unchanged) / 260 e2e (unchanged — the RA-59
 // re-bucketing moves a test between describes, adds none); the
 // intents (the docs carry the DELIVERED counts) unchanged.
+// Session 88 (S88-F): re-anchored again — 1112 unit / 149 files /
+// 63 smoke (unchanged) / 262 e2e (unchanged — the two new UNIT spec
+// files: editor-lows-s88 7 + doc-lows-s88 5, plus doc-lows-s87 +2);
+// the intents unchanged.
 // Session 87 (S87-F): re-anchored again — 1098 unit / 147 files /
 // 63 smoke (unchanged) / 262 e2e (unchanged — the two new UNIT spec
 // files: editor-lows-s87 16 + doc-lows-s87 6); the intents unchanged.
 // Session 85 (S85-F): re-anchored again — 1047 unit / 143 files /
 // 63 smoke (unchanged) / 262 e2e (+2 — the session85-fixes re-entry
 // discriminators); the intents unchanged.
-const UNIT = "1098";
+const UNIT = "1112";
 const SMOKE = "63";
 const E2E = "262";
 

@@ -33,6 +33,23 @@ import { describe, expect, it } from "vitest";
 // comment's number equals the enumeration — the F72 dead-constant
 // lesson's live-dynamic form, the way doc-lows-s86 closed the
 // .env.example reader count).
+//
+// Session 88 (S88-B / B88-L1 — the thirty-sixth audit's forward-looking
+// member): the enumerator widened to the LOCATOR-FAMILY CO-LOCATION form.
+// The S87 form counted only three LITERAL shapes (the askAssistant
+// invocations, the inline getByRole-textbox fill, the getByLabel const
+// with the fill within 3 lines) — a future spec sending in any other
+// shape (a fill further below the const, a different locator for the
+// same textbox, a Send-click without a fill, a direct API fetch)
+// consumed the real shared ai: bucket while the enumeration missed it.
+// The widened form keys on the locator FAMILY (any locator call naming
+// the assistant's INPUT surface — the textbox/input/Message/Ask
+// discriminator telling the textbox apart from the assistant PANEL's
+// heading checks) co-located with a send interaction within the 8-line
+// statement window, PLUS the coverage-completeness companion below:
+// every spec file touching the family's markers must be counted or
+// explicitly EXEMPTED — the count pin alone could stay green at a stale
+// number while reality drifted.
 
 const specDir = path.resolve(import.meta.dirname, "e2e");
 
@@ -51,46 +68,87 @@ const docLowsS86Spec = readFileSync(
   "utf8",
 );
 
+/** The assistant-TEXTBOX locator family: any locator call whose
+ * arguments name the assistant's INPUT surface — "assistant"
+ * co-occurring with the input discriminator (the accessible name is
+ * "Message the AI design assistant", so every locator for the textbox
+ * carries both; the assistant PANEL's heading checks carry "assistant"
+ * WITHOUT the discriminator and never match — untitled-editor's and
+ * editor-panels' own `getByRole("heading", { name: "AI Assistant" })`
+ * visibility checks are not send targets). */
+const TEXTBOX_LOCATOR_FAMILY =
+  /(?:getByRole|getByLabel|locator|getByPlaceholder)\([^)]*?(?:(?:textbox|input|textarea|Message|Ask|placeholder|aria-label)[^)]*?[Aa]ssistant|[Aa]ssistant[^)]*?(?:textbox|input|textarea|Message|Ask|placeholder|aria-label))/;
+
 /** The LIVE count of AI-assistant sends across the e2e specs: every
- * interaction that actually posts to the assistant (a fill + Enter/press
- * or a Send click on the assistant textbox). The askAssistant helper's
- * call sites and the five direct forms — enumerated from the spec
- * sources the way the runtime enumerates the bucket. A file that
- * DEFINES the helper contributes exactly one body-fill its invocations
- * already count, so each definition subtracts its body's fill back out. */
-function liveAssistantSendCount(): number {
+ * interaction that actually posts to the assistant — any
+ * assistant-textbox LOCATOR line (inline or const-declared, any locator
+ * family) co-located with a send interaction (a .fill( / .press( on the
+ * same line, or any of .fill( / .press( / a Send .click( within the
+ * 8-line statement window below a const declaration — the fill may sit
+ * below intermediate awaits), plus the askAssistant helper's invocation
+ * sites. A file that DEFINES the helper contributes exactly one
+ * body-fill its invocations already count, so each definition subtracts
+ * its body's fill back out. (The S88-B widened form: the enumeration
+ * keys on the LOCATOR FAMILY, not the literal call shapes — see the
+ * header.) */
+function liveAssistantSendCount(): { total: number; perFile: Record<string, number> } {
   const files = readdirSync(specDir).filter((f) => f.endsWith(".spec.ts"));
   let count = 0;
   let helperDefinitions = 0;
+  const perFile: Record<string, number> = {};
   for (const file of files) {
     const src = readFileSync(path.join(specDir, file), "utf8");
+    let fileCount = 0;
     // The helper-invocation form (editor-panels): askAssistant(page, "…")
-    count += (src.match(/askAssistant\(page, /g) ?? []).length;
+    fileCount += (src.match(/askAssistant\(page, /g) ?? []).length;
     // The helper definition itself: its body's fill is the invocation
     // sites' send, not an extra one.
     if (/async function askAssistant\(/.test(src)) helperDefinitions += 1;
-    // The direct form: a fill on the assistant textbox followed within
-    // the same statement block by Enter or the Send click. The textbox
-    // locator line is the marker; count each fill, not the locator alone.
+    // The locator-family co-location form: a line that locates the
+    // assistant textbox counts a send when the send interaction sits on
+    // the same line (the inline form) or within the next 8 lines (the
+    // const-declaration form — the fill may sit below intermediate
+    // awaits and expectations).
     const lines = src.split("\n");
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (/getByRole\("textbox", \{ name: "Message the AI design assistant" \}\)\.fill\(/.test(line)) {
-        count += 1;
-      } else if (/getByLabel\("Message the AI design assistant"\);/.test(line)) {
-        // The const-input form (session78/79/80): the fill follows on the
-        // next 1-3 lines as `await input.fill(…)`.
-        for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-          if (/await input\.fill\(/.test(lines[j])) {
-            count += 1;
+      if (TEXTBOX_LOCATOR_FAMILY.test(lines[i])) {
+        if (/\.fill\(|\.press\(/.test(lines[i])) {
+          fileCount += 1;
+          continue;
+        }
+        for (let j = i + 1; j <= Math.min(i + 8, lines.length - 1); j++) {
+          if (/\.fill\(|\.press\(|\.click\(/.test(lines[j])) {
+            fileCount += 1;
             break;
           }
         }
       }
     }
+    perFile[file] = fileCount;
+    count += fileCount;
   }
-  return count - helperDefinitions;
+  return { total: count - helperDefinitions, perFile };
 }
+
+/** The assistant-consumption family's marker: any spec file that could
+ * consume the shared ai: bucket — a textbox locator, the askAssistant
+ * helper, or a direct fetch to the assistant API. (S88-B: the
+ * coverage-completeness forcing function's sweep — see the pin below.) */
+const ASSISTANT_MARKER =
+  /(?:getByRole|getByLabel|locator|getByPlaceholder)\([^)]*?(?:(?:textbox|input|textarea|Message|Ask|placeholder|aria-label)[^)]*?[Aa]ssistant|[Aa]ssistant[^)]*?(?:textbox|input|textarea|Message|Ask|placeholder|aria-label))|askAssistant\(|fetch\(["']\/api\/ai-assistant/;
+
+/** The documented exemptions — files that touch the family's markers but
+ * legitimately consume no budget headroom the comment's arithmetic
+ * documents:
+ * - parity.spec.ts — the locate-only height check: it locates the
+ *   textbox to measure the input's geometry and NEVER sends.
+ * - session67-fixes.spec.ts — the limiter-trip test itself: its 21
+ *   direct fetches ARE the budget's own verifier (the 429 pin), not a
+ *   consumer of the headroom. */
+const EXEMPTED: Record<string, string> = {
+  "parity.spec.ts": "locate-only height check — never sends",
+  "session67-fixes.spec.ts": "the limiter-trip test — its fetches are the budget's own verifier",
+};
 
 // ---------------------------------------------------------------------------
 // B87-L1 — the seven-calls repair's own inline twin
@@ -128,8 +186,9 @@ describe("the shared ai bucket's send count is live-derived (S87-D / B87-L2)", (
     // enumerates the send interactions across the e2e specs and asserts
     // the comment's number equals the enumeration — the count can never
     // again rot while the specs drift (the F72 dead-constant lesson's
-    // live-dynamic form).
-    const live = liveAssistantSendCount();
+    // live-dynamic form). (S88-B: the enumeration is the widened
+    // locator-family co-location form — the count itself is unchanged.)
+    const live = liveAssistantSendCount().total;
     const claimed = session67Spec.match(/the other specs' (\w+) sends/);
     expect(claimed).not.toBeNull();
     const wordToNum: Record<string, number> = {
@@ -146,6 +205,47 @@ describe("the shared ai bucket's send count is live-derived (S87-D / B87-L2)", (
     // workspace, session78, session79 ×2, session80.
     expect(session67Spec).toMatch(/editor-panels/);
     expect(session67Spec).toMatch(/nine sends|9 sends/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// S88-B — the coverage-completeness companion (the forcing function)
+// ---------------------------------------------------------------------------
+
+describe("the assistant-marker sweep is coverage-complete (S88-B / B88-L1)", () => {
+  it("LIVE — every assistant-marker spec file is counted or explicitly exempted (the coverage-completeness forcing function)", () => {
+    // THE FORWARD-LOOKING PIN: a live-derived count whose enumeration is
+    // pattern-shaped certifies only the patterns it knows — a future spec
+    // that touches the assistant in an unenumerated shape consumed the
+    // real bucket while the count pin stayed green at a stale number
+    // (exactly the B87-L2 drift one layer over). The companion sweeps
+    // the family's MARKERS (the textbox locator family, askAssistant, a
+    // direct API fetch) and demands every matching file either
+    // contributes at least one enumerated send or carries its exemption
+    // here — an unaccounted file fails THIS pin even when the count pin
+    // is green.
+    const { perFile } = liveAssistantSendCount();
+    const unaccounted: string[] = [];
+    for (const file of readdirSync(specDir).filter((f) => f.endsWith(".spec.ts"))) {
+      const src = readFileSync(path.join(specDir, file), "utf8");
+      if (!ASSISTANT_MARKER.test(src)) continue;
+      if ((perFile[file] ?? 0) >= 1) continue;
+      if (EXEMPTED[file]) continue;
+      unaccounted.push(file);
+    }
+    expect(unaccounted).toEqual([]);
+  });
+
+  it("DOC — the exemption list is explicit (parity: locate-only; session67: the limiter trip)", () => {
+    // The exemptions are the pin's own documentation: adding one is a
+    // conscious act (the file must justify consuming zero budget), never
+    // an accident of an enumerator's blind spot.
+    expect(Object.keys(EXEMPTED).sort()).toEqual([
+      "parity.spec.ts",
+      "session67-fixes.spec.ts",
+    ]);
+    expect(EXEMPTED["parity.spec.ts"]).toMatch(/locate-only/);
+    expect(EXEMPTED["session67-fixes.spec.ts"]).toMatch(/limiter-trip/);
   });
 });
 
