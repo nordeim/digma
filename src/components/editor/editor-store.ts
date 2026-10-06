@@ -6,6 +6,7 @@
 
 import { create } from "zustand";
 import {
+  clampPositionField,
   clampSizeField,
   defaultElementFor,
   ELEMENT_LIMIT,
@@ -347,7 +348,18 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       const elements = state.elements.map((el) => {
         if (idSet.has(el.id) && !el.locked) {
           moved = true;
-          return { ...el, x: el.x + dx, y: el.y + dy };
+          // Session 87 (S87-B / A87-L1): the accumulated position joins the
+          // bounded set — the server's buildElementRow clamps x/y to
+          // ±100000, and the store-replacing PUT response would otherwise
+          // visibly teleport an element dragged past the bound (~5-10
+          // max-zoom-out drags reach it: 2000 screen px at zoom 0.1 =
+          // 20000 units each). The S84-B helper at the accumulation's
+          // consumer, mirroring the panel fields and scaleElements.
+          return {
+            ...el,
+            x: clampPositionField(el.x + dx),
+            y: clampPositionField(el.y + dy),
+          };
         }
         return el;
       });

@@ -145,7 +145,14 @@ test.describe("session 67 — the assistant's dedicated rate limit (S67-C / M-2)
     // limiter at all (an authenticated caller drives unbounded LLM
     // completions). The pin drives the route 21 times from this spec's
     // own XFF bucket (ai:198.51.100.67 — never the shared ai:unknown
-    // bucket the other specs' three sends live under).
+    // bucket the other specs' nine sends live under: editor-panels ×4
+    // (the askAssistant helper at :1047/:1080/:1106 + the direct send at
+    // :1133), workspace ×1 (:126), session78-fixes ×1 (:38),
+    // session79-fixes ×2 (:48/:114), session80-fixes ×1 (:152) — 11
+    // headroom under the 20/5min ceiling; S87-D re-anchored the count
+    // the sessions-78/79/80 deliveries had silently outgrown, and
+    // tests/doc-lows-s87.test.ts pins it LIVE-DERIVED so it can never
+    // rot again).
     await page.goto("/");
     const statuses = await page.evaluate(async () => {
       const seen: number[] = [];

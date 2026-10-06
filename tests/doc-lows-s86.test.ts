@@ -187,7 +187,11 @@ describe("the S86-C informational honesty set", () => {
     // submit's reset POST, the round-trip's forgot + reset, the old
     // login, the new login); 3 headroom at the 10-call bucket ceiling.
     expect(resetPasswordSpec).toMatch(/seven auth calls/);
-    expect(resetPasswordSpec).not.toMatch(/six auth calls/);
+    // Session 87 (S87-D / B87-L1): the negative form WIDENED — the
+    // hyphenated "six-call" twin survived the S86-C header repair because
+    // the spaced pattern alone never reached it. Both twins are covered
+    // forever now.
+    expect(resetPasswordSpec).not.toMatch(/six.call/i);
   });
 
   it("DOC — the PAD's smoke row names the script's real tool chain (bash + curl + python3, no jq)", () => {

@@ -145,6 +145,16 @@ function NumberField({
           // element's current value — the input never dead-ends empty.
           const parsed = Number(draft);
           if (draft.trim() === "" || !Number.isFinite(parsed)) setDraft(display);
+          // Session 87 (S87-C / A87-L2): a parseable draft whose COMMITTED
+          // value differs resyncs the display — the consumer's clamp may
+          // have mapped it back to the field's current value (500000 typed
+          // into an X field already at 100000 never moved the model), and a
+          // control must never lie about the committed state (the S78-C
+          // doctrine; the S79-E HexColorRow blur-restore's numeric
+          // sibling).
+          else if (parsed !== value) {
+            setDraft(display);
+          }
         }}
         className={`mt-1 h-8 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none ${
           width ?? "w-full"
@@ -235,6 +245,15 @@ function GuardedNumberInput({
         // current value — the input never dead-ends empty.
         const parsed = Number(draft);
         if (draft.trim() === "" || !Number.isFinite(parsed)) setDraft(display);
+        // Session 87 (S87-C / A87-L2): a parseable draft whose COMMITTED
+        // value differs resyncs the display — the consumer's clamp may
+        // have mapped it back to the field's current value (Rotation
+        // already at ±180, Opacity at 100), and a control must never lie
+        // about the committed state (the S78-C doctrine; the inline form
+        // carries NumberField's full contract).
+        else if (parsed !== value) {
+          setDraft(display);
+        }
       }}
       className={className}
     />

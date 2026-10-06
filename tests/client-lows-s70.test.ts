@@ -54,18 +54,30 @@ describe("the line-width clamp symmetry (S70-D / L-A7)", () => {
   it("the resize write-back floors the line width at 0 (type-aware, both dimensions)", () => {
     // THE DEFECT PIN: pre-fix width floors at 1 for EVERY type
     // (canvas.tsx:284) while the height is type-aware.
+    // Session 87 (S87-B / A87-L1 — re-anchored): the write-back's products
+    // now ride clampSizeField — the type-aware floor survives INSIDE the
+    // helper (the S70-D intent unchanged, the S84-B bound joined). The
+    // bare Math.max form is the pre-S87 shape.
     const canvas = src("src/components/editor/canvas.tsx");
-    const upIdx = canvas.indexOf("store.updateElements(\n        [el.id],\n        { x, y, width: Math.max(w / s, 1)");
-    // Post-fix the write-back carries the type-aware width form.
-    expect(canvas).toMatch(/width: Math\.max\(w \/ s, el\.type === "line" \? 0 : 1\)/);
+    expect(canvas).toMatch(
+      /width: clampSizeField\(Math\.max\(w \/ s, el\.type === "line" \? 0 : 1\), el\.type\)/,
+    );
     expect(canvas).not.toMatch(/width: Math\.max\(w \/ s, 1\)/);
+    expect(canvas).not.toMatch(/^\s*width: Math\.max\(w \/ s, el\.type/m);
   });
 
   it("the draw commit keeps its type-aware form (the standing contract)", () => {
     // THE PRESERVATION PIN: the draw path already symmetrizes.
+    // Session 87 (S87-B / A87-L1 — re-anchored): the products now ride
+    // clampSizeField — the type-aware floor survives INSIDE the helper
+    // (the S70-D intent unchanged, the S84-B bound joined).
     const canvas = src("src/components/editor/canvas.tsx");
-    expect(canvas).toMatch(/width: drag\.type === "line" \? drag\.w : Math\.max\(drag\.w, 1\)/);
-    expect(canvas).toMatch(/height: drag\.type === "line" \? drag\.h : Math\.max\(drag\.h, 1\)/);
+    expect(canvas).toMatch(
+      /width: drag\.type === "line" \? clampSizeField\(drag\.w, "line"\) : clampSizeField\(Math\.max\(drag\.w, 1\), drag\.type\)/,
+    );
+    expect(canvas).toMatch(
+      /height: drag\.type === "line" \? clampSizeField\(drag\.h, "line"\) : clampSizeField\(Math\.max\(drag\.h, 1\), drag\.type\)/,
+    );
   });
 
   it("scaleElements floors both dimensions type-aware (line 0 / non-line 1)", () => {

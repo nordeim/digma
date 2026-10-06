@@ -28,12 +28,12 @@ const SKILL = readFileSync(path.resolve(import.meta.dirname, "../digma_SKILL.md"
 // doc-lows-s85 +9) / 143 files (+2) / 63 smoke (unchanged) / 262 e2e
 // (+2 — the session85-fixes re-entry discriminators); the intents (the
 // docs carry the DELIVERED counts) unchanged.
-const UNIT = "1076";
+const UNIT = "1098";
 // Session 85 (S85-E / A85-I1): the constant was "140" — dead (never
 // asserted) AND wrong — a dead wrong copy one edit away from becoming
 // a live wrong pin. Corrected and made LIVE (the pin below asserts it
 // against the PAD §7.1 total row DYNAMICALLY).
-const FILES = "145";
+const FILES = "147";
 const SMOKE = "63";
 const E2E = "262";
 
@@ -64,28 +64,28 @@ describe("the auth-call budget claims name the RA-59 carve-out (S84-A / B84-L1)"
 // ---------------------------------------------------------------------------
 
 describe("the delivery counts are honest (S84-E — the live UNIT/FILES/SMOKE/E2E constants)", () => {
-  it("AGENTS' commands table and gate order carry 1024", () => {
+  it("AGENTS' commands table and gate order carry 1098", () => {
     expect(AGENTS).toMatch(new RegExp(`\\| Unit tests \\(${UNIT} checks\\) \\|`));
     expect(AGENTS).toMatch(new RegExp("bun run test` \\(" + UNIT + "\\)"));
   });
 
-  it("CLAUDE's table, gate order, and unit-tests line carry 1024", () => {
+  it("CLAUDE's table, gate order, and unit-tests line carry 1098", () => {
     expect(CLAUDE).toMatch(new RegExp(`\\| \`bun run test\` \\| Unit tests \\(${UNIT} checks, Vitest\\) \\|`));
     expect(CLAUDE).toMatch(new RegExp(`${UNIT} unit / ${SMOKE} smoke / ${E2E} e2e`));
     expect(CLAUDE).toMatch(new RegExp(`\\*\\*Unit Tests\\*\\* \\(Vitest, ${UNIT} checks\\)`));
   });
 
-  it("README's tech-stack row and quick-start command comment carry 1024", () => {
+  it("README's tech-stack row and quick-start command comment carry 1098", () => {
     expect(README).toMatch(new RegExp(`\\| Unit tests \\| Vitest \\| 5 \\| ${UNIT} checks`));
     expect(README).toMatch(new RegExp(`unit tests — ${UNIT} checks on the pure domain seams`));
   });
 
-  it("digma_SKILL's project_state carries the 1024 delivery count", () => {
+  it("digma_SKILL's project_state carries the 1098 delivery count", () => {
     expect(SKILL).toMatch(new RegExp(`${UNIT} unit`));
     expect(SKILL).toMatch(new RegExp(`\\| Unit tests \\| Vitest \\| [^|]*\\| ${UNIT} checks`));
   });
 
-  it("the 141-files claims — AGENTS' seam bullet and PAD's §7.1 total row (S85-E / A85-I1: the FILES constant made live)", () => {
+  it("the 147-files claims — AGENTS' seam bullet and PAD's §7.1 total row (S85-E / A85-I1: the FILES constant made live)", () => {
     // Session 85: the FILES constant was "140" — dead AND wrong. It now
     // pins the live file-count family DYNAMICALLY (the constant must
     // always equal the PAD §7.1 total row's file count — the same
@@ -99,7 +99,7 @@ describe("the delivery counts are honest (S84-E — the live UNIT/FILES/SMOKE/E2
   it("the negative forms — no stale 994 claims survive outside historical records", () => {
     // The F70 closure: grep the doctrine files for the stale number —
     // historical session logs / revision blocks carry their own time's
-    // counts and stay; the LIVE claim sites must all read 1024. A
+    // counts and stay; the LIVE claim sites must all read 1098. A
     // TRANSITION record ("994 -> 1024") is an honest delivery note,
     // not a current-state claim — the forms are stripped before the
     // negative check.

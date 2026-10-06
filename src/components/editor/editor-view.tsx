@@ -548,6 +548,26 @@ function useAutosave(): AutosaveHandle {
               )
               .catch(() => null),
           };
+        } else {
+          // Session 87 (S87-A / A87-M1): the skip branch registers the
+          // machine's own surviving flight as the transport. Pre-fix this
+          // branch left leaveTransportFor null — a same-project re-entry
+          // mount drained the null registry, awaited nothing, and fired
+          // its GET, which can answer BEFORE PUT₁ lands (a large board's
+          // full-list replace takes seconds): loadProject then replaced
+          // the store's still-correct element list with the pre-edit
+          // server state and stamped it "saved" — and because the
+          // machine's response is disposed-gated, the healing markSaved
+          // never landed. The pre-exit edit silently reverted, and the
+          // next local edit's full-list PUT permanently deleted it
+          // server-side. The registry's one-shot drain now covers this
+          // fourth and last interleaving: the mount awaits the machine's
+          // own PUT₁ before its GET, the same S85-A GET/PUT race closed
+          // in the one branch it had never covered.
+          leaveTransportFor = {
+            projectId: state.projectId,
+            done: softLeaveDescriptor.flightDone,
+          };
         }
       }
       disposed = true;

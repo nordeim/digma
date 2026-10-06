@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useEditorStore } from "./editor-store";
 import { resetSliderGesture } from "./properties-panel";
-import { boundsOf, canvasFontFamily, clampZoom, ELEMENT_LIMIT, fillPaintFor, isTypingTarget, textAlignToJustify, type DesignElementDTO, type EditorTool } from "@/lib/editor";
+import { boundsOf, canvasFontFamily, clampPositionField, clampSizeField, clampZoom, ELEMENT_LIMIT, fillPaintFor, isTypingTarget, textAlignToJustify, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
 // ---------------------------------------------------------------------------
 // The canvas: a DOM-element canvas (the reference's approach — absolutely
@@ -292,13 +292,19 @@ export function Canvas() {
       // Session 70 (S70-D / L-A7): the width floor is TYPE-AWARE now —
       // the draw commit and the panel H field always were; a 0-extent
       // line dimension previously snapped to 1 on any later resize.
+      // Session 87 (S87-B / A87-L1): the write-back joins the bounded
+      // set — x/y through clampPositionField and the size products
+      // through clampSizeField (the type-aware floor survives inside the
+      // helper, the server's ±100000 / 0..100000 bounds mirrored at the
+      // gesture's consumer; the store-replacing PUT response would
+      // otherwise visibly teleport an out-of-range resize).
       store.updateElements(
         [el.id],
         {
-          x,
-          y,
-          width: Math.max(w / s, el.type === "line" ? 0 : 1),
-          height: Math.max(h / s, el.type === "line" ? 0 : 1),
+          x: clampPositionField(x),
+          y: clampPositionField(y),
+          width: clampSizeField(Math.max(w / s, el.type === "line" ? 0 : 1), el.type),
+          height: clampSizeField(Math.max(h / s, el.type === "line" ? 0 : 1), el.type),
         },
         false,
       );
@@ -313,13 +319,18 @@ export function Canvas() {
       if (drag.w > 3 || drag.h > 3) {
         // Session 61 (S61-F / A-L-5): the cap-refused draw answers the
         // user (the store returns null instead of a new id).
+        // Session 87 (S87-B / A87-L1): the draw commit joins the bounded
+        // set — x/y and the size products clamp at the consumer (the
+        // S84-B helpers mirroring the server's buildElementRow bounds; a
+        // draw started after a deep pan could otherwise commit past
+        // ±100000 and visibly teleport on the store-replacing save).
         if (
           store.addElement({
             type: drag.type,
-            x: drag.x,
-            y: drag.y,
-            width: drag.type === "line" ? drag.w : Math.max(drag.w, 1),
-            height: drag.type === "line" ? drag.h : Math.max(drag.h, 1),
+            x: clampPositionField(drag.x),
+            y: clampPositionField(drag.y),
+            width: drag.type === "line" ? clampSizeField(drag.w, "line") : clampSizeField(Math.max(drag.w, 1), drag.type),
+            height: drag.type === "line" ? clampSizeField(drag.h, "line") : clampSizeField(Math.max(drag.h, 1), drag.type),
           }) === null
         ) {
           toast.error("Element limit reached", `Boards hold at most ${ELEMENT_LIMIT} elements.`);

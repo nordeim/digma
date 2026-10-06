@@ -134,9 +134,13 @@ test.describe("the full reset round-trip (the in-app delivery, ADR-014 family)",
     // tokenVersion live each reset evicts every previously minted cookie,
     // and the demo reset would have killed the shared storageState for the
     // ~50 specs that run after this file alphabetically. The scratch flow
-    // is identical to the demo flow it replaces (the same six-call budget
-    // in this file's own XFF bucket); no restore step is needed (the
-    // scratch account is disposable and the e2e DB re-seeds per run).
+    // is identical to the demo flow it replaces — the same
+    // seven-call budget in this file's own XFF bucket (register,
+    // verify-otp, the invalid-token submit's reset POST, the round-trip's
+    // forgot + reset, the old login, the new login; S87-D re-anchored
+    // this inline twin, which the S86-C header repair had missed). No
+    // restore step is needed (the scratch account is disposable and the
+    // e2e DB re-seeds per run).
     const scratchEmail = `s67-reset-${Date.now()}@e2e.test`;
     await page.goto("/login");
     const registered = await page.evaluate(
