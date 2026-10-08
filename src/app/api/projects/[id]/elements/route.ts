@@ -105,6 +105,15 @@ export async function POST(request: NextRequest, { params }: Params) {
       // (unstable order), and the count fallback escaped the clamp
       // entirely. The count is bounded by the ceiling check above, so
       // the fallback is always in range.
+      // Session 99 (S99-D / B99-I3 — the forty-seventh audit's B-I3,
+      // the honest note; the behavior stays deferred): clampNumber
+      // bounds the RANGE but not COLLISIONS — an explicit sortOrder can
+      // tie an existing index (a second row at 0 on a board whose rows
+      // are [0..n-1]); every read orders by sortOrder asc alone, so a
+      // tie's order is DB-unspecified. API-consumer-only: the client
+      // persists exclusively via the full-list PUT, which re-canonicalizes
+      // sortOrder: index. The shift-on-insert form (updateMany increment
+      // sortOrder >= s) is the future fix if a consumer ever appears.
       const sortOrder = clampNumber(body?.sortOrder, 0, ELEMENT_LIMIT - 1, count);
 
       // Session 70 (S70-B / L-A2 — the row-builder dedup): the POST

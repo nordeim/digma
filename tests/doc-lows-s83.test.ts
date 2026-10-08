@@ -48,15 +48,22 @@ describe("the page-route and route-count claims are honest (S83-E)", () => {
     expect(CLAUDE).not.toMatch(/five page routes/);
   });
 
-  it("DEPLOYMENT's build arithmetic is the real 7 pages / 18 route files / 25 routes", () => {
-    expect(DEPLOY).toMatch(/7 page routes and the 18 API route files \(25\s+routes total\)/);
+  it("DEPLOYMENT's build arithmetic is the real 7 pages / 18 route files / 27 routes", () => {
+    // Session 99 (S99-G): re-anchored to the 27-route arithmetic — the
+    // SEO parity pair (robots.ts + sitemap.ts) joined the build.
+    expect(DEPLOY).toMatch(/7 page routes, the 18 API route files, and the 2\s*\nSEO metadata routes/);
+    expect(DEPLOY).toMatch(/27\s+routes total/);
     expect(DEPLOY).not.toMatch(/6 page routes/);
     expect(DEPLOY).not.toMatch(/23\s+routes total/);
+    expect(DEPLOY).not.toMatch(/\(25\s+routes total\)/);
   });
 
-  it("digma_SKILL's project_state and pre-ship build line carry 25 routes", () => {
-    expect(SKILL).toMatch(/build 25 routes/);
+  it("digma_SKILL's project_state and pre-ship build line carry 27 routes", () => {
+    // Session 99 (S99-G): re-anchored from 25 — the SEO parity pair
+    // joined the build.
+    expect(SKILL).toMatch(/build 27 routes/);
     expect(SKILL).not.toMatch(/build 23 routes/);
+    expect(SKILL).not.toMatch(/build 25 routes/);
     expect(SKILL).not.toMatch(/23 routes total/);
   });
 

@@ -620,6 +620,15 @@ S108.update({
     "clone-54-dialog-color-reset": (1440, 900),
 })
 
+# s109 mapping (session 99 — the 75th reference audit's evidence set + the
+# standing evidence re-verified on the S99 code; the decimal-survival +
+# sitemap browser witnesses captured on the final build — clone-55/56)
+S109 = dict(S108)
+S109.update({
+    "clone-55-decimal-survival": (1440, 900),
+    "clone-56-sitemap": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -692,6 +701,8 @@ def expected_for(name: str):
         return S107.get(Path(name).stem)
     if name.startswith("ref-audit-s108/"):
         return S108.get(Path(name).stem)
+    if name.startswith("ref-audit-s109/"):
+        return S109.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -779,6 +790,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s106").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s107").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s108").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s109").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

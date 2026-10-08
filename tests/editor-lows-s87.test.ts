@@ -69,31 +69,34 @@ const panelSource = readFileSync(
 
 describe("the skip-branch transport registration (S87-A / A87-M1)", () => {
   it("SOURCE — the machine-carries skip branch registers the machine's own flight as the transport", () => {
-    // THE DEFECT PIN: pre-fix the skip branch leaves leaveTransportFor
-    // null — only the reference-mismatch branch registers. The machine's
+    // THE DEFECT PIN: pre-fix the skip branch registers nothing —
+    // only the reference-mismatch branch registers. The machine's
     // surviving flight IS the transport for the pure-duplicate exit: a
     // same-project re-entry mount must await PUT₁ before its GET.
+    // Session 99 (S99-C): the registration rides the ONE seam
+    // (registerLeaveTransport — the keyed Map).
     expect(editorViewSource).toMatch(
-      /\} else \{\s*\/\/ Session 87 \(S87-A \/ A87-M1\)[\s\S]{0,1600}?leaveTransportFor = \{\s*projectId: state\.projectId,\s*done: softLeaveDescriptor\.flightDone,\s*\};/
+      /\} else \{\s*\/\/ Session 87 \(S87-A \/ A87-M1\)[\s\S]{0,1600}?registerLeaveTransport\(state\.projectId, softLeaveDescriptor\.flightDone\);/
     );
   });
 
   it("SOURCE — the skip-branch registration names the S85-A race it closes (the GET-before-PUT₁ window)", () => {
     // The comment must carry the doctrine: the mount's GET can answer
-    // before the machine's surviving PUT lands — the registry's one-shot
-    // drain now covers this fourth and last interleaving.
+    // before the machine's surviving PUT lands — the registry's keyed
+    // drain covers this fourth interleaving (S99-C: the "and last"
+    // claim retired — the X→Y→X fifth interleaving taught otherwise).
     expect(editorViewSource).toMatch(/can answer BEFORE PUT₁|can answer before PUT₁/i);
-    expect(editorViewSource).toMatch(/fourth and last interleaving|last uncovered interleaving/i);
+    expect(editorViewSource).toMatch(/fourth interleaving|fourth and last interleaving|last uncovered interleaving/i);
   });
 
   it("SOURCE — the registration sits INSIDE the machineCarriesThisState skip (not the mismatch branch)", () => {
     // The structure: the if (!machineCarriesThisState) { …mismatch
     // chain… } is followed by the else { …bare-promise registration… } —
     // the two registrations are mutually exclusive, one transport per
-    // leave.
-    const mismatchIdx = editorViewSource.indexOf("done: machineFlight");
+    // leave. Session 99 (S99-C): the anchors ride the seam call forms.
+    const mismatchIdx = editorViewSource.indexOf("registerLeaveTransport(");
     const elseIdx = editorViewSource.indexOf("} else {", mismatchIdx);
-    const regIdx = editorViewSource.indexOf("done: softLeaveDescriptor.flightDone", mismatchIdx);
+    const regIdx = editorViewSource.indexOf("registerLeaveTransport(state.projectId, softLeaveDescriptor.flightDone)", mismatchIdx);
     expect(mismatchIdx).toBeGreaterThan(-1);
     expect(elseIdx).toBeGreaterThan(mismatchIdx);
     expect(regIdx).toBeGreaterThan(elseIdx);
@@ -209,8 +212,11 @@ describe("the S87 survival family (the sibling contracts unchanged)", () => {
     expect(editorViewSource).toMatch(
       /const machineFlight =\s*softLeaveDescriptor !== null && softLeaveDescriptor\.projectId === state\.projectId\s*\? softLeaveDescriptor\.flightDone\s*: Promise\.resolve\(\);/
     );
+    // Session 99 (S99-C): the chain rides the registerLeaveTransport
+    // seam now — the ordering intent (PUT₂ strictly after PUT₁)
+    // unchanged.
     expect(editorViewSource).toMatch(
-      /done: machineFlight\s*\.then\(\(\) =>\s*fetch\(/
+      /registerLeaveTransport\(\s*state\.projectId,\s*machineFlight\s*\.then\(\(\) =>\s*fetch\(/m
     );
   });
 
@@ -220,9 +226,9 @@ describe("the S87 survival family (the sibling contracts unchanged)", () => {
     );
   });
 
-  it("SURVIVAL — the S85-A drain site survives (the one-shot same-project await)", () => {
+  it("SURVIVAL — the S85-A drain site survives (the same-project await, S99-C's keyed form)", () => {
     expect(editorViewSource).toMatch(
-      /const transport = leaveTransportFor;\s*leaveTransportFor = null;\s*if \(transport && transport\.projectId === projectId\) \{\s*await transport\.done;/
+      /const transport = leaveTransports\.get\(projectId\);\s*if \(transport\) \{\s*leaveTransports\.delete\(projectId\);\s*await transport;/
     );
   });
 

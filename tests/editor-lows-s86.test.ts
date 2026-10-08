@@ -104,7 +104,7 @@ describe("the leave-transport ordering closure (S86-A / A86-L3)", () => {
       /const machineFlight =\s*softLeaveDescriptor !== null && softLeaveDescriptor\.projectId === state\.projectId\s*\? softLeaveDescriptor\.flightDone\s*: Promise\.resolve\(\);/
     );
     expect(editorViewSource).toMatch(
-      /leaveTransportFor = \{\s*projectId: state\.projectId,\s*done: machineFlight\s*\.then\(\(\) =>\s*fetch\(/
+      /registerLeaveTransport\(\s*state\.projectId,\s*machineFlight\s*\.then\(\(\) =>\s*fetch\(/m
     );
   });
 
@@ -234,8 +234,11 @@ describe("the S86 survival family (the sibling contracts unchanged)", () => {
   });
 
   it("SURVIVAL — the S85-A registry's drain site survives (the mount awaits the same-project transport)", () => {
+    // Session 99 (S99-C / A99-L3): the keyed-drain re-anchor (the S93-A
+    // precedent — the registry became a per-project Map; the drain reads
+    // only the loaded project's entry).
     expect(editorViewSource).toMatch(
-      /const transport = leaveTransportFor;\s*leaveTransportFor = null;\s*if \(transport && transport\.projectId === projectId\) \{\s*await transport\.done;/
+      /const transport = leaveTransports\.get\(projectId\);\s*if \(transport\) \{\s*leaveTransports\.delete\(projectId\);\s*await transport;/
     );
   });
 

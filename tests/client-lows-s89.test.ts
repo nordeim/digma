@@ -127,10 +127,11 @@ describe("the assistant input mirrors the server's 1000 prompt slice (S89-A / A8
   });
 
   it("SOURCE — the route's prompt slice stays canonical (the single source of the 1000)", () => {
-    // THE SURVIVAL PIN: the slice(0, 1000) line is the canonical seam
-    // the client cap mirrors.
+    // THE SURVIVAL PIN: the clampText(body?.message, 1000) line is the
+    // canonical seam the client cap mirrors (S99-D / B99-I1: the inline
+    // trim-slice twin joined the S71-D fold — semantics byte-identical).
     expect(assistantRouteSource).toMatch(
-      /body\.message\.trim\(\)\.slice\(0, 1000\)/,
+      /clampText\(body\?\.message, 1000\)/,
     );
   });
 });

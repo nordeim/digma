@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
-import { readBoundedJson, clampColor, clampTemplate, PROJECT_LIMIT } from "@/lib/validation";
+import { readBoundedJson, clampColor, clampTemplate, clampText, PROJECT_LIMIT } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +60,10 @@ export async function POST(request: NextRequest) {
   }
   const body = parsed.value;
   const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const description = typeof body?.description === "string" ? body.description.trim().slice(0, 500) : null;
+  // Session 99 (S99-D / B99-I1): the inline trim-slice twin joins the
+  // S71-D clampText fold — semantics byte-identical (null/trim/slice;
+  // empty → null), the divergence hazard deleted.
+  const description = clampText(body?.description, 500);
   const template = clampTemplate(typeof body?.template === "string" ? body.template : "blank");
   const backgroundColor = clampColor(typeof body?.backgroundColor === "string" ? body.backgroundColor : "#0D1117");
 

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { randomBytes } from "crypto";
+import { randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { readBoundedJson } from "@/lib/validation";

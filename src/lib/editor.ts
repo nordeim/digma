@@ -13,6 +13,7 @@ import {
   clampNumber,
   clampText,
   clampTextAlign,
+  clampTextContent,
   isElementType,
 } from "@/lib/validation";
 
@@ -966,7 +967,10 @@ export function buildElementRow(
           : clampColor(String(raw.stroke), FALLBACK_WHITE),
     strokeWidth: clampNumber(raw?.strokeWidth, 0, 100, 0),
     radius: clampNumber(raw?.radius, 0, 2000, 0),
-    text: clampText(raw?.text, 2000),
+    // Session 99 (S99-B / A99-L2): the text field rides the slice-only
+    // clamp — edge whitespace is real content (the S85-B doctrine's own
+    // words); the identity/prose fields (name below) keep clampText.
+    text: clampTextContent(raw?.text, 2000),
     fontSize: raw?.fontSize === null || raw?.fontSize === undefined ? null : clampNumber(raw?.fontSize, 1, 500, 16),
     fontWeight: clampFontWeight(raw?.fontWeight),
     fontFamily: clampFontFamily(raw?.fontFamily),

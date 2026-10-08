@@ -37,7 +37,7 @@ describe("the resend-otp uniform 400 (S71-C / L-A4)", () => {
     expect(unknownIdx).toBeGreaterThan(-1);
     const verifiedIdx = route.indexOf("if (user.verified) {");
     expect(verifiedIdx).toBeGreaterThan(-1);
-    const branch = route.slice(verifiedIdx, verifiedIdx + 1200);
+    const branch = route.slice(verifiedIdx, verifiedIdx + 1600); // S99-D: the honest-comment reword grew the branch — the window widened with it (the S93-A form)
     expect(branch).toMatch(/fail\("VALIDATION",\s*"Enter a valid email address",\s*400\)/);
   });
 

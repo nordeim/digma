@@ -58,7 +58,24 @@ const UNTITLED_PROJECT: ProjectDTO = {
 // parallel same-project full-replace PUTs whose order HTTP never
 // guaranteed could regress the server to the pre-edit state). The mount
 // awaits BOTH legs through the registry's single done handle.
-let leaveTransportFor: { projectId: string; done: Promise<unknown> } | null = null;
+// Session 99 (S99-C / A99-L3 — the forty-seventh audit's A-3): the
+// registry is a per-project MAP, not a one-shot slot. The slot let an
+// INTERMEDIATE project's mount discard a pending transport it never
+// awaited — X→Y→X: Y's mount nulled the slot, and X's re-entry GET
+// raced X's still-in-flight at-unmount PUT (the A87-M1
+// silent-edit-deletion class through the fifth interleaving S87-A
+// never enumerated — double navigation within one PUT flight, tight
+// but constructible on a large board). The Map drains on MATCH only;
+// entries self-clean at resolution (a resolved transport's await is a
+// no-op passthrough, so deleting it is safe and the registry stays
+// bounded across the session's project visits).
+const leaveTransports = new Map<string, Promise<unknown>>();
+function registerLeaveTransport(projectId: string, done: Promise<unknown>): void {
+  leaveTransports.set(projectId, done);
+  void done.then(() => {
+    if (leaveTransports.get(projectId) === done) leaveTransports.delete(projectId);
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Autosave: PUT the full element list (plus project meta) whenever the store
@@ -533,9 +550,9 @@ function useAutosave(): AutosaveHandle {
             softLeaveDescriptor !== null && softLeaveDescriptor.projectId === state.projectId
               ? softLeaveDescriptor.flightDone
               : Promise.resolve();
-          leaveTransportFor = {
-            projectId: state.projectId,
-            done: machineFlight
+          registerLeaveTransport(
+            state.projectId,
+            machineFlight
               .then(() =>
                 fetch(`/api/projects/${state.projectId}/elements`, {
                   method: "PUT",
@@ -547,12 +564,12 @@ function useAutosave(): AutosaveHandle {
                 }),
               )
               .catch(() => null),
-          };
+          );
         } else {
           // Session 87 (S87-A / A87-M1): the skip branch registers the
           // machine's own surviving flight as the transport. Pre-fix this
-          // branch left leaveTransportFor null — a same-project re-entry
-          // mount drained the null registry, awaited nothing, and fired
+          // branch left the registry empty — a same-project re-entry
+          // mount drained the empty registry, awaited nothing, and fired
           // its GET, which can answer BEFORE PUT₁ lands (a large board's
           // full-list replace takes seconds): loadProject then replaced
           // the store's still-correct element list with the pre-edit
@@ -560,14 +577,11 @@ function useAutosave(): AutosaveHandle {
           // machine's response is disposed-gated, the healing markSaved
           // never landed. The pre-exit edit silently reverted, and the
           // next local edit's full-list PUT permanently deleted it
-          // server-side. The registry's one-shot drain now covers this
-          // fourth and last interleaving: the mount awaits the machine's
+          // server-side. The registry's keyed drain now covers this
+          // fourth interleaving: the mount awaits the machine's
           // own PUT₁ before its GET, the same S85-A GET/PUT race closed
           // in the one branch it had never covered.
-          leaveTransportFor = {
-            projectId: state.projectId,
-            done: softLeaveDescriptor.flightDone,
-          };
+          registerLeaveTransport(state.projectId, softLeaveDescriptor.flightDone);
         }
       }
       disposed = true;
@@ -1419,12 +1433,14 @@ export function EditorView({ user }: { user: HeaderUser }) {
         // answering first (loading pre-transport state; the next local
         // edit would then full-list-PUT over the final save — the refresh
         // path's pagehide race, closed here because the registry is
-        // readable at this boundary). The slot is one-shot: any mount
-        // drains it, only a same-project match awaits it.
-        const transport = leaveTransportFor;
-        leaveTransportFor = null;
-        if (transport && transport.projectId === projectId) {
-          await transport.done;
+        // readable at this boundary). Session 99 (S99-C / A99-L3): the
+        // drain is KEYED — this mount drains only ITS project's entry;
+        // an intermediate project's mount can no longer discard a
+        // transport it never awaited (the X→Y→X fifth interleaving).
+        const transport = leaveTransports.get(projectId);
+        if (transport) {
+          leaveTransports.delete(projectId);
+          await transport;
           if (cancelled) return;
         }
         // Session 61 (S61-I, en-route — the adoption-clobber guard): Next
@@ -1495,7 +1511,10 @@ export function EditorView({ user }: { user: HeaderUser }) {
           // — the S61-I contract), and never on the Untitled fallback
           // (a failed load falls through WITH the gate armed).
           setLoading(true);
-          const response = await fetch(`/api/projects/${projectId}`);
+          // Session 99 (S99-E / A99-I2): the id is encoded for uniformity
+          // with every other id-consuming site (own-origin GET, opaque id
+          // — worst case a 404/405 into the Untitled fallback).
+          const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`);
           const body = await response.json().catch(() => null);
           if (!cancelled && response.ok && body?.ok) {
             // Session 65 (S65-B — the thirteenth audit's B-1): the store's

@@ -11,8 +11,10 @@ bun install
 bun run build          # next build + standalone assembly (.next/standalone)
 ```
 
-The build compiles the 7 page routes and the 18 API route files (25
-routes total), then copies `.next/static` and `public/` into
+The build compiles the 7 page routes, the 18 API route files, and the 2
+SEO metadata routes (`/robots.txt` + `/sitemap.xml` — session 99's S99-G,
+the reference-measured parity pair; 27 routes total), then copies
+`.next/static` and `public/` into
 `.next/standalone/` (see the `build` script in `package.json`).
 `next.config.ts` pins `outputFileTracingRoot` to the repo root — keep it;
 the standalone trace depends on it.

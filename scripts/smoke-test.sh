@@ -50,7 +50,25 @@ bad() { FAIL=$((FAIL + 1)); step "FAIL: $1"; }
 # Boot the production server (kill anything already on the port).
 pkill -f "standalone/server.js" >/dev/null 2>&1 || true
 pkill -f "next start" >/dev/null 2>&1 || true
+pkill -f "next dev" >/dev/null 2>&1 || true
 sleep 1
+
+# Session 99 (S99-F / B99-L2): the port-ownership refusal — the S73-D
+# form (mechanism, not discipline). The pre-kill pair above covered only
+# the standalone and `next start` patterns; a lingering `next dev` on
+# the port is neither killed nor refused by them — the standalone boot
+# fails EADDRINUSE, the health loop below hits the DEV server, and every
+# check silently certifies dev code instead of the built artifact (dev
+# code, NODE_ENV=development, no DIGMA_DISABLE_AI_LLM). Refuse up front:
+# if anything still answers the port after the kills, the gate does not
+# run.
+if curl -sf -m 2 "$BASE/api/health" >/dev/null 2>&1; then
+  echo "REFUSED: something already answers $BASE — a lingering dev" >&2
+  echo "server would silently steal the health probe and every check" >&2
+  echo "would run against code that is not the built artifact." >&2
+  echo "Stop it first (or set PORT to a free port)." >&2
+  exit 1
+fi
 
 step "Booting the standalone production server on :${PORT}…"
 PORT="$PORT" NODE_ENV=production DIGMA_DISABLE_AI_LLM=1 bun .next/standalone/server.js >/tmp/smoke-server.log 2>&1 &

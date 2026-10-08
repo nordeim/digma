@@ -124,7 +124,10 @@ describe("S73-E — the name-cap symmetry (DQ-1: PATCH rejects like POST)", () =
 
   it("the description fields stay truncate-at-500 (the documented product semantics: names reject, prose truncates)", () => {
     expect(patch).toMatch(/clampText\(body\.description, 500\)/);
-    expect(post).toMatch(/\.slice\(0, 500\)/);
+    // Session 99 (S99-D / B99-I1): the POST's inline trim-slice twin
+    // joined the S71-D clampText fold — the truncate-at-500 semantics
+    // ride through the shared clamp (byte-identical; the S93-A form).
+    expect(post).toMatch(/clampText\(body\?\.description, 500\)/);
   });
 });
 

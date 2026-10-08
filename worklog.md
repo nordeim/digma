@@ -1885,3 +1885,21 @@ Work Log:
 
 Stage Summary:
 - Session 98 delivered on main: the member-name-rejection/reset-completion/census-spelling pass; gate green at 1212/160 files/63/262; the mobile nav contract held the 75th consecutive session; no reference drift (the Share/Present clipping byte-identical the 35th consecutive session)
+
+---
+Task ID: digma-s99
+Agent: lead (Super Z)
+
+Task: the operator's session-cycle directive — refresh, review the mandated docs (session_156/157 + remediation-plan-session98 + worklog), audit, remediate TDD-first, capture, align docs, push to main only.
+
+Work Log:
+- Workspace refreshed by git pull at HEAD 89c10ce (the session-98 delivery 72e5e84 + the session_157 log push); the mandated docs reviewed and the understanding validated against the codebase (all S98 seams verified intact in source at baseline; the M-B85-1 parent-shell trap handled with env -u at every gate)
+- The baseline gate re-proven green at 1212 unit / 160 files / 63 smoke / 262 e2e (the F59 corollary HOLDS, the sixteenth consecutive); the 75th reference audit NO DRIFT (the Share/Present clipping byte-identical the 36th consecutive session; scripts/ref-audit-s99.sh under the env-var form, evidence ref-audit-s109/); the NEW SEO probe — the reference's robots.txt + sitemap.xml measured live (the 4-URL set); mobile nav 9/9 the 76th consecutive session (baseline AND the final S99 build — the Tailwind v4 class-A guard passing)
+- The 47th Mode C audit (auditor A: the editor/client layer ~12.8k lines read line-by-line; auditor B: the server/infra side ~7.9k lines with typecheck + the read-only DB contract + the hand-counts re-run): 0 Critical / 0 High / 0 Medium / 5 Low / 5 Informational; every chosen finding lead-verified
+- The TDD remediation: S99-A the numeric fields' draft-survival guard (the headline, A99-L1 — the render-time resync snapped a user's own >2-decimal commit to the 2-decimal display under the caret mid-typing; the guard: a draft whose parse equals the committed value already tells the truth about it), S99-B the text-content round-trip (A99-L2 — the S85-B doctrine "edge whitespace is real content" now holds at the server layer: the slice-only clampTextContent), S99-C the leave-transport keyed registry (A99-L3 — the per-project Map closing the X→Y→X fifth interleaving), S99-D the server smalls fold (B99-L1/B99-I1/B99-I2/B99-I3), S99-E the client smalls fold (A99-I1/A99-I2), S99-F the smoke port-ownership refusal (B99-L2, the S73-D mechanism form), S99-G the SEO parity (robots.ts + sitemap.ts + DIGMA_SITE_URL; the build 25 -> 27 routes)
+- 21 defect/anchor pins deterministically RED pre-fix / 5 survival pins GREEN by design; the count family's forcing function fired across EIGHT files (the §11 six-row trip + the re-anchors in client-lows-s77/89, server-lows-s71/73/77, exit-flush-s71, editor-lows-s85/86/87, soft-leave-flush) — all closed in-commit; the eleven anchor-bearing spec constants onto 1238/161; the route-count family 25 -> 27
+- Full gate green at 1238 unit / 161 files / 63 smoke / 262 e2e (one session62 timing flake re-run green in isolation AND on the full-suite re-run); the build 27 routes; the capture re-run with ZERO ✗ marks (the F43/F42 discipline — the decimal-survival witness's own three-run journey documented in the plan's execution notes); the NEW clone-55 decimal-survival + clone-56 sitemap witnesses + the robots live check; the dimension checker 548/548 (the S109 mapping added); the DB pristine after every mutating phase; .env.example verified (the new DIGMA_SITE_URL knob documented)
+- Committed and pushed to git@github.com:nordeim/digma.git main via docs/ssh_git_wrapper_v3.py
+
+Stage Summary:
+- Session 99 delivered on main: the draft-survival/round-trip-stability/keyed-registry/SEO-parity pass; gate green at 1238/161 files/63/262; the mobile nav contract held the 76th consecutive session; no reference drift (the Share/Present clipping byte-identical the 36th consecutive session); the deferred queue documented in docs/remediation-plan-session99.md (the F86 lesson set: the draft-survival guard — the render-time resync must distinguish the user's own commit; the round-trip trim — a content doctrine must hold at every layer the datum crosses; the keyed registry — a discard-on-mismatch drain re-opens the race it closed; the honest-port guard)

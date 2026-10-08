@@ -79,20 +79,24 @@ describe("the layers-row double-cast removal (S69-D / L-F)", () => {
 describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
   const doc = src("docs/DEPLOYMENT.md");
 
-  it("the route counts match the shipped build (18 route files / 25 routes)", () => {
+  it("the route counts match the shipped build (18 route files / 27 routes)", () => {
     // Session 83 (S83-B): legitimately re-anchored from the birth
     // miscount "23 routes" (6 pages + 18 files — the app has always
     // shipped 7 page routes and 25 exported handlers across the 18
     // files; the figure was a miscount at birth, not later drift).
-    // The pin's intent (DEPLOYMENT.md carries the REAL build
-    // arithmetic) is unchanged — now actually true.
+    // Session 99 (S99-G): re-anchored again — the SEO parity pair
+    // (src/app/robots.ts + src/app/sitemap.ts, the reference's measured
+    // /robots.txt + /sitemap.xml) grew the build 25 -> 27 routes; the
+    // pin's intent (DEPLOYMENT.md carries the REAL build arithmetic) is
+    // unchanged — still actually true.
     expect(doc).toMatch(/18 API route/);
-    expect(doc).toMatch(/25\s+routes/);
+    expect(doc).toMatch(/27\s+routes/);
     expect(doc).toMatch(/7 page routes/);
     expect(doc.includes("14 API route")).toBe(false);
     expect(doc.includes("(20 routes")).toBe(false);
     expect(doc.includes("6 page routes")).toBe(false);
     expect(doc.includes("23 routes")).toBe(false);
+    expect(doc.includes("25 routes total")).toBe(false);
   });
 
   it("the verification checklist carries the real counts (63 smoke / 260 e2e)", () => {

@@ -49,6 +49,25 @@ export function clampText(value: unknown, maxLength: number): string | null {
   return trimmed.slice(0, maxLength);
 }
 
+// Session 99 (S99-B / A99-L2 — the forty-seventh audit's A-2): the
+// TEXT-CONTENT variant — edge whitespace is real content. The S85-B
+// doctrine's own words ("the canvas renders whiteSpace: pre-wrap,
+// edge whitespace is real content") make the server-side trim the
+// violation: a composer typing "hello " and pausing past the 800ms
+// autosave debounce got the PUT round-trip — the trim deleted the
+// trailing space mid-composition while the input still held focus
+// (the next word joined: "helloworld"). clampText (trim + slice,
+// all-whitespace → null) stays the IDENTITY/PROSE family's clamp —
+// names, emails, descriptions are trimmed at the boundary; the
+// element TEXT field is renderable canvas content and rides this
+// slice-only form, making the round-trip byte-stable. The client's
+// blur trim-at-commit stays (the S85-B boundary form — the store
+// reconciles when the user LEAVES the field, never mid-composition).
+export function clampTextContent(value: unknown, maxLength: number): string | null {
+  if (typeof value !== "string") return null;
+  return value.slice(0, maxLength);
+}
+
 const FONT_WEIGHTS = new Set(["300", "400", "500", "600", "700", "800"]);
 const TEXT_ALIGNS = new Set(["left", "center", "right"]);
 

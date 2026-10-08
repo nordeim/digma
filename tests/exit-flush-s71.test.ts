@@ -97,8 +97,11 @@ describe("the untouched transports (S71-B preservation)", () => {
     // older-state PUT₁, the out-of-order landing closure) and the
     // .catch(() => null) closes the whole sequence; the
     // newer-state-safety-net intent is unchanged.
+    // Session 99 (S99-C / A99-L3): re-anchored again — the chain now
+    // rides the registerLeaveTransport seam (the keyed Map registry);
+    // the intent is unchanged.
     expect(view).toMatch(/saveState !== "saved" && state\.projectId/);
-    expect(view).toMatch(/done:\s*machineFlight\s*\.then\(\(\)\s*=>\s*fetch\([\s\S]{0,400}?method:\s*"PUT",\s*headers:\s*\{\s*"Content-Type":\s*"application\/json"\s*\},\s*body:\s*JSON\.stringify\(\{\s*elements:\s*state\.elements,\s*backgroundColor:\s*state\.backgroundColor,?\s*\}\),?\s*\}\),?\s*\)\s*\.catch\(\(\)\s*=>\s*null\)/);
+    expect(view).toMatch(/registerLeaveTransport\(\s*state\.projectId,\s*machineFlight\s*\.then\(\(\)\s*=>\s*fetch\([\s\S]{0,400}?method:\s*"PUT",\s*headers:\s*\{\s*"Content-Type":\s*"application\/json"\s*\},\s*body:\s*JSON\.stringify\(\{\s*elements:\s*state\.elements,\s*backgroundColor:\s*state\.backgroundColor,?\s*\}\),?\s*\}\),?\s*\)\s*\.catch\(\(\)\s*=>\s*null\)/);
   });
 
   it("the machine's pending re-run stays NOT disposed-gated (the S56-B contract)", () => {

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { fail, ok, requireSession } from "@/lib/api";
-import { readBoundedJson } from "@/lib/validation";
+import { readBoundedJson, clampText } from "@/lib/validation";
 import { parseFallbackCommand, sanitizeElementSummary, sanitizeLlmOperations, type AiCommand } from "@/lib/ai-assistant";
 import { aiRateLimit, clientIpOf } from "@/lib/rate-limit";
 
@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
   const body = parsed.value;
-  const message = typeof body?.message === "string" ? body.message.trim().slice(0, 1000) : "";
+  // Session 99 (S99-D / B99-I1): the inline trim-slice twin joins the
+  // S71-D clampText fold — semantics byte-identical (null/trim/slice;
+  // empty → "" via the nullish fallback).
+  const message = clampText(body?.message, 1000) ?? "";
   // Session 77 (S77-F / B-L1): the per-string clamp joins the count cap
   // — pre-fix the filter checked only typeof, so a scripted caller could
   // pad the system prompt with up to ~32 MB of id-shaped prose (100

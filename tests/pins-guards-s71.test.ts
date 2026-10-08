@@ -102,7 +102,11 @@ describe("the clampText fold (S71-D / L-A10)", () => {
     expect(members).not.toMatch(/clampOptionalText/);
     expect(teams).not.toMatch(/clampOptionalText/);
     expect(editor).toMatch(/clampText\(raw\?\.name,\s*80\)/);
-    expect(editor).toMatch(/clampText\(raw\?\.text,\s*2000\)/);
+    // Session 99 (S99-B / A99-L2): the TEXT site rides the slice-only
+    // clampTextContent — edge whitespace is real content (the S85-B
+    // doctrine's own words); the re-anchor is the S93-A precedent (the
+    // in-commit form — a live pin whose shape follows the seam it pins).
+    expect(editor).toMatch(/clampTextContent\(raw\?\.text,\s*2000\)/);
     expect(members).toMatch(/clampText\(body\?\.role,\s*80\)/);
     expect(teams).toMatch(/clampText\(body\?\.description,\s*300\)/);
     expect(teams).toMatch(/clampText\(body\?\.memberRole,\s*80\)/);

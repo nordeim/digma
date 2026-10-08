@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { clampText, FONT_FAMILIES } from "@/lib/validation";
+import { expandShortHex } from "@/lib/utils";
 import {
   addGradientStop,
   clampFontSizeField,
@@ -91,9 +92,15 @@ function NumberField({
 
   // The sanctioned "adjust state during render" pattern: when the external
   // value changes (move/resize), the draft follows — no effect, no cascade.
+  // Session 99 (S99-A / A99-L1 — the forty-seventh audit's headline): the
+  // user's own commit never rewrites the draft — a draft whose parse
+  // equals the committed value already tells the truth about it (typing
+  // "12.375" survives verbatim instead of snapping to "12.38" under the
+  // caret; only an EXTERNAL change — slider, resize, undo, AI —
+  // resynchronizes through the rounded display).
   if (prevValue !== value) {
     setPrevValue(value);
-    setDraft(display);
+    if (Number(draft) !== value) setDraft(display);
   }
 
   return (
@@ -203,9 +210,12 @@ function GuardedNumberInput({
   // The sanctioned "adjust state during render" pattern (no effect, no
   // cascade): the draft follows the external value — slider moves,
   // undo/redo, AI edits all resynchronize the input.
+  // Session 99 (S99-A / A99-L1): the user's own commit never rewrites
+  // the draft — a draft whose parse equals the committed value already
+  // tells the truth about it (the NumberField sibling's guard).
   if (prevValue !== value) {
     setPrevValue(value);
-    setDraft(display);
+    if (Number(draft) !== value) setDraft(display);
   }
 
   return (
@@ -292,7 +302,7 @@ function HexColorRow({
         <input
           type="color"
           aria-label={`${label ?? "Color"} swatch`}
-          value={value ?? "#000000"}
+          value={expandShortHex(value) ?? "#000000"}
           onChange={(event) => {
             // Session 66 (S66-B — the fourteenth audit's A-3): the
             // picker's continuous input events ride the idle-coalesced

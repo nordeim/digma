@@ -87,28 +87,35 @@ describe("the re-entry guard discriminates the adoption re-run from the fresh mo
     // a same-project re-entry mount's GET can answer first and load
     // pre-transport state. The registry records the at-unmount transport
     // so the mount boundary can await it.
+    // Session 99 (S99-C / A99-L3): the registry is a per-project MAP
+    // (the re-anchor is the S93-A precedent — the one-shot slot became
+    // a keyed drain: an intermediate project's mount can no longer
+    // discard a transport it never awaited — the X→Y→X interleaving).
     expect(editorViewSource).toMatch(
-      /let leaveTransportFor: \{ projectId: string; done: Promise<unknown> \} \| null = null;/
+      /const leaveTransports = new Map<string, Promise<unknown>>\(\)/
     );
   });
 
   it("SOURCE — the S62-C cleanup records its at-unmount PUT into the registry", () => {
     // The record site: the cleanup's raw fetch (the !machineCarriesThisState
-    // branch) registers { projectId, done } — the promise of the transport
-    // itself, settled through the existing .catch(() => null).
+    // branch) registers through the ONE seam (registerLeaveTransport —
+    // S99-C) with the promise of the transport itself, settled through
+    // the existing .catch(() => null).
     expect(editorViewSource).toMatch(
-      /leaveTransportFor = \{\s*projectId: state\.projectId,/
+      /registerLeaveTransport\(\s*state\.projectId,/m
     );
   });
 
   it("SOURCE — the mount's load awaits the same-project leave transport before the GET (the PUT/GET race closure)", () => {
-    // The await site: a mount run drains the registry slot (one-shot) and
-    // awaits it ONLY when the transport targets the project being loaded —
-    // the at-unmount PUT and the mount's GET can otherwise interleave with
-    // the GET answering first (loading pre-transport state; the next local
-    // edit would then full-list-PUT over the final save).
+    // The await site: a mount run drains the registry's entry for THE
+    // PROJECT BEING LOADED (S99-C's keyed drain — an intermediate
+    // project's mount leaves other projects' entries alone) and awaits
+    // it — the at-unmount PUT and the mount's GET can otherwise
+    // interleave with the GET answering first (loading pre-transport
+    // state; the next local edit would then full-list-PUT over the
+    // final save).
     expect(editorViewSource).toMatch(
-      /const transport = leaveTransportFor;\s*leaveTransportFor = null;\s*if \(transport && transport\.projectId === projectId\) \{\s*await transport\.done;/
+      /const transport = leaveTransports\.get\(projectId\);\s*if \(transport\) \{\s*leaveTransports\.delete\(projectId\);\s*await transport;/
     );
   });
 });

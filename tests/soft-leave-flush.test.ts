@@ -63,7 +63,10 @@ describe("the soft-leave flush + the stale-saving normalization (session 62, S62
     // rides the machineFlight chain (strictly AFTER the machine's
     // older-state PUT₁; the out-of-order landing closure); the
     // no-keepalive intent still unchanged.
-    const fetchIdx = cleanup.indexOf("done: machineFlight");
+    // Session 99 (S99-C / A99-L3): re-anchored once more — the chain now
+    // rides the registerLeaveTransport seam (the keyed Map registry);
+    // the no-keepalive intent still unchanged.
+    const fetchIdx = cleanup.indexOf("machineFlight");
     expect(fetchIdx).toBeGreaterThan(-1);
     expect(cleanup.slice(fetchIdx, cleanup.indexOf(")", cleanup.indexOf("keepalive", fetchIdx) === -1 ? cleanup.length : cleanup.indexOf("keepalive", fetchIdx)) + 1)).not.toContain("keepalive");
   });

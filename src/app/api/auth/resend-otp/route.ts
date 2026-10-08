@@ -59,9 +59,16 @@ export async function POST(request: NextRequest) {
     // production knob does NOT close (it nulls the payload, not the
     // shape). The uniform answer mirrors the verify route's own
     // verified-case convention: the same VALIDATION 400 as an unknown
-    // email, byte-identical — no remote reader can tell the three
-    // states apart. The client's resend path is only reachable from an
-    // unverified account's verify card, so no consumer changes.
+    // email, byte-identical. Session 99 (S99-D / B99-L1 — the
+    // forty-seventh audit's B-L1, the B97-I1 honest-comment class):
+    // VERIFIED and UNKNOWN are indistinguishable; the
+    // pending-unverified state remains distinguishable BY DESIGN —
+    // the delivery 200 is the route's function (the ADR-014
+    // self-hosted family's inherent shape, surviving the knob with a
+    // null code). The residual "unverified-signup-exists" oracle is
+    // the documented ADR-014 residue, not a closed surface. The
+    // client's resend path is only reachable from an unverified
+    // account's verify card, so no consumer changes.
     return fail("VALIDATION", "Enter a valid email address", 400);
   }
 

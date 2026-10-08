@@ -216,16 +216,16 @@ describe("the editor's project-swap loading re-arm (S77-E / A-L5)", () => {
     // THE DEFECT PIN: pre-fix the branch never set loading — a soft
     // A -> B swap kept project A painting for the whole GET window.
     const branch = editor.slice(
-      editor.indexOf("const response = await fetch(`/api/projects/${projectId}`);"),
+      editor.indexOf("const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`);"),
     );
     // The setLoading(true) call must exist in the effect BEFORE the
     // fetch call (the effect's sync prefix — the sanctioned form).
     const effectStart = editor.indexOf("React.useEffect(() => {", editor.indexOf("UNTITLED_PROJECT") > 0 ? 0 : 0);
     const loadEffect = editor.slice(
-      editor.lastIndexOf("React.useEffect(() => {", editor.indexOf("const response = await fetch(`/api/projects/${projectId}`);")),
+      editor.lastIndexOf("React.useEffect(() => {", editor.indexOf("const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`);")),
     );
     const rearm = loadEffect.indexOf("setLoading(true)");
-    const fetch = loadEffect.indexOf("const response = await fetch(`/api/projects/${projectId}`);");
+    const fetch = loadEffect.indexOf("const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`);");
     expect(rearm).toBeGreaterThan(-1);
     expect(fetch).toBeGreaterThan(-1);
     expect(rearm).toBeLessThan(fetch);

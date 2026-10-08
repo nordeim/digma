@@ -71,9 +71,11 @@ describe("the AI route's per-string id clamp (S77-F / B-L1)", () => {
 
   it("the count caps and the sibling field bounds are preserved", () => {
     // PRESERVATION: the .slice(0, 100) count caps stay; message keeps
-    // its 1000-char slice; the summary keeps the sanitizer.
+    // its 1000-char clamp (S99-D / B99-I1: the inline twin joined the
+    // S71-D clampText fold — semantics byte-identical); the summary
+    // keeps the sanitizer.
     expect(route).toMatch(/\.slice\(0, 100\)/);
-    expect(route).toMatch(/body\.message\.trim\(\)\.slice\(0, 1000\)/);
+    expect(route).toMatch(/clampText\(body\?\.message, 1000\)/);
     expect(route).toMatch(/sanitizeElementSummary\(/);
   });
 });
