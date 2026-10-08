@@ -566,6 +566,12 @@ S100.update({
 # new browser witness)
 S101 = dict(S100)
 
+# s102 mapping (session 92 — the 68th reference audit's evidence set + the
+# standing evidence re-captured on the S92 code (clone-46/47/48 all
+# re-verified as standing; the session's remediation is source-level — no
+# new browser witness)
+S102 = dict(S101)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -624,6 +630,8 @@ def expected_for(name: str):
         return S100.get(Path(name).stem)
     if name.startswith("ref-audit-s101/"):
         return S101.get(Path(name).stem)
+    if name.startswith("ref-audit-s102/"):
+        return S102.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -704,6 +712,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s99").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s100").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s101").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s102").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

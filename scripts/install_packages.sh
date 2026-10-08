@@ -8,4 +8,4 @@
 # from package.json. bun install / npm install (no arguments) reads
 # package.json directly and is always in sync — prefer that when the
 # toolchain is available.
-npm install @prisma/client @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-label @radix-ui/react-select @radix-ui/react-slot @radix-ui/react-tabs class-variance-authority clsx lucide-react next prisma react react-dom tailwind-merge z-ai-web-dev-sdk zustand @playwright/test @tailwindcss/postcss @types/react @types/react-dom bun-types eslint eslint-config-next tailwindcss tw-animate-css typescript vitest
+npm install @prisma/client @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-label @radix-ui/react-select @radix-ui/react-slot @radix-ui/react-tabs class-variance-authority clsx lucide-react next prisma react react-dom tailwind-merge z-ai-web-dev-sdk zustand @playwright/test @tailwindcss/postcss @types/react @types/react-dom bun-types eslint eslint-config-next tailwindcss tsx tw-animate-css typescript vitest

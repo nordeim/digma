@@ -48,12 +48,18 @@ const SKILL = readFileSync(path.resolve(import.meta.dirname, "../digma_SKILL.md"
 // pins + the S91-B editor-* doctrine conditional pins) / 153 files (+1)
 // / 63 smoke (unchanged) / 262 e2e (unchanged); the intents (the docs
 // carry the DELIVERED counts) unchanged.
-const UNIT = "1141";
+// Session 92 (S92-E): re-anchored to the session-92 delivery counts —
+// 1150 unit (1141 + lows-s92 9 — the S92-A export dead-member pins +
+// the S92-B credential-indirection pins + the S92-C/S92-D cleanup pins
+// + the live-anchor) / 154 files (+1) / 63 smoke (unchanged) / 262 e2e
+// (unchanged); the intents (the docs carry the DELIVERED counts)
+// unchanged.
+const UNIT = "1150";
 // Session 85 (S85-E / A85-I1): the constant was "140" — dead (never
 // asserted) AND wrong — a dead wrong copy one edit away from becoming
 // a live wrong pin. Corrected and made LIVE (the pin below asserts it
 // against the PAD §7.1 total row DYNAMICALLY).
-const FILES = "153";
+const FILES = "154";
 const SMOKE = "63";
 const E2E = "262";
 

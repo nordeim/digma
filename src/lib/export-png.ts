@@ -118,12 +118,14 @@ function gradientDefs(gradient: GradientFill, id: string): string {
 }
 
 /** The fill attributes for a non-text element from the ONE paint chain:
- * solid → fill="…", gradient → a defs entry + fill="url(#…)", image → an
- * <image> child. Returns the attribute string plus any defs/children. */
+ * solid → fill="…", gradient → the url(#…) fill reference (the defs entry
+ * itself is derived by the caller — elementsToSvg owns the single
+ * derivation), image → an <image> child. Returns the attribute string
+ * plus any children. */
 function paintFor(
   el: DesignElementDTO,
   gradientId: string,
-): { attrs: string; defs: string; children: string } {
+): { attrs: string; children: string } {
   if (el.fillImage) {
     return {
       // fill="none" (session 53, S53-B): the parent shape must paint NO
@@ -132,7 +134,6 @@ function paintFor(
       // paint chain leaves the area transparent. The <image> child
       // renders on top of the unfilled shape.
       attrs: 'fill="none"',
-      defs: "",
       children:
         `<image href="${escapeXml(el.fillImage)}" x="0" y="0" width="${n(el.width)}" height="${n(el.height)}" ` +
         `preserveAspectRatio="${preserveAspectRatioFor(el.fillImageFit)}"/>`,
@@ -140,9 +141,9 @@ function paintFor(
   }
   const gradient = parseGradient(el.fillGradient);
   if (gradient) {
-    return { attrs: `fill="url(#${gradientId})"`, defs: gradientDefs(gradient, gradientId), children: "" };
+    return { attrs: `fill="url(#${gradientId})"`, children: "" };
   }
-  return { attrs: el.fill ? `fill="${escapeXml(el.fill)}"` : 'fill="none"', defs: "", children: "" };
+  return { attrs: el.fill ? `fill="${escapeXml(el.fill)}"` : 'fill="none"', children: "" };
 }
 
 /** The stroke attributes + the border-box inset (sw/2 on every side). A

@@ -149,7 +149,10 @@ const skill = readFileSync(
 // 63 smoke (unchanged) / 262 e2e (unchanged — doc-lows-s91 +10, the
 // S91-A count-family two-shape pins + the S91-B doctrine conditional);
 // the intents unchanged.
-const UNIT = "1141";
+// Session 92 (S92-E): re-anchored again — 1150 unit / 154 files /
+// 63 smoke (unchanged) / 262 e2e (unchanged — lows-s92 +9, the S92
+// low-batch pins); the intents unchanged.
+const UNIT = "1150";
 const SMOKE = "63";
 const E2E = "262";
 

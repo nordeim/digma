@@ -51,8 +51,11 @@ const GLOBALS = readFileSync(
 // 1131 -> 1141 unit / 152 -> 153 files (the F68/F70 discipline: the
 // constants are pinned against the PAD §7.1 total row below, so the
 // whole count family moves together in the same commit).
-const UNIT = "1141";
-const FILES = "153";
+// Session 92 (S92-E): re-anchored — 1150 unit / 154 files (the s92
+// delivery's lows-s92 +9); the intents (the docs carry the DELIVERED
+// counts, the family moves together) unchanged.
+const UNIT = "1150";
+const FILES = "154";
 
 // ---------------------------------------------------------------------------
 // The consumer probe (A91-L1's evidence base): a recursive walk of src/
