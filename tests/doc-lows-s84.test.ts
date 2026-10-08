@@ -43,12 +43,17 @@ const SKILL = readFileSync(path.resolve(import.meta.dirname, "../digma_SKILL.md"
 // doc-lows-s85 +9) / 143 files (+2) / 63 smoke (unchanged) / 262 e2e
 // (+2 — the session85-fixes re-entry discriminators); the intents (the
 // docs carry the DELIVERED counts) unchanged.
-const UNIT = "1131";
+// Session 91 (S91-D): re-anchored to the session-91 delivery counts —
+// 1141 unit (1131 + doc-lows-s91 10 — the S91-A count-family two-shape
+// pins + the S91-B editor-* doctrine conditional pins) / 153 files (+1)
+// / 63 smoke (unchanged) / 262 e2e (unchanged); the intents (the docs
+// carry the DELIVERED counts) unchanged.
+const UNIT = "1141";
 // Session 85 (S85-E / A85-I1): the constant was "140" — dead (never
 // asserted) AND wrong — a dead wrong copy one edit away from becoming
 // a live wrong pin. Corrected and made LIVE (the pin below asserts it
 // against the PAD §7.1 total row DYNAMICALLY).
-const FILES = "152";
+const FILES = "153";
 const SMOKE = "63";
 const E2E = "262";
 

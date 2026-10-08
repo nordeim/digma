@@ -560,6 +560,12 @@ S100.update({
     "clone-48-member-email-cap-create-form": (1440, 900),
 })
 
+# s101 mapping (session 91 — the 67th reference audit's evidence set + the
+# standing evidence re-captured on the S91 code (clone-46/47/48 all
+# re-verified as standing; the session's remediation was doc-level — no
+# new browser witness)
+S101 = dict(S100)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -616,6 +622,8 @@ def expected_for(name: str):
         return S99.get(Path(name).stem)
     if name.startswith("ref-audit-s100/"):
         return S100.get(Path(name).stem)
+    if name.startswith("ref-audit-s101/"):
+        return S101.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -695,6 +703,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s98").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s99").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s100").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s101").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

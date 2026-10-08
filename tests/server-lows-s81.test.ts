@@ -145,7 +145,11 @@ const skill = readFileSync(
 // Session 85 (S85-F): re-anchored again — 1047 unit / 143 files /
 // 63 smoke (unchanged) / 262 e2e (+2 — the session85-fixes re-entry
 // discriminators); the intents unchanged.
-const UNIT = "1131";
+// Session 91 (S91-D): re-anchored again — 1141 unit / 153 files /
+// 63 smoke (unchanged) / 262 e2e (unchanged — doc-lows-s91 +10, the
+// S91-A count-family two-shape pins + the S91-B doctrine conditional);
+// the intents unchanged.
+const UNIT = "1141";
 const SMOKE = "63";
 const E2E = "262";
 
