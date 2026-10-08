@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useEditorStore } from "./editor-store";
 import { resetSliderGesture } from "./properties-panel";
-import { boundsOf, canvasFontFamily, clampPositionField, clampSizeField, clampZoom, ELEMENT_LIMIT, fillPaintFor, isTypingTarget, textAlignToJustify, type DesignElementDTO, type EditorTool } from "@/lib/editor";
+import { boundsOf, canvasFontFamily, clampPositionField, clampSizeField, clampZoom, ELEMENT_LIMIT, FALLBACK_WHITE, fillPaintFor, isTypingTarget, textAlignToJustify, type DesignElementDTO, type EditorTool } from "@/lib/editor";
 
 // ---------------------------------------------------------------------------
 // The canvas: a DOM-element canvas (the reference's approach — absolutely
@@ -705,7 +705,7 @@ function CanvasElement({
   else if (element.radius > 0) style.borderRadius = element.radius;
 
   if (element.type === "text") {
-    style.color = element.fill ?? "#FFFFFF";
+    style.color = element.fill ?? FALLBACK_WHITE;
     style.fontSize = element.fontSize ?? 16;
     style.fontWeight = element.fontWeight ?? "500";
     // The reference's Font Family combobox (session 29, RA-10) — measured
@@ -760,7 +760,7 @@ function CanvasElement({
             y1={0}
             x2={element.width}
             y2={element.height}
-            stroke={element.stroke ?? "#FFFFFF"}
+            stroke={element.stroke ?? FALLBACK_WHITE}
             strokeWidth={element.strokeWidth || 2}
             strokeLinecap="round"
           />

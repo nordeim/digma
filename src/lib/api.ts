@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { getSessionUser, type SessionUser } from "./auth";
 
 // The uniform API envelope (ADR-006 in the inherited architecture):
-// every handler returns { ok: true, data } or { ok: false, error: { code, message } }.
+// every handler except /api/health returns { ok: true, data } or
+// { ok: false, error: { code, message } } — the health route is the
+// documented liveness carve-out (a bare { status, app, ts } probe
+// shape, pinned by doc-lows-s83 against the README).
 // The client's call() helper unwraps success data or surfaces a destructive
 // toast and returns null — failures never throw into React render.
 

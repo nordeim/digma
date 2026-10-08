@@ -154,7 +154,7 @@ const skill = readFileSync(
 // Session 92 (S92-E): re-anchored again — 1150 unit / 154 files /
 // 63 smoke (unchanged) / 262 e2e (unchanged — lows-s92 +9, the S92
 // low-batch pins); the intents unchanged.
-const UNIT = "1183";
+const UNIT = "1196";
 const SMOKE = "63";
 const E2E = "262";
 

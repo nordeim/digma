@@ -28,8 +28,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const body = parsed.value ?? {};
   const data: Record<string, unknown> = {};
   if (body?.name !== undefined) {
-    const name = clampText(body.name, 80);
+    // Session 97 (S97-C — B97-L1): the S73-E explicit-over-silent form
+    // reaches the PATCH name branch (the create route's sibling).
+    const name = typeof body.name === "string" ? body.name.trim() : "";
     if (!name) return fail("VALIDATION", "Team name is required", 400);
+    if (name.length > 80) return fail("VALIDATION", "Team name is too long (max 80)", 400);
     data.name = name;
   }
   if (body?.description !== undefined) {

@@ -41,8 +41,14 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
   const body = parsed.value;
-  const name = clampText(body?.name, 80);
+  // Session 97 (S97-C — B97-L1, the forty-fifth audit): names are
+  // identity — REJECT, the project family's S73-E doctrine reaching its
+  // sibling (a 200-char scripted name previously truncated silently to
+  // 80; the UI's maxLength=80 makes this API-consumer-only). The
+  // description below stays truncate — prose, the doctrine's other half.
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
   if (!name) return fail("VALIDATION", "Team name is required", 400);
+  if (name.length > 80) return fail("VALIDATION", "Team name is too long (max 80)", 400);
 
   const description = clampText(body?.description, 300);
   const color = clampColor(String(body?.color ?? "#8B5CF6"), "#8B5CF6");

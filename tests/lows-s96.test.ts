@@ -84,26 +84,70 @@ function walkTsx(dir: string): string[] {
 }
 
 const TSX_FILES = walkTsx(path.resolve(import.meta.dirname, "../src"));
-const TSX_TEXT = TSX_FILES.map((f) => readFileSync(f, "utf8")).join("\n");
 
 // The inline-style hex literal inventory — the closed set this spec
-// pins. Pre-fix count 3 (verified against the tree, multiline-aware):
-// the avatar chip's #3B82F6, the swatch ring's #111827 + #E5E7EB, and
-// the Sarah datum's #10B981. Post-fix: exactly the one documented
-// datum site (no token counterpart, provenance-commented). The day a
-// second literal site appears, this pin goes RED and the newcomer must
-// either join a token or join this spec's documented set (the F78
-// class-census discipline applied at the THIRD scope — classes,
-// plain CSS, now inline styles).
-const INLINE_HEX_SITE = /style=\{\{[^}]*#[0-9a-fA-F]{3,8}[^}]*\}\}/g;
-const inlineHexSites = TSX_TEXT.match(INLINE_HEX_SITE) ?? [];
+// pins. Pre-fix count 3 (verified against the tree): the avatar chip's
+// #3B82F6, the swatch ring's #111827 + #E5E7EB, and the Sarah datum's
+// #10B981. Post-fix: exactly the one documented datum site (no token
+// counterpart, provenance-commented). The day a second literal site
+// appears, this pin goes RED and the newcomer must either join a token
+// or join this spec's documented set (the F78 class-census discipline
+// applied at the THIRD scope — classes, plain CSS, now inline styles).
+//
+// Session 97 (S97-A — A97-M1, the census repair): the original regex
+// form (/style=\{\{[^}]*#hex[^}]*\}\}/) was structurally BLIND to two
+// forms — a multi-line style object whose template literals carry }
+// (rotate(${el.rotation}deg) terminates [^}]* early) and a style object
+// built as a local variable (style.<prop> = ... — no style={{ token at
+// all) — so the pin passed VACUOUSLY over the text-fill fallback trio
+// the S97 seam then consolidated onto FALLBACK_WHITE. The repaired
+// census walks BALANCED BRACES from every style={{ token (template-
+// literal braces are balanced pairs the walker crosses) and scans the
+// variable-form assignment lines beside it — the faithful form, the
+// "the delivered pin tells the truth" doctrine (the S94-C form).
+function inlineStyleSpans(text: string): string[] {
+  const spans: string[] = [];
+  let i = 0;
+  while (true) {
+    const start = text.indexOf("style={{", i);
+    if (start === -1) break;
+    let depth = 0;
+    let j = start + "style=".length; // at the first '{'
+    for (; j < text.length; j++) {
+      if (text[j] === "{") depth++;
+      else if (text[j] === "}") {
+        depth--;
+        if (depth === 0) break;
+      }
+    }
+    spans.push(text.slice(start, Math.min(j + 1, text.length)));
+    i = j + 1;
+  }
+  return spans;
+}
+
+const INLINE_HEX = /#[0-9a-fA-F]{3,8}\b/g;
+const inlineHexSites: string[] = [];
+for (const f of TSX_FILES) {
+  const text = readFileSync(f, "utf8");
+  for (const span of inlineStyleSpans(text)) {
+    const hexes = span.match(INLINE_HEX) ?? [];
+    if (hexes.length > 0) inlineHexSites.push(`${hexes.join(",")}`);
+  }
+  for (const ln of text.split("\n")) {
+    if (/style\.\w+\s*=/.test(ln)) {
+      const hexes = ln.match(INLINE_HEX) ?? [];
+      if (hexes.length > 0) inlineHexSites.push(`${hexes.join(",")} (variable form)`);
+    }
+  }
+}
 
 // The S96 delivered counts — this file's 9 pins grow the suite
 // 1174 -> 1183 unit / 157 -> 158 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "1183";
-const FILES = "158";
+const UNIT = "1196";
+const FILES = "159";
 
 // ---------------------------------------------------------------------------
 // S96-A — the TSX inline-style token indirection (the F81/F82 class at
@@ -146,7 +190,9 @@ describe("the TSX inline-style token indirection (S96-A — the third scope of t
     // (RA-41), no token counterpart (--color-green-500 is #22c55e),
     // provenance-commented above its site. TEAM_COLORS and the
     // member-avatar styles are data-layer (dynamic values, identity-
-    // compared), not chrome literals.
+    // compared), not chrome literals; the text-fill fallback family
+    // rides the FALLBACK_WHITE constant (S97-A — identifiers, not
+    // literals — so the census stays blind to nothing).
     expect(inlineHexSites.length).toBe(1);
     expect(inlineHexSites[0]).toContain("#10B981");
   });

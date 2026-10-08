@@ -40,6 +40,7 @@
 
 import {
   canvasFontFamily,
+  FALLBACK_WHITE,
   fillPaintFor,
   parseGradient,
   type DesignElementDTO,
@@ -170,7 +171,7 @@ function elementToSvg(el: DesignElementDTO, gradientId: string): string {
   const opacity = el.opacity !== 1 ? ` opacity="${n(el.opacity)}"` : "";
 
   if (el.type === "line") {
-    const strokeColor = el.stroke ?? "#FFFFFF";
+    const strokeColor = el.stroke ?? FALLBACK_WHITE;
     const strokeWidth = el.strokeWidth || 2;
     return (
       `<line x1="0" y1="0" x2="${n(el.width)}" y2="${n(el.height)}" ` +
@@ -199,7 +200,7 @@ function elementToSvg(el: DesignElementDTO, gradientId: string): string {
     return (
       `<text font-family="${escapeXml(canvasFontFamily(el.fontFamily))}" ` +
       `font-size="${n(fontSize)}" font-weight="${escapeXml(el.fontWeight ?? "500")}" ` +
-      `fill="${escapeXml(el.fill ?? "#FFFFFF")}" text-anchor="${anchor}" ` +
+      `fill="${escapeXml(el.fill ?? FALLBACK_WHITE)}" text-anchor="${anchor}" ` +
       `dominant-baseline="central"${transform}${opacity}>${tspans}</text>`
     );
   }

@@ -109,8 +109,12 @@ describe("the clampText fold (S71-D / L-A10)", () => {
     expect(teams).toMatch(/clampText\(body\?\.description,\s*300\)/);
     expect(teams).toMatch(/clampText\(body\?\.memberEmail,\s*200\)/);
     expect(teams).toMatch(/clampText\(body\?\.memberRole,\s*80\)/);
-    // The teams POST's own name site was already clampText (preserved).
-    expect(teams).toMatch(/clampText\(body\?\.name,\s*80\)/);
+    // Session 97 (S97-C — B97-L1): the teams POST's name site moved to
+    // the S73-E explicit rejection (names are identity — reject; the
+    // project family's doctrine reaching its sibling). The description/
+    // email/role sites above stay clampText (prose — truncate).
+    expect(teams).toContain('fail("VALIDATION", "Team name is too long (max 80)", 400)');
+    expect(teams).not.toMatch(/clampText\(body\?\.name,\s*80\)/);
   });
 
   it("the stale comments quoting the removed twin are updated (the comment-literal discipline)", () => {

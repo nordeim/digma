@@ -604,6 +604,14 @@ S106.update({
     "clone-52-inline-style-token-computed": (1440, 900),
 })
 
+# s107 mapping (session 97 — the 73rd reference audit's evidence set + the
+# standing evidence re-verified on the S97 code; the fallback-white
+# computed-style witness captured on the final build — clone-53)
+S107 = dict(S106)
+S107.update({
+    "clone-53-fallback-white-computed": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -672,6 +680,8 @@ def expected_for(name: str):
         return S105.get(Path(name).stem)
     if name.startswith("ref-audit-s106/"):
         return S106.get(Path(name).stem)
+    if name.startswith("ref-audit-s107/"):
+        return S107.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -757,6 +767,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s104").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s105").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s106").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s107").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

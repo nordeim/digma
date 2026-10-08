@@ -252,6 +252,24 @@ export const CANVAS_BACKGROUND_PRESETS: Array<{ title: string; value: string }> 
 
 export const DEFAULT_FILL = "#3B82F6";
 
+// Session 97 (S97-A — A97-M1/A97-L1, the forty-fifth audit): the single
+// source for the render white — the model's null-fill default (a text
+// with no fill paints white; a line with no stroke paints white — the
+// same white, one source). DATA, not chrome (the F82/F83 separation):
+// this is NOT a token indirection — #ffffff is incidentally the value
+// five @theme tokens declare, but the fallback is the canvas DATA
+// default (what the reference's text/line defaults paint), and riding a
+// var() would re-pin the text default to the app-shell background
+// token. Consumed at every render/model seam: defaultElementFor's text
+// + line factories, elementToStyle, buildElementRow, the
+// canvas/thumbnail/present render sites, and the export seam — closing
+// the #fff/#FFFFFF spelling divergence (twelve hand-maintained copies
+// of one datum, already split two ways). The DATA carve-outs stay
+// literal: the AI's color-word map + template fills (ai-assistant.ts —
+// authored data), the gradient add-stop's lowercase #ffffff (the
+// reference's decoded RA-54 datum below).
+export const FALLBACK_WHITE = "#FFFFFF";
+
 // Session 61 (S61-F — the ninth audit's A-L-5, the residual half of
 // S60-D's B-L-2): the single seam for the board-size ceiling. The PUT
 // route carried it as a literal since session 33; S60-D added the POST
@@ -356,7 +374,7 @@ export function defaultElementFor(
   if (type === "text") {
     return {
       ...base,
-      fill: "#FFFFFF",
+      fill: FALLBACK_WHITE,
       // The reference's measured fresh-text contract (session 29, RA-10):
       // the Content INPUT's VALUE is "Type here..." (not a placeholder),
       // Font Size is a fixed 16, and the Font Family combobox defaults to
@@ -377,7 +395,7 @@ export function defaultElementFor(
     return { ...base, fill: null, stroke: "#555555", strokeWidth: 1, radius: 0 };
   }
   if (type === "line") {
-    return { ...base, height: 0, stroke: "#FFFFFF", strokeWidth: 2, fill: null };
+    return { ...base, height: 0, stroke: FALLBACK_WHITE, strokeWidth: 2, fill: null };
   }
   return base;
 }
@@ -521,7 +539,7 @@ export function elementToStyle(el: DesignElementDTO): ElementStyle {
     style.fontSize = `${el.fontSize ?? 16}px`;
     style.fontWeight = el.fontWeight ?? "500";
     style.fontFamily = canvasFontFamily(el.fontFamily);
-    style.color = el.fill ?? "#FFFFFF";
+    style.color = el.fill ?? FALLBACK_WHITE;
     style.display = "flex";
     style.alignItems = "center";
     style.textAlign = el.textAlign ?? "left";
@@ -926,9 +944,9 @@ export function buildElementRow(
         ? null
         : raw?.fill === undefined
           ? synthesize
-            ? "#3B82F6"
+            ? DEFAULT_FILL
             : null
-          : clampColor(String(raw.fill), "#3B82F6"),
+          : clampColor(String(raw.fill), DEFAULT_FILL),
     fillGradient:
       raw?.fillGradient === null || raw?.fillGradient === undefined
         ? null
@@ -943,9 +961,9 @@ export function buildElementRow(
         ? null
         : raw?.stroke === undefined
           ? synthesize
-            ? "#FFFFFF"
+            ? FALLBACK_WHITE
             : null
-          : clampColor(String(raw.stroke), "#FFFFFF"),
+          : clampColor(String(raw.stroke), FALLBACK_WHITE),
     strokeWidth: clampNumber(raw?.strokeWidth, 0, 100, 0),
     radius: clampNumber(raw?.radius, 0, 2000, 0),
     text: clampText(raw?.text, 2000),

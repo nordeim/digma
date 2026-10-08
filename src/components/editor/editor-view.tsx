@@ -18,7 +18,7 @@ import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, fillPaintFor, isTypingTarget, textAlignToJustify, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, FALLBACK_WHITE, fillPaintFor, isTypingTarget, textAlignToJustify, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
 import {
   EXPORT_BOARD_HEIGHT,
   EXPORT_BOARD_WIDTH,
@@ -947,7 +947,7 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                     ? `${el.strokeWidth}px solid ${el.stroke}`
                     : undefined,
                 borderRadius: el.type === "ellipse" ? "50%" : el.radius || undefined,
-                color: el.type === "text" ? el.fill ?? "#fff" : undefined,
+                color: el.type === "text" ? el.fill ?? FALLBACK_WHITE : undefined,
                 // Session 58 (S58-E — the sixth audit's B-M-1): the text
                 // branch adopts the canvas text chain's EXACT contract
                 // (the inline CanvasElement style block in canvas.tsx +
@@ -993,7 +993,7 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                     y1={0}
                     x2={el.width}
                     y2={el.height}
-                    stroke={el.stroke ?? "#FFFFFF"}
+                    stroke={el.stroke ?? FALLBACK_WHITE}
                     strokeWidth={el.strokeWidth || 2}
                     strokeLinecap="round"
                   />

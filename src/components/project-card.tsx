@@ -44,6 +44,7 @@ import {
   TEMPLATE_META,
   boundsOf,
   canvasFontFamily,
+  FALLBACK_WHITE,
   fillPaintFor,
   textAlignToJustify,
   thumbnailFit,
@@ -172,7 +173,7 @@ export function CanvasThumbnail({
                       ? `${el.strokeWidth}px solid ${el.stroke}`
                       : undefined,
                   borderRadius: el.type === "ellipse" ? "50%" : el.radius > 0 ? el.radius : undefined,
-                  color: el.type === "text" ? el.fill ?? "#fff" : undefined,
+                  color: el.type === "text" ? el.fill ?? FALLBACK_WHITE : undefined,
                   fontSize: el.type === "text" ? el.fontSize ?? 16 : undefined,
                   fontWeight: el.type === "text" ? el.fontWeight ?? "500" : undefined,
                   fontFamily: el.type === "text" ? canvasFontFamily(el.fontFamily) : undefined,
@@ -208,7 +209,7 @@ export function CanvasThumbnail({
                       y1={0}
                       x2={el.width}
                       y2={el.height}
-                      stroke={el.stroke ?? "#FFFFFF"}
+                      stroke={el.stroke ?? FALLBACK_WHITE}
                       strokeWidth={el.strokeWidth || 2}
                       strokeLinecap="round"
                     />
