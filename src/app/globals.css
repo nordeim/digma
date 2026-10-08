@@ -177,7 +177,12 @@
   }
 }
 
-/* Custom scrollbar for the editor's dark panels. */
+/* Custom scrollbar for the editor's dark panels. The thumb rides the
+   --color-editor-border @theme token (session 94 — the S93-A
+   migration's own completion at the one site a utility class cannot
+   reach; both forms compile to identical CSS); the hover's #484f58 is
+   the reference-measured GitHub-dark hover state (no token
+   counterpart — a measured literal, the .editor-range convention). */
 .editor-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -186,7 +191,7 @@
   background: transparent;
 }
 .editor-scroll::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: var(--color-editor-border);
   border-radius: 4px;
 }
 .editor-scroll::-webkit-scrollbar-thumb:hover {
