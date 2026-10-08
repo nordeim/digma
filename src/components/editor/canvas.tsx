@@ -459,7 +459,11 @@ export function Canvas() {
       role="application"
       aria-label="Design canvas"
     >
-      {/* Grid — 20px like the reference */}
+      {/* Grid — 20px like the reference. Provenance (session 98, S98-D —
+          the ring sibling's #484f58 convention): the grid lines paint
+          rgba(255, 255, 255, 0.1) — the reference-measured 20px-grid
+          white at 10% alpha (an alpha variant, not a token value; the
+          plain-CSS twins live in globals.css's measured families). */}
       <div
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{

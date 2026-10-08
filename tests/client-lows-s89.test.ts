@@ -91,14 +91,25 @@ describe("the member-email inputs mirror the server's 200 truncation (S89-A / A8
     expect(tag).toContain("maxLength={200}");
   });
 
-  it("SOURCE — the server clamps stay canonical (the single source of the 200)", () => {
-    // THE SURVIVAL PIN: the client cap mirrors the SERVER's seam — the
-    // clampText(_, 200) lines are the canonical numbers, and they stay
-    // exactly where they are (the client must never diverge from the
-    // seam it mirrors; a future widening of one without the other is
-    // this family's recurrence).
-    expect(membersRouteSource).toMatch(/clampText\(body\?\.email, 200\)/);
-    expect(teamsRouteSource).toMatch(/clampText\(body\?\.memberEmail, 200\)/);
+  it("SOURCE — the server's 200 bound stays canonical (the single source of the 200)", () => {
+    // THE SURVIVAL PIN (re-anchored session 98, S98-A — the S93-A
+    // precedent): pre-S98 the client cap mirrored the server's SILENT
+    // clamp — clampText(_, 200) — and this pin asserted the clamps.
+    // S98-A moved both invite paths to the auth family's honest
+    // rejection (email.length > 200 → 400 "Email is too long"), so the
+    // client maxLength={200} now mirrors the REJECTION bound instead
+    // (the same UX contract — the client cap prevents the UI from ever
+    // sending the over-length address the server now refuses). The
+    // single-source discipline is unchanged: the client cap and the
+    // server bound must agree in the same commit.
+    expect(membersRouteSource).toMatch(/email\.length > 200/);
+    expect(teamsRouteSource).toMatch(/memberEmail\.length > 200/);
+    expect(membersRouteSource).toContain(
+      'fail("VALIDATION", "Email is too long (max 200)", 400)',
+    );
+    expect(teamsRouteSource).toContain(
+      'fail("VALIDATION", "Email is too long (max 200)", 400)',
+    );
   });
 });
 
@@ -126,11 +137,16 @@ describe("the assistant input mirrors the server's 1000 prompt slice (S89-A / A8
 
 describe("the register asymmetry stays honest (the S89-A doctrine's boundary)", () => {
   it("SOURCE — register still REJECTS >200 (the honest 400), never truncating", () => {
-    // THE DOCTRINE PIN: the mirror rule is for SILENT truncation seams
-    // only — register's contract is a REJECTION (email.length > 200 →
-    // 400), which the login form surfaces as an inline alert. The
-    // asymmetric family stays asymmetric: the teams routes truncate
-    // (so the client caps), register rejects (so the client surfaces).
+    // THE DOCTRINE PIN: the mirror rule is for the bound the client
+    // must not silently cross — register's contract is a REJECTION
+    // (email.length > 200 → 400), which the login form surfaces as an
+    // inline alert. Session 98 (S98-A) completed the family: the teams
+    // invite paths joined the rejection form (the member email is
+    // address data, and a truncated address is a mangled one), so every
+    // 200-bound surface now answers the honest 400 — the asymmetry the
+    // S89 header described (teams truncate, register rejects) is closed,
+    // and the client maxLength caps remain the UI's first line of
+    // defense on all three surfaces.
     const registerRouteSource = readFileSync(
       path.join(ROOT, "src/app/api/auth/register/route.ts"),
       "utf8",

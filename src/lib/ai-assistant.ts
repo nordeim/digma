@@ -4,6 +4,7 @@
 // assistant utterance resolves to element operations + a reply string.
 
 import { clampNumber } from "@/lib/validation";
+import { DEFAULT_FILL } from "@/lib/editor";
 
 // Session 78 (S78-G / B-L3): the S71-D fold's numeric leftover — this
 // module's private clamp() was a byte-identical twin of validation.ts's
@@ -222,7 +223,12 @@ export function parseFallbackCommand(
   // ---- add shapes ----
   for (const [word, shape] of Object.entries(SHAPES)) {
     if (new RegExp(`\\b${word}\\b`).test(lowered) && /\b(add|create|draw|place)\b/.test(lowered)) {
-      const fill = colorFor(lowered) ?? "#3B82F6";
+      // Session 98 (S98-D — A98-I2, the S97-B shape): the fallback
+      // parser's default fill rides DEFAULT_FILL — the exported single
+      // source (one import; still DATA, not chrome — the authored
+      // color-word map + template fills below stay literal, the S97-A
+      // carve-out).
+      const fill = colorFor(lowered) ?? DEFAULT_FILL;
       const size = shape === "ellipse" ? 100 : 120;
       const elements = Array.from({ length: count }, (_, i) => ({
         type: shape,

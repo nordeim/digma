@@ -60,7 +60,14 @@ export async function POST(request: NextRequest) {
   // Create Team dialog silently created a garbage member while the same
   // input in the Invite Member dialog 400'd with "Enter a valid email
   // address" — the two invite paths must answer identically.
-  const memberEmail = clampText(body?.memberEmail, 200);
+  // Session 98 (S98-A — B98-L2): the email REJECTS over-length BEFORE
+  // the format check (the members route's identical form) — the
+  // clampText-then-regex shape truncated a 200+ char address first and
+  // stored the mangled remainder when it still matched.
+  const memberEmail = typeof body?.memberEmail === "string" ? body.memberEmail.trim() : "";
+  if (memberEmail.length > 200) {
+    return fail("VALIDATION", "Email is too long (max 200)", 400);
+  }
   if (memberEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(memberEmail)) {
     return fail("VALIDATION", "Enter a valid email address", 400);
   }

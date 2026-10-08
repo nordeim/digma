@@ -64,19 +64,26 @@ function walkSources(dir: string): string[] {
 const SRC_SOURCES = walkSources(path.resolve(import.meta.dirname, "../src"));
 const SRC_TEXT = SRC_SOURCES.map((f) => readFileSync(f, "utf8")).join("\n");
 
-// The full utility-prefix family of arbitrary-value hex classes — the
-// closed-set inventory this spec pins (exactly the three documented
-// measured literals; pre-fix count 3, verified against the tree).
-const HEX_CLASS =
-  /(?:bg|border|text|divide|ring|fill|stroke|outline|decoration|shadow|from|to|via|accent|caret|placeholder)-\[#[0-9a-fA-F]{3,8}\]/g;
+// Session 98 (S98-C — A98-L3, the in-commit repair): the arbitrary-value
+// hex-class census rides the SYNTAX catch-all instead of a utility-prefix
+// enumeration. The prefix list was blind to side-suffixed
+// (border-b-[#hex]) and nested (shadow-[0_0_2px_#fff]) forms — the F84
+// lesson's continuation: a census scoped by enumeration enumerates only
+// the forms it knows. The dash-bracket form IS the arbitrary-value
+// syntax (a utility's `-` before a bracket carrying a hex anywhere
+// inside), so the catch-all is strictly more faithful at the same cost —
+// the delivered count stays exactly the three documented measured
+// literals (verified against the tree).
+const HEX_CLASS = /-\[[^\]]*#[0-9a-fA-F]{3,8}[^\]]*\]/g;
 const hexClassSites = SRC_TEXT.match(HEX_CLASS) ?? [];
+const hexClassHexes = hexClassSites.map((m) => m.match(/#[0-9a-fA-F]{3,8}/)?.[0]);
 
 // The S94 delivered counts — this file's 7 pins grow the suite
 // 1158 -> 1165 unit / 155 -> 156 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "1196";
-const FILES = "159";
+const UNIT = "1212";
+const FILES = "160";
 
 // ---------------------------------------------------------------------------
 // S94-A — the scrollbar-thumb token indirection (the migration's own
@@ -144,9 +151,13 @@ describe("the arbitrary-hex closed-set inventory (S94-B — the three documented
     // must either join a token or join this spec's documented set
     // (the F78 class-census discipline applied to the class
     // vocabulary — the family cannot silently grow).
+    // Session 98 (S98-C): the census now rides the dash-bracket
+    // catch-all — the matched span is the `-[...]` tail, so the hex
+    // members are asserted through the extracted-hex array.
     expect(hexClassSites.length).toBe(3);
-    expect(hexClassSites.filter((c) => c === "bg-[#21262d]").length).toBe(2);
-    expect(hexClassSites.filter((c) => c === "border-[#404040]").length).toBe(1);
+    expect(hexClassHexes.filter((h) => h === "#21262d").length).toBe(2);
+    expect(hexClassHexes.filter((h) => h === "#404040").length).toBe(1);
+    expect(hexClassSites.every((s) => s.startsWith("-["))).toBe(true);
   });
 
   it("SURVIVAL + the doc record: the measured literals stay in source and AGENTS names the exception set", () => {

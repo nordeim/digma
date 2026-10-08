@@ -27,9 +27,29 @@ export async function POST(request: NextRequest, { params }: Params) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
   const body = parsed.value;
-  const email = clampText(body?.email, 200);
+  // Session 98 (S98-A — B98-L2, the forty-sixth audit): the member
+  // email REJECTS over-length BEFORE the format check — the auth
+  // family's contract (register answers the honest 400 while this
+  // route's clampText truncated first, storing a MANGLED address whose
+  // truncation still matched the regex). The two invite paths must
+  // answer identically to the auth family.
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  if (email.length > 200) {
+    return fail("VALIDATION", "Email is too long (max 200)", 400);
+  }
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return fail("VALIDATION", "Enter a valid email address", 400);
+  }
+
+  // Session 98 (S98-A — B98-L1): names are identity — REJECT, the
+  // S73-E/S97-C doctrine reaching the member family (a 200-char
+  // scripted name previously truncated silently to 80; the derived
+  // memberDisplayFor fallback below covers the absent name — only the
+  // present-but-too-long name rejects). The role stays truncate (a
+  // fixed-option label, not identity — the doctrine's carve-out).
+  const memberName = typeof body?.name === "string" ? body.name.trim() : "";
+  if (memberName.length > 80) {
+    return fail("VALIDATION", "Member name is too long (max 80)", 400);
   }
 
   // Session 67 (S67-B / L-1): the per-team member ceiling — the
@@ -55,7 +75,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       return tx.teamMember.create({
         data: {
           teamId: id,
-          name: clampText(body?.name, 80) ?? memberDisplayFor(email),
+          name: memberName || memberDisplayFor(email),
           email,
           role: clampText(body?.role, 80),
           avatarColor: memberColorFor(email),

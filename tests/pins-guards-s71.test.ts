@@ -103,18 +103,28 @@ describe("the clampText fold (S71-D / L-A10)", () => {
     expect(teams).not.toMatch(/clampOptionalText/);
     expect(editor).toMatch(/clampText\(raw\?\.name,\s*80\)/);
     expect(editor).toMatch(/clampText\(raw\?\.text,\s*2000\)/);
-    expect(members).toMatch(/clampText\(body\?\.email,\s*200\)/);
-    expect(members).toMatch(/clampText\(body\?\.name,\s*80\)/);
     expect(members).toMatch(/clampText\(body\?\.role,\s*80\)/);
     expect(teams).toMatch(/clampText\(body\?\.description,\s*300\)/);
-    expect(teams).toMatch(/clampText\(body\?\.memberEmail,\s*200\)/);
     expect(teams).toMatch(/clampText\(body\?\.memberRole,\s*80\)/);
     // Session 97 (S97-C — B97-L1): the teams POST's name site moved to
     // the S73-E explicit rejection (names are identity — reject; the
     // project family's doctrine reaching its sibling). The description/
-    // email/role sites above stay clampText (prose — truncate).
+    // role sites above stay clampText (prose — truncate).
     expect(teams).toContain('fail("VALIDATION", "Team name is too long (max 80)", 400)');
     expect(teams).not.toMatch(/clampText\(body\?\.name,\s*80\)/);
+    // Session 98 (S98-A — B98-L1 + B98-L2, the member-family completion):
+    // the members POST's name + email sites and the teams POST's
+    // memberEmail site joined the explicit rejection (the member name is
+    // identity; the email rejects over-length BEFORE the format check —
+    // the auth family's contract; the derived memberDisplayFor fallback
+    // covers the absent name). The role/memberRole sites above stay
+    // clampText (fixed-option labels — the doctrine's carve-out).
+    expect(members).toContain('fail("VALIDATION", "Member name is too long (max 80)", 400)');
+    expect(members).toContain('fail("VALIDATION", "Email is too long (max 200)", 400)');
+    expect(teams).toContain('fail("VALIDATION", "Email is too long (max 200)", 400)');
+    expect(members).not.toMatch(/clampText\(body\?\.name,\s*80\)/);
+    expect(members).not.toMatch(/clampText\(body\?\.email,\s*200\)/);
+    expect(teams).not.toMatch(/clampText\(body\?\.memberEmail,\s*200\)/);
   });
 
   it("the stale comments quoting the removed twin are updated (the comment-literal discipline)", () => {

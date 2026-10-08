@@ -143,6 +143,79 @@ function inlineStyleSpans(text: string): string[] {
 
 const HEX = /#[0-9a-fA-F]{3,8}\b/g;
 
+// Session 98 (S98-C — A98-L2, the in-commit repair): the color-function
+// spelling family joins the census — the F84 lesson's own continuation.
+// A census scoped by SPELLING enumerates only the spellings it knows:
+// the HEX-only matcher above is blind to a token value re-spelled
+// rgb()/rgba()/hsl() (no live violation — the corpus's only
+// color-function spellings are the documented ring + grid pair — the
+// blindness was in the pin's shape, repaired here the S93-A way).
+const COLOR_FN = /rgba?\([^)]*\)|hsla?\([^)]*\)/g;
+
+/** Strip // and {/* *} lines — the code-only census counts paints, not
+ * the provenance comments that record them (the ring's own comment
+ * mentions its literal). */
+function stripComments(text: string): string {
+  return text
+    .split("\n")
+    .filter((ln) => !/^\s*\/\//.test(ln))
+    .join("\n")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+}
+
+/** Form C (the S98 discovery): balanced-brace walking from every typed
+ * local style-object literal (`const style: React.CSSProperties = {`) —
+ * the ring's form, missed by BOTH census forms above (no style={{ token,
+ * no style.x = assignment). */
+function typedStyleObjectSpans(text: string): string[] {
+  const spans: string[] = [];
+  let i = 0;
+  while (true) {
+    const token = text.indexOf("React.CSSProperties = {", i);
+    if (token === -1) break;
+    const start = text.lastIndexOf("const ", token);
+    let depth = 0;
+    let j = text.indexOf("{", token);
+    for (; j < text.length; j++) {
+      if (text[j] === "{") depth++;
+      else if (text[j] === "}") {
+        depth--;
+        if (depth === 0) break;
+      }
+    }
+    spans.push(text.slice(start, Math.min(j + 1, text.length)));
+    i = j + 1;
+  }
+  return spans;
+}
+
+/** The color-function census: the spelling-faithful completion — Form A
+ * (style={{ spans) + Form B (style.<prop> =) + Form C (typed local style
+ * objects), comments stripped, counting rgb()/rgba()/hsl() spellings. */
+function faithfulInlineColorFunctionSites(): string[] {
+  const sites: string[] = [];
+  for (const f of TSX_FILES) {
+    const text = stripComments(readFileSync(f, "utf8"));
+    const found: string[] = [];
+    for (const span of inlineStyleSpans(text)) {
+      found.push(...(span.match(COLOR_FN) ?? []));
+      COLOR_FN.lastIndex = 0;
+    }
+    for (const ln of text.split("\n")) {
+      if (/style\.\w+\s*=/.test(ln)) {
+        found.push(...(ln.match(COLOR_FN) ?? []));
+        COLOR_FN.lastIndex = 0;
+      }
+    }
+    for (const span of typedStyleObjectSpans(text)) {
+      found.push(...(span.match(COLOR_FN) ?? []));
+      COLOR_FN.lastIndex = 0;
+    }
+    if (found.length > 0) sites.push(`${path.basename(f)}: ${found.join(",")}`);
+  }
+  return sites;
+}
+
 /** The faithful census: Form A (style={{...}} spans) + Form B (style.<prop> =). */
 function faithfulInlineHexSites(): string[] {
   const sites: string[] = [];
@@ -168,8 +241,8 @@ function faithfulInlineHexSites(): string[] {
 // 1183 -> 1196 unit / 158 -> 159 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "1196";
-const FILES = "159";
+const UNIT = "1212";
+const FILES = "160";
 
 describe("S97-A the FALLBACK_WHITE single-source seam + the faithful census (A97-M1 + A97-L1)", () => {
   it("DEFECT: editor.ts exports FALLBACK_WHITE — the single source for the render white", () => {
@@ -252,6 +325,25 @@ describe("S97-A the FALLBACK_WHITE single-source seam + the faithful census (A97
     expect(LOWS_S96).not.toContain("INLINE_HEX_SITE");
     expect(LOWS_S96).toContain("inlineStyleSpans");
     expect(LOWS_S96).toContain("(variable form)");
+  });
+});
+
+describe("S98-C the color-function census (the in-commit repair — A98-L2/A98-L3, the forty-sixth audit)", () => {
+  it("the spelling-faithful census counts rgb()/rgba()/hsl() — the closed set is exactly the ring + the grid", () => {
+    // The F84 continuation: the HEX-only census above is blind to a
+    // token value re-spelled as a color function. No live violation —
+    // the three-form census (spans + assignments + the typed local
+    // style objects the S98 discovery added) finds exactly the
+    // documented pair: the selection ring rgba(59, 130, 246, 0.9) (the
+    // S96-C provenance record, Form C — a local React.CSSProperties
+    // object BOTH prior forms missed) and the 20px grid's
+    // rgba(255, 255, 255, 0.1) pair (Form A — one span, two spellings).
+    // A third literal trips this pin and the newcomer must either ride
+    // a token (chrome) or join the documented set (data).
+    const sites = faithfulInlineColorFunctionSites();
+    expect(sites).toEqual([
+      "canvas.tsx: rgba(255, 255, 255, 0.1),rgba(255, 255, 255, 0.1),rgba(59, 130, 246, 0.9)",
+    ]);
   });
 });
 

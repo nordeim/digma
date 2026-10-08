@@ -648,6 +648,13 @@ export function CreateProjectDialog({
     setName("");
     setDescription("");
     setBackground(CANVAS_BACKGROUND_PRESETS[0]?.value ?? "#0D1117");
+    // Session 98 (S98-B — A98-L1, the forty-sixth audit): the custom-color
+    // draft joins the reset contract — pre-fix a custom pick survived the
+    // reset, so reopening the dialog showed the stale swatch behind the
+    // restored preset background (isPreset true, the color input reading
+    // customColor). The CreateTeamDialog sibling resets its color the
+    // same way (teams-view.tsx setColor(TEAM_COLORS[0])).
+    setCustomColor(CANVAS_BACKGROUND_PRESETS[0]?.value ?? "#0D1117");
     setTemplate("blank");
   }
 
