@@ -51,11 +51,13 @@ const GLOBALS = readFileSync(
 // 1131 -> 1141 unit / 152 -> 153 files (the F68/F70 discipline: the
 // constants are pinned against the PAD §7.1 total row below, so the
 // whole count family moves together in the same commit).
+// Session 93 (S93-E): re-anchored — 1158 unit / 155 files (the s93
+// delivery's editor-utilities-s93 +8).
 // Session 92 (S92-E): re-anchored — 1150 unit / 154 files (the s92
 // delivery's lows-s92 +9); the intents (the docs carry the DELIVERED
 // counts, the family moves together) unchanged.
-const UNIT = "1150";
-const FILES = "154";
+const UNIT = "1158";
+const FILES = "155";
 
 // ---------------------------------------------------------------------------
 // The consumer probe (A91-L1's evidence base): a recursive walk of src/
@@ -158,12 +160,21 @@ describe("the editor-* doctrine honesty (S91-B — A91-L1)", () => {
     }
   });
 
-  it("digma_SKILL's anti-pattern listing is conditioned on adoption (the 'once … have consumers' form)", () => {
+  it("digma_SKILL's anti-pattern listing matches the adoption state (S93: the migration landed — the ACTIVATED form)", () => {
     // The anti-pattern "Hardcoded hex in editor chrome when `editor-*`
-    // utilities exist" was itself a zero-consumer claim — an
-    // anti-pattern nothing could violate. The conditioned form activates
-    // with the first consumer.
-    expect(SKILL).toMatch(/once `editor-\*` utilities have consumers/);
+    // utilities exist" was itself a zero-consumer claim at S91 — an
+    // anti-pattern nothing could violate — so the conditioned
+    // ("once … have consumers") form stood while consumerCount === 0.
+    // The S93-A migration landed the consumers: the IFF contract now
+    // requires the ACTIVATED, unconditioned form (the arbitrary-value
+    // hex is the anti-pattern; the utilities carry the chrome).
+    if (consumerCount === 0) {
+      expect(SKILL).toMatch(/once `editor-\*` utilities have consumers/);
+    } else {
+      expect(SKILL).toMatch(
+        /Hardcoded hex in editor chrome when `editor-\*` utilities exist/,
+      );
+    }
   });
 
   it("SURVIVAL: the @theme editor palette stays defined (the four tokens — the palette is real)", () => {

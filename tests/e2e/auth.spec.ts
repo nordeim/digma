@@ -66,7 +66,10 @@ test.describe("login route", () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test("unknown API paths keep the envelope contract", async ({ request }) => {
+  test("an unknown user keeps the login envelope contract", async ({ request }) => {
+    // S93-D (B93-I3): the probe is the login route's unknown-USER 401 —
+    // the API-path 404-shape probe lives in the smoke suite. The name
+    // now says what the body does.
     const res = await request.post("/api/auth/login", {
       data: { email: "not-a-user@digma.app", password: "wrong-password" },
     });

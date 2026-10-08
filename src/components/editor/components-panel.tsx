@@ -17,7 +17,7 @@ import { Package, Plus } from "lucide-react";
 export function ComponentsPanel() {
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-[#30363d] p-4">
+      <div className="border-b border-editor-border p-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-medium text-white">Components</h3>
           <button

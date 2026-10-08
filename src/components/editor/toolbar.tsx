@@ -45,7 +45,7 @@ export function Toolbar() {
 
   return (
     <div
-      className="flex w-12 flex-shrink-0 flex-col items-center border-r border-[#30363d] bg-[#161b22] py-2"
+      className="flex w-12 flex-shrink-0 flex-col items-center border-r border-editor-border bg-editor-panel py-2"
       role="toolbar"
       aria-label="Editor tools"
       aria-orientation="vertical"
@@ -59,7 +59,7 @@ export function Toolbar() {
           return (
             <React.Fragment key={entry.id}>
               {(entry.id === "frame" || entry.id === "pen") && (
-                <div className="my-1 h-px w-full bg-[#30363d]" role="separator" aria-hidden />
+                <div className="my-1 h-px w-full bg-editor-border" role="separator" aria-hidden />
               )}
               <button
                 type="button"
@@ -71,7 +71,7 @@ export function Toolbar() {
                   "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
                   isActive
                     ? "bg-blue-600 text-white"
-                    : "text-gray-400 hover:bg-[#30363d] hover:text-white",
+                    : "text-gray-400 hover:bg-editor-border hover:text-white",
                 )}
               >
                 <Icon className="h-4 w-4" aria-hidden />

@@ -572,6 +572,14 @@ S101 = dict(S100)
 # new browser witness)
 S102 = dict(S101)
 
+# s103 mapping (session 93 — the 69th reference audit's evidence set + the
+# standing evidence re-verified on the S93 code; the migration's computed-
+# style chrome spot-checked live on the final build — clone-49)
+S103 = dict(S102)
+S103.update({
+    "clone-49-editor-token-chrome": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -632,6 +640,8 @@ def expected_for(name: str):
         return S101.get(Path(name).stem)
     if name.startswith("ref-audit-s102/"):
         return S102.get(Path(name).stem)
+    if name.startswith("ref-audit-s103/"):
+        return S103.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -713,6 +723,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s100").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s101").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s102").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s103").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

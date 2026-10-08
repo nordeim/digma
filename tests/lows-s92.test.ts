@@ -55,12 +55,14 @@ const PAD = readFileSync(
   "utf8",
 );
 
-// The S92 delivered counts — this file's 9 pins grow the suite
-// 1141 -> 1150 unit / 153 -> 154 files (the F68/F70 discipline: the
-// constants ride the count family's live anchor — the PAD §7.1 Unit-total
-// row — so the whole family moves together in the same commit).
-const UNIT = "1150";
-const FILES = "154";
+// The S92 delivered counts — this file's 9 pins grew the suite
+// 1141 -> 1150 unit / 153 -> 154 files at the S92 delivery (the F68/F70
+// discipline: the constants ride the count family's live anchor — the PAD
+// §7.1 Unit-total row — so the whole family moves together in the same
+// commit). Session 93 (S93-E): re-anchored — 1158 / 155 (the s93
+// delivery's editor-utilities-s93 +8).
+const UNIT = "1158";
+const FILES = "155";
 
 // ---------------------------------------------------------------------------
 // S92-A — the export seam's single-derivation contract (A92-L1)

@@ -603,7 +603,7 @@ export function Canvas() {
 
       {/* "N selected" badge — measured from the reference */}
       {selected.length > 0 && (
-        <div className="pointer-events-none absolute right-4 top-4 rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-xs text-gray-300">
+        <div className="pointer-events-none absolute right-4 top-4 rounded-lg border border-editor-border bg-editor-panel px-3 py-2 text-xs text-gray-300">
           {selected.length} selected
         </div>
       )}
@@ -757,14 +757,14 @@ function CanvasElement({
       ) : null}
       {element.type === "frame" && element.name ? (
         // The reference's frame label (session 31, RA-13): an ALWAYS-ON name
-        // chip at -top-5 left-0 — text-xs text-gray-300 on bg-[#161b22] with
+        // chip at -top-5 left-0 — text-xs text-gray-300 on bg-editor-panel with
         // px-1.5 py-0.5 padding, pointer-events-none so it never intercepts
         // canvas interaction, and a 1/zoom COUNTER-SCALE (measured at 128%
         // zoom: scale 0.778866 = 1/1.28392) so the label's text stays at a
         // constant screen size at any zoom while its distance from the frame
         // scales with the canvas. nowrap keeps long names on one line.
         <span
-          className="pointer-events-none absolute -top-5 left-0 whitespace-nowrap bg-[#161b22] px-1.5 py-0.5 text-xs text-gray-300"
+          className="pointer-events-none absolute -top-5 left-0 whitespace-nowrap bg-editor-panel px-1.5 py-0.5 text-xs text-gray-300"
           style={{ transform: `scale(${1 / (zoom ?? 1)})`, transformOrigin: "left top" }}
           aria-hidden
         >

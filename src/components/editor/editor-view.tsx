@@ -765,7 +765,7 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="rounded border border-[#30363d] bg-[#0d1117] px-1.5 py-0.5 font-mono text-xs text-gray-300">
+    <kbd className="rounded border border-editor-border bg-editor-bg px-1.5 py-0.5 font-mono text-xs text-gray-300">
       {children}
     </kbd>
   );
@@ -783,7 +783,7 @@ function ShortcutsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[85vh] gap-0 overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white sm:max-w-[420px] [&>button]:h-11 [&>button]:w-11"
+        className="max-h-[85vh] gap-0 overflow-y-auto border-editor-border bg-editor-panel p-0 text-white sm:max-w-[420px] [&>button]:h-11 [&>button]:w-11"
         aria-label="Keyboard shortcuts"
         // The app's dialog convention (F34): focus returns to the trigger on
         // close. Radix's default return targets the DialogTrigger — none
@@ -794,7 +794,7 @@ function ShortcutsDialog({
           triggerRef.current?.focus();
         }}
       >
-        <DialogTitle className="border-b border-[#30363d] px-5 py-4 text-lg font-semibold text-white">
+        <DialogTitle className="border-b border-editor-border px-5 py-4 text-lg font-semibold text-white">
           Keyboard shortcuts
         </DialogTitle>
         <div className="space-y-5 px-5 py-4">
@@ -1147,20 +1147,20 @@ function MobilePropertiesEditor() {
           <button
             type="button"
             aria-label="Edit properties"
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-editor-border bg-editor-panel p-2 text-gray-400 transition-colors hover:text-white"
           >
             <SlidersHorizontal className="h-4 w-4" aria-hidden />
           </button>
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="max-h-[80vh] overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white [&>button]:h-11 [&>button]:w-11"
+          className="max-h-[80vh] overflow-y-auto border-editor-border bg-editor-panel p-0 text-white [&>button]:h-11 [&>button]:w-11"
         >
           {/* Session 60 (S60-F — the eighth audit's A-4): the built-in
               Close X meets the 44px touch floor — the MobileNav's own fix
               for the SAME vendored component, applied to both editor
               Sheets so every Radix Sheet in the app agrees. */}
-          <SheetHeader className="border-b border-[#30363d] px-4 py-3">
+          <SheetHeader className="border-b border-editor-border px-4 py-3">
             <SheetTitle className="text-left text-sm font-medium text-white">Edit properties</SheetTitle>
             {/* Session 54 (S54-B — the session-53 audit's deferred F-5):
                 the dialog's PURPOSE for screen readers, wired by Radix
@@ -1261,16 +1261,16 @@ function MobileCanvasProperties() {
           <button
             type="button"
             aria-label="Edit canvas properties"
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-editor-border bg-editor-panel p-2 text-gray-400 transition-colors hover:text-white"
           >
             <Palette className="h-4 w-4" aria-hidden />
           </button>
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="max-h-[80vh] overflow-y-auto border-[#30363d] bg-[#161b22] p-0 text-white [&>button]:h-11 [&>button]:w-11"
+          className="max-h-[80vh] overflow-y-auto border-editor-border bg-editor-panel p-0 text-white [&>button]:h-11 [&>button]:w-11"
         >
-          <SheetHeader className="border-b border-[#30363d] px-4 py-3">
+          <SheetHeader className="border-b border-editor-border px-4 py-3">
             <SheetTitle className="text-left text-sm font-medium text-white">Canvas properties</SheetTitle>
             {/* Session 54 (S54-B): the same aria-describedby contract as
                 the element Sheet — the canvas Sheet's purpose. */}
@@ -1642,7 +1642,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
   }
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-[#0d1117]">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-editor-bg">
       {/* Top bar — measured: h-12, back, name, Saved badge, undo/redo, avatars, Share/Present.
           Mobile wrap (session 48, S48-2): at <sm the right group wraps onto its
           own row — pre-fix Share (L413) and Present (L493) rendered OFF-SCREEN
@@ -1652,7 +1652,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
           when everything fits). The reference's own header clips Share/Present
           at 390 too (evidence ref-audit-s52/ref-02) — this is the clone's
           documented mobile-editor improvement family (ADR-010, F34). */}
-      <header className="flex min-h-12 flex-shrink-0 flex-wrap items-center justify-between gap-y-1 border-b border-[#30363d] bg-[#161b22] px-4 py-1 sm:h-12 sm:py-0">
+      <header className="flex min-h-12 flex-shrink-0 flex-wrap items-center justify-between gap-y-1 border-b border-editor-border bg-editor-panel px-4 py-1 sm:h-12 sm:py-0">
         <div className="flex min-w-0 items-center gap-4">
           <button
             type="button"
@@ -1706,7 +1706,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
           >
             <Redo2 className="h-4 w-4" aria-hidden />
           </button>
-          <div className="mx-2 hidden h-6 w-px bg-[#30363d] sm:block" role="separator" aria-hidden />
+          <div className="mx-2 hidden h-6 w-px bg-editor-border sm:block" role="separator" aria-hidden />
 
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
@@ -1793,20 +1793,20 @@ export function EditorView({ user }: { user: HeaderUser }) {
             a deliberate improvement over the reference, which squeezes all
             columns to unreadable widths at 390px. */}
         {panels.layers && isMd && (
-          <div className="hidden w-60 flex-shrink-0 flex-col border-r border-[#30363d] bg-[#161b22] md:flex">
+          <div className="hidden w-60 flex-shrink-0 flex-col border-r border-editor-border bg-editor-panel md:flex">
             <div className="min-h-0 flex-1">
               <LayersPanel />
             </div>
           </div>
         )}
         {panels.components && isMd && (
-          <div className="hidden w-60 flex-shrink-0 flex-col border-r border-[#30363d] bg-[#161b22] md:flex">
+          <div className="hidden w-60 flex-shrink-0 flex-col border-r border-editor-border bg-editor-panel md:flex">
             <ComponentsPanel />
           </div>
         )}
 
         {/* Center: canvas + AI assistant. */}
-        <div className="relative flex min-w-0 flex-1 flex-col bg-[#0d1117]">
+        <div className="relative flex min-w-0 flex-1 flex-col bg-editor-bg">
           <div className="relative min-h-0 flex-1">
             {loading ? (
               <div className="flex h-full items-center justify-center text-sm text-gray-500">
@@ -1825,14 +1825,14 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 sibling cluster, never a fourth member of the measured one. */}
             <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-1 text-sm text-gray-300">
+                <div className="rounded-lg border border-editor-border bg-editor-panel px-3 py-1 text-sm text-gray-300">
                   {Math.round(zoom * 100)}%
                 </div>
                 <button
                   type="button"
                   onClick={() => useEditorStore.getState().zoomIn()}
                   aria-label="Zoom in"
-                  className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+                  className="rounded-lg border border-editor-border bg-editor-panel p-2 text-gray-400 transition-colors hover:text-white"
                 >
                   <ZoomIn className="h-4 w-4" aria-hidden />
                 </button>
@@ -1840,7 +1840,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
                   type="button"
                   onClick={() => useEditorStore.getState().zoomOut()}
                   aria-label="Zoom out"
-                  className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+                  className="rounded-lg border border-editor-border bg-editor-panel p-2 text-gray-400 transition-colors hover:text-white"
                 >
                   <ZoomOut className="h-4 w-4" aria-hidden />
                 </button>
@@ -1858,7 +1858,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 ref={shortcutsChipRef}
                 aria-label="Keyboard shortcuts"
                 title="Keyboard shortcuts (?)"
-                className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white"
+                className="rounded-lg border border-editor-border bg-editor-panel p-2 text-gray-400 transition-colors hover:text-white"
               >
                 <Keyboard className="h-4 w-4" aria-hidden />
               </button>
@@ -1888,16 +1888,16 @@ export function EditorView({ user }: { user: HeaderUser }) {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   asChild
-                  className="rounded-lg border border-[#30363d] bg-[#161b22] p-2 text-gray-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="rounded-lg border border-editor-border bg-editor-panel p-2 text-gray-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <button type="button" aria-label="Download" title="Download">
                     <Download className="h-4 w-4" aria-hidden />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44 border-[#30363d] bg-[#161b22] text-gray-200">
+                <DropdownMenuContent align="end" className="w-44 border-editor-border bg-editor-panel text-gray-200">
                   <DropdownMenuItem
                     onSelect={onDownloadPng}
-                    className="gap-2 focus:bg-[#30363d] focus:text-white"
+                    className="gap-2 focus:bg-editor-border focus:text-white"
                   >
                     <ImageIcon className="h-4 w-4" aria-hidden />
                     Download PNG
@@ -1905,7 +1905,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={onDownloadSvg}
-                    className="gap-2 focus:bg-[#30363d] focus:text-white"
+                    className="gap-2 focus:bg-editor-border focus:text-white"
                   >
                     <FileCode2 className="h-4 w-4" aria-hidden />
                     Download SVG
@@ -1929,14 +1929,14 @@ export function EditorView({ user }: { user: HeaderUser }) {
 
           {/* AI assistant — bottom of the canvas column. The reference wraps
               it in an h-80 (320px) border-t column. */}
-          <div className="h-80 flex-shrink-0 border-t border-[#30363d] bg-[#161b22]">
+          <div className="h-80 flex-shrink-0 border-t border-editor-border bg-editor-panel">
             <AiAssistant />
           </div>
         </div>
 
         {/* Right: properties (chip-toggled). */}
         {panels.properties && isLg && (
-          <div className="hidden w-72 flex-shrink-0 border-l border-[#30363d] bg-[#161b22] lg:flex">
+          <div className="hidden w-72 flex-shrink-0 border-l border-editor-border bg-editor-panel lg:flex">
             <PropertiesPanel />
           </div>
         )}
@@ -1967,7 +1967,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
             className={cn(
               "rounded px-3 py-1 text-xs transition-colors",
               "hideBelow" in chip && chip.hideBelow === "lg" && "hidden lg:inline-block",
-              panels[chip.key] ? "bg-blue-600 text-white" : "bg-[#161b22] text-gray-400 hover:text-white",
+              panels[chip.key] ? "bg-blue-600 text-white" : "bg-editor-panel text-gray-400 hover:text-white",
             )}
           >
             {chip.label}

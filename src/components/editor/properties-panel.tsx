@@ -156,7 +156,7 @@ function NumberField({
             setDraft(display);
           }
         }}
-        className={`mt-1 h-8 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none ${
+        className={`mt-1 h-8 rounded-md border border-editor-border bg-editor-bg px-3 text-sm text-white focus:border-blue-500 focus:outline-none ${
           width ?? "w-full"
         }`}
       />
@@ -305,7 +305,7 @@ function HexColorRow({
             onChange(event.target.value);
           }}
           onBlur={() => sliderGesture.finish("text")}
-          className="h-8 w-8 rounded border border-[#30363d] bg-transparent"
+          className="h-8 w-8 rounded border border-editor-border bg-transparent"
         />
         <input
           type="text"
@@ -335,7 +335,7 @@ function HexColorRow({
           // value changes — the resync fires), and an INVALID non-empty
           // draft (an abandoned "#gg") restores the same way.
           onBlur={() => setDraft(value ?? "")}
-          className="h-8 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
+          className="h-8 flex-1 rounded-md border border-editor-border bg-editor-bg px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
         />
       </div>
     </div>
@@ -710,7 +710,7 @@ function GradientPanel({
                   setStop(index, { color: event.target.value });
                 }}
                 onBlur={() => sliderGesture.finish("text")}
-                className="h-6 w-6 rounded border border-[#30363d] bg-transparent"
+                className="h-6 w-6 rounded border border-editor-border bg-transparent"
               />
               <GuardedNumberInput
                 label={`Stop ${index + 1} position`}
@@ -721,7 +721,7 @@ function GradientPanel({
                 onChange={(position) =>
                   setStop(index, { position: Math.min(Math.max(position, 0), 100) })
                 }
-                className="h-6 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
+                className="h-6 flex-1 rounded-md border border-editor-border bg-editor-bg px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
               />
               <span className="text-xs text-gray-400">%</span>
               {/* Session 43, RA-55 (decoded `i.length>2 && <Button …>`): the
@@ -871,7 +871,7 @@ function ImagePanel({
             default is suppressed and the same reader consumes the
             file, filtered to the image family the input accepts. */}
         <div
-          className="rounded-lg border-2 border-dashed border-[#30363d] p-4 text-center transition-colors hover:border-[#404040]"
+          className="rounded-lg border-2 border-dashed border-editor-border p-4 text-center transition-colors hover:border-[#404040]"
           onDragOver={(event) => {
             event.preventDefault();
           }}
@@ -931,7 +931,7 @@ function ImagePanel({
             value={element.fillImageFit ?? "cover"}
             onValueChange={(fit) => update({ fillImageFit: fit })}
           >
-            <SelectTrigger aria-label="Background Size" className="mt-1 h-8 border-[#30363d] bg-[#0d1117] text-sm text-white">
+            <SelectTrigger aria-label="Background Size" className="mt-1 h-8 border-editor-border bg-editor-bg text-sm text-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1011,7 +1011,7 @@ export function TextSection({
             update({ text: event.target.value });
           }}
           aria-label="Text content"
-          className="mt-1 h-8 w-full rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-sm text-white shadow-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 h-8 w-full rounded-md border border-editor-border bg-editor-bg px-3 text-sm text-white shadow-sm focus:border-blue-500 focus:outline-none"
         />
       </label>
       <NumberField
@@ -1066,10 +1066,10 @@ export function TextSection({
                 aria-label={`Align ${align}`}
                 aria-pressed={active}
                 onClick={() => update({ textAlign: align })}
-                className={`inline-flex h-8 w-10 items-center justify-center rounded-md border border-[#30363d] transition-colors ${
+                className={`inline-flex h-8 w-10 items-center justify-center rounded-md border border-editor-border transition-colors ${
                   active
                     ? "bg-white text-gray-900 shadow"
-                    : "bg-[#0d1117] text-gray-400 hover:text-white"
+                    : "bg-editor-bg text-gray-400 hover:text-white"
                 }`}
               >
                 <AlignIcon className="h-4 w-4" aria-hidden />
@@ -1205,7 +1205,7 @@ export function FillStrokeSection({
       <SectionHeading icon="fill">Fill &amp; Stroke</SectionHeading>
       {/* Session 41 (RA-54): the segmented control is a Radix TABLIST
            (the reference's own structure — role=tablist with
-           data-state tabs on the bg-[#30363d] h-9 rounded-lg track,
+           data-state tabs on the bg-editor-border h-9 rounded-lg track,
            the active tab painted white) where EVERY TAB opens a
            working editor. The session-29 "the reference's own tabs
            are no-ops" decode is REVERSED — live-measured: its
@@ -1215,7 +1215,7 @@ export function FillStrokeSection({
            derives from the element's fill state (the derivation
            above the return). */}
       <Tabs value={fillTab} onValueChange={(value) => setFillTab(value as "solid" | "gradient" | "image")}>
-        <TabsList className="grid h-9 w-full grid-cols-3 items-center justify-center rounded-lg bg-[#30363d] p-1">
+        <TabsList className="grid h-9 w-full grid-cols-3 items-center justify-center rounded-lg bg-editor-border p-1">
           <TabsTrigger value="solid" className="px-3 py-1 text-xs">Solid</TabsTrigger>
           <TabsTrigger value="gradient" className="px-3 py-1 text-xs">Gradient</TabsTrigger>
           <TabsTrigger value="image" className="px-3 py-1 text-xs">Image</TabsTrigger>
@@ -1298,7 +1298,7 @@ export function TransformSection({
             max={180}
             step={1}
             onChange={(rotation) => update({ rotation: Math.min(Math.max(rotation, -180), 180) })}
-            className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
+            className="h-8 w-16 rounded-md border border-editor-border bg-editor-bg px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
           />
           <span className="text-xs text-gray-300" aria-hidden>
             °
@@ -1383,7 +1383,7 @@ export function OpacitySection({
           max={100}
           step={1}
           onChange={(value) => update({ opacity: Math.min(Math.max(value, 0), 100) / 100 })}
-          className="h-8 w-16 rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
+          className="h-8 w-16 rounded-md border border-editor-border bg-editor-bg px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
         />
         <span className="text-xs text-gray-300" aria-hidden>
           %
@@ -1561,7 +1561,7 @@ export function PropertiesPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-[#30363d] p-4">
+      <div className="border-b border-editor-border p-4">
         <h3 className="text-sm font-medium text-white">
           {single ? "Properties" : selected.length > 1 ? `${selected.length} elements selected` : "Canvas Properties"}
         </h3>

@@ -169,7 +169,8 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
     // Measured live in the reference (double-click on a layer row's name):
     // the input that replaces the name div inside the flex-1 min-w-0 wrapper
     // renders the shadcn-Input base plus editor overrides — rounded-md,
-    // border-[#30363d], bg-[#0d1117], text-white, h-6 px-2 py-1, text-sm,
+    // border-editor-border, bg-editor-bg (the S93-A token forms of the
+    // reference's measured #30363d / #0d1117), text-white, h-6 px-2 py-1, text-sm,
     // shadow-sm — with the focus ring only on focus-visible. The pre-session
     // clone rendered `rounded px-1 ring-1 ring-blue-500` (an ALWAYS-on blue
     // ring, no border).
@@ -188,8 +189,8 @@ test.describe("layer row action interiors: eye/lock/rename (session 19)", () => 
     // The reference's measured chrome.
     await expect(input).toHaveClass(/h-6/);
     await expect(input).toHaveClass(/px-2/);
-    await expect(input).toHaveClass(/border-\[#30363d\]/);
-    await expect(input).toHaveClass(/bg-\[#0d1117\]/);
+    await expect(input).toHaveClass(/border-editor-border/);
+    await expect(input).toHaveClass(/bg-editor-bg/);
     await expect(input).toHaveClass(/rounded-md/);
     await expect(input).toHaveClass(/text-sm/);
     // NOT the pre-fix always-on blue ring. The class string may legitimately
@@ -410,7 +411,8 @@ test.describe("properties panel reference chrome (session 15)", () => {
   //     white thumb) — the clone ships the same LOOK via the .editor-range
   //     class on native range inputs (zero-dependency, keyboard-accessible);
   //   - the Fill & Stroke mode pills are a SEGMENTED CONTROL: a
-  //     bg-[#30363d] h-9 rounded-lg track, the active segment painted white;
+  //     bg-editor-border h-9 rounded-lg track (the S93-A token form of the
+  //     reference's measured #30363d), the active segment painted white;
   //   - Stroke Width is a slider row (0–20) with a w-8 numeric readout;
   //   - the Rotation row carries a "°" suffix after its number input;
   //   - the Opacity row has NO label — slider + w-16 number input + "%" suffix.
@@ -456,8 +458,9 @@ test.describe("properties panel reference chrome (session 15)", () => {
 
   test("the Fill & Stroke mode pills are the reference's segmented control", async ({ page }) => {
     const fillSection = page.locator("section[aria-label='Fill and stroke']");
-    // The track: bg-[#30363d] rounded-lg h-9 grid — measured classes.
-    const track = fillSection.locator("[class*='grid-cols-3'][class*='bg-[#30363d]']").first();
+    // The track: bg-editor-border rounded-lg h-9 grid — the S93-A token
+    // form of the reference's measured chrome (#30363d).
+    const track = fillSection.locator("[class*='grid-cols-3'][class*='bg-editor-border']").first();
     await expect(track).toBeVisible();
     await expect(track).toHaveClass(/h-9/);
     await expect(track).toHaveClass(/rounded-lg/);
@@ -1333,7 +1336,8 @@ test.describe("frame container rendering (session 31)", () => {
     // The reference's frame (RA-13/RA-18): a TRANSPARENT container div —
     // border 1px solid #555555 via the STROKE model fields, radius 0 —
     // carrying an ALWAYS-ON name label chip: -top-5 left-0 text-xs
-    // text-gray-300 bg-[#161b22] px-1.5 py-0.5 pointer-events-none. The
+    // text-gray-300 bg-editor-panel (the S93-A token form of the measured
+    // #161b22) px-1.5 py-0.5 pointer-events-none. The
     // pre-fix clone rendered a solid #161B22 panel (radius 8, no border)
     // with a bare 10px gray label.
     const frame = await drawFrame(page);
@@ -1573,7 +1577,7 @@ test.describe("fill tabs: the functional three-tab editor (session 41, RA-54)", 
     const fillSection = page.locator("section[aria-label='Fill and stroke']");
     const tablist = fillSection.getByRole("tablist");
     await expect(tablist).toBeVisible();
-    await expect(tablist).toHaveClass(/bg-\[#30363d\]/);
+    await expect(tablist).toHaveClass(/bg-editor-border/);
     await expect(tablist).toHaveClass(/h-9/);
     await expect(tablist).toHaveClass(/rounded-lg/);
     // Three tabs; Solid is the active one (the element paints a solid fill).
@@ -1721,7 +1725,7 @@ test.describe("fill tabs: the functional three-tab editor (session 41, RA-54)", 
     await expect(page.getByText("Click to upload image")).toBeVisible();
     await expect(page.getByText("PNG, JPG, SVG")).toBeVisible();
     const dropzone = page.locator("section[aria-label='Fill and stroke'] div.border-dashed");
-    await expect(dropzone).toHaveClass(/border-\[#30363d\]/);
+    await expect(dropzone).toHaveClass(/border-editor-border/);
     // Upload the 16x16 orange probe PNG.
     await page
       .locator("section[aria-label='Fill and stroke'] input[type=file]")

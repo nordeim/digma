@@ -463,10 +463,10 @@ export function AiAssistant() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#161b22]">
+    <div className="flex h-full min-h-0 flex-col bg-editor-panel">
       {/* Header — measured live: a blue Bot glyph leads, a purple WandSparkles
           trails, on a border-b p-3 row (no gradient circle). */}
-      <div className="flex items-center gap-2 border-b border-[#30363d] p-3">
+      <div className="flex items-center gap-2 border-b border-editor-border p-3">
         <Bot className="h-4 w-4 text-blue-400" aria-hidden />
         <h3 className="text-sm font-medium text-white">AI Assistant</h3>
         <WandSparkles className="h-3 w-3 text-purple-400" aria-hidden />
@@ -570,7 +570,7 @@ export function AiAssistant() {
           unmeasurable (its assistant crashes on submission)" — that session
           27's live reply measurements had already dissolved: its deletes
           answer with theater, only its ADD commands crash). */}
-      <div className="border-t border-[#30363d] p-3">
+      <div className="border-t border-editor-border p-3">
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -584,7 +584,7 @@ export function AiAssistant() {
             placeholder="Create a blue button, make it bigger, delete selected..."
             aria-label="Message the AI design assistant"
             maxLength={1000}
-            className="h-8 w-full flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-3 text-xs text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-8 w-full flex-1 rounded-md border border-editor-border bg-editor-bg px-3 text-xs text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           />
           <button
             type="submit"

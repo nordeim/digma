@@ -149,10 +149,12 @@ const skill = readFileSync(
 // 63 smoke (unchanged) / 262 e2e (unchanged — doc-lows-s91 +10, the
 // S91-A count-family two-shape pins + the S91-B doctrine conditional);
 // the intents unchanged.
+// Session 93 (S93-E): re-anchored — 1158 unit / 155 files (the s93
+// delivery's editor-utilities-s93 +8).
 // Session 92 (S92-E): re-anchored again — 1150 unit / 154 files /
 // 63 smoke (unchanged) / 262 e2e (unchanged — lows-s92 +9, the S92
 // low-batch pins); the intents unchanged.
-const UNIT = "1150";
+const UNIT = "1158";
 const SMOKE = "63";
 const E2E = "262";
 
@@ -166,7 +168,7 @@ describe("the stale-count family is corrected (S81-E / B81-L-family)", () => {
 
   it("README: the smoke count sites (173 / 319 / 326) carry the live SMOKE constant", () => {
     // Pre-fix: "58-check" / "58 checks" x3.
-    const count58 = readme.match(/58[- ]check|58 checks/g) ?? [];
+    const count58 = readme.match(/\b58[- ]check|\b58 checks/g) ?? [];
     expect(count58.length).toBe(0);
     expect(readme).toMatch(new RegExp(`${SMOKE}-check E2E suite`));
     expect(readme).toMatch(new RegExp(`${SMOKE} checks against the production build`));

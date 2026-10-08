@@ -178,30 +178,19 @@
 }
 
 /* Custom scrollbar for the editor's dark panels. */
-.editor-scroll::-webkit-scrollbar,
-.scroll-thin::-webkit-scrollbar {
+.editor-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-.editor-scroll::-webkit-scrollbar-track,
-.scroll-thin::-webkit-scrollbar-track {
+.editor-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.editor-scroll::-webkit-scrollbar-thumb,
-.scroll-thin::-webkit-scrollbar-thumb {
+.editor-scroll::-webkit-scrollbar-thumb {
   background: #30363d;
   border-radius: 4px;
 }
 .editor-scroll::-webkit-scrollbar-thumb:hover {
   background: #484f58;
-}
-.scroll-thin::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-}
-
-/* Mobile safe-area support for bottom-attached chrome. */
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Editor range inputs — the reference's Radix-slider look on native inputs

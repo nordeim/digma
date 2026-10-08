@@ -68,7 +68,7 @@ export function LayersPanel() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="border-b border-[#30363d] p-4">
+      <div className="border-b border-editor-border p-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-sm font-medium text-white">Layers</h3>
           {/* Reference semantics, measured from the live DOM: the label (and
@@ -170,7 +170,7 @@ export function LayersPanel() {
                   }}
                   className={cn(
                     "group flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-all duration-200",
-                    isSelected ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-[#30363d]",
+                    isSelected ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-editor-border",
                   )}
                   // Session 70 (S70-A / M-A2 — the eighteenth audit): the
                   // WAI-ARIA button-pattern violation closed — the row was a
@@ -230,8 +230,8 @@ export function LayersPanel() {
                       // Session-19 fix (S19-1) — the reference's measured
                       // chrome (double-click on a layer row name, live DOM):
                       // the input renders the shadcn-Input base plus editor
-                      // overrides — rounded-md, a VISIBLE border-[#30363d],
-                      // bg-[#0d1117], text-white, h-6 px-2 py-1, text-sm,
+                      // overrides — rounded-md, a VISIBLE border-editor-border,
+                      // bg-editor-bg, text-white, h-6 px-2 py-1, text-sm,
                       // shadow-sm — with the focus ring only on
                       // focus-visible. The previous `rounded px-1 ring-1
                       // ring-blue-500` shipped an always-on blue ring, no
@@ -240,7 +240,7 @@ export function LayersPanel() {
                       // button's SIBLING (the row's direct child, flex-1 —
                       // the nesting that made the row a WAI-ARIA violation
                       // is gone), carrying its own accessible name.
-                      className="h-6 min-w-0 flex-1 rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-1 text-sm text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      className="h-6 min-w-0 flex-1 rounded-md border border-editor-border bg-editor-bg px-2 py-1 text-sm text-white shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
