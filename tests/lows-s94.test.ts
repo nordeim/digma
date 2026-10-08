@@ -75,8 +75,8 @@ const hexClassSites = SRC_TEXT.match(HEX_CLASS) ?? [];
 // 1158 -> 1165 unit / 155 -> 156 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "1174";
-const FILES = "157";
+const UNIT = "1183";
+const FILES = "158";
 
 // ---------------------------------------------------------------------------
 // S94-A — the scrollbar-thumb token indirection (the migration's own

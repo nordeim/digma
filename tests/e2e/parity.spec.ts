@@ -511,7 +511,13 @@ test.describe("session 37 parity pins (seventeenth audit — the editor avatar s
       return Array.from(stack.children).map((c) => ({
         title: (c as HTMLElement).title,
         text: c.textContent,
-        bg: (c as HTMLElement).style.backgroundColor,
+        // S96-A re-anchor: the chip's inline style now rides
+        // var(--color-blue-500) — the .style API returns the var()
+        // form unresolved, so the painted color is asserted through
+        // the computed style, which resolves the indirection (the
+        // S93-A class-pin precedent: the pin asserts the PAINT, not
+        // the literal's spelling).
+        bg: getComputedStyle(c).backgroundColor,
       }));
     });
     // Chip 1: the clone's working superset — the REAL user's initial on the

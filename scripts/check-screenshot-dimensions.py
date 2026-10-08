@@ -596,6 +596,14 @@ S105.update({
     "clone-51-range-fill-token-css": (1440, 900),
 })
 
+# s106 mapping (session 96 — the 72nd reference audit's evidence set + the
+# standing evidence re-verified on the S96 code; the inline-style token's
+# computed-style witness captured on the final build — clone-52)
+S106 = dict(S105)
+S106.update({
+    "clone-52-inline-style-token-computed": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -662,6 +670,8 @@ def expected_for(name: str):
         return S104.get(Path(name).stem)
     if name.startswith("ref-audit-s105/"):
         return S105.get(Path(name).stem)
+    if name.startswith("ref-audit-s106/"):
+        return S106.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -746,6 +756,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s103").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s104").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s105").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s106").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

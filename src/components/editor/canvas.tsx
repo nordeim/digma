@@ -674,6 +674,12 @@ function CanvasElement({
         ? "default"
         : "crosshair",
     userSelect: "none",
+    // The selection ring's measured literal (the #484f58 convention —
+    // no token counterpart): rgba(59, 130, 246, 0.9) is blue-500's RGB at
+    // 0.9 alpha, the clone's working-superset paint (the reference's
+    // blue ring utility classes are overridden by its serialized
+    // box-shadow: none — PAD:1375), so the value keeps with this
+    // provenance record rather than riding the token.
     boxShadow: selected ? "0 0 0 2px rgba(59, 130, 246, 0.9)" : undefined,
   };
 

@@ -392,7 +392,7 @@ function CreateTeamDialog({
                   aria-pressed={color === c}
                   onClick={() => setColor(c)}
                   className="h-8 w-8 rounded-full border-2"
-                  style={{ backgroundColor: c, borderColor: color === c ? "#111827" : "#E5E7EB" }}
+                  style={{ backgroundColor: c, borderColor: color === c ? "var(--color-gray-900)" : "var(--color-gray-200)" }}
                 />
               ))}
             </div>

@@ -1713,7 +1713,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-medium text-white"
                 title={user.name}
-                style={{ backgroundColor: "#3B82F6" }}
+                style={{ backgroundColor: "var(--color-blue-500)" }}
               >
                 {/* Session 77 (S77-D / A-L3 — the user-initial family's
                     fourth site): the guarded form — trim + upper + the
