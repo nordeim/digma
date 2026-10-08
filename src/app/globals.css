@@ -200,10 +200,15 @@
 
 /* Editor range inputs — the reference's Radix-slider look on native inputs
    (session-15 parity fix, measured in the reference's DOM): a 6px
-   rounded-full track of rgba(23,23,23,0.2) with a solid #171717 fill whose
+   rounded-full track of rgba(23,23,23,0.2) with a solid fill whose
    length each input drives via the --range-fill custom property, and a 16px
    white thumb with a 1px rgba(23,23,23,0.5) border (shadow measured
-   transparent at rest). Native input semantics are kept for free: keyboard
+   transparent at rest). The solid fill rides the --color-neutral-900
+   token (session 95, S95-A — the same value the bg-neutral-900
+   view-toggle sites consume, so a future token re-pin now reaches the
+   sliders too), while the rgba() track/tick forms keep their
+   reference-measured values (no token counterpart — the #484f58
+   convention). Native input semantics are kept for free: keyboard
    arrows, screen-reader role=slider, focus — zero dependencies. */
 .editor-range {
   -webkit-appearance: none;
@@ -216,7 +221,7 @@
   border-radius: 9999px;
   background: linear-gradient(
     to right,
-    #171717 var(--range-fill, 0%),
+    var(--color-neutral-900) var(--range-fill, 0%),
     rgba(23, 23, 23, 0.2) var(--range-fill, 0%)
   );
 }
@@ -239,7 +244,7 @@
 .editor-range::-moz-range-progress {
   height: 6px;
   border-radius: 9999px;
-  background: #171717;
+  background: var(--color-neutral-900);
 }
 .editor-range::-moz-range-thumb {
   height: 16px;

@@ -313,6 +313,11 @@ export function Canvas() {
   }
 
   function onPointerUp() {
+    // A plain hover-out with no gesture in flight (kind "none") has
+    // nothing to end — the tail setDrag would write a fresh same-value
+    // object identity and re-render the shell for nothing (the
+    // onPointerMove none-guard's sibling, session 95 S95-D).
+    if (drag.kind === "none") return;
     const store = useEditorStore.getState();
 
     if (drag.kind === "draw") {

@@ -1813,3 +1813,21 @@ Work Log:
 
 Stage Summary:
 - Session 94 delivered on main: the scrollbar-token/closed-set/ordinal pass; gate green at 1165/63/262; the mobile nav contract held the 71st consecutive session; no reference drift (the Share/Present clipping byte-identical the 31st consecutive session); the deferred queue documented in docs/remediation-plan-session94.md (the F81 lesson set: the token-value duplication class + the closed-set exception record + the served-CSS witness form).
+
+---
+Task ID: digma-s95
+Agent: lead (Super Z)
+
+Task: the operator's session-cycle directive — refresh, review the mandated docs (session_147/148 + remediation-plan-session94 + worklog), audit, remediate TDD-first, capture, align docs, push to main only.
+
+Work Log:
+- Workspace refreshed by fresh clone at HEAD af8a5e0 (the session-94 delivery 0183379 + the session_147 log push); the mandated docs reviewed and the understanding validated against the codebase (all S94 seams verified intact in source at baseline: the scrollbar-thumb var() form, #30363d exactly once, the closed-set 3, the 89 token consumers, the repaired ordinal, tests/lows-s94)
+- The baseline gate re-proven green at 1165 unit / 156 files / 63 smoke / 262 e2e (the F59 corollary HOLDS, the twelfth consecutive); the 71st reference audit NO DRIFT (the Share/Present clipping byte-identical the 32nd consecutive session; scripts/ref-audit-s95.sh under the env-var form, evidence ref-audit-s105/); mobile nav 9/9 the 72nd consecutive session (baseline AND the final S95 build — the Tailwind v4 class-A guard passing); the vitest/playwright suites verified configured
+- The 43rd Mode C audit (auditor A: the editor/client layer ~12.5k lines read line-by-line + the 39-row arithmetic probe ALL PASS; auditor B: the server/infra side with the five gates re-run green in the auditor's own environment): 0 Critical / 0 High / 1 Medium / 4 Low / 5 Informational; every chosen finding lead-verified
+- The TDD remediation: S95-A the .editor-range track-fill token indirection (the headline, A95-L1 — the F81 class outside the editor-* family: both solid #171717 paint sites ride var(--color-neutral-900), the rgba measured literals keeping their values with provenance, identical CSS, the served-CSS witness clone-51), S95-B the --color-editor-text zero-consumer honesty (A95-L2 — the three doc rows + the AGENTS bullet record the state with the IFF return clause; the token stays), S95-C the PAD §5 stale rows re-anchor (A95-L3 — the font row off the pre-v1.5.0 bug form; the destructive rows onto #dc2626, the S61-A AA fix 33 sessions stale), S95-D the canvas onPointerUp none-guard (A95-I2 — the onPointerMove sibling form)
+- 8 defect pins deterministically RED pre-fix / 1 survival pin GREEN by design; the count family's forcing function fired live (the s95 live anchor + the doc-lows-s86 §11 pin catching BOTH edited files: globals.css 250->255, canvas.tsx 787->792; six prior-session spec constants onto 1174/157); full gate green at 1174 unit / 157 files / 63 smoke / 262 e2e
+- The capture re-run with ZERO ✗ marks (the F43 discipline): the standard set + every standing family (clone-40 through clone-50) + the NEW clone-51 served-CSS witness (the built stylesheet's .editor-range rules carrying var(--color-neutral-900) at both paint sites; the :root emitting the token; the scan-ALL-chunks form); dimensions 522/522 (the S105 mapping added); the DB pristine after every mutating phase; .env.example verified (the remediation touched no env reader)
+- Committed and pushed to git@github.com:nordeim/digma.git main via docs/ssh_git_wrapper_v3.py
+
+Stage Summary:
+- Session 95 delivered on main: the range-fill-token/editor-text-record/guard pass; gate green at 1174/63/262; the mobile nav contract held the 72nd consecutive session; no reference drift (the Share/Present clipping byte-identical the 32nd consecutive session); the deferred queue documented in docs/remediation-plan-session95.md (the F82 lesson set: the sibling-family twin — the token-value-wide audit question; the defined-but-unconsumed doc record)
