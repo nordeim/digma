@@ -1,0 +1,4 @@
+User-Agent: *
+Allow: /
+
+Sitemap: https://digma.example.com/sitemap.xml

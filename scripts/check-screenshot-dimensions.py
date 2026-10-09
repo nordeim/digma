@@ -655,6 +655,15 @@ S112.update({
     "clone-60-noop-bail": (1440, 900),
 })
 
+# s113 mapping (session 103 — the 79th reference audit's evidence set + the
+# standing evidence re-verified on the S103 code; the gradient-cap + hex
+# no-op browser witnesses on the final build — clone-61/clone-62)
+S113 = dict(S112)
+S113.update({
+    "clone-61-gradient-cap-noop": (1440, 900),
+    "clone-62-hex-noop": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -733,6 +742,8 @@ def expected_for(name: str):
         return S110.get(Path(name).stem)
     if name.startswith("ref-audit-s112/"):
         return S112.get(Path(name).stem)
+    if name.startswith("ref-audit-s113/"):
+        return S113.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -826,6 +837,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s110").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s111").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s112").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s113").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

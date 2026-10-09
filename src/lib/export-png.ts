@@ -172,7 +172,12 @@ function elementToSvg(el: DesignElementDTO, gradientId: string): string {
 
   if (el.type === "line") {
     const strokeColor = el.stroke ?? FALLBACK_WHITE;
-    const strokeWidth = el.strokeWidth || 2;
+    // Session 103 (S103-B / A-L4 — the stored-vs-rendered agreement):
+    // the stored number IS the export truth — a strokeWidth of 0 (the
+    // slider's own min) exports stroke-width="0" (SVG paints no
+    // stroke, the border-0 semantics lines share with rectangles);
+    // fresh lines carry defaultGeometry's 2.
+    const strokeWidth = el.strokeWidth;
     return (
       `<line x1="0" y1="0" x2="${n(el.width)}" y2="${n(el.height)}" ` +
       `stroke="${escapeXml(strokeColor)}" stroke-width="${n(strokeWidth)}" stroke-linecap="round"` +

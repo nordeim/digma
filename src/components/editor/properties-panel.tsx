@@ -337,7 +337,20 @@ function HexColorRow({
             setDraft(next);
             if (next === "") {
               onChange(null);
-            } else if (/^#[0-9a-fA-F]{6}$/.test(next)) {
+            } else if (
+              /^#[0-9a-fA-F]{6}$/.test(next) &&
+              // Session 103 (S103-A / A-L2 — the text-input surface the
+              // blur/click/select sweeps never reached): a complete-hex
+              // commit of the element's CURRENT color (select-all +
+              // paste of the same hex, or backspace-then-retype through
+              // the 7-char state) must not push a history snapshot, wipe
+              // redo, flip the badge, and fire a redundant PUT. The
+              // compare is the COLOR identity (case-insensitive): a
+              // different case of the same color is not a commit — the
+              // model already carries that color; the draft keeps the
+              // user's spelling.
+              next.toUpperCase() !== (value ?? "").toUpperCase()
+            ) {
               onChange(next);
             }
           }}
@@ -718,7 +731,16 @@ function GradientPanel({
             size="sm"
             className="h-6 rounded-md px-2 text-xs"
             aria-label="Add gradient stop"
-            onClick={() => apply({ ...gradient, stops: addGradientStop(gradient.stops) })}
+            onClick={() => {
+              // Session 103 (S103-A / A-L1 — the no-op family's sixth
+              // member): at the 8-stop cap addGradientStop returns the
+              // SAME array reference, so the unguarded apply committed a
+              // structurally identical gradient — the inert snapshot /
+              // wiped redo / phantom Unsaved badge / redundant PUT the
+              // five S102-E sites closed for the click/select family.
+              const stops = addGradientStop(gradient.stops);
+              if (patchDiffers(gradient, { stops })) apply({ ...gradient, stops });
+            }}
           >
             <Plus className="h-3 w-3" aria-hidden />
           </Button>

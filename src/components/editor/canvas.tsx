@@ -759,13 +759,18 @@ function CanvasElement({
           viewBox={`0 0 ${Math.max(element.width, 1)} ${Math.max(element.height, 1)}`}
           aria-hidden
         >
+          {/* Session 103 (S103-B / A-L4 — the stored-vs-rendered
+              agreement): the stored number IS the render truth — a
+              strokeWidth of 0 (the slider's own min) paints NO stroke
+              (the border-0 semantics lines share with rectangles);
+              fresh lines carry defaultGeometry's 2. */}
           <line
             x1={0}
             y1={0}
             x2={element.width}
             y2={element.height}
             stroke={element.stroke ?? FALLBACK_WHITE}
-            strokeWidth={element.strokeWidth || 2}
+            strokeWidth={element.strokeWidth}
             strokeLinecap="round"
           />
         </svg>

@@ -235,7 +235,11 @@ describe("the hex row's abandoned-draft blur-restore (S79-E / A-L1)", () => {
     // lying about the model's value.
     const start = panel.indexOf("function HexColorRow");
     expect(start).toBeGreaterThanOrEqual(0);
-    const body = panel.slice(start, start + 3000);
+    // Session 103 (S103-A / A-L2): the window widened 3000 -> 3700 — the
+    // complete-hex changed-value guard's doctrine comment sits between
+    // the row's head and its onBlur (the S102-D reset-url-gate family's
+    // own re-anchor form).
+    const body = panel.slice(start, start + 3700);
     expect(body).toMatch(/onBlur=\{\(\)\s*=>\s*setDraft\(value\s*\?\?\s*""\)\}/);
   });
 

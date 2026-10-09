@@ -71,7 +71,19 @@ if curl -sf -m 2 "$BASE/api/health" >/dev/null 2>&1; then
 fi
 
 step "Booting the standalone production server on :${PORT}…"
-PORT="$PORT" NODE_ENV=production DIGMA_DISABLE_AI_LLM=1 bun .next/standalone/server.js >/tmp/smoke-server.log 2>&1 &
+# Session 103 (S103-E / B-I2 — the hermeticity mechanism over discipline):
+# the boot line now STRIPS the parent shell's app knobs via the same
+# `env -u` family the playwright webServer command carries
+# (playwright.config.ts:96) — an exported DIGMA_DISABLE_IN_APP_OTP=1
+# nulls every delivered code, DIGMA_PROXY_HOPS=0 collapses the XFF
+# buckets, an exported HOSTNAME kills the health loop: every failure
+# mode turns checks RED (never false-green), but the gate inherits
+# operator-environment sensitivity either way. The S73-D DATABASE_URL
+# REFUSAL above stays — a foreign database false-GREENS checks, the
+# one trap that must refuse rather than silently unset. The AI knob is
+# SET, never unset (the S81-C posture: the smoke checks pin the
+# deterministic fallback's exact output).
+env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u DIGMA_SITE_URL -u HOSTNAME -u KEEP_ALIVE_TIMEOUT PORT="$PORT" NODE_ENV=production DIGMA_DISABLE_AI_LLM=1 bun .next/standalone/server.js >/tmp/smoke-server.log 2>&1 &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" >/dev/null 2>&1; pkill -f "standalone/server.js" >/dev/null 2>&1' EXIT
 

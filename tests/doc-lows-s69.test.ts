@@ -99,7 +99,10 @@ describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
     expect(doc.includes("25 routes total")).toBe(false);
   });
 
-  it("the verification checklist carries the real counts (63 smoke / 260 e2e)", () => {
+  it("the verification checklist carries the real counts (63 smoke / 262 e2e)", () => {
+    // Session 103 (S103-E / B-I1): the TITLE re-anchored to 262 — the
+    // S85-F re-anchor updated the assertion below but missed the
+    // title's own parenthetical (the title/assertion pair must agree).
     // Session 85 (S85-F): re-anchored to 262 — the session85-fixes re-entry
     // discriminators added 2 e2e checks; the intent (DEPLOYMENT carries
     // the delivered count) unchanged.

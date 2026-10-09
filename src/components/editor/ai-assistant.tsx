@@ -50,6 +50,14 @@ const SUGGESTIONS = [
   "Create a login form",
 ];
 
+// Session 103 (S103-D / A-I1 — the F35e class at the string level): the
+// intro is ONE constant — the mount initializer and the scope-reset
+// replacement must greet identically (a future edit to one literal
+// would drift the other; the post-reset transcript would greet
+// differently than a fresh mount).
+const AI_ASSISTANT_INTRO =
+  "Hi! I'm your AI design assistant. I can make changes directly to your canvas. Try asking me to create shapes, modify elements, or organize your design.";
+
 function nowLabel(): string {
   return new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
@@ -95,7 +103,7 @@ export function AiAssistant() {
     {
       id: "intro",
       role: "assistant",
-      text: "Hi! I'm your AI design assistant. I can make changes directly to your canvas. Try asking me to create shapes, modify elements, or organize your design.",
+      text: AI_ASSISTANT_INTRO,
       time: nowLabel(),
     },
   ]);
@@ -145,7 +153,7 @@ export function AiAssistant() {
         {
           id: "intro",
           role: "assistant",
-          text: "Hi! I'm your AI design assistant. I can make changes directly to your canvas. Try asking me to create shapes, modify elements, or organize your design.",
+          text: AI_ASSISTANT_INTRO,
           time: nowLabel(),
         },
       ]);

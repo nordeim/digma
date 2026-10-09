@@ -124,7 +124,10 @@ describe("the panel number-field clamps mirror the server's bounds (S84-B / A84-
     // numbers, the one map of the domain.
     expect(editorLibSource).toMatch(/x: clampNumber\(raw\?\.x, -POSITION_BOUND, POSITION_BOUND, 0\)/);
     expect(editorLibSource).toMatch(/width: clampNumber\(raw\?\.width, 0, SIZE_MAX, 100\)/);
-    expect(editorLibSource).toMatch(/clampNumber\(raw\?\.fontSize, 1, 500, 16\)/);
+    // Session 103 (S103-C / A-L3) re-anchor: the fontSize bounds ride the
+    // named single-source members (FONT_SIZE_MIN/FONT_SIZE_MAX) — the
+    // same numbers, the one map of the domain.
+    expect(editorLibSource).toMatch(/clampNumber\(raw\?\.fontSize, FONT_SIZE_MIN, FONT_SIZE_MAX, 16\)/);
   });
 });
 

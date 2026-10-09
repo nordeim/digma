@@ -313,9 +313,17 @@ export function isTypingTarget(target: EventTarget | null): boolean {
  * clamp-domain bounds, named and single-sourced. The helpers below
  * and buildElementRow's row-builder spellings hand-mirrored the
  * ±100000/100000 literals (two maps of one domain inside one file);
- * both spellings now ride these named members. */
+ * both spellings now ride these named members. Session 103 (S103-C /
+ * A-L3) completes the fold: the fontSize, radius-ceiling, and scale
+ * domains join (the scale one a CROSS-FILE mirror into the AI
+ * sanitizer — one domain, one map, wherever it lives). */
 export const POSITION_BOUND = 100000;
 export const SIZE_MAX = 100000;
+export const FONT_SIZE_MIN = 1;
+export const FONT_SIZE_MAX = 500;
+export const RADIUS_MAX = 2000;
+export const SCALE_MIN = 0.05;
+export const SCALE_MAX = 20;
 
 /** Session 84 (S84-B — the thirty-second audit's A84-L1): the panel
  * number-field clamps, single-sourced. The properties panel's X/Y/W/H
@@ -341,7 +349,9 @@ export function clampSizeField(value: number, type: ElementType): number {
 }
 
 export function clampFontSizeField(value: number): number {
-  return Math.min(Math.max(value, 1), 500);
+  // Session 103 (S103-C / A-L3): the named bound — buildElementRow's
+  // fontSize spelling rides the same member (one domain, one map).
+  return Math.min(Math.max(value, FONT_SIZE_MIN), FONT_SIZE_MAX);
 }
 
 /** Default geometry + styling for a freshly drawn element of each type. */
@@ -455,7 +465,8 @@ export type ElementStyle = Record<string, string>;
  *
  * Session 88 (S88-A / A88-L1): the dynamic max COMPOSES with the server's
  * radius ceiling — buildElementRow clamps the field at 2000
- * (clampNumber(raw?.radius, 0, 2000, 0)), and min/2 alone exceeds 2000 for
+ * (clampNumber(raw?.radius, 0, RADIUS_MAX, 0) — the S103-C named bound),
+ * and min/2 alone exceeds 2000 for
  * any element whose smaller side tops 4000 (fully legal since S87-B widened
  * the W/H panel fields to the server's 100000 ceiling): a radius typed to
  * min/2 past 2000 rendered locally, then visibly TELEPORTED to the server's
@@ -465,7 +476,9 @@ export type ElementStyle = Record<string, string>;
  * INSIDE the one seam every consumer rides; the reference-measured dynamic
  * behavior is untouched (every measured element is far below the cap). */
 export function cornerRadiusMax(el: Pick<DesignElementDTO, "width" | "height">): number {
-  return Math.min(Math.min(el.width, el.height) / 2, 2000);
+  // Session 103 (S103-C / A-L3): the ceiling named — buildElementRow's
+  // radius spelling rides the same member.
+  return Math.min(Math.min(el.width, el.height) / 2, RADIUS_MAX);
 }
 
 /** The ONE slider fill-percentage seam (session 71, S71-D / L-A9 — the
@@ -955,7 +968,7 @@ export function buildElementRow(
     width: clampNumber(raw?.width, 0, SIZE_MAX, 100),
     height: clampNumber(raw?.height, 0, SIZE_MAX, 100),
     rotation: clampNumber(raw?.rotation, -3600, 3600, 0),
-    scale: clampNumber(raw?.scale, 0.05, 20, 1),
+    scale: clampNumber(raw?.scale, SCALE_MIN, SCALE_MAX, 1),
     opacity: clampNumber(raw?.opacity, 0, 1, 1),
     // THE ONE convention asymmetry, made explicit and parameterized: an
     // EXPLICIT null clears in both modes (the historical POST contract);
@@ -987,12 +1000,12 @@ export function buildElementRow(
             : null
           : clampColor(String(raw.stroke), FALLBACK_WHITE),
     strokeWidth: clampNumber(raw?.strokeWidth, 0, 100, 0),
-    radius: clampNumber(raw?.radius, 0, 2000, 0),
+    radius: clampNumber(raw?.radius, 0, RADIUS_MAX, 0),
     // Session 99 (S99-B / A99-L2): the text field rides the slice-only
     // clamp — edge whitespace is real content (the S85-B doctrine's own
     // words); the identity/prose fields (name below) keep clampText.
     text: clampTextContent(raw?.text, 2000),
-    fontSize: raw?.fontSize === null || raw?.fontSize === undefined ? null : clampNumber(raw?.fontSize, 1, 500, 16),
+    fontSize: raw?.fontSize === null || raw?.fontSize === undefined ? null : clampNumber(raw?.fontSize, FONT_SIZE_MIN, FONT_SIZE_MAX, 16),
     fontWeight: clampFontWeight(raw?.fontWeight),
     fontFamily: clampFontFamily(raw?.fontFamily),
     textAlign: clampTextAlign(raw?.textAlign),

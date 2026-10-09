@@ -4,7 +4,7 @@
 // assistant utterance resolves to element operations + a reply string.
 
 import { clampNumber } from "@/lib/validation";
-import { DEFAULT_FILL } from "@/lib/editor";
+import { DEFAULT_FILL, SCALE_MAX, SCALE_MIN } from "@/lib/editor";
 
 // Session 78 (S78-G / B-L3): the S71-D fold's numeric leftover — this
 // module's private clamp() was a byte-identical twin of validation.ts's
@@ -364,7 +364,10 @@ export function sanitizeLlmOperations(
         if (typeof patchRaw.opacity === "number") patch.opacity = clamp(patchRaw.opacity, 0, 1, 1);
         if (typeof patchRaw.width === "number") patch.width = clamp(patchRaw.width, 1, 20000, 100);
         if (typeof patchRaw.height === "number") patch.height = clamp(patchRaw.height, 0, 20000, 100);
-        if (typeof patchRaw.scale === "number") patch.scale = clamp(patchRaw.scale, 0.05, 20, 1);
+        // Session 103 (S103-C / A-L3): the scale domain rides the named
+        // bound — buildElementRow's spelling is the same member (the
+        // cross-file two-spelling closed).
+        if (typeof patchRaw.scale === "number") patch.scale = clamp(patchRaw.scale, SCALE_MIN, SCALE_MAX, 1);
         if (typeof patchRaw.text === "string") patch.text = patchRaw.text.slice(0, 500);
         if (Object.keys(patch).length === 0) continue;
         operations.push({ op: "update", ids, patch });

@@ -204,13 +204,16 @@ export function CanvasThumbnail({
                     viewBox={`0 0 ${Math.max(el.width, 1)} ${Math.max(el.height, 1)}`}
                     aria-hidden
                   >
+                    {/* Session 103 (S103-B / A-L4): the stored stroke width
+                        renders — 0 paints no stroke (the canvas sibling's
+                        doctrine; defaultGeometry owns the fresh-line 2). */}
                     <line
                       x1={0}
                       y1={0}
                       x2={el.width}
                       y2={el.height}
                       stroke={el.stroke ?? FALLBACK_WHITE}
-                      strokeWidth={el.strokeWidth || 2}
+                      strokeWidth={el.strokeWidth}
                       strokeLinecap="round"
                     />
                   </svg>

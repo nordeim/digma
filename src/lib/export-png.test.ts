@@ -132,10 +132,17 @@ describe("elementsToSvg — the ellipse + line mappings", () => {
     expect(svg).not.toContain('stroke-width="4"');
   });
 
-  it("defaults the line stroke to white and the width to 2 (the render-site defaults)", () => {
+  it("defaults the line stroke COLOR to white and renders the STORED width (S103-B — the stored-vs-rendered agreement)", () => {
+    // Session 103 (S103-B / A-L4): the render-site `|| 2` fallback is
+    // RETIRED — a stored strokeWidth of 0 (the slider's own min) renders
+    // stroke-width="0" (SVG paints no stroke; the border-0 semantics
+    // lines share with rectangles) while the COLOR default (stroke null
+    // → the RA-8 white) stays. The pre-fix pin expected width 2 for a
+    // stored 0 — the stored-vs-rendered disagreement this session
+    // closed; the honest form is pinned by tests/lows-s103.test.ts.
     const svg = elementsToSvg([el({ type: "line", width: 90, height: 40, fill: null, stroke: null, strokeWidth: 0 })]);
     expect(svg).toContain('stroke="#FFFFFF"');
-    expect(svg).toContain('stroke-width="2"');
+    expect(svg).toContain('stroke-width="0"');
   });
 });
 

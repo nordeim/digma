@@ -81,8 +81,10 @@ describe("the radius dynamic-max composes with the server's 2000 ceiling (S88-A 
     // THE DEFECT PIN: pre-fix the body is the bare
     // `return Math.min(el.width, el.height) / 2;` — the composed form
     // carries the server's ceiling at the one seam every consumer rides.
+    // Session 103 (S103-C / A-L3) re-anchor: the ceiling rides the named
+    // single-source member (RADIUS_MAX) — the same number, the one map.
     expect(editorLibSource).toMatch(
-      /return Math\.min\(Math\.min\(el\.width, el\.height\) \/ 2, 2000\)/,
+      /return Math\.min\(Math\.min\(el\.width, el\.height\) \/ 2, RADIUS_MAX\)/,
     );
   });
 
@@ -98,8 +100,11 @@ describe("the radius dynamic-max composes with the server's 2000 ceiling (S88-A 
   });
 
   it("SOURCE (SURVIVAL) — the server's own clamp line keeps the canonical bounds (the single source of the number)", () => {
+    // Session 103 (S103-C / A-L3) re-anchor: the ceiling now rides the
+    // named single-source member (RADIUS_MAX) — the same number, the
+    // one map of the domain (the S102-G POSITION_BOUND/SIZE_MAX form).
     expect(editorLibSource).toMatch(
-      /radius: clampNumber\(raw\?\.radius, 0, 2000, 0\)/,
+      /radius: clampNumber\(raw\?\.radius, 0, RADIUS_MAX, 0\)/,
     );
   });
 });

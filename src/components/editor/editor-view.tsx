@@ -960,7 +960,10 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                   el.type !== "line" && el.stroke && el.strokeWidth
                     ? `${el.strokeWidth}px solid ${el.stroke}`
                     : undefined,
-                borderRadius: el.type === "ellipse" ? "50%" : el.radius || undefined,
+                // Session 103 (S103-D / A-I2 — the F88 form-alignment):
+                // the strict sibling form — canvas.tsx and
+                // project-card.tsx read `> 0` at the same render family.
+                borderRadius: el.type === "ellipse" ? "50%" : el.radius > 0 ? el.radius : undefined,
                 color: el.type === "text" ? el.fill ?? FALLBACK_WHITE : undefined,
                 // Session 58 (S58-E — the sixth audit's B-M-1): the text
                 // branch adopts the canvas text chain's EXACT contract
@@ -1002,13 +1005,16 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                   viewBox={`0 0 ${Math.max(el.width, 1)} ${Math.max(el.height, 1)}`}
                   aria-hidden
                 >
+                  {/* Session 103 (S103-B / A-L4): the stored stroke width
+                      renders — 0 paints no stroke (the canvas sibling's
+                      doctrine; defaultGeometry owns the fresh-line 2). */}
                   <line
                     x1={0}
                     y1={0}
                     x2={el.width}
                     y2={el.height}
                     stroke={el.stroke ?? FALLBACK_WHITE}
-                    strokeWidth={el.strokeWidth || 2}
+                    strokeWidth={el.strokeWidth}
                     strokeLinecap="round"
                   />
                 </svg>
