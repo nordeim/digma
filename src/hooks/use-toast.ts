@@ -9,7 +9,11 @@
 
 import * as React from "react";
 
-export type Toast = {
+// Session 105 (S105-C / A-L1 — the F79 dead-export class's N−4 shape):
+// the export keyword drops — zero external importers (every consumer
+// takes toast/toast.error/useToastList by value; the alias is
+// self-consumed only as the list's element annotation).
+type Toast = {
   id: string;
   title?: string;
   description?: string;

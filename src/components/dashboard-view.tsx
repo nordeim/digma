@@ -224,7 +224,11 @@ export function DashboardView({ user }: { user: HeaderUser }) {
 
               {loading ? (
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
-                  {Array.from({ length: 2 }).map((_, i) => (
+                  {/* Session 105 (S105-D / A-I4 — the cosmetic asymmetry):
+                      the Continue-Working skeleton renders FOUR
+                      placeholders — Recent's own loading form, and the
+                      four real cards the populated section renders. */}
+                  {Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="h-52 animate-pulse rounded-lg bg-gray-100" />
                   ))}
                 </div>

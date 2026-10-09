@@ -61,6 +61,21 @@ export async function POST(request: NextRequest) {
   // either way, and the client's sent card degrades gracefully (it
   // renders the link only when the field is a string).
   //
+  // Session 105 (S105-G / B-L5 — the S72-C equalizer family's missed
+  // sibling, the DOCUMENTED-RESIDUAL posture): the BODY is
+  // byte-identical across the known/unknown branches but the TIMING
+  // is not — the known-email branch performs randomBytes + a SQLite
+  // user.update (with fsync) before answering while the unknown-email
+  // branch returns immediately. The timing residual is accepted: (a)
+  // the delta
+  // is fsync-scale (≤10ms on a local disk, under network jitter); (b) a
+  // naive scrypt burn on the unknown branch (the login equalizer's
+  // S72-C form) would INVERT the signal — scryptSync costs ~100ms and
+  // dwarfs the write, making unknown emails measurably SLOWER instead;
+  // (c) register's 409 openly enumerates by design, so this route is
+  // not the enumeration boundary; (d) the route is rate-limited (10/IP/
+  // 15min). The B84-I3 inert-residue family.
+  //
   // The URL is RELATIVE on purpose (the e2e trace caught the absolute form
   // breaking the standalone deploy): Next's standalone server rebuilds
   // request.url from its BIND address, so `new URL(request.url).origin`

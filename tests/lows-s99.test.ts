@@ -82,8 +82,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1332";
-const FILES = "166";
+const UNIT = "1356";
+const FILES = "167";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -250,10 +250,14 @@ describe("S99-D the server smalls fold (B99-L1 + B99-I1 + B99-I2 + B99-I3)", () 
   it("SURVIVAL: the uniform 400 envelopes stay + the B99-I3 sortOrder-tie note lands", () => {
     // The S71-C contract: the format check, unknown, and verified ALL
     // answer the same VALIDATION 400 envelope (three sites).
+    // Session 105 (S105-D / B-I4 — a legitimate contract update): the
+    // format-regex fold adds the sibling short-circuit's envelope —
+    // the census grows to FOUR (presence + format + unknown +
+    // verified, all byte-identical).
     const envelopes = RESEND_ROUTE.match(
       /fail\("VALIDATION", "Enter a valid email address", 400\)/g,
     ) ?? [];
-    expect(envelopes.length).toBe(3);
+    expect(envelopes.length).toBe(4);
     // The honest note beside the S71-C comment (the behavior deferred —
     // the client persists exclusively via the full-list PUT):
     expect(ELEMENTS_ROUTE).toMatch(/B99-I3/);

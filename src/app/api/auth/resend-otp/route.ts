@@ -44,6 +44,14 @@ export async function POST(request: NextRequest) {
   if (!email) {
     return fail("VALIDATION", "Enter a valid email address", 400);
   }
+  // Session 105 (S105-D / B-I4 — the S98-A order family's form gap):
+  // the format regex every sibling runs (register, forgot-password,
+  // members/teams — length caps FIRST, then the format). Behaviorally
+  // identical (a malformed email missed findUnique and answered the
+  // same byte-identical 400) — the pure short-circuit form fold.
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return fail("VALIDATION", "Enter a valid email address", 400);
+  }
 
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {

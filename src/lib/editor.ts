@@ -344,10 +344,19 @@ export const SCALE_MAX = 20;
  * 1..500) while the Radius/Stroke/Rotation/Opacity siblings all clamped
  * at their consumers — so an out-of-range value typed into the panel
  * rendered locally until the autosave PUT's response replaced the store
- * list and the value visibly teleported to the clamped form. These
- * helpers mirror the server's bounds at the consumer; the mobile
- * properties Sheet rides the SHARED PropertiesSections composition, so
- * one seam covers both surfaces. */
+ * list and the value visibly teleported to the clamped form. Session
+ * 105 (S105-G / B-L4 — the truth-keeping repair): the CEILING and the
+ * position/font bounds mirror the server exactly; the W/H FLOOR is the
+ * ONE deliberate two-layer split (the A-I4 bound-posture family): the
+ * panel's type-aware 1-floor (non-line) is the EDITING contract — the
+ * S70-D draw-commit form, keeping a typed/drawn dimension from
+ * collapsing to an invisible 0-extent — while buildElementRow's 0-floor
+ * is the STORAGE permissiveness (a scripted-API consumer may persist a
+ * 0-width rectangle; the panel displays the stored 0 verbatim and
+ * floors only on the next EDIT commit — no teleport direction exists:
+ * the panel never rewrites a stored value it did not commit). The
+ * mobile properties Sheet rides the SHARED PropertiesSections
+ * composition, so one seam covers both surfaces. */
 export function clampPositionField(value: number): number {
   return Math.min(Math.max(value, -POSITION_BOUND), POSITION_BOUND);
 }

@@ -181,7 +181,11 @@ export function bodySizeRejected(contentLength: string | null): boolean {
 /** The bounded body-parse result: `tooLarge` answers the 32 MB
  * envelope; `value` carries the parsed JSON (null when unparseable —
  * the sites' historical `.catch(() => null)` contract). */
-export type BoundedJson =
+// Session 105 (S105-C / B-L3 — the F79 dead-export class's N−4 shape):
+// the export keyword drops — zero external importers (the 14 route
+// sites import readBoundedJson the FUNCTION; the alias is
+// self-consumed solely as its return annotation).
+type BoundedJson =
   | { tooLarge: true }
   | { tooLarge: false; value: Record<string, unknown> | null };
 

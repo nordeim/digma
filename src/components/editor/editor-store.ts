@@ -28,7 +28,10 @@ type Snapshot = {
 // restoreSnapshot() puts it back (an undoable restore, not a raw overwrite).
 export type EditorSnapshot = Snapshot;
 
-export type SaveState = "saved" | "saving" | "unsaved";
+// Session 105 (S105-C / A-L1 — the F79 dead-export class's N−4
+// shape): the export keyword drops — zero external importers (the
+// store's own EditorStore.saveState member is the only consumer).
+type SaveState = "saved" | "saving" | "unsaved";
 
 let localCounter = 0;
 function nextLocalId(): string {

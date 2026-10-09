@@ -21,8 +21,16 @@ export async function GET(request: NextRequest) {
   const user = await requireSession();
   if (!user) return fail("UNAUTHENTICATED", "Sign in to view projects", 401);
 
-  const search = request.nextUrl.searchParams.get("search")?.trim() ?? "";
-  const template = request.nextUrl.searchParams.get("template")?.trim() ?? "";
+  // Session 105 (S105-D / B-I5 — the S62-G body-field family's
+  // query-string sibling): both query reads ride the ONE clampText
+  // seam (the S71-D fold — never a bare trim().slice() twin, the
+  // S99-D doctrine) — the body family bounded every field in S62-G
+  // while the query string never joined; names cap at 80 and template
+  // values are enum-scale, so 200 bounds every legitimate input and a
+  // megabyte-scale LIKE pattern rides no SQLite scan. Semantics
+  // byte-identical (null/trim/slice → "").
+  const search = clampText(request.nextUrl.searchParams.get("search"), 200) ?? "";
+  const template = clampText(request.nextUrl.searchParams.get("template"), 200) ?? "";
 
   const projects = await db.project.findMany({
     where: {

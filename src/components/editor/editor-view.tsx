@@ -201,8 +201,10 @@ function useAutosave(): AutosaveHandle {
           current.attachProject(id);
           // Adopt the new id in the URL without a navigation entry (a
           // reload now opens the real project; the back button still
-          // leaves the page).
-          window.history.replaceState(null, "", `/Editor?projectId=${id}`);
+          // leaves the page). Session 105 (S105-D / A-L3 — the F35e
+          // two-spellings form): the id encodes like every sibling
+          // id-consuming site (the S99-E uniformity contract).
+          window.history.replaceState(null, "", `/Editor?projectId=${encodeURIComponent(id)}`);
         }
       }
       return id;
@@ -718,9 +720,14 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
           // measured semantics — verified live on its locked rectangle: the
           // row trash removed it while its own keyboard was entirely dead),
           // so the guard lives HERE, in the keyboard seam, not in the shared
-          // deleteElements action.
+          // deleteElements action. Session 105 (S105-D / A-L4 — the S74-B
+          // family's residual): the membership scan joins the Set form the
+          // canvas hit-test, the panel, and reorderElements already ride —
+          // the includes() filter was the O(n·m) scan at Delete/Backspace
+          // frequency.
+          const selectedIdSet = new Set(store.selectedIds);
           const unlockedIds = store.elements
-            .filter((el) => store.selectedIds.includes(el.id) && !el.locked)
+            .filter((el) => selectedIdSet.has(el.id) && !el.locked)
             .map((el) => el.id);
           if (unlockedIds.length > 0) store.deleteElements(unlockedIds);
         }
@@ -1069,10 +1076,11 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
 // carrying the SHARED PropertiesSections composition (S52-1: the SAME
 // type-conditional section stack the desktop panel renders — Position &
 // Size, Corner Radius, Fill & Stroke, TEXT, Transform, Opacity) in the
-// editor's dark chrome. The chip renders for ANY single selected
-// element (the same condition under which the desktop panel shows its
-// sections) and only below lg (`lg:hidden` — at ≥1024 the panel is the
-// surface).
+// editor's dark chrome. Session 105 (S105-D / A-L2 — the F78
+// truth-keeping repair): the chip renders for ANY NON-EMPTY selection
+// (the S60-H widening — a marquee MULTI-selection on a phone surfaces
+// the multi Fill/Stroke branch, not nothing) and only below lg
+// (`lg:hidden` — at ≥1024 the panel is the surface).
 function MobilePropertiesEditor() {
   // Session 65 (S65-B — the thirteenth audit's B-1): the Sheet's
   // content unmounts on EVERY close path (the scrim tap, Escape, the
@@ -1214,10 +1222,11 @@ function MobilePropertiesEditor() {
 }
 
 // The canvas-properties counterpart — session 53 (S53-C). The
-// Edit-properties chip renders exactly when a SINGLE element is
-// selected; this chip renders exactly when NOTHING is (the two are
-// mutually exclusive — each surfaces exactly when its desktop panel
-// branch is the content, so the bottom-right slot never double-books).
+// Edit-properties chip renders exactly when a NON-EMPTY selection
+// exists (the S60-H widening — session 105's truth-keeping repair);
+// this chip renders exactly when NOTHING is (the two are mutually
+// exclusive — each surfaces exactly when its desktop panel branch is
+// the content, so the bottom-right slot never double-books).
 // The reference's own mobile editor carries its background-color pair
 // only inside a clipped ~126px Canvas-Properties sliver (the
 // 29th-audit datum); this working Sheet completes the mobile surface
@@ -1946,7 +1955,8 @@ export function EditorView({ user }: { user: HeaderUser }) {
             {/* Session 50 (S50-2) → session 52 (S52-2): the mobile
                 properties surface — the bottom-right mirror of the zoom
                 cluster, visible only below lg (where the properties panel
-                does not exist) and for any single selected element. See
+                does not exist) and for ANY NON-EMPTY selection (the S60-H
+                widening — session 105's truth-keeping repair). See
                 MobilePropertiesEditor.
                 Session 102 (S102-F / A-I1): the MOUNT joins the S75-E
                 doctrine — the wrapper's lg:hidden was CSS-only, so the

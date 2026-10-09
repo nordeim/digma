@@ -186,16 +186,24 @@ describe("the AI apply coalesces a scale+patch operation into ONE history entry 
   it("the apply wraps the combined pair in the gesture seam", () => {
     // THE DEFECT PIN: pre-fix both halves committed independently —
     // two Ctrl+Z presses for one intent.
+    // Session 105 (S105-B — a legitimate contract update): the window
+    // widened 1600 -> 3400 — the per-target truth block (the F78
+    // honest-count repair's scaleWouldChange/patchWouldChange guards)
+    // sits between the coalesce derivation and the gesture pair; the
+    // gesture now arms/ends ONLY when either half would really change
+    // (a no-op instruction never opens a gesture at all).
     const start = assistant.indexOf("operation.patch.scale !== undefined");
     expect(start).toBeGreaterThanOrEqual(0);
-    const body = assistant.slice(start, start + 1600);
+    const body = assistant.slice(start, start + 3400);
     expect(body).toMatch(/beginGesture\(\)/);
     expect(body).toMatch(/endGesture\(\)/);
   });
 
   it("the combined halves commit false (the gesture's endGesture owns the single push)", () => {
+    // Session 105 (S105-B): the window widened 1600 -> 3400 with the
+    // truth block's insertion (same re-anchor form as above).
     const start = assistant.indexOf("operation.patch.scale !== undefined");
-    const body = assistant.slice(start, start + 1600);
+    const body = assistant.slice(start, start + 3400);
     expect(body).toMatch(/scaleElements\(\s*targets,\s*operation\.patch\.scale,\s*(?:coalesce|combined)\s*\?\s*false\s*:\s*(?:true|undefined)/);
     expect(body).toMatch(/updateElements\(\s*targets,\s*patch,\s*(?:coalesce|combined)\s*\?\s*false\s*:\s*(?:true|undefined)/);
   });

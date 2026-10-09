@@ -7,7 +7,7 @@ import { useEditorStore, type EditorSnapshot } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import type { AiOperation } from "@/lib/ai-assistant";
 import { clampText } from "@/lib/validation";
-import { ELEMENT_LIMIT, type DesignElementDTO } from "@/lib/editor";
+import { ELEMENT_LIMIT, clampSizeField, patchDiffers, type DesignElementDTO } from "@/lib/editor";
 
 type ChatMessage = {
   id: string;
@@ -286,16 +286,49 @@ export function AiAssistant() {
           operation.patch.scale !== undefined &&
           Object.keys(patch).length > 0 &&
           useEditorStore.getState().gestureSnapshot === null;
-        if (coalesce) store.beginGesture();
+        // Session 105 (S105-B / A-M2 — the F78 count-truth class at the
+        // reply footer): the per-target TRUTH before any commit. The
+        // pre-fix form ran scaleElements/updateElements unconditionally
+        // and set `did` on commit ATTEMPT — a scale:1 instruction (the
+        // identity factor) or a repeated identical instruction
+        // ("make it red" twice) re-committed identical values (a pushed
+        // history snapshot, a wiped redo, an unsaved flip, a
+        // byte-identical full-list PUT) and the footer overclaimed
+        // "1 action(s) performed" over an UNCHANGED canvas — the exact
+        // opposite of the footer's own honest-count doctrine (RA-2 /
+        // the S62-F cap-annotation family). Both halves report their
+        // truth against the LIVE elements (the S61-E re-read doctrine)
+        // and through the ONE patchDiffers seam / the S86-B
+        // clampSizeField product compare the store itself rides.
+        const liveElements = useEditorStore.getState().elements;
+        const targetSet = new Set(targets);
+        const scaleWouldChange =
+          operation.patch.scale !== undefined &&
+          liveElements.some(
+            (el) =>
+              targetSet.has(el.id) &&
+              (el.width !==
+                clampSizeField(el.width * (operation.patch.scale ?? 1), el.type) ||
+                el.height !==
+                  clampSizeField(el.height * (operation.patch.scale ?? 1), el.type)),
+          );
+        const patchWouldChange =
+          Object.keys(patch).length > 0 &&
+          liveElements.some((el) => targetSet.has(el.id) && patchDiffers(el, patch));
+        if (coalesce && (scaleWouldChange || patchWouldChange)) store.beginGesture();
         if (operation.patch.scale !== undefined) {
-          store.scaleElements(targets, operation.patch.scale, coalesce ? false : true);
-          did = true;
+          if (scaleWouldChange) {
+            store.scaleElements(targets, operation.patch.scale, coalesce ? false : true);
+            did = true;
+          }
         }
         if (Object.keys(patch).length > 0) {
-          store.updateElements(targets, patch, coalesce ? false : true);
-          did = true;
+          if (patchWouldChange) {
+            store.updateElements(targets, patch, coalesce ? false : true);
+            did = true;
+          }
         }
-        if (coalesce) store.endGesture();
+        if (coalesce && (scaleWouldChange || patchWouldChange)) store.endGesture();
         if (did) applied += 1;
       } else if (operation.op === "delete") {
         // The wall's AI contract (S27-1): locked elements never ride along
@@ -480,6 +513,12 @@ export function AiAssistant() {
         },
       ]);
     } catch {
+      // Session 105 (S105-B / A-L5 — the draft-loss edge): the send
+      // path cleared the draft BEFORE the await; a network failure
+      // degraded to this toast and the operator's typed prompt was
+      // gone — a dead control that lies. The catch restores the draft
+      // (nothing was applied — the scope guards above never ran).
+      setInput(message);
       toast.error("Network error", "The assistant could not be reached.");
     } finally {
       setSending(false);

@@ -238,8 +238,11 @@ describe("the hex row's abandoned-draft blur-restore (S79-E / A-L1)", () => {
     // Session 103 (S103-A / A-L2): the window widened 3000 -> 3700 — the
     // complete-hex changed-value guard's doctrine comment sits between
     // the row's head and its onBlur (the S102-D reset-url-gate family's
-    // own re-anchor form).
-    const body = panel.slice(start, start + 3700);
+    // own re-anchor form). Session 105 (S105-A — the same family's
+    // second widening): the swatch color-identity guard + the
+    // empty-draft null guard's doctrine comments grow the row further —
+    // 3700 -> 5300 (the live-measured distance).
+    const body = panel.slice(start, start + 5300);
     expect(body).toMatch(/onBlur=\{\(\)\s*=>\s*setDraft\(value\s*\?\?\s*""\)\}/);
   });
 

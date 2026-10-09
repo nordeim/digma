@@ -48,8 +48,8 @@ import * as exportLib from "../src/lib/export-png";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1332";
-const FILES = "166";
+const UNIT = "1356";
+const FILES = "167";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -177,8 +177,10 @@ describe("S103-A the no-op family's last two members (A-L1 + A-L2 — the headli
     // helper's ONE call + the gradient stop position's ONE call grow the
     // census to EIGHT (the no-op family's seventh member — the number
     // fields — rides the same seam through the shared helper).
+    // Session 105 (S105-A — the same family's continuation): the stop
+    // COLOR swatch joins the seam — the census grows to NINE.
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(8);
+    expect(guarded?.length).toBe(9);
     expect(PANEL).toMatch(/patchDiffers\(element, \{ textAlign: align \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "linear" \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "radial" \}\)/);

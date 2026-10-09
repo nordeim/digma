@@ -66,11 +66,16 @@ describe("the editor Low batch (session 62, S62-F)", () => {
   it("A-L4: the AI apply seam annotates the reply when the cap refused part of the batch", () => {
     // THE DEFECT PIN: pre-fix the reply asserted the requested count
     // regardless of what actually landed.
+    // Session 105 (S105-B — a legitimate contract update): the import
+    // grew clampSizeField + patchDiffers (the per-target truth block's
+    // seams) — the ELEMENT_LIMIT member stays.
     expect(aiComponentSource).toMatch(
       /const capped =\s*\n?\s*actionCount < operations\.length &&\s*\n?\s*useEditorStore\.getState\(\)\.elements\.length >= ELEMENT_LIMIT;/,
     );
     expect(aiComponentSource).toMatch(/the board is at its element limit/);
-    expect(aiComponentSource).toMatch(/import \{ ELEMENT_LIMIT, type DesignElementDTO \} from "@\/lib\/editor";/);
+    expect(aiComponentSource).toMatch(
+      /import \{ ELEMENT_LIMIT, clampSizeField, patchDiffers, type DesignElementDTO \} from "@\/lib\/editor";/,
+    );
   });
 
   it("A-L5: the dead setName action is gone from the store", () => {

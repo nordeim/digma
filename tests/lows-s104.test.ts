@@ -68,8 +68,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1332";
-const FILES = "166";
+const UNIT = "1356";
+const FILES = "167";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -232,8 +232,12 @@ describe("S104-A the number-field no-op commits (A-M1 — the headline, the fami
     // GREEN by design post-fix: the S102-E five + the S103-A
     // gradient-stop button = six stay; the guardedUpdate helper's one
     // call + the stop position's one call grow the census to eight.
+    // Session 105 (S105-A / A-M1): the stop COLOR swatch joins the seam
+    // — the census grows to NINE (the legitimate contract update; the
+    // pre-S105 census closed at the number/position members while the
+    // color-picker modality survived — lesson F92's very form).
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(8);
+    expect(guarded?.length).toBe(9);
     expect(PANEL).toMatch(/patchDiffers\(element, \{ textAlign: align \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "linear" \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "radial" \}\)/);

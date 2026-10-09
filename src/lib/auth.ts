@@ -55,7 +55,11 @@ export function createSessionToken(userId: string, tokenVersion: number): string
   return `${payload}.${sign(payload)}`;
 }
 
-export type ParsedSession = { userId: string; tokenVersion: number };
+// Session 105 (S105-C / B-L3 — the F79 dead-export class's N−4 shape):
+// the export keyword drops — zero external importers (self-consumed
+// solely as parseSessionToken's return annotation; the S104-I census
+// stopped at three members).
+type ParsedSession = { userId: string; tokenVersion: number };
 
 export function parseSessionToken(token: string | undefined | null): ParsedSession | null {
   if (!token) return null;

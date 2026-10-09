@@ -343,8 +343,22 @@ function HexColorRow({
             // ONE history entry (the pre-fix path pushed a full snapshot
             // per intermediate color — one picker drag flooded the
             // 60-deep stack and evicted earlier work).
-            sliderGesture.textTick();
-            onChange(event.target.value);
+            // Session 105 (S105-A / A-M1 — the no-op family's remaining
+            // member): the color-identity guard. Re-picking the
+            // element's CURRENT color from the native picker (the
+            // palette's current swatch, the eyedropper landing on the
+            // current color) is not a commit — the compare is the COLOR
+            // identity the S103-A text branch established, widened to
+            // the short-hex-expanded form (a stored 3-digit hex's
+            // expanded pick is the same color — the model already
+            // carries it); a null→color pick is ALWAYS a real commit.
+            if (
+              value === null ||
+              event.target.value.toUpperCase() !== (expandShortHex(value) ?? "").toUpperCase()
+            ) {
+              sliderGesture.textTick();
+              onChange(event.target.value);
+            }
           }}
           onBlur={() => sliderGesture.finish("text")}
           className="h-8 w-8 rounded border border-editor-border bg-transparent"
@@ -359,7 +373,14 @@ function HexColorRow({
             const next = event.target.value;
             setDraft(next);
             if (next === "") {
-              onChange(null);
+              // Session 105 (S105-A / A-M1 — the no-op family's
+              // empty-draft form): clearing a junk draft typed into an
+              // already-TRANSPARENT field (fill/stroke/text-color null)
+              // is not a commit — the null re-commit pushed an inert
+              // snapshot and flipped the badge for a structurally
+              // identical patch. The clear is real only when the field
+              // actually holds a value.
+              if (value !== null) onChange(null);
             } else if (
               /^#[0-9a-fA-F]{6}$/.test(next) &&
               // Session 103 (S103-A / A-L2 — the text-input surface the
@@ -814,8 +835,17 @@ function GradientPanel({
                   // Session 66 (S66-B / A-3): the stop-color swatch rides
                   // the same idle-coalesced burst (the pre-fix per-event
                   // commit flooded history exactly like the fill swatch).
-                  sliderGesture.textTick();
-                  setStop(index, { color: event.target.value });
+                  // Session 105 (S105-A / A-M1 — the no-op family's
+                  // remaining member): the stop COLOR joins its position
+                  // sibling (S104-A) on the ONE patchDiffers seam at the
+                  // stop's own sub-object granularity — re-picking the
+                  // stop's current color is not a commit (the inert
+                  // snapshot / wiped redo / phantom Unsaved /
+                  // byte-identical PUT the family doctrine closes).
+                  if (patchDiffers(stop, { color: event.target.value })) {
+                    sliderGesture.textTick();
+                    setStop(index, { color: event.target.value });
+                  }
                 }}
                 onBlur={() => sliderGesture.finish("text")}
                 className="h-6 w-6 rounded border border-editor-border bg-transparent"
