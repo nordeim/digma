@@ -80,13 +80,20 @@ export default defineConfig({
     // runtime witness caught, falsifying the S83-C source-only pins).
     // The command-level `env -u` form is the only effective removal:
     // coreutils env execs bun directly (the process cmdline keeps the
-    // ^bun anchor the pre-kill needs) with the six knobs REMOVED — the
-    // four app knobs of S83-C plus the standalone runtime's own
-    // HOSTNAME (Docker exports it as the container id; a resolvable
-    // value binds a non-loopback address so the localhost health URL
-    // never answers) and KEEP_ALIVE_TIMEOUT.
+    // ^bun anchor the pre-kill needs) with the seven knobs REMOVED —
+    // the five app knobs (the four of S83-C plus DIGMA_SITE_URL, the
+    // S100-D/B100-L2 addition: the SEO-surface knob landed in S99-G
+    // without joining either removal list — unobservable only while
+    // the prerender defect B100-H1 baked the body at build, so the
+    // day the force-dynamic fix made the knob live at runtime, a
+    // parent-shell export would have steered the e2e server's
+    // robots/sitemap — the exact class the S84-C revision closed)
+    // plus the standalone runtime's own HOSTNAME (Docker exports it
+    // as the container id; a resolvable value binds a non-loopback
+    // address so the localhost health URL never answers) and
+    // KEEP_ALIVE_TIMEOUT.
     command:
-      'pkill -f "^bun .next/standalone" >/dev/null 2>&1 || true; exec env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u HOSTNAME -u KEEP_ALIVE_TIMEOUT bun .next/standalone/server.js',
+      'pkill -f "^bun .next/standalone" >/dev/null 2>&1 || true; exec env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u DIGMA_SITE_URL -u HOSTNAME -u KEEP_ALIVE_TIMEOUT bun .next/standalone/server.js',
     url: `${BASE_URL}/api/health`,
     timeout: 60_000,
     reuseExistingServer: false,

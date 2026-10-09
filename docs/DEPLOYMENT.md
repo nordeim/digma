@@ -58,6 +58,7 @@ every user into one bucket). See `.env.example` for the full semantics.
 | `DIGMA_DISABLE_IN_APP_RESET` | **Yes for public deploys** | Suppresses the self-hosted in-app password-reset link (the reset token never rides an API payload — a real email service must own the delivery). |
 | `DIGMA_DISABLE_IN_APP_OTP` | **Yes for public deploys** | Suppresses the in-response OTP verification-code delivery on register/login/resend (a real email service must own the delivery). |
 | `DIGMA_DISABLE_AI_LLM` | No | Force-degrades the AI assistant to the deterministic fallback parser (no LLM calls). |
+| `DIGMA_SITE_URL` | No | The public origin the SEO surfaces declare — `/robots.txt`'s sitemap pointer and `/sitemap.xml`'s absolute URLs. Unset = `http://localhost:3000` (the local default). Read per-request at runtime (session 100, S100-A: the two metadata routes are `force-dynamic` — an operator who builds once in CI/Docker and configures at deploy time gets the live value, not the build-time one). |
 
 **Public-deploy posture (ADR-014, session 69):** with the two delivery knobs
 UNSET, the self-hosted demo posture hands the reset URL / OTP code to any

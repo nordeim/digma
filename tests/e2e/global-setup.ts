@@ -21,6 +21,11 @@ export default function globalSetup(): void {
   delete hermetic.DIGMA_DISABLE_IN_APP_RESET;
   delete hermetic.DIGMA_DISABLE_IN_APP_OTP;
   delete hermetic.DIGMA_REPO_ROOT;
+  // Session 100 (S100-D / B100-L2): the fifth app knob joins the set —
+  // the SEO-surface knob landed in S99-G without this delete (the
+  // S83-C/S84-C hermeticity family's missed member; rides the same
+  // commit as the S100-A force-dynamic fix that made the knob live).
+  delete hermetic.DIGMA_SITE_URL;
   const env = {
     ...hermetic,
     DATABASE_URL: "file:../db/e2e.db",

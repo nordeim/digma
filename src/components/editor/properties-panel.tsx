@@ -73,7 +73,6 @@ function NumberField({
   max,
   step = 1,
   hideZero = false,
-  width,
 }: {
   label: string;
   value: number;
@@ -83,8 +82,10 @@ function NumberField({
   step?: number;
   /** Render 0 as an empty input with a "0" placeholder (reference style). */
   hideZero?: boolean;
-  /** Tailwind width class for compact inputs (e.g. "w-16"). */
-  width?: string;
+  // Session 100 (S100-D / A100-I2): the dead `width` prop is deleted —
+  // zero call-site consumers (the F79 dead-member class; every site
+  // rides the w-full default; the compact-width need the inline rows
+  // had was always the GuardedNumberInput sibling's per-site className).
 }) {
   const display = hideZero && value === 0 ? "" : String(Math.round(value * 100) / 100);
   const [draft, setDraft] = React.useState(display);
@@ -98,9 +99,15 @@ function NumberField({
   // "12.375" survives verbatim instead of snapping to "12.38" under the
   // caret; only an EXTERNAL change — slider, resize, undo, AI —
   // resynchronizes through the rounded display).
+  // Session 100 (S100-B / A100-L1): an EMPTY draft holds no truth —
+  // Number("") === 0 is a coercion artifact, not a truthful parse — so
+  // a cleared field ALWAYS resyncs to the external change (an AI
+  // height: 0 patch landing while the field is cleared shows "0",
+  // never blank). A NON-EMPTY draft that parses to the value still
+  // survives verbatim (the S99-A contract — the user's own commit).
   if (prevValue !== value) {
     setPrevValue(value);
-    if (Number(draft) !== value) setDraft(display);
+    if (draft.trim() === "" || Number(draft) !== value) setDraft(display);
   }
 
   return (
@@ -163,9 +170,7 @@ function NumberField({
             setDraft(display);
           }
         }}
-        className={`mt-1 h-8 rounded-md border border-editor-border bg-editor-bg px-3 text-sm text-white focus:border-blue-500 focus:outline-none ${
-          width ?? "w-full"
-        }`}
+        className="mt-1 h-8 w-full rounded-md border border-editor-border bg-editor-bg px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
       />
     </div>
   );
@@ -213,9 +218,12 @@ function GuardedNumberInput({
   // Session 99 (S99-A / A99-L1): the user's own commit never rewrites
   // the draft — a draft whose parse equals the committed value already
   // tells the truth about it (the NumberField sibling's guard).
+  // Session 100 (S100-B / A100-L1): the empty-draft arm — Number("") === 0
+  // is a coercion artifact, not a truthful parse, so a cleared field
+  // ALWAYS resyncs (the NumberField sibling's corrected polarity).
   if (prevValue !== value) {
     setPrevValue(value);
-    if (Number(draft) !== value) setDraft(display);
+    if (draft.trim() === "" || Number(draft) !== value) setDraft(display);
   }
 
   return (
@@ -989,20 +997,20 @@ export function TextSection({
           type="text"
           value={element.text ?? ""}
           // Session 85 (S85-B / A85-L1 — the thirty-third audit's missed
-          // member of the S84-B teleport family): the server's
-          // buildElementRow clamps text through clampText(raw?.text, 2000)
-          // (trim + slice, all-whitespace → null) and the PUT response
-          // REPLACES the store list — an unclamped value rendered locally
-          // then visibly teleported on save (a >2000-char paste silently
-          // truncating a second later; edge whitespace lost on the
-          // round-trip — the canvas renders whiteSpace: pre-wrap, edge
-          // whitespace is real content). The layers-rename sibling's own
-          // form: the input cap closes the length teleport at typing
-          // time; the trim-at-commit below closes the whitespace
-          // teleport at commit time. The onChange stays RAW — a
-          // per-keystroke trim would delete a trailing space AS IT IS
-          // TYPED (the controlled value re-rendering from the trimmed
-          // store).
+          // member of the S84-B teleport family) + Session 100 (S100-C /
+          // A100-L2 — the re-anchor): the server's buildElementRow rides
+          // the SLICE-ONLY clampTextContent(raw?.text, 2000) since S99-B
+          // — edge whitespace is real content and SURVIVES the round-trip
+          // (the S85-B doctrine now held at the server layer); the length
+          // bound still slices, and the PUT response REPLACES the store
+          // list — a >2000-char paste rendered locally would still
+          // visibly truncate a second later. The layers-rename sibling's
+          // own form: the input cap below closes the length teleport at
+          // typing time; the trim-at-commit on blur stays the SANCTIONED
+          // boundary (the store reconciles when the user leaves the
+          // field). The onChange stays RAW — a per-keystroke trim would
+          // delete a trailing space AS IT IS TYPED (the controlled value
+          // re-rendering from the trimmed store).
           maxLength={2000}
           onBlur={() => {
             sliderGesture.finish("text");

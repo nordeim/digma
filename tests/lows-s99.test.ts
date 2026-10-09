@@ -82,8 +82,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1238";
-const FILES = "161";
+const UNIT = "1252";
+const FILES = "162";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -116,12 +116,18 @@ describe("S99-A the numeric fields' draft-survival guard (A99-L1 — the headlin
     // the caret. Post-fix a draft whose parse equals the new value
     // already tells the truth about it; only an external change
     // (slider/resize/undo/AI) resynchronizes through the rounded
-    // display.
+    // display. Session 100 (S100-B / A100-L1) re-anchored in-commit:
+    // the guard gained the EMPTY-DRAFT arm — Number("") === 0 is a
+    // coercion artifact, not a truthful parse, so a cleared field
+    // always resyncs (the S93-A precedent: the prior-session pin
+    // tracks the delivered form).
     const start = PANEL.indexOf("function NumberField(");
     const end = PANEL.indexOf("\nfunction ", start + 10);
     expect(start, "the NumberField definition must be findable").toBeGreaterThan(-1);
     const body = PANEL.slice(start, end);
-    expect(body).toMatch(/if \(Number\(draft\) !== value\) setDraft\(display\);/);
+    expect(body).toMatch(
+      /if \(draft\.trim\(\) === "" \|\| Number\(draft\) !== value\) setDraft\(display\);/,
+    );
   });
 
   it("DEFECT: GuardedNumberInput's render-time resync carries the same guard", () => {
@@ -129,7 +135,11 @@ describe("S99-A the numeric fields' draft-survival guard (A99-L1 — the headlin
     const end = PANEL.indexOf("\nfunction ", start + 10);
     expect(start, "the GuardedNumberInput definition must be findable").toBeGreaterThan(-1);
     const body = PANEL.slice(start, end);
-    expect(body).toMatch(/if \(Number\(draft\) !== value\) setDraft\(display\);/);
+    // Session 100 (S100-B / A100-L1) re-anchored in-commit: the empty-draft
+    // arm joins the sibling's guard (the corrected polarity).
+    expect(body).toMatch(
+      /if \(draft\.trim\(\) === "" \|\| Number\(draft\) !== value\) setDraft\(display\);/,
+    );
   });
 
   it("SURVIVAL: the rounded display derivation, the empty-draft guard, and the blur restore stay untouched", () => {

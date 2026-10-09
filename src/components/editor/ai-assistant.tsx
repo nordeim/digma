@@ -178,14 +178,17 @@ export function AiAssistant() {
           partial.fill = operation.element.fill;
         }
         if (operation.element.text !== null && operation.element.text !== undefined) {
-          // Session 86 (S86-B / A86-L1): the AI path's text commits through
-          // the SAME clamp the server's buildElementRow applies — the
-          // fallback's quoted content and the sanitizer's slice never TRIM,
-          // so edge whitespace rendered locally (the canvas's pre-wrap
-          // makes it visible content) then visibly lost on the
-          // store-replacing PUT round-trip; a whitespace-only AI text
-          // nulled to empty after the save (the S85-B TextSection fix's
-          // AI-path sibling — one seam, both consumers).
+          // Session 86 (S86-B / A86-L1) + Session 100 (S100-C / A100-L2 —
+          // the re-anchor): the server's buildElementRow rides the
+          // SLICE-ONLY clampTextContent since S99-B, so this client-side
+          // clampText is NO LONGER "the SAME clamp the server applies" —
+          // it is the commit-boundary form (the blur-trim sibling): the
+          // machine's generated text commits TRIMMED before the user
+          // ever sees it, then the round-trip is byte-stable through
+          // the slice-only server (a whitespace-only AI text still nulls
+          // at the commit — the fallback's quoted content and the
+          // sanitizer's slice never trim, so the boundary trim is the
+          // AI path's own seam, one per consumer).
           partial.text = clampText(operation.element.text, 2000);
         }
         if (operation.element.fontSize !== null && operation.element.fontSize !== undefined) {
@@ -224,9 +227,12 @@ export function AiAssistant() {
         if (operation.patch.width !== undefined && operation.patch.width !== null) patch.width = operation.patch.width;
         if (operation.patch.height !== undefined && operation.patch.height !== null) patch.height = operation.patch.height;
         if (operation.patch.text !== undefined) {
-          // Session 86 (S86-B / A86-L1): the update path's patch.text rides
-          // the same clamp — the LLM's free-form edits arrive with edge
-          // whitespace the sanitizer's slice(0, 500) never trims.
+          // Session 86 (S86-B / A86-L1) + Session 100 (S100-C / A100-L2 —
+          // the re-anchor): the update path's patch.text rides the same
+          // COMMIT-BOUNDARY trim — the LLM's free-form edits arrive with
+          // edge whitespace the sanitizer's slice(0, 500) never trims;
+          // the server's clamp is slice-only since S99-B, so the
+          // round-trip keeps whatever the boundary commits.
           patch.text = clampText(operation.patch.text, 2000);
         }
         // Session 57 (S57-E — the fifth Mode C audit's M-6): the scale no

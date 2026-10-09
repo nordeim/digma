@@ -51,7 +51,7 @@ const registerSource = readFileSync(
 // ---------------------------------------------------------------------------
 
 describe("the e2e server's env is hermetic against operator exports (S83-C / B83-L1 — the S84-C revision form)", () => {
-  it("the webServer COMMAND strips the six knobs via env -u (the merge discovery's effective form)", () => {
+  it("the webServer COMMAND strips the seven knobs via env -u (the merge discovery's effective form)", () => {
     // Session 84 (S84-C revision — the F71 runtime discovery): the
     // S83-C delete-lines-in-the-env-object form was INEFFECTIVE —
     // Playwright MERGES the webServer env object OVER process.env, so
@@ -62,7 +62,10 @@ describe("the e2e server's env is hermetic against operator exports (S83-C / B83
     // own HOSTNAME/KEEP_ALIVE_TIMEOUT — the only form that actually
     // reaches the child process.
     expect(playwrightSource).toMatch(
-      /exec env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u HOSTNAME -u KEEP_ALIVE_TIMEOUT bun \.next\/standalone\/server\.js/,
+      // Session 100 (S100-D / B100-L2) re-anchored in-commit: the FIFTH
+      // app knob DIGMA_SITE_URL joins the removal list (the S83-A
+      // precedent — the prior-session pin tracks the delivered form).
+      /exec env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u DIGMA_SITE_URL -u HOSTNAME -u KEEP_ALIVE_TIMEOUT bun \.next\/standalone\/server\.js/,
     );
   });
 
