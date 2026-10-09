@@ -64,16 +64,19 @@ const SheetContent = React.forwardRef<
     <SheetOverlay />
     <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
       {children}
-      {/* Session 77 (S77-A / A-L4 — the twenty-fifth audit's headline):
+      {/* Session 77 (S77-A / A-L4 — the twenty-fifth audit's headline;
+          the count corrected session 101, S101-B / A101-L1 — the F78
+          count-falsified-by-grep class: the claim said "ten" at birth
+          while the repo carried nine):
           the PRIMITIVE owns the 44px close-target floor now — the
           S76-E toaster form generalized. Pre-fix the floor lived only
-          in ten duplicated call-site [&>button]:h-11 overrides while
+          in nine duplicated call-site [&>button]:h-11 overrides while
           this built-in stayed ~20px (a 16-20px glyph at right-4 top-4):
           the next consumer forgetting the override would silently ship
           a sub-floor mobile close target (the F35e drift-hazard class
           applied to a11y). The call-site overrides become inert
           belt-and-suspenders (the rendered geometry is unchanged at
-          every existing consumer — all ten already applied the same
+          every existing consumer — all nine already applied the same
           floor). */}
       <SheetPrimitive.Close className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
         <X className="h-5 w-5" />

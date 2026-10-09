@@ -8,6 +8,7 @@ import { create } from "zustand";
 import {
   clampPositionField,
   clampSizeField,
+  clampZoom,
   defaultElementFor,
   ELEMENT_LIMIT,
   type DesignElementDTO,
@@ -220,9 +221,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   // after repeated zoom-in and holds 10 after repeated zoom-out). The
   // pre-fix clone clamped [0.05, 8]. The clone's Ctrl+wheel superset flows
   // through setZoom and inherits the same coherent range.
-  setZoom: (zoom) => set({ zoom: clamp(zoom, 0.1, 5) }),
-  zoomIn: () => set((state) => ({ zoom: clamp(state.zoom * 1.2, 0.1, 5) })),
-  zoomOut: () => set((state) => ({ zoom: clamp(state.zoom / 1.2, 0.1, 5) })),
+  // Session 101 (S101-C / A102-L2 — the F35e two-maps-of-one-domain class):
+  // the three actions now ride the ONE exported clampZoom seam (its only
+  // other consumer the Ctrl+wheel path in canvas.tsx) — the [0.1, 5]
+  // range was hand-maintained in both files before; a future range
+  // change now touches exactly one.
+  setZoom: (zoom) => set({ zoom: clampZoom(zoom) }),
+  zoomIn: () => set((state) => ({ zoom: clampZoom(state.zoom * 1.2) })),
+  zoomOut: () => set((state) => ({ zoom: clampZoom(state.zoom / 1.2) })),
   resetView: () => set({ zoom: 1, panX: 0, panY: 0 }),
 
   panBy: (dx, dy) => set((state) => ({ panX: state.panX + dx, panY: state.panY + dy })),

@@ -41,8 +41,11 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      {/* Session 77 (S77-A / A-L4 — the Sheet twin's identical fix): the
-          PRIMITIVE owns the 44px close-target floor — the ten call-site
+      {/* Session 77 (S77-A / A-L4 — the Sheet twin's identical fix; the
+          count corrected session 101, S101-B / A101-L1 — the F78
+          count-falsified-by-grep class: the claim said "ten" at birth
+          while the repo carried nine): the
+          PRIMITIVE owns the 44px close-target floor — the nine call-site
           [&>button]:h-11 overrides become inert belt-and-suspenders
           (every existing consumer already applied the same floor, so
           the rendered geometry is unchanged). */}

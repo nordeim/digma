@@ -639,6 +639,14 @@ S110.update({
     "clone-57-empty-draft-restore": (1440, 900),
 })
 
+# s111 mapping (session 101 — the 77th reference audit's evidence set + the
+# standing evidence re-verified on the S101 code; the strict-boolean
+# browser witness on the final build — clone-59)
+S111 = dict(S110)
+S111.update({
+    "clone-59-strict-boolean": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -715,6 +723,8 @@ def expected_for(name: str):
         return S109.get(Path(name).stem)
     if name.startswith("ref-audit-s110/"):
         return S110.get(Path(name).stem)
+    if name.startswith("ref-audit-s111/"):
+        return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
         return S79.get(Path(name).stem)
     if name.startswith("ref-audit-s78/"):
@@ -804,6 +814,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s108").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s109").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s110").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s111").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

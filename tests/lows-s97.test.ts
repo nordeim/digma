@@ -241,8 +241,8 @@ function faithfulInlineHexSites(): string[] {
 // 1183 -> 1196 unit / 158 -> 159 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "1252";
-const FILES = "162";
+const UNIT = "1271";
+const FILES = "163";
 
 describe("S97-A the FALLBACK_WHITE single-source seam + the faithful census (A97-M1 + A97-L1)", () => {
   it("DEFECT: editor.ts exports FALLBACK_WHITE — the single source for the render white", () => {

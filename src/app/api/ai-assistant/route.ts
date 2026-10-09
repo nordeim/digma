@@ -103,7 +103,13 @@ export async function POST(request: NextRequest) {
         thinking: { type: "disabled" },
       });
 
-      const text = completion.choices[0]?.message?.content ?? "";
+      // Session 101 (S101-E / B101-I1): the completion text rides a 64KB
+      // cap before the JSON scan — the user-supplied side was already
+      // bounded (message 1000, ids ≤64×100, ops ≤50 after sanitize) while
+      // the model's reply buffered unbounded (the SDK call sets no
+      // max_tokens; a pathological repetition glitch is the realistic
+      // case, and 64KB is ~100× the headroom the accepted ops need).
+      const text = (completion.choices[0]?.message?.content ?? "").slice(0, 65_536);
       const jsonStart = text.indexOf("{");
       const jsonEnd = text.lastIndexOf("}");
       if (jsonStart >= 0 && jsonEnd > jsonStart) {

@@ -975,8 +975,16 @@ export function buildElementRow(
     fontWeight: clampFontWeight(raw?.fontWeight),
     fontFamily: clampFontFamily(raw?.fontFamily),
     textAlign: clampTextAlign(raw?.textAlign),
-    visible: raw?.visible === undefined ? true : Boolean(raw?.visible),
-    locked: raw?.locked === undefined ? false : Boolean(raw?.locked),
+    // Session 101 (S101-A / B101-L1): strict acceptance — only a REAL
+    // boolean writes. These two were the ONE field family at this seam
+    // without strict validation (every sibling carries a hex regex, an
+    // enum set, or a numeric clamp), and the truthiness coercion
+    // INVERTED a scripted consumer's stated intent: Boolean("false")
+    // === true locked what the body asked to unlock; Boolean(0) ===
+    // false hid what the body never asked to hide. A non-boolean now
+    // falls to the safe default, never the coercion artifact.
+    visible: raw?.visible === false ? false : true,
+    locked: raw?.locked === true,
     sortOrder: index,
   };
 }

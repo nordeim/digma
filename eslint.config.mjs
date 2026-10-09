@@ -35,7 +35,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // Session 71 (S71-D / L-A8 — the nineteenth audit's B-F8): the lint
     // gate's re-enable ladder, cheapest rung first — no-unreachable,
     // no-debugger, no-redeclare run as ERRORS (the auditor's full-file
-    // read of all 18 routes + 13 libs observed zero violations; the
+    // read of all 18 routes + 14 libs observed zero violations; the
     // deeper rungs — unused-vars and friends — stay off until their debt
     // is paid).
     "no-debugger": "error",

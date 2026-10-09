@@ -67,7 +67,10 @@ const MAX_RETAINED_REVERT_SNAPSHOTS = 10;
 
 // Strip the stale snapshots from all but the newest (cap − 1) carriers —
 // the message appended after this pass carries the newest snapshot, so
-// the total retained lands exactly at the cap.
+// the total retained lands exactly at the cap when the reply carries a
+// snapshot (session 101, S101-E / A104-I1: a zero-action reply appends
+// NONE — actionCount 0 leaves the carrier without one — and the pass
+// honestly ends at cap−1; the cap is a ceiling, not a floor).
 function stripAgedSnapshots(prev: ChatMessage[]): ChatMessage[] {
   let seen = 0;
   const out = [...prev];
