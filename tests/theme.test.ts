@@ -109,10 +109,16 @@ describe("the editor slider contract (session 15 — the reference's Radix look)
       /\.editor-range\s*\{/,
     );
     // The webkit thumb: 16px white circle with the measured border.
+    // Session 104 (S104-D / A-L2 — a legitimate contract update): the
+    // thumb's background re-anchored from the `#fff` literal to the
+    // --color-white token it duplicates (the token-indirection class —
+    // a future re-pin of white now reaches the sliders with every
+    // utility site; the token itself is pinned in @theme).
     expect(css).toMatch(/\.editor-range::-webkit-slider-thumb\s*\{/);
     expect(css).toMatch(/height:\s*16px/);
     expect(css).toMatch(/width:\s*16px/);
-    expect(css).toMatch(/background:\s*#fff/);
+    expect(css).toMatch(/--color-white:\s*#ffffff/);
+    expect(css).toMatch(/background:\s*var\(--color-white\)/);
     expect(css).toMatch(/border:\s*1px solid rgba\(23,\s*23,\s*23,\s*0\.5\)/);
     // The webkit track: 6px rounded with the two-tone fill gradient.
     expect(css).toMatch(/\.editor-range::-webkit-slider-runnable-track\s*\{/);

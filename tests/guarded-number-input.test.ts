@@ -64,8 +64,12 @@ describe("GuardedNumberInput — the S21-2 guard on the inline value inputs (ses
     expect(panelSource).toMatch(/<GuardedNumberInput\s*\n?\s*label=\{`Stop \$\{index \+ 1\} position`\}/);
     // The per-site clamps moved to the CALL site (the component commits
     // the parsed number; the consumer clamps its domain).
-    expect(panelSource).toMatch(/update\(\{ rotation: [^}]*-180[^}]*180[^}]*\}\)/);
-    expect(panelSource).toMatch(/update\(\{ opacity: [^}]*100[^}]*\/ 100 \}\)/);
+    // Session 104 (S104-A — a legitimate contract update): the two
+    // element-patch consumers ride the guardedUpdate helper now (the
+    // no-op commit family's seventh member); the gradient stop position
+    // compares through the seam at its own sub-object granularity.
+    expect(panelSource).toMatch(/patch\(\{ rotation: [^}]*-180[^}]*180[^}]*\}\)/);
+    expect(panelSource).toMatch(/patch\(\{ opacity: [^}]*100[^}]*\/ 100 \}\)/);
     // And the unguarded commit pattern is gone from the file entirely —
     // `Number(x) || 0` coerces every empty draft to a committed 0.
     expect(panelSource).not.toMatch(/Number\(event\.target\.value\) \|\| 0/);

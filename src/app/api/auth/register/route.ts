@@ -30,16 +30,20 @@ export async function POST(request: NextRequest) {
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return fail("VALIDATION", "Enter a valid email address", 400);
-  }
   // Session 62 (S62-G / B-L3): the public route's input lengths are
   // capped — the pre-fix form stored unbounded name/email/password
   // strings verbatim (row bloat; every other stored string in the app
   // was already capped). scrypt cost is length-independent, so the
   // password cap costs nothing.
+  // Session 104 (S104-E / B-L1): the caps reject BEFORE the format
+  // regex — forgot-password's order is the family's contract (the O(1)
+  // length rejection never runs behind the regex scan on the one
+  // public route an attacker drives pre-auth).
   if (name.length > 80 || email.length > 200 || password.length > 200) {
     return fail("VALIDATION", "Name, email, and password must be reasonably sized", 400);
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return fail("VALIDATION", "Enter a valid email address", 400);
   }
   if (password.length < 8) {
     // Session 45, RA-63: the reference's exact measured text (its 400

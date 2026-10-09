@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
+import { DEFAULT_CANVAS_BACKGROUND, THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
 import { readBoundedJson, clampColor, clampTemplate, clampText, PROJECT_LIMIT } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
   // empty → null), the divergence hazard deleted.
   const description = clampText(body?.description, 500);
   const template = clampTemplate(typeof body?.template === "string" ? body.template : "blank");
-  const backgroundColor = clampColor(typeof body?.backgroundColor === "string" ? body.backgroundColor : "#0D1117");
+  const backgroundColor = clampColor(typeof body?.backgroundColor === "string" ? body.backgroundColor : DEFAULT_CANVAS_BACKGROUND);
 
   if (!name) return fail("VALIDATION", "Project name is required", 400);
   if (name.length > 120) return fail("VALIDATION", "Project name is too long (max 120)", 400);

@@ -41,6 +41,7 @@ import { toast } from "@/hooks/use-toast";
 import { call } from "@/lib/call";
 import {
   CANVAS_BACKGROUND_PRESETS,
+  DEFAULT_CANVAS_BACKGROUND,
   TEMPLATE_META,
   boundsOf,
   canvasFontFamily,
@@ -607,8 +608,8 @@ export function CreateProjectDialog({
 }) {
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [background, setBackground] = React.useState(CANVAS_BACKGROUND_PRESETS[0]?.value ?? "#0D1117");
-  const [customColor, setCustomColor] = React.useState("#0D1117");
+  const [background, setBackground] = React.useState(CANVAS_BACKGROUND_PRESETS[0]?.value ?? DEFAULT_CANVAS_BACKGROUND);
+  const [customColor, setCustomColor] = React.useState(DEFAULT_CANVAS_BACKGROUND);
   const [template, setTemplate] = React.useState("blank");
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -650,14 +651,14 @@ export function CreateProjectDialog({
   function reset() {
     setName("");
     setDescription("");
-    setBackground(CANVAS_BACKGROUND_PRESETS[0]?.value ?? "#0D1117");
+    setBackground(CANVAS_BACKGROUND_PRESETS[0]?.value ?? DEFAULT_CANVAS_BACKGROUND);
     // Session 98 (S98-B — A98-L1, the forty-sixth audit): the custom-color
     // draft joins the reset contract — pre-fix a custom pick survived the
     // reset, so reopening the dialog showed the stale swatch behind the
     // restored preset background (isPreset true, the color input reading
     // customColor). The CreateTeamDialog sibling resets its color the
     // same way (teams-view.tsx setColor(TEAM_COLORS[0])).
-    setCustomColor(CANVAS_BACKGROUND_PRESETS[0]?.value ?? "#0D1117");
+    setCustomColor(CANVAS_BACKGROUND_PRESETS[0]?.value ?? DEFAULT_CANVAS_BACKGROUND);
     setTemplate("blank");
   }
 

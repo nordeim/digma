@@ -664,6 +664,16 @@ S113.update({
     "clone-62-hex-noop": (1440, 900),
 })
 
+# s114 mapping (session 104 — the 80th reference audit's evidence set + the
+# standing evidence re-verified on the S104 code; the number-field same-value
+# + clamp-identity no-op browser witnesses on the final build —
+# clone-63/clone-64)
+S114 = dict(S113)
+S114.update({
+    "clone-63-numberfield-samevalue-noop": (1440, 900),
+    "clone-64-clamp-identity-noop": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -744,6 +754,8 @@ def expected_for(name: str):
         return S112.get(Path(name).stem)
     if name.startswith("ref-audit-s113/"):
         return S113.get(Path(name).stem)
+    if name.startswith("ref-audit-s114/"):
+        return S114.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -838,6 +850,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s111").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s112").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s113").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s114").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

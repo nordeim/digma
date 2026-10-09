@@ -18,7 +18,7 @@ import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO, canvasFontFamily, EDITOR_SHORTCUTS, FALLBACK_WHITE, fillPaintFor, isTypingTarget, textAlignToJustify, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily, DEFAULT_CANVAS_BACKGROUND, EDITOR_SHORTCUTS, FALLBACK_WHITE, fillPaintFor, isTypingTarget, textAlignToJustify, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
 import {
   EXPORT_BOARD_HEIGHT,
   EXPORT_BOARD_WIDTH,
@@ -38,7 +38,7 @@ const UNTITLED_PROJECT: ProjectDTO = {
   name: "Untitled",
   description: null,
   template: "blank",
-  backgroundColor: "#0D1117",
+  backgroundColor: DEFAULT_CANVAS_BACKGROUND,
   lastOpenedAt: new Date(0).toISOString(),
   createdAt: new Date(0).toISOString(),
   updatedAt: new Date(0).toISOString(),
@@ -957,7 +957,11 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
                 // A line's stroke feeds its SVG diagonal, never the box
                 // border (session 29, RA-8).
                 border:
-                  el.type !== "line" && el.stroke && el.strokeWidth
+                  // Session 104 (S104-I / A-I1 — the F88 form-alignment
+                  // residual): the strict sibling form — canvas.tsx,
+                  // project-card.tsx, and export-png.ts read `> 0` at
+                  // the same render family.
+                  el.type !== "line" && el.stroke && el.strokeWidth > 0
                     ? `${el.strokeWidth}px solid ${el.stroke}`
                     : undefined,
                 // Session 103 (S103-D / A-I2 — the F88 form-alignment):

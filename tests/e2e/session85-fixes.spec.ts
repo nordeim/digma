@@ -40,7 +40,9 @@ const FIXTURE_BASE = "S85 Reentry Fixture";
 async function makeContext(): Promise<APIRequestContext> {
   return request.newContext({
     storageState: "tests/e2e/.auth/user.json",
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3100",
+    // Session 104 (S104-F / B-L2): the fallback derives from E2E_PORT like
+    // the config — never an orphaned hardcoded port.
+    baseURL: process.env.E2E_BASE_URL ?? `http://localhost:${process.env.E2E_PORT ?? 3100}`,
   });
 }
 

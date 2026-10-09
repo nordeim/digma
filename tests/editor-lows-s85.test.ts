@@ -152,8 +152,12 @@ describe("the Text Content input mirrors the server's clampText at the consumer 
     // rename maxLength={120}); the Content input was the one unclamped
     // editable surface whose value round-trips through the store-replacing
     // PUT.
+    // Session 104 (S104-A — the documented re-anchor pattern): the
+    // same-value guard's doctrine comment landed between maxLength and
+    // the aria-label — the window widens 1200 -> 2100 (the s79
+    // precedent for comment growth crossing a fixed window).
     expect(panelSource).toMatch(
-      /maxLength=\{2000\}[\s\S]{0,1200}?aria-label="Text content"/
+      /maxLength=\{2000\}[\s\S]{0,2100}?aria-label="Text content"/
     );
   });
 
@@ -172,8 +176,13 @@ describe("the Text Content input mirrors the server's clampText at the consumer 
     // trailing space AS IT IS TYPED (the controlled value re-rendering
     // from the trimmed store). The sibling layers-rename keeps the same
     // split: raw onChange, trimmed onBlur commit.
+    // Session 104 (S104-A — a legitimate contract update): the onChange
+    // gained its own same-value guard (the blur path's S78-C doctrine
+    // reaching the typing path — a paste-identical text no longer arms
+    // the burst or commits the byte-identical patch; the RAW value form
+    // inside the guard is unchanged).
     expect(panelSource).toMatch(
-      /onChange=\{\(event\) => \{\s*sliderGesture\.textTick\(\);\s*update\(\{ text: event\.target\.value \}\);/
+      /if \(event\.target\.value !== \(element\.text \?\? ""\)\) \{\s*sliderGesture\.textTick\(\);\s*update\(\{ text: event\.target\.value \}\);/
     );
   });
 });
@@ -189,9 +198,11 @@ describe("the S85-B survival family (the sibling clamps unchanged)", () => {
   });
 
   it("SURVIVAL — the panel's number-field clamps (the S84-B family) ride through unchanged", () => {
-    expect(panelSource).toMatch(/update\(\{ fontSize: clampFontSizeField\(fontSize\) \}\)/);
-    expect(panelSource).toMatch(/update\(\{ width: clampSizeField\(width, element\.type\) \}\)/);
-    expect(panelSource).toMatch(/update\(\{ height: clampSizeField\(height, element\.type\) \}\)/);
+    // Session 104 (S104-A — a legitimate contract update): the guarded
+    // patch helper wraps the clamps at every element-patch consumer.
+    expect(panelSource).toMatch(/patch\(\{ fontSize: clampFontSizeField\(fontSize\) \}\)/);
+    expect(panelSource).toMatch(/patch\(\{ width: clampSizeField\(width, element\.type\) \}\)/);
+    expect(panelSource).toMatch(/patch\(\{ height: clampSizeField\(height, element\.type\) \}\)/);
   });
 
   it("SURVIVAL — the adoption re-run's S62-C stale-state normalization survives inside the guarded branch", () => {

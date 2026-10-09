@@ -4,7 +4,11 @@ import { expect, test } from "@playwright/test";
 // derives from the suite's own knob — the request-context specs' form
 // (E2E_BASE_URL, defaulted to the config's own E2E_PORT default) —
 // never a hardcoded port that an E2E_PORT override would orphan.
-const E2E_ORIGIN = process.env.E2E_BASE_URL ?? "http://localhost:3100";
+// Session 104 (S104-F / B-L2): the claim is now true at the FALLBACK
+// level too — the default derives from E2E_PORT like the config
+// itself, so an E2E_PORT-only override keeps all seven specs pointed
+// at the live webServer.
+const E2E_ORIGIN = process.env.E2E_BASE_URL ?? `http://localhost:${process.env.E2E_PORT ?? 3100}`;
 const APP_ROOT_URL = new RegExp(`^${E2E_ORIGIN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/$`);
 
 // Login surface: the /login route renders the reference auth card, rejects

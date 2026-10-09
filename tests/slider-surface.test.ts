@@ -83,13 +83,22 @@ describe("the surface-aware sliderGesture (session 64, S64-B / A-2)", () => {
     // immediately (the hardcoded label made the field blur a no-op
     // once the focus arm retired; the gesture outlived the blur by the
     // full idle and a Ctrl+Z in that window no-opped).
+    // Session 104 (S104-A — a legitimate contract update): the arm
+    // bookkeeping moved into the armText primitive (the arm/mark split
+    // — the no-op commit family's seventh member); textTick delegates
+    // to the two halves and keeps its own wiring byte-identical.
     const start = panelSource.indexOf('textTick: (surface: string = "text") => {');
     expect(start).toBeGreaterThan(-1);
     const end = panelSource.indexOf("},", start);
     const body = panelSource.slice(start, end);
-    expect(body).toMatch(/activeSurface = surface/);
-    expect(body).toMatch(/const idleSurface = activeSurface \?\? surface/);
-    expect(body).toMatch(/finish\(idleSurface\)/);
+    expect(body).toMatch(/armText\(surface\)/);
+    expect(body).toMatch(/markText\(\)/);
+    const armStart = panelSource.indexOf('const armText = (surface: string = "text") => {');
+    const armEnd = panelSource.indexOf("};", armStart);
+    const armBody = panelSource.slice(armStart, armEnd);
+    expect(armBody).toMatch(/activeSurface = surface/);
+    expect(armBody).toMatch(/const idleSurface = activeSurface \?\? surface/);
+    expect(armBody).toMatch(/finish\(idleSurface\)/);
   });
 
   it("the SliderRow and Content wiring pass their surface tokens (the consumers)", () => {
@@ -107,7 +116,11 @@ describe("the surface-aware sliderGesture (session 64, S64-B / A-2)", () => {
     // arm under "text" (their blur terminals match), the number fields
     // pass "field" explicitly.
     expect(panelSource).toMatch(/textTick: \(surface: string = "text"\) => \{/);
-    expect(panelSource).toMatch(/sliderGesture\.textTick\("field"\)/);
+    // Session 104 (S104-A — a legitimate contract update): the number
+    // fields arm through armText (the split's arm half); the swatches
+    // and the Content input keep the textTick composition.
+    expect(panelSource).toMatch(/sliderGesture\.armText\("field"\)/);
+    expect(panelSource).toMatch(/sliderGesture\.textTick\(\)/);
     expect(panelSource).toMatch(/sliderGesture\.finish\("text"\)/);
   });
 

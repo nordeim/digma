@@ -81,7 +81,10 @@ export function toolForShortcut(key: string): EditorTool | null {
 // dialog can never advertise a shortcut the handler doesn't wire — the
 // View/Editing groups mirror the exact commands useEditorShortcuts
 // implements (Ctrl/Cmd = the meta modifier; Space is hold-to-pan).
-export type ShortcutHelpItem = { label: string; keys: string[] };
+// Session 104 (S104-I / A-I3 — the type-level F79 census): the export
+// keyword drops — self-consumed only (the value-level dead exports were
+// swept in S63-G; the type-level members predate that census).
+type ShortcutHelpItem = { label: string; keys: string[] };
 
 export const EDITOR_SHORTCUTS: ReadonlyArray<{
   group: string;
@@ -244,8 +247,17 @@ export const TEMPLATE_META: Record<string, { label: string; description: string;
   },
 };
 
+// Session 104 (S104-C / A-L3 — the S97-A FALLBACK_WHITE class): the
+// single source for the default canvas background — the datum was
+// hand-spelled at eight sites (the store initial, UNTITLED_PROJECT,
+// the export fallback, the create-route default, the presets[0] entry,
+// the dialog's four belt fallbacks) with no named constant, the exact
+// datum-shape the forty-fifth audit closed for the render white. The
+// presets[0] entry consumes it (the Dark preset IS the default).
+export const DEFAULT_CANVAS_BACKGROUND = "#0D1117";
+
 export const CANVAS_BACKGROUND_PRESETS: Array<{ title: string; value: string }> = [
-  { title: "Dark", value: "#0D1117" },
+  { title: "Dark", value: DEFAULT_CANVAS_BACKGROUND },
   { title: "Light", value: "#F9FAFB" },
   { title: "Purple", value: "#F3E8FF" },
   { title: "Blue", value: "#E0F2FE" },
@@ -453,7 +465,10 @@ export function normalizeRect(
   };
 }
 
-export type ElementStyle = Record<string, string>;
+// Session 104 (S104-I / A-I3 — the type-level F79 census): the export
+// keyword drops — self-consumed only (elementToStyle's own return
+// annotation; zero external importers).
+type ElementStyle = Record<string, string>;
 
 /** The Corner Radius slider's DYNAMIC max — half the element's smaller side
  * (session 33, RA-29 — triple-measured on the reference: a 200x150 rectangle

@@ -77,7 +77,10 @@ function NumberField({
 }: {
   label: string;
   value: number;
-  onChange: (value: number) => void;
+  // Session 104 (S104-A / A-M1): the number-field commits report whether
+  // a real change landed — the gesture marks the burst changed only on a
+  // real commit (void keeps the legacy committed semantics).
+  onChange: (value: number) => boolean | void;
   min?: number;
   max?: number;
   step?: number;
@@ -146,9 +149,22 @@ function NumberField({
           // surface token — the arm lands under "field", so this
           // input's blur terminal (finish("field")) ends the burst
           // immediately instead of waiting out the idle.
-          if (Number.isFinite(parsed)) {
-            sliderGesture.textTick("field");
-            onChange(parsed);
+          // Session 104 (S104-A / A-M1 — the no-op family's seventh
+          // member): a retype of the CURRENT value is not a commit —
+          // the draft already tells the truth about it (the S99-A
+          // doctrine). The clamp-identity form (a parsed value beyond
+          // the clamp ceiling mapping back to the element's current
+          // value) is the consumer's guardedUpdate patch check; this
+          // component reports the commit's truth back so the gesture
+          // marks the burst changed ONLY on a real commit (the
+          // arm/mark split — the blur/idle terminal's
+          // endGesture-else-cancelGesture then holds for the no-op
+          // form: no inert snapshot, redo preserved, no phantom
+          // Unsaved badge, no redundant PUT).
+          if (Number.isFinite(parsed) && parsed !== value) {
+            sliderGesture.armText("field");
+            const committed = onChange(parsed);
+            if (committed !== false) sliderGesture.markText();
           }
         }}
         onBlur={() => {
@@ -202,7 +218,9 @@ function GuardedNumberInput({
 }: {
   label: string;
   value: number;
-  onChange: (value: number) => void;
+  // Session 104 (S104-A / A-M1): the inline form carries NumberField's
+  // full contract — the commit's truth report included.
+  onChange: (value: number) => boolean | void;
   min?: number;
   max?: number;
   step?: number;
@@ -250,11 +268,16 @@ function GuardedNumberInput({
         // Session 66 (S66-A / A-4): the arm belongs to the first COMMITTING
         // event alone — a read-only focus arms nothing (the held-focus
         // autosave loop the audit found).
-        if (Number.isFinite(parsed)) {
+        // Session 104 (S104-A / A-M1 — the no-op family's seventh
+        // member): the same-value guard + the arm/mark split reach the
+        // inline form (NumberField's full contract, including the
+        // retype-of-the-current-value and clamp-identity no-op bail).
+        if (Number.isFinite(parsed) && parsed !== value) {
           // Session 66 (S66-A, en-route): the FIELD surface token —
           // the blur terminal matches the arm's surface.
-          sliderGesture.textTick("field");
-          onChange(parsed);
+          sliderGesture.armText("field");
+          const committed = onChange(parsed);
+          if (committed !== false) sliderGesture.markText();
         }
       }}
       onBlur={() => {
@@ -449,6 +472,31 @@ const sliderGesture = (() => {
     activeSurface = null;
     armed = null;
   };
+  // Session 104 (S104-A / A-M1): the text path's arm primitive — the
+  // begin-on-demand + foreign-ride bookkeeping + the idle re-arm,
+  // WITHOUT setting the changed-flag (the flag belongs to the
+  // markText half alone; see the textTick comment above for the
+  // no-op-commit corruption the split closes).
+  const armText = (surface: string = "text") => {
+    const store = useEditorStore.getState();
+    if (store.gestureSnapshot === null) {
+      store.beginGesture();
+      activeSurface = surface;
+      armed = useEditorStore.getState().gestureSnapshot;
+    } else if (store.gestureSnapshot !== armed) {
+      // A foreign gesture owns the store — this burst rides under it
+      // and never ends it.
+      armed = null;
+    }
+    const idleSurface = activeSurface ?? surface;
+    clearIdle();
+    idleTimer = setTimeout(() => finish(idleSurface), 150);
+  };
+  // Session 104 (S104-A / A-M1): the text path's mark primitive — the
+  // burst's changed-flag, set ONLY on a consumer-reported real commit.
+  const markText = () => {
+    changed = true;
+  };
   return {
     begin: (surface: string) => {
       clearIdle();
@@ -515,22 +563,27 @@ const sliderGesture = (() => {
     // session-65 number-field pin caught it). The field surfaces now
     // pass their own token; the text default preserves the Content
     // input's and the swatches' calls.
+    // Session 104 (S104-A / A-M1 — the no-op family's seventh member):
+    // the text path's ARM and its changed-flag DECOUPLE. textTick
+    // coupled them — the number fields' clamp-identity commits (a
+    // parsed value beyond the clamp ceiling mapping back to the
+    // element's current value) armed the burst with changed=true, so
+    // the blur/idle terminal ran endGesture and pushed the INERT
+    // pre-gesture snapshot (a wiped redo, a phantom Unsaved badge, a
+    // byte-identical PUT — the exact corruption the S102-E/S103-A
+    // doctrine closes for the click/select family). The split keeps
+    // textTick's own wiring byte-identical through the composition:
+    // the number-field commits arm FIRST (the snapshot must capture
+    // the pre-change state) and mark only when the consumer reports a
+    // real commit — the terminal's existing changed ? endGesture :
+    // cancelGesture discrimination then holds for the no-op form
+    // (nothing marked, nothing pushed, redo preserved).
     textTick: (surface: string = "text") => {
-      const store = useEditorStore.getState();
-      if (store.gestureSnapshot === null) {
-        store.beginGesture();
-        activeSurface = surface;
-        armed = useEditorStore.getState().gestureSnapshot;
-      } else if (store.gestureSnapshot !== armed) {
-        // A foreign gesture owns the store — this burst rides under it
-        // and never ends it.
-        armed = null;
-      }
-      const idleSurface = activeSurface ?? surface;
-      changed = true;
-      clearIdle();
-      idleTimer = setTimeout(() => finish(idleSurface), 150);
+      armText(surface);
+      markText();
     },
+    armText,
+    markText,
     finish,
     // Session 65 (S65-B — the thirteenth audit's B-1): the unmount
     // terminal. Every other terminal is an ELEMENT-scoped pointer or
@@ -751,7 +804,12 @@ function GradientPanel({
               <input
                 type="color"
                 aria-label={`Stop ${index + 1} color`}
-                value={stop.color}
+                // Session 104 (S104-B / A-L1 — the A99-I1 class's missed
+                // surface): a stored 3-digit stop hex (clampColor passes
+                // "#abc" verbatim) coerced the swatch to BLACK — the
+                // expandShortHex binding the Fill/Stroke/Text/Background
+                // rows carry, at the stop rows too.
+                value={expandShortHex(stop.color) ?? "#000000"}
                 onChange={(event) => {
                   // Session 66 (S66-B / A-3): the stop-color swatch rides
                   // the same idle-coalesced burst (the pre-fix per-event
@@ -768,9 +826,21 @@ function GradientPanel({
                 min={0}
                 max={100}
                 step={1}
-                onChange={(position) =>
-                  setStop(index, { position: Math.min(Math.max(position, 0), 100) })
-                }
+                onChange={(position) => {
+                  // Session 104 (S104-A / A-M1 — the no-op family's
+                  // seventh member): the stop position rides the ONE
+                  // patchDiffers seam at its own sub-object granularity —
+                  // the clamp-identity form (typing 200 into a stop
+                  // already at 100) no longer commits a structurally
+                  // identical gradient (the inert snapshot / wiped redo
+                  // / phantom Unsaved / byte-identical PUT).
+                  const next = Math.min(Math.max(position, 0), 100);
+                  if (patchDiffers(stop, { position: next })) {
+                    setStop(index, { position: next });
+                    return true;
+                  }
+                  return false;
+                }}
                 className="h-6 flex-1 rounded-md border border-editor-border bg-editor-bg px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
               />
               <span className="text-xs text-gray-400">%</span>
@@ -1024,6 +1094,7 @@ export function TextSection({
   element: DesignElementDTO;
   update: (patch: Partial<DesignElementDTO>) => void;
 }) {
+  const patch = guardedUpdate(element, update);
   return (
     <section aria-label="Text" className="space-y-3">
       <SectionHeading icon="text">Text</SectionHeading>
@@ -1067,8 +1138,18 @@ export function TextSection({
             }
           }}
           onChange={(event) => {
-            sliderGesture.textTick();
-            update({ text: event.target.value });
+            // Session 104 (S104-A / A-M1 — the no-op family's seventh
+            // member): the same-value guard reaches the typing path —
+            // the blur path's own S78-C doctrine (a paste-identical
+            // text must not push a history snapshot, wipe redo, flip
+            // the badge, and fire a redundant PUT for a byte-identical
+            // value). The Content input's own form: a REAL typing
+            // sequence always differs from the committed value at each
+            // committing keystroke.
+            if (event.target.value !== (element.text ?? "")) {
+              sliderGesture.textTick();
+              update({ text: event.target.value });
+            }
           }}
           aria-label="Text content"
           className="mt-1 h-8 w-full rounded-md border border-editor-border bg-editor-bg px-3 text-sm text-white shadow-sm focus:border-blue-500 focus:outline-none"
@@ -1077,7 +1158,7 @@ export function TextSection({
       <NumberField
         label="Font Size"
         value={element.fontSize ?? 16}
-        onChange={(fontSize) => update({ fontSize: clampFontSizeField(fontSize) })}
+        onChange={(fontSize) => patch({ fontSize: clampFontSizeField(fontSize) })}
         min={1}
       />
       {/* Session 64 (S64-G / A-8): the cleared color COMMITS the null —
@@ -1167,6 +1248,29 @@ export function TextSection({
 // only what is surface-specific: the header, the multi-selection rows, and
 // the Canvas Properties branch.
 
+// Session 104 (S104-A / A-M1 — the no-op family's seventh member): the
+// number-field consumers' guarded patch helper. Every element-patch
+// consumer (X/Y/W/H, Font Size, the four corner-radius inputs, Rotation,
+// Opacity) rides the ONE exported patchDiffers seam (the S102-E/S103-A
+// doctrine): the clamp-identity form — a parsed value beyond the clamp
+// ceiling mapping back to the element's current value — no longer
+// commits a structurally identical patch (the inert history snapshot,
+// the wiped redo, the phantom Unsaved badge, the byte-identical PUT).
+// The helper returns the commit's truth so the number-input components
+// mark their gesture bursts changed ONLY on a real commit.
+function guardedUpdate(
+  element: DesignElementDTO,
+  update: (patch: Partial<DesignElementDTO>) => void,
+): (patch: Partial<DesignElementDTO>) => boolean {
+  return (patch) => {
+    if (patchDiffers(element, patch)) {
+      update(patch);
+      return true;
+    }
+    return false;
+  };
+}
+
 export function PositionSizeSection({
   element,
   update,
@@ -1174,25 +1278,26 @@ export function PositionSizeSection({
   element: DesignElementDTO;
   update: (patch: Partial<DesignElementDTO>) => void;
 }) {
+  const patch = guardedUpdate(element, update);
   return (
     <section aria-label="Position and size">
       <SectionHeading icon="position">Position &amp; Size</SectionHeading>
       <div className="grid grid-cols-2 gap-3">
-        <NumberField label="X" value={element.x} onChange={(x) => update({ x: clampPositionField(x) })} />
-        <NumberField label="Y" value={element.y} onChange={(y) => update({ y: clampPositionField(y) })} />
+        <NumberField label="X" value={element.x} onChange={(x) => patch({ x: clampPositionField(x) })} />
+        <NumberField label="Y" value={element.y} onChange={(y) => patch({ y: clampPositionField(y) })} />
         {/* Session 70 (S70-D / L-A7): the W floor is TYPE-AWARE now —
             matching the H field and the draw commit (a 0-extent line
             dimension stays 0 instead of snapping to 1). */}
         <NumberField
           label="W"
           value={element.width}
-          onChange={(width) => update({ width: clampSizeField(width, element.type) })}
+          onChange={(width) => patch({ width: clampSizeField(width, element.type) })}
           min={element.type === "line" ? 0 : 1}
         />
         <NumberField
           label="H"
           value={element.height}
-          onChange={(height) => update({ height: clampSizeField(height, element.type) })}
+          onChange={(height) => patch({ height: clampSizeField(height, element.type) })}
           // Session 85 (S85-E / A85-I3): the displayed floor aligns with
           // the enforced type-aware clamp (the W sibling's own form) — the
           // H field previously rendered min={0} while clampSizeField
@@ -1211,6 +1316,7 @@ export function CornerRadiusSection({
   element: DesignElementDTO;
   update: (patch: Partial<DesignElementDTO>) => void;
 }) {
+  const patch = guardedUpdate(element, update);
   return (
     <section aria-label="Corner radius">
       <SectionHeading icon="radius">Corner Radius</SectionHeading>
@@ -1229,10 +1335,10 @@ export function CornerRadiusSection({
           min(w,h)/2 — so the section's controls share one coherent
           range (a value above the slider's max would peg it). */}
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <NumberField label="Top Left" value={element.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
-        <NumberField label="Top Right" value={element.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
-        <NumberField label="Bottom Left" value={element.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
-        <NumberField label="Bottom Right" value={element.radius} hideZero onChange={(radius) => update({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
+        <NumberField label="Top Left" value={element.radius} hideZero onChange={(radius) => patch({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
+        <NumberField label="Top Right" value={element.radius} hideZero onChange={(radius) => patch({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
+        <NumberField label="Bottom Left" value={element.radius} hideZero onChange={(radius) => patch({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
+        <NumberField label="Bottom Right" value={element.radius} hideZero onChange={(radius) => patch({ radius: Math.min(Math.max(radius, 0), cornerRadiusMax(element)) })} />
       </div>
     </section>
   );
@@ -1329,6 +1435,7 @@ export function TransformSection({
   element: DesignElementDTO;
   update: (patch: Partial<DesignElementDTO>) => void;
 }) {
+  const patch = guardedUpdate(element, update);
   return (
     <section aria-label="Transform">
       <SectionHeading>Transform</SectionHeading>
@@ -1366,7 +1473,7 @@ export function TransformSection({
             min={-180}
             max={180}
             step={1}
-            onChange={(rotation) => update({ rotation: Math.min(Math.max(rotation, -180), 180) })}
+            onChange={(rotation) => patch({ rotation: Math.min(Math.max(rotation, -180), 180) })}
             className="h-8 w-16 rounded-md border border-editor-border bg-editor-bg px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
           />
           <span className="text-xs text-gray-300" aria-hidden>
@@ -1419,6 +1526,7 @@ export function OpacitySection({
   element: DesignElementDTO;
   update: (patch: Partial<DesignElementDTO>) => void;
 }) {
+  const patch = guardedUpdate(element, update);
   return (
     <section aria-label="Opacity">
       <SectionHeading icon="opacity">Opacity</SectionHeading>
@@ -1451,7 +1559,7 @@ export function OpacitySection({
           min={0}
           max={100}
           step={1}
-          onChange={(value) => update({ opacity: Math.min(Math.max(value, 0), 100) / 100 })}
+          onChange={(value) => patch({ opacity: Math.min(Math.max(value, 0), 100) / 100 })}
           className="h-8 w-16 rounded-md border border-editor-border bg-editor-bg px-3 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
         />
         <span className="text-xs text-gray-300" aria-hidden>

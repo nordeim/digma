@@ -53,8 +53,8 @@ import { describe, expect, it } from "vitest";
 // (the F68/F70 discipline: the constants ride the count family's live
 // anchor — the PAD §7.1 Unit-total row — so the whole family moves
 // together in the same commit).
-const UNIT = "1312";
-const FILES = "165";
+const UNIT = "1332";
+const FILES = "166";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -270,8 +270,11 @@ describe("S98-B the CreateProjectDialog reset completion (A98-L1)", () => {
     const body = PROJECT_CARD.slice(start, end);
     expect(body).toContain("setCustomColor(");
     // the default mirrors the background reset's preset anchor exactly
+    // Session 104 (S104-C — a legitimate contract update): the datum
+    // fold — the belt fallback is DEFAULT_CANVAS_BACKGROUND now (the
+    // S97-A FALLBACK_WHITE class; the literal is gone from the file).
     expect(body).toMatch(
-      /setCustomColor\(CANVAS_BACKGROUND_PRESETS\[0\]\?\.value \?\? "#0D1117"\)/,
+      /setCustomColor\(CANVAS_BACKGROUND_PRESETS\[0\]\?\.value \?\? DEFAULT_CANVAS_BACKGROUND\)/,
     );
   });
 });

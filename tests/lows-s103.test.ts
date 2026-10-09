@@ -48,8 +48,8 @@ import * as exportLib from "../src/lib/export-png";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1312";
-const FILES = "165";
+const UNIT = "1332";
+const FILES = "166";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -173,8 +173,12 @@ describe("S103-A the no-op family's last two members (A-L1 + A-L2 — the headli
     // The five S102-E forms are the survival content; the COUNT is the
     // defect pin — pre-fix the panel carries exactly FIVE patchDiffers
     // call sites (the gradient-stop button unguarded); post-fix SIX.
+    // Session 104 (S104-A — a legitimate contract update): the guardedUpdate
+    // helper's ONE call + the gradient stop position's ONE call grow the
+    // census to EIGHT (the no-op family's seventh member — the number
+    // fields — rides the same seam through the shared helper).
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(6);
+    expect(guarded?.length).toBe(8);
     expect(PANEL).toMatch(/patchDiffers\(element, \{ textAlign: align \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "linear" \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "radial" \}\)/);

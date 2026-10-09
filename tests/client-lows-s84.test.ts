@@ -88,24 +88,32 @@ describe("the panel number-field clamps mirror the server's bounds (S84-B / A84-
 
   it("SOURCE — the X and Y consumers route through clampPositionField (the raw update forms gone)", () => {
     // THE DEFECT PIN: pre-fix the fields read `update({ x })` — raw.
-    expect(panelSource).toMatch(/update\(\{ x: clampPositionField\(x\) \}\)/);
-    expect(panelSource).toMatch(/update\(\{ y: clampPositionField\(y\) \}\)/);
+    // Session 104 (S104-A — a legitimate contract update): the consumers
+    // route through the guardedUpdate helper's `patch` now (the no-op
+    // commit family's seventh member — the clamp itself is the content,
+    // the helper wraps it).
+    expect(panelSource).toMatch(/patch\(\{ x: clampPositionField\(x\) \}\)/);
+    expect(panelSource).toMatch(/patch\(\{ y: clampPositionField\(y\) \}\)/);
   });
 
   it("SOURCE — the W and H consumers route through clampSizeField (the floor-only forms gone)", () => {
     // THE DEFECT PIN: pre-fix the fields carried the type-aware floors
     // inline with no ceiling.
+    // Session 104 (S104-A — a legitimate contract update): the guarded
+    // patch helper wraps the clamps.
     expect(panelSource).toMatch(
-      /update\(\{ width: clampSizeField\(width, element\.type\) \}\)/,
+      /patch\(\{ width: clampSizeField\(width, element\.type\) \}\)/,
     );
     expect(panelSource).toMatch(
-      /update\(\{ height: clampSizeField\(height, element\.type\) \}\)/,
+      /patch\(\{ height: clampSizeField\(height, element\.type\) \}\)/,
     );
   });
 
   it("SOURCE — the Font Size consumer routes through clampFontSizeField (the floor-only form gone)", () => {
+    // Session 104 (S104-A — a legitimate contract update): the guarded
+    // patch helper wraps the clamp.
     expect(panelSource).toMatch(
-      /update\(\{ fontSize: clampFontSizeField\(fontSize\) \}\)/,
+      /patch\(\{ fontSize: clampFontSizeField\(fontSize\) \}\)/,
     );
   });
 

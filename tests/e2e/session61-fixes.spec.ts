@@ -317,7 +317,9 @@ test.describe("session 61 — the pagehide keepalive flush (S61-I / A-3)", () =>
 test.afterAll(async () => {
   const ctx = await request.newContext({
     storageState: "tests/e2e/.auth/user.json",
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3100",
+    // Session 104 (S104-F / B-L2): the fallback derives from E2E_PORT like
+    // the config — never an orphaned hardcoded port.
+    baseURL: process.env.E2E_BASE_URL ?? `http://localhost:${process.env.E2E_PORT ?? 3100}`,
   });
   try {
     const res = await ctx.get(`/api/projects?search=${encodeURIComponent(FIXTURE_NAME)}`);

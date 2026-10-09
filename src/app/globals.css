@@ -65,6 +65,14 @@
      enumeration itself — the consumed-vs-pinned difference must stay
      EMPTY, so this block's own rule can never silently falsify
      again. */
+  /* Session 104 (S104-D / A-L2 — the F81 token-indirection class at the
+     plain-CSS surface): white joins the block explicitly — the
+     .editor-range thumb's `background: #fff` duplicated the token
+     bg-white/text-white consume live at 52+ sites (the S95-A sweep
+     enumerated only its own family). The explicit member is a no-op
+     against the v4 default (white is #ffffff in both v3 and v4) — the
+     future re-pin surface now includes the sliders. */
+  --color-white: #ffffff;
   --color-blue-100: #dbeafe;
   --color-blue-200: #bfdbfe;
   --color-blue-800: #1e40af;
@@ -231,7 +239,10 @@
   height: 16px;
   width: 16px;
   border-radius: 9999px;
-  background: #fff;
+  /* Session 104 (S104-D / A-L2): the token, not the literal — a future
+     re-pin of --color-white now reaches the slider thumbs with every
+     utility site (the scrollbar-thumb/track-fill precedent). */
+  background: var(--color-white);
   border: 1px solid rgba(23, 23, 23, 0.5);
   /* Center the 16px thumb on the 6px webkit track. */
   margin-top: -5px;
@@ -250,6 +261,7 @@
   height: 16px;
   width: 16px;
   border-radius: 9999px;
-  background: #fff;
+  /* Session 104 (S104-D / A-L2): the token, not the literal. */
+  background: var(--color-white);
   border: 1px solid rgba(23, 23, 23, 0.5);
 }

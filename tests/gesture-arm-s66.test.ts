@@ -144,11 +144,17 @@ describe("the focus-begin retirement (session 66, S66-A / A-4)", () => {
     for (const name of ["NumberField", "GuardedNumberInput"]) {
       const w = componentWindow(panelSource, name);
       expect(w).toMatch(/sliderGesture\.finish\("field"\)/);
-      expect(w).toMatch(/sliderGesture\.textTick\("field"\)/);
-      const tickIdx = w.indexOf('sliderGesture.textTick("field")');
+      // Session 104 (S104-A — a legitimate contract update): the tick
+      // became the arm/mark split (the no-op commit family's seventh
+      // member) — the arm precedes the commit (the pre-change snapshot
+      // contract), the mark follows a REAL commit only.
+      expect(w).toMatch(/sliderGesture\.armText\("field"\)/);
+      const armIdx = w.indexOf('sliderGesture.armText("field")');
       const commitIdx = w.indexOf("onChange(parsed)");
-      expect(tickIdx).toBeGreaterThan(-1);
-      expect(commitIdx).toBeGreaterThan(tickIdx);
+      const markIdx = w.indexOf("sliderGesture.markText()");
+      expect(armIdx).toBeGreaterThan(-1);
+      expect(commitIdx).toBeGreaterThan(armIdx);
+      expect(markIdx).toBeGreaterThan(commitIdx);
     }
   });
 

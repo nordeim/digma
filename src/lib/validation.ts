@@ -23,7 +23,15 @@ export function isElementType(value: string): boolean {
   return ELEMENT_TYPES.has(value);
 }
 
-/** Accepts #RGB / #RRGGBB hex colors; falls back to the canvas default. */
+/**
+ * Accepts #RGB / #RRGGBB hex colors; falls back to the canvas default.
+ *
+ * Session 104 (S104-C / A-L3): the default param's literal IS the
+ * canvas-background datum (DEFAULT_CANVAS_BACKGROUND in editor.ts) —
+ * kept literal here because editor.ts imports this module (the
+ * circular-import constraint; the S95-A provenance-comment precedent).
+ * The no-fallback call sites carry their own domain defaults.
+ */
 export function clampColor(value: string, fallback = "#0D1117"): string {
   const trimmed = value?.trim();
   if (trimmed && HEX_COLOR.test(trimmed)) return trimmed;

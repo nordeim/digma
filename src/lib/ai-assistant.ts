@@ -294,7 +294,11 @@ export function sanitizeElementSummary(raw: string): string {
   return flattened.slice(0, 500);
 }
 
-export type LlmOperation = { op: string; element?: Record<string, unknown>; ids?: unknown; patch?: Record<string, unknown> };
+// Session 104 (S104-I / B-I1 — the type-level F79 census): the export
+// keyword drops — self-consumed only (sanitizeLlmOperations's own
+// casts; zero external importers — every "LlmOperation" hit elsewhere
+// is the sanitizeLlmOperations substring).
+type LlmOperation = { op: string; element?: Record<string, unknown>; ids?: unknown; patch?: Record<string, unknown> };
 
 export function sanitizeLlmOperations(
   raw: unknown,

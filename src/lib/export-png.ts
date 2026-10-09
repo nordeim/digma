@@ -41,6 +41,7 @@
 import {
   canvasFontFamily,
   FALLBACK_WHITE,
+  DEFAULT_CANVAS_BACKGROUND,
   fillPaintFor,
   parseGradient,
   type DesignElementDTO,
@@ -52,7 +53,10 @@ export const EXPORT_BOARD_WIDTH = 1000;
 export const EXPORT_BOARD_HEIGHT = 700;
 
 /** The raster multiplier (2× → a 2000×1400 PNG). */
-export const EXPORT_SCALE = 2;
+// Session 104 (S104-I / A-I2 — the F79 dead-export class): the export
+// keyword drops — its only consumer is svgToPngBlob's own default
+// parameter (zero external importers).
+const EXPORT_SCALE = 2;
 
 export type ExportOptions = {
   backgroundColor?: string;
@@ -240,7 +244,7 @@ export function elementsToSvg(
 ): string {
   const width = options.width ?? EXPORT_BOARD_WIDTH;
   const height = options.height ?? EXPORT_BOARD_HEIGHT;
-  const backgroundColor = options.backgroundColor ?? "#0D1117";
+  const backgroundColor = options.backgroundColor ?? DEFAULT_CANVAS_BACKGROUND;
 
   const visible = elements.filter((el) => el.visible);
   const defs: string[] = [];

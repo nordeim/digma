@@ -47,7 +47,11 @@ describe("NumberField — the field-surface wiring (session 65, S65-C / B-2)", (
     const w = componentWindow("NumberField");
     expect(w).not.toMatch(/onFocus=\{\(\) => sliderGesture\.begin/);
     expect(w).toMatch(/sliderGesture\.finish\("field"\)/);
-    expect(w).toMatch(/sliderGesture\.textTick\(/);
+    // Session 104 (S104-A — a legitimate contract update): the number
+    // fields left textTick for the arm/mark split (the no-op commit
+    // family's seventh member) — the arm is armText's begin-on-demand.
+    expect(w).toMatch(/sliderGesture\.armText\("field"\)/);
+    expect(w).toMatch(/sliderGesture\.markText\(\)/);
   });
 
   it("the committing change branch feeds the idle-coalesced tick BEFORE the value commit", () => {
@@ -61,15 +65,23 @@ describe("NumberField — the field-surface wiring (session 65, S65-C / B-2)", (
     // "field" so this input's own blur terminal ends the burst — the
     // hardcoded text label made the blur a no-op once the focus arm
     // retired).
+    // Session 104 (S104-A — a legitimate contract update): the branch
+    // gained the same-value guard (a retype of the current value is not
+    // a commit) and the arm/mark split — the arm keeps its BEFORE-commit
+    // ordering (the snapshot captures the pre-change state); the mark
+    // lands only on a consumer-reported real commit.
     const w = componentWindow("NumberField");
-    const m = w.match(/if \(Number\.isFinite\(parsed\)\) \{([\s\S]*?)\n\s*\}/);
+    const m = w.match(/if \(Number\.isFinite\(parsed\) && parsed !== value\) \{([\s\S]*?)\n\s*\}/);
     expect(m).not.toBeNull();
-    expect(m![1]).toMatch(/sliderGesture\.textTick\("field"\)/);
+    expect(m![1]).toMatch(/sliderGesture\.armText\("field"\)/);
     expect(m![1]).toMatch(/onChange\(parsed\)/);
-    const tickIdx = m![1].indexOf('sliderGesture.textTick("field")');
+    expect(m![1]).toMatch(/sliderGesture\.markText\(\)/);
+    const armIdx = m![1].indexOf('sliderGesture.armText("field")');
     const commitIdx = m![1].indexOf("onChange(parsed)");
-    expect(tickIdx).toBeGreaterThan(-1);
-    expect(commitIdx).toBeGreaterThan(tickIdx);
+    const markIdx = m![1].indexOf("sliderGesture.markText()");
+    expect(armIdx).toBeGreaterThan(-1);
+    expect(commitIdx).toBeGreaterThan(armIdx);
+    expect(markIdx).toBeGreaterThan(commitIdx);
   });
 
   it("the empty-draft guard survives (the never-commit-an-empty-prefix contract)", () => {
@@ -89,17 +101,25 @@ describe("GuardedNumberInput — the same wiring on the inline form (session 65,
     const w = componentWindow("GuardedNumberInput");
     expect(w).not.toMatch(/onFocus=\{\(\) => sliderGesture\.begin/);
     expect(w).toMatch(/sliderGesture\.finish\("field"\)/);
-    expect(w).toMatch(/sliderGesture\.textTick\(/);
+    // Session 104 (S104-A — a legitimate contract update): the inline
+    // form carries NumberField's full contract — the arm/mark split
+    // included.
+    expect(w).toMatch(/sliderGesture\.armText\("field"\)/);
+    expect(w).toMatch(/sliderGesture\.markText\(\)/);
   });
 
   it("the committing change branch feeds the idle-coalesced tick before the value commit", () => {
     // Session 66 (S66-A, en-route): the FIELD surface token — the
     // blur terminal matches the arm's surface.
     const w = componentWindow("GuardedNumberInput");
-    const m = w.match(/if \(Number\.isFinite\(parsed\)\) \{([\s\S]*?)\n\s*\}/);
+    // Session 104 (S104-A — a legitimate contract update): the same
+    // guarded form as NumberField (the same-value guard + the arm/mark
+    // split).
+    const m = w.match(/if \(Number\.isFinite\(parsed\) && parsed !== value\) \{([\s\S]*?)\n\s*\}/);
     expect(m).not.toBeNull();
-    expect(m![1]).toMatch(/sliderGesture\.textTick\("field"\)/);
+    expect(m![1]).toMatch(/sliderGesture\.armText\("field"\)/);
     expect(m![1]).toMatch(/onChange\(parsed\)/);
+    expect(m![1]).toMatch(/sliderGesture\.markText\(\)/);
   });
 
   it("the abandoned-draft blur restore survives (the input never dead-ends empty)", () => {
