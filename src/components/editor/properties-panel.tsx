@@ -19,6 +19,7 @@ import {
   defaultGradient,
   downscaledDimensions,
   parseGradient,
+  patchDiffers,
   rangeFillPercent,
   removeGradientStop,
   shouldDownscale,
@@ -652,7 +653,13 @@ function GradientPanel({
             size="sm"
             className="flex-1"
             aria-pressed={gradient.type === "linear"}
-            onClick={() => apply({ ...gradient, type: "linear" })}
+            onClick={() => {
+              // Session 102 (S102-E / A-L1): the no-op bail — clicking the
+              // already-active gradient type must not push a history
+              // snapshot for a byte-identical list (the S78-C doctrine's
+              // click/select completion, riding the ONE patchDiffers seam).
+              if (patchDiffers(gradient, { type: "linear" })) apply({ ...gradient, type: "linear" });
+            }}
           >
             Linear
           </Button>
@@ -662,7 +669,10 @@ function GradientPanel({
             size="sm"
             className="flex-1"
             aria-pressed={gradient.type === "radial"}
-            onClick={() => apply({ ...gradient, type: "radial" })}
+            onClick={() => {
+              // Session 102 (S102-E / A-L1): the radial twin of the no-op bail.
+              if (patchDiffers(gradient, { type: "radial" })) apply({ ...gradient, type: "radial" });
+            }}
           >
             Radial
           </Button>
@@ -932,6 +942,12 @@ function ImagePanel({
           >
             <ImageIcon className="h-8 w-8 text-gray-400" aria-hidden />
             <span className="text-sm text-gray-400">{busy ? "Reading image…" : "Click to upload image"}</span>
+            {/* Session 102 (S102-G / A-I4): the visible hint is the
+                REFERENCE-MEASURED text (PAD RA-54) and deliberately
+                under-lists the accepted families — the accept regex and
+                the rejection toast below carry the honest five-family
+                inventory (PNG, JPG, GIF, WebP, SVG); the visible text is
+                parity, the toast is the truth. */}
             <span className="text-xs text-gray-500">PNG, JPG, SVG</span>
           </label>
         </div>
@@ -947,7 +963,11 @@ function ImagePanel({
           <span className="text-xs font-medium text-gray-300">Background Size</span>
           <Select
             value={element.fillImageFit ?? "cover"}
-            onValueChange={(fit) => update({ fillImageFit: fit })}
+            onValueChange={(fit) => {
+              // Session 102 (S102-E / A-L1): the no-op bail — re-selecting the
+              // current Background Size must not corrupt history.
+              if (patchDiffers(element, { fillImageFit: fit })) update({ fillImageFit: fit });
+            }}
           >
             <SelectTrigger aria-label="Background Size" className="mt-1 h-8 border-editor-border bg-editor-bg text-sm text-white">
               <SelectValue />
@@ -1048,7 +1068,11 @@ export function TextSection({
         <span className="text-xs font-medium text-gray-300">Font Family</span>
         <Select
           value={element.fontFamily ?? "Inter"}
-          onValueChange={(fontFamily) => update({ fontFamily })}
+          onValueChange={(fontFamily) => {
+            // Session 102 (S102-E / A-L1): the no-op bail — re-selecting the
+            // current Font Family must not corrupt history.
+            if (patchDiffers(element, { fontFamily })) update({ fontFamily });
+          }}
         >
           <SelectTrigger aria-label="Font Family" className="mt-1 h-8">
             <SelectValue />
@@ -1083,7 +1107,12 @@ export function TextSection({
                 type="button"
                 aria-label={`Align ${align}`}
                 aria-pressed={active}
-                onClick={() => update({ textAlign: align })}
+                onClick={() => {
+                  // Session 102 (S102-E / A-L1): the no-op bail — clicking the
+                  // already-active alignment must not push a history snapshot,
+                  // wipe redo, flip the badge, and PUT a byte-identical list.
+                  if (patchDiffers(element, { textAlign: align })) update({ textAlign: align });
+                }}
                 className={`inline-flex h-8 w-10 items-center justify-center rounded-md border border-editor-border transition-colors ${
                   active
                     ? "bg-white text-gray-900 shadow"

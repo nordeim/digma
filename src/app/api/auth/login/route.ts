@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { generateVerifyCode, setSessionCookie, timingEqualizerHash, verifyPassword } from "@/lib/auth";
 import { ok, fail } from "@/lib/api";
@@ -66,7 +67,20 @@ export async function POST(request: NextRequest) {
   // deviation ledger.
   if (!user.verified) {
     const verifyCode = generateVerifyCode();
-    await db.user.update({ where: { id: user.id }, data: { verifyCode, verifyAttempts: 0 } });
+    // Session 102 (S102-B / B-L1): the P2025 envelope catch joins the
+    // route family's guard form — a row vanishing mid-request (the
+    // unreachable-via-API class; no user-delete endpoint exists)
+    // answers the 404 envelope, never a 500 past it. This was the
+    // THIRD bare site (the B101-I3 ledger counted two); the family
+    // closes to zero.
+    try {
+      await db.user.update({ where: { id: user.id }, data: { verifyCode, verifyAttempts: 0 } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        return fail("NOT_FOUND", "User not found", 404);
+      }
+      throw error;
+    }
     // Session 67 (S67-C / M-3): the OTP suppression knob — the recovery
     // path's delivered code nulls under DIGMA_DISABLE_IN_APP_OTP=1, the
     // same form register's and resend's carry.

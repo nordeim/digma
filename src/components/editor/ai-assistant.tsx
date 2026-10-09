@@ -197,7 +197,14 @@ export function AiAssistant() {
         if (operation.element.fontSize !== null && operation.element.fontSize !== undefined) {
           partial.fontSize = operation.element.fontSize;
         }
-        if (operation.element.radius) {
+        // Session 102 (S102-G / A-I2): the strict sibling form — the
+        // fill/text/fontSize gates above are null-and-undefined checks;
+        // the radius rode truthiness (the F88 family's last
+        // coercion-shaped member at this seam). Behaviorally identical
+        // today (the sanitizer clamps radius to 0..500 and 0 equals the
+        // defaultElementFor default) — the form alignment closes the
+        // family.
+        if (operation.element.radius !== null && operation.element.radius !== undefined) {
           partial.radius = operation.element.radius;
         }
         // Session 61 (S61-F / A-L-5): the honest count — the store clamps

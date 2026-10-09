@@ -149,7 +149,11 @@ describe("the S85-E small-honesty batch", () => {
     // doc-lows-s86's reality-derived pin (grep the spec files, parse the
     // header's number, assert equality — no second copy can rot).
     expect(ENV_EXAMPLE).toMatch(/read by the Playwright layer/i);
-    expect(ENV_EXAMPLE).toMatch(/six spec files/i);
+    // Session 102 (S102-D): re-anchored six -> seven — auth.spec joined
+    // the E2E_BASE_URL reader family (the from_url guard derives its
+    // expected origin from the knob); the count stays reality-derived
+    // in doc-lows-s86's live pin.
+    expect(ENV_EXAMPLE).toMatch(/seven spec files/i);
     expect(ENV_EXAMPLE).toMatch(/E2E_PORT/);
     expect(ENV_EXAMPLE).toMatch(/E2E_BASE_URL/);
   });

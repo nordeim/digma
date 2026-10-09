@@ -1937,13 +1937,22 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 properties surface — the bottom-right mirror of the zoom
                 cluster, visible only below lg (where the properties panel
                 does not exist) and for any single selected element. See
-                MobilePropertiesEditor. */}
-            <MobilePropertiesEditor />
+                MobilePropertiesEditor.
+                Session 102 (S102-F / A-I1): the MOUNT joins the S75-E
+                doctrine — the wrapper's lg:hidden was CSS-only, so the
+                component stayed mounted (its selector running an O(n)
+                find on every store commit) at ANY viewport. The !isLg
+                gate unmounts it above lg entirely; the server snapshot
+                (true) leaves the chips absent server-side, added at
+                below-lg hydration — the same semantics the S75-E pins
+                describe. */}
+            {!isLg && <MobilePropertiesEditor />}
             {/* Session 53 (S53-C): the canvas-properties counterpart —
                 the same bottom-right slot when NOTHING is selected (the
                 two chips are mutually exclusive). See
-                MobileCanvasProperties. */}
-            <MobileCanvasProperties />
+                MobileCanvasProperties. The S102-F mount gate applies to
+                this twin identically. */}
+            {!isLg && <MobileCanvasProperties />}
           </div>
 
           {/* AI assistant — bottom of the canvas column. The reference wraps

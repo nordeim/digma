@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+// Session 102 (S102-D / B-L3): the from_url guard's expected origin
+// derives from the suite's own knob — the request-context specs' form
+// (E2E_BASE_URL, defaulted to the config's own E2E_PORT default) —
+// never a hardcoded port that an E2E_PORT override would orphan.
+const E2E_ORIGIN = process.env.E2E_BASE_URL ?? "http://localhost:3100";
+const APP_ROOT_URL = new RegExp(`^${E2E_ORIGIN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/$`);
+
 // Login surface: the /login route renders the reference auth card, rejects
 // bad credentials, signs the demo user in, and honors authenticated visits.
 // This file OPTS OUT of the shared storageState (empty cookies) because it
@@ -344,7 +351,7 @@ test.describe("from_url open-redirect guard (session 58, S58-C / A-M-3)", () => 
     // THE RED PIN: pre-fix the router hard-navigated to the attacker
     // origin right after the session opened. Post-fix the guard falls
     // back to the app root — the workspace greeting renders.
-    await expect(page).toHaveURL(/localhost:3100\/$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(APP_ROOT_URL, { timeout: 15_000 });
     await expect(
       page.getByRole("heading", { level: 1 }).filter({ hasText: /Good (morning|afternoon|evening)/ })
     ).toBeVisible();

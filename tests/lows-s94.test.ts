@@ -82,8 +82,8 @@ const hexClassHexes = hexClassSites.map((m) => m.match(/#[0-9a-fA-F]{3,8}/)?.[0]
 // 1158 -> 1165 unit / 155 -> 156 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "1271";
-const FILES = "163";
+const UNIT = "1292";
+const FILES = "164";
 
 // ---------------------------------------------------------------------------
 // S94-A — the scrollbar-thumb token indirection (the migration's own

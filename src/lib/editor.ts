@@ -309,6 +309,14 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return tag === "textarea" || tag === "select" || el.isContentEditable;
 }
 
+/** Session 102 (S102-G / A-I3 — the F35e two-spellings class): the
+ * clamp-domain bounds, named and single-sourced. The helpers below
+ * and buildElementRow's row-builder spellings hand-mirrored the
+ * ±100000/100000 literals (two maps of one domain inside one file);
+ * both spellings now ride these named members. */
+export const POSITION_BOUND = 100000;
+export const SIZE_MAX = 100000;
+
 /** Session 84 (S84-B — the thirty-second audit's A84-L1): the panel
  * number-field clamps, single-sourced. The properties panel's X/Y/W/H
  * and Font Size fields lacked the server's bounds (buildElementRow
@@ -321,7 +329,7 @@ export function isTypingTarget(target: EventTarget | null): boolean {
  * properties Sheet rides the SHARED PropertiesSections composition, so
  * one seam covers both surfaces. */
 export function clampPositionField(value: number): number {
-  return Math.min(Math.max(value, -100000), 100000);
+  return Math.min(Math.max(value, -POSITION_BOUND), POSITION_BOUND);
 }
 
 /** The W/H form: the type-aware floor survives (a line allows a 0
@@ -329,7 +337,7 @@ export function clampPositionField(value: number): number {
  * server's 100000 ceiling joins it. */
 export function clampSizeField(value: number, type: ElementType): number {
   const floor = type === "line" ? 0 : 1;
-  return Math.min(Math.max(value, floor), 100000);
+  return Math.min(Math.max(value, floor), SIZE_MAX);
 }
 
 export function clampFontSizeField(value: number): number {
@@ -682,6 +690,19 @@ export function clampZoom(zoom: number): number {
   return Math.min(Math.max(zoom, 0.1), 5);
 }
 
+/** Session 102 (S102-E / A-L1 — the S78-C doctrine's click/select
+ * completion): a discrete control re-committing its CURRENT value is
+ * NOT a no-op at the store — the unconditional commit path pushes a
+ * history snapshot, wipes redo, flips the saveState badge, and
+ * schedules an autosave PUT of a byte-identical list. The blur-commit
+ * siblings have carried the changed-value guard since S78-C; the
+ * click/select family (Text Align buttons, Gradient Type buttons, the
+ * Font Family and Background Size selects) now rides this ONE seam.
+ * The empty patch answers false (nothing to commit). */
+export function patchDiffers<T extends object>(element: T, patch: Partial<T>): boolean {
+  return (Object.keys(patch) as (keyof T)[]).some((key) => patch[key] !== element[key]);
+}
+
 // ---------------------------------------------------------------------
 // Session 41 (RA-54) — the Fill/Gradient/Image seams. The reference's
 // segmented control is a fully functional three-tab editor; these pure
@@ -929,10 +950,10 @@ export function buildElementRow(
   return {
     type,
     name: clampText(raw?.name, 80) ?? defaultNameFor(type as ElementType, index),
-    x: clampNumber(raw?.x, -100000, 100000, 0),
-    y: clampNumber(raw?.y, -100000, 100000, 0),
-    width: clampNumber(raw?.width, 0, 100000, 100),
-    height: clampNumber(raw?.height, 0, 100000, 100),
+    x: clampNumber(raw?.x, -POSITION_BOUND, POSITION_BOUND, 0),
+    y: clampNumber(raw?.y, -POSITION_BOUND, POSITION_BOUND, 0),
+    width: clampNumber(raw?.width, 0, SIZE_MAX, 100),
+    height: clampNumber(raw?.height, 0, SIZE_MAX, 100),
     rotation: clampNumber(raw?.rotation, -3600, 3600, 0),
     scale: clampNumber(raw?.scale, 0.05, 20, 1),
     opacity: clampNumber(raw?.opacity, 0, 1, 1),

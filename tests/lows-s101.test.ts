@@ -60,8 +60,8 @@ import { buildElementRow } from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1271";
-const FILES = "163";
+const UNIT = "1292";
+const FILES = "164";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -133,7 +133,7 @@ describe("S101-A the strict boolean acceptance (B101-L1 — the headline)", () =
     // GREEN by design: every OTHER field already validates strictly —
     // the S101-A fix brings the last two members into the family.
     expect(EDITOR_LIB).toMatch(/: clampColor\(String\(raw\.fill\), DEFAULT_FILL\)/);
-    expect(EDITOR_LIB).toMatch(/: clampNumber\(raw\?\.width, 0, 100000, 100\)/);
+    expect(EDITOR_LIB).toMatch(/: clampNumber\(raw\?\.width, 0, SIZE_MAX, 100\)/);
     expect(EDITOR_LIB).toMatch(/: clampTextContent\(raw\?\.text, 2000\)/);
   });
 });

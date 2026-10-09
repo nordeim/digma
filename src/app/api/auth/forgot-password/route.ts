@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { randomBytes } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { readBoundedJson } from "@/lib/validation";
@@ -71,14 +72,31 @@ export async function POST(request: NextRequest) {
   const user = await db.user.findUnique({ where: { email } });
   if (user) {
     const token = randomBytes(32).toString("hex");
-    await db.user.update({
-      where: { id: user.id },
-      data: {
-        resetToken: token,
-        resetTokenExpiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
-      },
-    });
-    if (inAppResetEnabled) {
+    // Session 102 (S102-B / B-L1): the P2025 guard joins the family in
+    // this route's OWN doctrine-preserving form — a row vanishing
+    // mid-request (the unreachable-via-API class; no user-delete
+    // endpoint exists) is an unknown email by response time, so the
+    // guard SWALLOWS to the no-enumeration 200 and the resetUrl stays
+    // null (never deliver a link the store cannot honor — the token
+    // never persisted).
+    let stored = false;
+    try {
+      await db.user.update({
+        where: { id: user.id },
+        data: {
+          resetToken: token,
+          resetTokenExpiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+        },
+      });
+      stored = true;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        stored = false;
+      } else {
+        throw error;
+      }
+    }
+    if (stored && inAppResetEnabled) {
       resetUrl = `/reset-password?token=${token}`;
     }
   }
