@@ -72,8 +72,8 @@ const PAD = readFileSync(
 // 1165 -> 1174 unit / 156 -> 157 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "1382";
-const FILES = "169";
+const UNIT = "1392";
+const FILES = "170";
 
 // ---------------------------------------------------------------------------
 // S95-A — the .editor-range track-fill token indirection (the F81

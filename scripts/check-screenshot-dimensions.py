@@ -701,6 +701,14 @@ S116.update({
 # on the seeded flows).
 S117 = dict(S116)
 
+# s118 mapping (session 108 — the 84th reference audit's evidence set + the
+# S108 capture set). The standing S117 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S108 tree); no NEW
+# witness this session (the S108 pass is script-level + record-level with
+# identical observable behavior on the seeded flows — the SEO gate's served
+# bodies are the capture script's birth-labeled flip witness's own datum).
+S118 = dict(S117)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -789,6 +797,8 @@ def expected_for(name: str):
         return S116.get(Path(name).stem)
     if name.startswith("ref-audit-s117/"):
         return S117.get(Path(name).stem)
+    if name.startswith("ref-audit-s118/"):
+        return S118.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -887,6 +897,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s115").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s116").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s117").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s118").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
