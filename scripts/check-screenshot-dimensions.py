@@ -709,6 +709,15 @@ S117 = dict(S116)
 # bodies are the capture script's birth-labeled flip witness's own datum).
 S118 = dict(S117)
 
+# s119 mapping (session 109 — the 85th reference audit's evidence set + the
+# S109 capture set). The standing S118 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S109 tree); no NEW
+# witness this session (the S109 pass is a store-guard-internals +
+# record-level change with identical observable behavior on the seeded
+# flows — a zero-match updateElements/scaleElements commit is unreachable
+# through any seeded journey's normal flow).
+S119 = dict(S118)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -799,6 +808,8 @@ def expected_for(name: str):
         return S117.get(Path(name).stem)
     if name.startswith("ref-audit-s118/"):
         return S118.get(Path(name).stem)
+    if name.startswith("ref-audit-s119/"):
+        return S119.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -898,6 +909,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s116").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s117").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s118").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s119").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

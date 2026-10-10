@@ -301,7 +301,23 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   updateElements: (ids, patch, commit = true) =>
     set((state) => {
       const idSet = new Set(ids);
-      const next = state.elements.map((el) => (idSet.has(el.id) ? { ...el, ...patch } : el));
+      // Session 109 (S109-A — the fifty-seventh audit's A-L1): the
+      // no-op commit family's STORE-LEVEL member. moveElements carried
+      // the id-match guard (`moved ? {…} : {}`); this pair unconditionally
+      // flipped saveState and pushed an inert snapshot + wiped redo when
+      // NO id matched — the delete-mid-window reachability through the
+      // panel's commitUpload `?? element` floor (the S107-A guard's own
+      // comment claimed this seam already no-oped; the membership scan
+      // blocked the PATCH, never the commit's state transition). A
+      // zero-match commit never flips saveState, never pushes history,
+      // never wipes redo — never arms the PUT.
+      let matched = false;
+      const next = state.elements.map((el) => {
+        if (!idSet.has(el.id)) return el;
+        matched = true;
+        return { ...el, ...patch };
+      });
+      if (!matched) return {};
       const base: Partial<EditorStore> = { elements: next, saveState: "unsaved" };
       if (commit) {
         return { ...base, past: [...state.past, snapshotOf(state)].slice(-60), future: [] };
@@ -335,6 +351,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
             }
           : el,
       );
+      // Session 109 (S109-A — the fifty-seventh audit's A-L1): the same
+      // id-match guard as updateElements — a zero-match scale never
+      // flips saveState, never pushes history, never wipes redo (the
+      // AI apply's scale arm passes the LLM's id list; a stale id in
+      // the batch must not arm a phantom PUT for the surviving members'
+      // sake, and an ALL-stale batch must arm nothing at all).
+      let matched = false;
+      for (const el of state.elements) if (idSet.has(el.id)) { matched = true; break; }
+      if (!matched) return {};
       // Session 80 (S80-C / A-L2): the optional commit mirrors
       // updateElements' own form — the AI apply's combined scale+patch
       // operation coalesces into ONE history entry through the gesture

@@ -1380,8 +1380,11 @@ export function EditorView({ user }: { user: HeaderUser }) {
   // the first run and stays false for the instance's lifetime.
   const firstRunRef = React.useRef(true);
 
-  // Load the project once — setState lands in the async continuation only.
-  // Unknown or missing projectId NEVER dead-ends: the editor opens in
+  // Load the project once — setState lands in the async prefix (after
+  // the same-project skip's early return — the S77-E placement: the
+  // call runs in the async function's SYNC prefix, before the first
+  // await, never in the effect's sync body directly). Unknown or
+  // missing projectId NEVER dead-ends: the editor opens in
   // "Untitled" mode (reference parity, ADR-009) and the first autosave
   // creates the backing project.
   React.useEffect(() => {

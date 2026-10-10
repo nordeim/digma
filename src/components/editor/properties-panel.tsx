@@ -990,8 +990,10 @@ function ImagePanel({
     // (possibly stale) prop; the STATE from the store — the panel's
     // own gesture seams' getState() form. The `?? element` floor keeps
     // the guard well-defined when the element was deleted mid-window
-    // (the patch then differs, and update() no-ops on the missing id
-    // through the store's own membership scan).
+    // (the patch then differs — and update() no-ops on the missing id
+    // at the STORE level through the S109-A id-match guard: a
+    // zero-match commit never flips saveState, never pushes history,
+    // never wipes redo, never arms the PUT).
     const live = useEditorStore.getState().elements.find((el) => el.id === element.id) ?? element;
     if (patchDiffers(live, patch)) update(patch);
   };
