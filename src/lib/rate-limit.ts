@@ -5,7 +5,7 @@
 
 export type RateBuckets = Map<string, { count: number; resetAt: number }>;
 
-export type RateLimitResult = {
+type RateLimitResult = {
   allowed: boolean;
   retryAfterSeconds: number;
 };

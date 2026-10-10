@@ -604,7 +604,7 @@ export function elementToStyle(el: DesignElementDTO): ElementStyle {
   return style;
 }
 
-export type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
+type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
 
 /** Content bounding box of a set of elements (used by thumbnails + zoom-to-fit).
  * VISUAL bounds: a scaled element occupies width*scale x height*scale —

@@ -980,7 +980,20 @@ function ImagePanel({
   const commitUpload = (fillImage: string) => {
     setBusy(false);
     const patch = { fillImage, fillGradient: null, fillImageFit: null };
-    if (patchDiffers(element, patch)) update(patch);
+    // Session 107 (S107-A — the fifty-fifth audit's A-I1): the guard
+    // reads the LIVE element, not the render-time prop. The FileReader
+    // + downscaleDataUrl continuation lands after an async window
+    // during which a fill change on the SAME element (a gradient
+    // applied, a color picked through a sibling tab) is invisible to
+    // a stale compare — the pre-fix form evaluated its truth against
+    // the PAST, mis-evaluating both directions. The id comes from the
+    // (possibly stale) prop; the STATE from the store — the panel's
+    // own gesture seams' getState() form. The `?? element` floor keeps
+    // the guard well-defined when the element was deleted mid-window
+    // (the patch then differs, and update() no-ops on the missing id
+    // through the store's own membership scan).
+    const live = useEditorStore.getState().elements.find((el) => el.id === element.id) ?? element;
+    if (patchDiffers(live, patch)) update(patch);
   };
 
   const readFile = (file: File | undefined) => {

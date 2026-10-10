@@ -54,8 +54,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1369";
-const FILES = "168";
+const UNIT = "1382";
+const FILES = "169";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -97,7 +97,14 @@ describe("S106-A the image-upload no-op commits (A-M1 — the headline, the fami
     const helper = w.match(/const commitUpload = \(fillImage: string\) => \{[\s\S]*?\n  \};/);
     expect(helper).not.toBeNull();
     expect(helper![0]).toMatch(/setBusy\(false\)/);
-    const guardIdx = helper![0].indexOf("patchDiffers(element, patch)");
+    // Session 107 (S107-A — a legitimate contract update): the guard's
+    // compare target moved from the render-time `element` prop to the
+    // LIVE store-derived element (`const live = useEditorStore
+    // .getState().elements.find(…) ?? element` — the fifty-fifth
+    // audit's A-I1: the async FileReader window made the stale-prop
+    // compare evaluate its truth against the past). The guard still
+    // precedes the update; the seam call itself is unchanged.
+    const guardIdx = helper![0].indexOf("patchDiffers(live, patch)");
     const updateIdx = helper![0].indexOf("update(patch)");
     expect(guardIdx).toBeGreaterThan(-1);
     expect(updateIdx).toBeGreaterThan(guardIdx);

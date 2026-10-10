@@ -692,6 +692,15 @@ S116.update({
     "clone-66-upload-noop": (1440, 900),
 })
 
+# s117 mapping (session 107 — the 83rd reference audit's evidence set + the
+# S107 capture set). The standing S116 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S107 tree — the s106-born
+# upload witness now reading the LIVE row through the S107-A guard, the
+# temporal member's own standing form); no NEW witness this session (the
+# S107 pass is a guard-internals change with identical observable behavior
+# on the seeded flows).
+S117 = dict(S116)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -778,6 +787,8 @@ def expected_for(name: str):
         return S115.get(Path(name).stem)
     if name.startswith("ref-audit-s116/"):
         return S116.get(Path(name).stem)
+    if name.startswith("ref-audit-s117/"):
+        return S117.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -875,6 +886,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s114").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s115").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s116").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s117").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
