@@ -268,6 +268,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const room = ELEMENT_LIMIT - state.elements.length;
     if (room <= 0) return [];
     const accepted = partials.slice(0, room);
+    // Session 110 (S110-A / A-I1 — the fifty-eighth audit's empty-batch
+    // member): the no-op commit family's store-level completion. An
+    // EMPTY batch with room>0 fell through to the set() below — pushing
+    // an inert history snapshot, wiping redo, flipping saveState
+    // "unsaved", AND CLEARING THE SELECTION (selectedIds: created.map
+    // on an empty array). The S61-F honest-return form: nothing
+    // created, nothing committed, the ids answer [].
+    if (accepted.length === 0) return [];
     const baseIndex = state.elements.length;
     const created = accepted.map((partial, i) => {
       const order = partial.sortOrder ?? baseIndex + i;
@@ -404,10 +412,27 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   deleteElements: (ids) =>
     set((state) => {
       const idSet = new Set(ids);
+      // Session 110 (S110-A / A-L1 — the fifty-eighth audit's headline):
+      // the no-op commit family's store-level completion. S109-A closed
+      // updateElements/scaleElements while this arm — their sibling —
+      // still committed the full transition on a ZERO-match delete (the
+      // filter yields a new same-content array; past pushes, redo wipes,
+      // saveState flips "unsaved", the PUT arms). The S109-A id-match
+      // form: a zero-match commit never flips saveState, never pushes
+      // history, never wipes redo — never arms the PUT.
+      let matched = false;
+      const next = state.elements.filter((el) => {
+        if (idSet.has(el.id)) {
+          matched = true;
+          return false;
+        }
+        return true;
+      });
+      if (!matched) return {};
       return {
         past: [...state.past, snapshotOf(state)].slice(-60),
         future: [],
-        elements: state.elements.filter((el) => !idSet.has(el.id)),
+        elements: next,
         selectedIds: state.selectedIds.filter((id) => !idSet.has(id)),
         saveState: "unsaved",
       };
@@ -452,39 +477,74 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     }),
 
   toggleVisibility: (id) =>
-    set((state) => ({
-      elements: state.elements.map((el) => (el.id === id ? { ...el, visible: !el.visible } : el)),
-      saveState: "unsaved",
-      // Session 56 (S56-A / L-3): an eye toggle is a real mutation — it
-      // joins the history-committed family (individually undoable;
-      // Ctrl+Z no longer jumps past it to an older action).
-      past: [...state.past, snapshotOf(state)].slice(-60),
-      future: [],
-    })),
+    set((state) => {
+      // Session 110 (S110-A / A-L1): the id-match guard — the no-op
+      // commit family's store-level completion (the S109-A form on the
+      // toggle pair; an unknown id never flips saveState, never pushes
+      // history, never wipes redo).
+      let matched = false;
+      const next = state.elements.map((el) => {
+        if (el.id !== id) return el;
+        matched = true;
+        return { ...el, visible: !el.visible };
+      });
+      if (!matched) return {};
+      return {
+        elements: next,
+        saveState: "unsaved",
+        // Session 56 (S56-A / L-3): an eye toggle is a real mutation — it
+        // joins the history-committed family (individually undoable;
+        // Ctrl+Z no longer jumps past it to an older action).
+        past: [...state.past, snapshotOf(state)].slice(-60),
+        future: [],
+      };
+    }),
 
   toggleLock: (id) =>
-    set((state) => ({
-      elements: state.elements.map((el) => (el.id === id ? { ...el, locked: !el.locked } : el)),
-      saveState: "unsaved",
-      // Session 56 (S56-A / L-3): the lock toggle too.
-      past: [...state.past, snapshotOf(state)].slice(-60),
-      future: [],
-    })),
+    set((state) => {
+      // Session 110 (S110-A / A-L1): the id-match guard — the toggle
+      // pair's other member (the S109-A form; an unknown id commits
+      // nothing).
+      let matched = false;
+      const next = state.elements.map((el) => {
+        if (el.id !== id) return el;
+        matched = true;
+        return { ...el, locked: !el.locked };
+      });
+      if (!matched) return {};
+      return {
+        elements: next,
+        saveState: "unsaved",
+        // Session 56 (S56-A / L-3): the lock toggle too.
+        past: [...state.past, snapshotOf(state)].slice(-60),
+        future: [],
+      };
+    }),
 
   setBackgroundColor: (color) =>
-    set((state) => ({
-      backgroundColor: color,
-      saveState: "unsaved",
-      // Session 66 (S66-B — the fourteenth audit's A-3): the
-      // gesture-aware commit, updateElements' form. The swatch's
-      // textTick-armed burst commits history-free here — the armed
-      // gesture's terminal endGesture pushes the ONE pre-picker
-      // snapshot. The pre-fix unconditional push meant every
-      // intermediate popup color landed a full history entry.
-      ...(state.gestureSnapshot
-        ? {}
-        : { past: [...state.past, snapshotOf(state)].slice(-60), future: [] }),
-    })),
+    set((state) => {
+      // Session 110 (S110-A / A-I2): the same-value guard — the no-op
+      // commit family's store-level completion, its last member. Both
+      // surfaces ride the guarded HexColorRow (the S103-A text-surface
+      // census), so a same-value call is unreachable today — but the
+      // family doctrine is layer-scoped, not caller-scoped (F96): a
+      // re-commit of the CURRENT color never flips saveState, never
+      // pushes history, never arms the PUT.
+      if (state.backgroundColor === color) return {};
+      return {
+        backgroundColor: color,
+        saveState: "unsaved",
+        // Session 66 (S66-B — the fourteenth audit's A-3): the
+        // gesture-aware commit, updateElements' form. The swatch's
+        // textTick-armed burst commits history-free here — the armed
+        // gesture's terminal endGesture pushes the ONE pre-picker
+        // snapshot. The pre-fix unconditional push meant every
+        // intermediate popup color landed a full history entry.
+        ...(state.gestureSnapshot
+          ? {}
+          : { past: [...state.past, snapshotOf(state)].slice(-60), future: [] }),
+      };
+    }),
 
   // Session 56 (S56-A): the gesture seam — see the type comment above.
   beginGesture: () => set((state) => ({ gestureSnapshot: snapshotOf(state) })),

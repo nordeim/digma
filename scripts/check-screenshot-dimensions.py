@@ -718,6 +718,15 @@ S118 = dict(S117)
 # through any seeded journey's normal flow).
 S119 = dict(S118)
 
+# s120 mapping (session 110 — the 86th reference audit's evidence set + the
+# S110 capture set). The standing S119 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S110 tree); no NEW
+# witness this session (the S110 pass is store-guard-internals +
+# script-gate + record-level with identical observable behavior on the
+# seeded flows — a zero-match deleteElements/toggleVisibility/toggleLock
+# commit is unreachable through any seeded journey's normal flow).
+S120 = dict(S119)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -810,6 +819,8 @@ def expected_for(name: str):
         return S118.get(Path(name).stem)
     if name.startswith("ref-audit-s119/"):
         return S119.get(Path(name).stem)
+    if name.startswith("ref-audit-s120/"):
+        return S120.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -910,6 +921,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s117").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s118").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s119").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s120").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
