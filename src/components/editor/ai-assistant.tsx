@@ -444,6 +444,14 @@ export function AiAssistant() {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok) {
+        // Session 106 (S106-B — A-L1): the S105-B closure restored the
+        // draft on the NETWORK failure only; this branch (a 500, a 429
+        // rate-limit, a 400) toasted "Please try again" and lost the
+        // typed prompt — the same draft-loss class, one branch over.
+        // The restore lands beside the toast (the scope-refusal branch
+        // stays exempt: a prompt sent under another canvas may not
+        // apply, restoring it there would be a lie about scope).
+        setInput(message);
         toast.error("Assistant unavailable", body?.error?.message ?? "Please try again.");
         return;
       }

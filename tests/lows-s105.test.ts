@@ -69,8 +69,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1356";
-const FILES = "167";
+const UNIT = "1369";
+const FILES = "168";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -192,8 +192,12 @@ describe("S105-A the color-swatch no-op commits (A-M1 — the headline, the fami
     // RED pre-fix: the census reads EIGHT (the S102-E five + the S103-A
     // gradient-stop button + the guardedUpdate helper + the stop
     // position) — the stop COLOR input is the ninth consumer.
+    // Session 106 (S106-A — a legitimate contract update): the upload
+    // commit helper joins the seam — the census grows to TEN (the
+    // file-input channel, the member that lived outside the control
+    // census entirely — lesson F93's very form).
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(9);
+    expect(guarded?.length).toBe(10);
   });
 });
 

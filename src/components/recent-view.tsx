@@ -118,11 +118,11 @@ function RecentListCard({
     // immediate (the grid-card variant's rationale).
     // Session 71 (S71-A / L-A1): the PATCH rides the ONE call() seam's
     // SILENT variant (the S61-H toast-less contract, now declared).
-    void call(`/api/projects/${project.id}`, {
+    void call(`/api/projects/${encodeURIComponent(project.id)}`, {
       method: "PATCH",
       body: JSON.stringify({ lastOpened: true }),
     }, { silent: true });
-    router.push(`/Editor?projectId=${project.id}`);
+    router.push(`/Editor?projectId=${encodeURIComponent(project.id)}`);
   }
 
   async function deleteProject() {
@@ -133,7 +133,7 @@ function RecentListCard({
     // route answers ok({ deleted: true }) — the pre-fix annotation
     // claimed a wrapper that never existed; honest by type now).
     const data = await call<{ deleted: boolean }>(
-      `/api/projects/${project.id}`,
+      `/api/projects/${encodeURIComponent(project.id)}`,
       { method: "DELETE" },
       { errorTitle: "Delete failed" },
     );
@@ -181,7 +181,7 @@ function RecentListCard({
             />
           ) : (
           <a
-            href={`/Editor?projectId=${project.id}`}
+            href={`/Editor?projectId=${encodeURIComponent(project.id)}`}
             onClick={(event) => {
               // Session 77 (S77-B / A-L1 — the twenty-fifth audit's
               // A-L1): a modified click (Cmd/Ctrl = new tab, Shift = new

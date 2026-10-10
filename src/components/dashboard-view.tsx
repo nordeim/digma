@@ -99,11 +99,11 @@ export function DashboardView({ user }: { user: HeaderUser }) {
     // router.push, so "Continue Working" and Recent ordering silently
     // disagreed with the card-family paths. The PATCH rides the call()
     // seam's SILENT variant (the S61-H fire-and-forget contract).
-    void call(`/api/projects/${projectId}`, {
+    void call(`/api/projects/${encodeURIComponent(projectId)}`, {
       method: "PATCH",
       body: JSON.stringify({ lastOpened: true }),
     }, { silent: true });
-    router.push(`/Editor?projectId=${projectId}`);
+    router.push(`/Editor?projectId=${encodeURIComponent(projectId)}`);
   }
 
   return (

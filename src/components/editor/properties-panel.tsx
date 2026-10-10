@@ -725,7 +725,13 @@ function GradientPanel({
   update: (patch: Partial<DesignElementDTO>) => void;
 }) {
   const gradient: GradientFill = parseGradient(element.fillGradient) ?? defaultGradient();
-  const apply = (next: GradientFill) => update({ fillGradient: JSON.stringify(next), fillImage: null });
+  // Session 106 (S106-D — A-I1): the S78-D sibling-clearing completion —
+  // the Solid tab clears all four fill fields and the upload path three;
+  // the gradient path cleared only fillImage. Zero paint-time impact
+  // (fillPaintFor reads fillImageFit only under a live fillImage) — the
+  // stored-data hygiene the doctrine owns.
+  const apply = (next: GradientFill) =>
+    update({ fillGradient: JSON.stringify(next), fillImage: null, fillImageFit: null });
   const setStop = (index: number, patch: Partial<GradientFill["stops"][number]>) =>
     apply({ ...gradient, stops: gradient.stops.map((stop, i) => (i === index ? { ...stop, ...patch } : stop)) });
 
@@ -957,6 +963,26 @@ function ImagePanel({
   const inputId = `image-upload-${element.id}`;
   const [busy, setBusy] = React.useState(false);
 
+  // Session 106 (S106-A — the fifty-fourth audit's A-M1): the no-op
+  // family's FILE-INPUT member. The S102-E/S103-A/S104-A/S105-A sweeps
+  // enumerated the controls' input modalities (click/select, text,
+  // number, color picker); the upload channel lived outside the control
+  // census entirely — and its re-fire affordance is deliberate (the
+  // hidden input's value reset allows the SAME file to re-fire
+  // onChange; the dropzone feeds the same reader). Re-uploading the
+  // element's CURRENT image re-committed a structurally identical
+  // patch — the inert snapshot, the wiped redo, the phantom Unsaved
+  // badge, and a ~500 KB full-list PUT re-run for nothing (the
+  // family's heaviest payload). Both branches ride ONE guard through
+  // this shared commit helper, the patch compared WHOLE — the
+  // fill-paint precedence doctrine makes { fillImage, fillGradient:
+  // null, fillImageFit: null } a unit, not three fields.
+  const commitUpload = (fillImage: string) => {
+    setBusy(false);
+    const patch = { fillImage, fillGradient: null, fillImageFit: null };
+    if (patchDiffers(element, patch)) update(patch);
+  };
+
   const readFile = (file: File | undefined) => {
     if (!file || busy) return;
     if (file.size > 500 * 1024) {
@@ -988,14 +1014,8 @@ function ImagePanel({
         // decode failure degrades to the original — the upload's own
         // contract, never a broken fill.
         downscaleDataUrl(dataUrl)
-          .then((stored) => {
-            setBusy(false);
-            update({ fillImage: stored, fillGradient: null, fillImageFit: null });
-          })
-          .catch(() => {
-            setBusy(false);
-            update({ fillImage: dataUrl, fillGradient: null, fillImageFit: null });
-          });
+          .then((stored) => commitUpload(stored))
+          .catch(() => commitUpload(dataUrl));
       } else {
         setBusy(false);
         toast.show({ title: "Unsupported image", description: "PNG, JPG, GIF, WebP, or SVG images are supported." });

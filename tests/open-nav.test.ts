@@ -58,7 +58,7 @@ describe("the immediate card open (session 61, S61-H / B-L-5)", () => {
     const end = cardSource.indexOf("router.push(", start);
     const body = cardSource.slice(start, end);
     expect(body).not.toMatch(/await\s+(fetch|call)\(/);
-    expect(body).toContain("void call(`/api/projects/${project.id}`, {");
+    expect(body).toContain("void call(`/api/projects/${encodeURIComponent(project.id)}`, {"); // Session 106 (S106-C): the id-encoding fold
     expect(body).toContain("{ silent: true }");
   });
 
@@ -69,7 +69,7 @@ describe("the immediate card open (session 61, S61-H / B-L-5)", () => {
     const end = recentSource.indexOf("router.push(", start);
     const body = recentSource.slice(start, end);
     expect(body).not.toMatch(/await\s+(fetch|call)\(/);
-    expect(body).toContain("void call(`/api/projects/${project.id}`, {");
+    expect(body).toContain("void call(`/api/projects/${encodeURIComponent(project.id)}`, {"); // Session 106 (S106-C): the id-encoding fold
     expect(body).toContain("{ silent: true }");
   });
 });

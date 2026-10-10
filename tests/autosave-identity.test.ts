@@ -117,7 +117,7 @@ describe("the autosave identity guards (session 57, S57-B / M-1 + M-2)", () => {
     // the freshly created project — the untitled content silently lost).
     // Anchor AFTER the elements PUT fetch — ensureProject's own POST body
     // matches the same JSON.stringify prefix.
-    const putIdx = seg.indexOf("fetch(`/api/projects/${projectId}/elements`");
+    const putIdx = seg.indexOf("fetch(`/api/projects/${encodeURIComponent(projectId)}/elements`"); // Session 106 (S106-C): the id-encoding fold
     expect(putIdx).toBeGreaterThan(-1);
     const afterPut = seg.slice(putIdx);
     const bodyMatch = afterPut.match(/body: JSON\.stringify\(\{([\s\S]*?)\}\),/);

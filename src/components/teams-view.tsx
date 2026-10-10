@@ -188,7 +188,7 @@ function TeamCard({
   async function deleteTeam() {
     if (deleting) return;
     setDeleting(true);
-    const data = await call<{ deleted: boolean }>(`/api/teams/${team.id}`, { method: "DELETE" });
+    const data = await call<{ deleted: boolean }>(`/api/teams/${encodeURIComponent(team.id)}`, { method: "DELETE" });
     if (data) {
       onDeleted(team.id);
       toast.success("Team deleted", team.name);
@@ -458,7 +458,7 @@ function InviteMemberDialog({
     if (!team || submitting) return;
     setSubmitting(true);
     try {
-      const data = await call<{ member: TeamMemberDTO }>(`/api/teams/${team.id}/members`, {
+      const data = await call<{ member: TeamMemberDTO }>(`/api/teams/${encodeURIComponent(team.id)}/members`, {
         method: "POST",
         body: JSON.stringify({ email: email.trim(), role: role.trim() || null }),
       });

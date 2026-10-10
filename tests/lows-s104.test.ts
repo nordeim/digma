@@ -68,8 +68,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1356";
-const FILES = "167";
+const UNIT = "1369";
+const FILES = "168";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -236,8 +236,11 @@ describe("S104-A the number-field no-op commits (A-M1 — the headline, the fami
     // — the census grows to NINE (the legitimate contract update; the
     // pre-S105 census closed at the number/position members while the
     // color-picker modality survived — lesson F92's very form).
+    // Session 106 (S106-A / A-M1): the upload commit helper joins the
+    // seam — the census grows to TEN (the file-input channel, the
+    // member that lived outside the control census entirely).
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(9);
+    expect(guarded?.length).toBe(10);
     expect(PANEL).toMatch(/patchDiffers\(element, \{ textAlign: align \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "linear" \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "radial" \}\)/);

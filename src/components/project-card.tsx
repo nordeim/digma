@@ -277,7 +277,7 @@ export function InlineProjectRename({
     // callback boundary and every consumer's id compare never matched:
     // the card title kept the stale name after a successful rename).
     const renamed = await call<{ project: ProjectSummaryDTO }>(
-      `/api/projects/${project.id}`,
+      `/api/projects/${encodeURIComponent(project.id)}`,
       {
         method: "PATCH",
         body: JSON.stringify({ name }),
@@ -392,11 +392,11 @@ export function ProjectCard({
     // Session 71 (S71-A / L-A1): the PATCH rides the ONE call() seam's
     // SILENT variant — the fire-and-forget family never toasts (the
     // S61-H contract, now declared instead of hand-rolled .catch).
-    void call(`/api/projects/${project.id}`, {
+    void call(`/api/projects/${encodeURIComponent(project.id)}`, {
       method: "PATCH",
       body: JSON.stringify({ lastOpened: true }),
     }, { silent: true });
-    router.push(`/Editor?projectId=${project.id}`);
+    router.push(`/Editor?projectId=${encodeURIComponent(project.id)}`);
   }
 
   async function deleteProject() {
@@ -409,7 +409,7 @@ export function ProjectCard({
     // truthiness but lied by type — a future data.project.id read
     // would crash past the type gate).
     const data = await call<{ deleted: boolean }>(
-      `/api/projects/${project.id}`,
+      `/api/projects/${encodeURIComponent(project.id)}`,
       { method: "DELETE" },
       { errorTitle: "Delete failed" },
     );

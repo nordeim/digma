@@ -126,7 +126,7 @@ describe("the Recent title anchor's modifier-click preservation (S77-B / A-L1)",
     // preventDefault()ed — Ctrl/Cmd/Shift/Alt+click was swallowed into
     // a same-tab SPA navigation.
     const m = recent.match(
-      /<a\s+href=\{`\/Editor\?projectId=\$\{project\.id\}`\}\s*onClick=\{\(event\) => \{([\s\S]*?)\}\}/,
+      /<a\s+href=\{`\/Editor\?projectId=\$\{encodeURIComponent\(project\.id\)\}`\}\s*onClick=\{\(event\) => \{([\s\S]*?)\}\}/,
     );
     expect(m).not.toBeNull();
     const body = m?.[1] ?? "";
@@ -149,7 +149,7 @@ describe("the Recent title anchor's modifier-click preservation (S77-B / A-L1)",
     expect(m).not.toBeNull();
     expect(m?.[0]).toMatch(/lastOpened: true/);
     expect(m?.[0]).toMatch(/\{ silent: true \}/);
-    expect(m?.[0]).toMatch(/router\.push\(`\/Editor\?projectId=\$\{project\.id\}`\)/);
+    expect(m?.[0]).toMatch(/router\.push\(`\/Editor\?projectId=\$\{encodeURIComponent\(project\.id\)\}`\)/);
   });
 });
 

@@ -47,6 +47,15 @@ export async function POST(request: NextRequest) {
   if (!email || !/^\d{6}$/.test(code)) {
     return fail("VALIDATION", "Enter the 6-digit code from your email", 400);
   }
+  // Session 106 (S106-D / B-I1 — the S98-A/S105-D order family's missed
+  // sibling): the format regex every sibling now runs (register,
+  // forgot-password, resend-otp, members/teams — length caps FIRST, then
+  // the format). Behaviorally identical (a malformed email missed
+  // findUnique and answered the same byte-identical 400) — the pure
+  // short-circuit form fold closing the family to zero.
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return fail("VALIDATION", "Enter the 6-digit code from your email", 400);
+  }
 
   const user = await db.user.findUnique({ where: { email } });
   if (!user || user.verified || !user.verifyCode) {

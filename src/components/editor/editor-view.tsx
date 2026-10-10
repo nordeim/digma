@@ -277,7 +277,7 @@ function useAutosave(): AutosaveHandle {
           if (!disposed) useEditorStore.getState().setUnsaved();
           return;
         }
-        const response = await fetch(`/api/projects/${projectId}/elements`, {
+        const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/elements`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           // Session 33 (S33-3): the body carries the FULL canvas state —
@@ -475,7 +475,7 @@ function useAutosave(): AutosaveHandle {
       // keepalive byte cap, pass the guard, and be silently rejected
       // by the browser.
       if (new Blob([payload]).size > 60_000) return;
-      void fetch(`/api/projects/${projectId}/elements`, {
+      void fetch(`/api/projects/${encodeURIComponent(projectId)}/elements`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: payload,
@@ -556,7 +556,7 @@ function useAutosave(): AutosaveHandle {
             state.projectId,
             machineFlight
               .then(() =>
-                fetch(`/api/projects/${state.projectId}/elements`, {
+                fetch(`/api/projects/${encodeURIComponent(state.projectId)}/elements`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({

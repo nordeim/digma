@@ -683,6 +683,15 @@ S115.update({
     "clone-65-swatch-noop": (1440, 900),
 })
 
+# s116 mapping (session 106 — the 82nd reference audit's evidence set + the
+# S106 capture set). The standing S115 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S106 tree); the NEW
+# member: clone-66, the upload no-op witness (S106-A).
+S116 = dict(S115)
+S116.update({
+    "clone-66-upload-noop": (1440, 900),
+})
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -767,6 +776,8 @@ def expected_for(name: str):
         return S114.get(Path(name).stem)
     if name.startswith("ref-audit-s115/"):
         return S115.get(Path(name).stem)
+    if name.startswith("ref-audit-s116/"):
+        return S116.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -863,6 +874,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s113").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s114").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s115").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s116").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
