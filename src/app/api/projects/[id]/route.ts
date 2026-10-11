@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
+import { THUMBNAIL_ELEMENT_SELECT, withThumbFills } from "@/lib/editor";
 import { readBoundedJson, clampColor, clampText } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -81,7 +81,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       // the full rows are that route's contract).
       include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
     });
-    return ok({ project });
+    // Session 113 (S113-D — B92-I1 leg (b)): the PATCH response rides
+    // the thumb projection (withThumbFills — the graceful legacy
+    // fallback keeps a thumb-less row on its full image).
+    return ok({ project: withThumbFills(project) });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
       return fail("NOT_FOUND", "Project not found", 404);

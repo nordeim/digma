@@ -198,3 +198,25 @@ paramiko 已安装。让我阅读手册中的 Appendix A shim：
 - **文档已对齐**：PAD v1.91.0，SKILL v1.90.0，AGENTS 要点，session_192.md，计划框，完整的计数系列重定位（跨约 25 个声明点的 1491/174/71）
 
 **建议的下一步**：从 `docs/session_192.md` 的结束指令开始下一个周期 — 延迟队列的前端现在是 B92-I1 (b)/(c) 腿（fillImageThumb 编解码器 + 读取端姿态）、B-I1 旧版本规范化迁移，以及 A-I2/A-I3 的残留问题。
+
+---
+
+## Session 113 — the sixty-first audit cycle (the continuation record)
+
+The S113 continuation session resumed the interrupted GREEN phase mid-pin-repair: the three remaining lows-s113 meta/schema pins (the collapsed-view/casing fixes). The slice-bounds meta pin re-targeted the RECEIVER-PREFIXED code forms (`panelSource.indexOf('"Solid"')` — the repair's own provenance comment names the bare forms, comment text is not code; the F89 lesson at the meta layer), the wiring meta pin re-formed onto the ESCAPED regex-literal source shape (a raw-form regex matches nothing in a test file's escaped pattern — the pin would sit hollow, the very lesson it exists to close), and the schema pin rode the collapsed view with the case-insensitive match (the phrase is LINE-BROKEN across comment lines). **All 33 lows-s113 pins GREEN.**
+
+The collateral family — the forcing function firing live as designed: ten pins across five older spec files whose watched shapes the S113 delivery moved. The s99 leave-transport census 3→4 (the S113-A resolved-transport registration — the third call site); the s106/s107 upload-helper family re-anchored onto the two-parameter signature, the id-scoped `updateElements([element.id], patch, …)` commit form, the thumbnailFor-nested continuation, and the four-member patch unit; the s73 duplicate-route pins onto the `withThumbFills(project)` response form (with the hollow-bound closing slice repaired to the F89 form — a `closeIdx > reRead` floor); the doc-lows-s86 §11 rows awaiting the PAD re-anchor. **Unit gate green at 1526/1526 across 175 files** (1491 + 33 + 2 — the RUN-OUTPUT truth).
+
+The smoke gate's first run exposed a REAL probe-layer defect the pure layer could not: 72/73 — the fillImageThumb thumb-row check failed because the probe values were all-'A' base64 runs and the SHORTER thumb payload was a prefix-substring of the LONGER legacy image (the absence grep could never discriminate). A manual round-trip (login → POST with thumb → detail GET thumb 422 persisted → list GET fillImage 422 projected) proved the codec correct end-to-end; the fix is the probe's DISTINCT base64 alphabets (`tr 'A' 'B'/'C'/'D'` per probe). **Smoke 73/73.** Then **e2e 262/262** (6.9m, zero flakes — the F59 corollary holds, the thirty-first consecutive), **mobile-nav 9/9** on the FINAL S113 build (the 90th session), **SEO 4/4**.
+
+The count-family re-anchor: the twenty prior-session spec constants onto 1526/175/73; the s69/s81/s83 doc-pin re-anchors (with the 71-smoke false markers joining the family); the PAD §7.1 Unit-total + the new lows-s113 row + the export-png row 24→26 (the row-sum pin's arithmetic: 1491 + 33 + 2 = 1526); the §11 line-count rows (editor-view 2132, properties-panel 2020, editor.ts 1117, schema 186, smoke-test 672→679 with the probe comment) and the four enriched row descriptions; the README/CLAUDE/AGENTS/digma_SKILL/DEPLOYMENT/PAD claim sites; the AGENTS session-113 seam bullet (the s112 bullet's parenthetical restored to its frozen birth form — each bullet freezes at delivery, the latest carries the live count).
+
+The capture derived from the s112 form (the clone113 session, the capture113 log, the honest S113 header — every S113 change guard-internals + server-side-projection + record-level with identical seeded behavior): **ALL CAPTURED**, every standing witness re-verified LIVE. The dimension checker's s123 mapping: **654/654 OK** (649 + the 89th audit's five-file evidence set).
+
+The docs: the PAD v1.92.0 revision block, the digma_SKILL v1.91.0 bump with lesson F100, the remediation plan's execution boxes, this record, and the worklog entry. The ten e2e-touched evidence PNGs restored before the commit (B-I2 — immutable evidence).
+
+**Session 113 cycle complete — the S113 delivery: the payload terminal's soft-leave boundary (A-L1, the headline — the terminal's "never re-uploads" claim now true at EVERY boundary), the upload/selection seam pair (the id-scoped commit + the color-identity alignment), the pin-layer repair (the hollow-slice class, F100), the fillImageThumb codec (B92-I1 leg (b) — encode-on-write, the graceful legacy fallback, the 200K clamp), the fine prints + the normalize-member-emails operator script.**
+
+**Final state: 1526 unit / 175 files · 73 smoke · 262 e2e · 654 dimensions — zero flakes; docs aligned; pushed to main via the SSH wrapper.**
+
+**Next**: run another cycle from this record — the deferred queue front: the elements-POST sortOrder collision posture (the shift-on-insert form if a consumer ever appears), the LLM timeout, the resend-otp ADR-014 residue, the B97-L2/B98-M1 re-classifications delivered by S113-D's mechanism, the A-I2 dev-only residual (the fix-risk analysis recorded), and the s73–s99 carried members per the s112 plan §item 6.

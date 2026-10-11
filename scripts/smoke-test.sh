@@ -533,12 +533,53 @@ if [ -n "$BURNP_ID" ]; then
     -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF91" \
     --data-binary @"$FILL_BODY")
   echo "$IMG_BODY" | grep -q 'remove some image fills before adding more' \
-    && ok "the 35th image element answers the recovery-naming 400" \
-    || bad "the 35th image element answers the recovery-naming 400: $IMG_BODY"
+    && ok "an over-bound image element answers the recovery-naming 400" \
+    || bad "an over-bound image element answers the recovery-naming 400: $IMG_BODY"
   rm -f "$FILL_BODY"
   curl -s -o /dev/null -b /tmp/smoke-cookies.txt -X DELETE "$BASE/api/projects/$BURNP_ID"
 else
   bad "image bound burn project unavailable: $BURNP"
+fi
+
+# == The fillImageThumb projection (session 113 — S113-D / B92-I1 leg (b)) ==
+# The list family ships the ~320px THUMB re-encode in the fillImage slot
+# (withThumbFills in src/lib/editor.ts); a thumb-less legacy row keeps its
+# FULL image (the graceful fallback). Rides the same dedicated XFF identity
+# as the bound pair above (1 create + 2 element POSTs — the burn stays far
+# under the crud bucket's 60).
+THUMB_CREATE=$(curl -s -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF91" \
+  -d '{"name":"Thumb Projection Probe"}')
+THUMB_P_ID=$(echo "$THUMB_CREATE" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+if [ -n "$THUMB_P_ID" ]; then
+  # The probe values use DISTINCT base64 alphabets (zero bytes map to
+  # all-'A'; tr remaps each probe to its own letter). The projection
+  # check greps for the thumb's ABSENCE of the full image — with the
+  # first-draft all-'A' values, the SHORTER thumb payload was a
+  # prefix-substring of the LONGER legacy image and the absence grep
+  # could never pass (the F89 lesson at the probe layer: the fixture
+  # must be distinguishable, not just valid).
+  THUMB_A="data:image/png;base64,$(head -c 1500 /dev/zero | base64 | tr -d '\n' | tr 'A' 'B')"
+  THUMB_TA="data:image/png;base64,$(head -c 300 /dev/zero | base64 | tr -d '\n' | tr 'A' 'C')"
+  THUMB_B="data:image/png;base64,$(head -c 2000 /dev/zero | base64 | tr -d '\n' | tr 'A' 'D')"
+  curl -s -o /dev/null -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects/$THUMB_P_ID/elements" \
+    -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF91" \
+    -d "{\"type\":\"rectangle\",\"x\":0,\"y\":0,\"width\":10,\"height\":10,\"fillImage\":\"$THUMB_A\",\"fillImageThumb\":\"$THUMB_TA\"}"
+  curl -s -o /dev/null -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects/$THUMB_P_ID/elements" \
+    -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF91" \
+    -d "{\"type\":\"rectangle\",\"x\":20,\"y\":0,\"width\":10,\"height\":10,\"fillImage\":\"$THUMB_B\"}"
+  THUMB_LIST=$(curl -s -b /tmp/smoke-cookies.txt "$BASE/api/projects")
+  # The thumb-bearing row ships the THUMB (never its full image); the
+  # legacy row ships its FULL image; the response's thumb field is nulled.
+  echo "$THUMB_LIST" | grep -q "$THUMB_TA" && ! echo "$THUMB_LIST" | grep -q "$THUMB_A" \
+    && ok "the list family ships the THUMB re-encode in the fillImage slot" \
+    || bad "the fillImageThumb projection (thumb row): $THUMB_LIST"
+  echo "$THUMB_LIST" | grep -q "$THUMB_B" && echo "$THUMB_LIST" | grep -q '"fillImageThumb":null' \
+    && ok "a thumb-less legacy row keeps its FULL image (the graceful fallback)" \
+    || bad "the fillImageThumb legacy fallback: $THUMB_LIST"
+  curl -s -o /dev/null -b /tmp/smoke-cookies.txt -X DELETE "$BASE/api/projects/$THUMB_P_ID"
+else
+  bad "thumb projection probe project unavailable: $THUMB_CREATE"
 fi
 
 # ---------------------------------------------------------------------------

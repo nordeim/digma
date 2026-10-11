@@ -972,6 +972,52 @@ async function downscaleDataUrl(dataUrl: string): Promise<string> {
   return shrunk.length < dataUrl.length ? shrunk : dataUrl;
 }
 
+/** Session 113 (S113-D — B92-I1 leg (b), the sixty-first audit's
+ * deferred-queue front): the thumbnail codec's client half. The four
+ * list-family routes (the projects list, the PATCH/POST/duplicate
+ * responses) used to ship the FULL fillImage data URL to paint a
+ * ~320px card thumbnail — a ~500 KB payload per image-bearing row on
+ * every Recent load. The codec: a best-effort <=320px-longest-side
+ * re-encode of the ALREADY-DECODED upload (one extra canvas pass on
+ * the stored form, ~10-30 ms — the same machinery downscaleDataUrl
+ * runs, no second decode of the original file). The thumb rides its
+ * own schema column and its own tighter server clamp
+ * (FILL_IMAGE_THUMB_MAX_CHARS); the list projection ships it in the
+ * fillImage slot through withThumbFills (src/lib/editor.ts). ANY
+ * failure answers null — the thumb is an optimization, never a block
+ * on the upload itself (a null thumb degrades to the graceful legacy
+ * fallback: the list keeps shipping the full image). */
+const THUMB_MAX_DIM = 320;
+async function thumbnailFor(dataUrl: string): Promise<string | null> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("decode failed"));
+      image.src = dataUrl;
+    });
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    // No intrinsic size (some SVGs) — no honest thumbnail.
+    if (w <= 0 || h <= 0) return null;
+    const longest = Math.max(w, h);
+    const k = longest > THUMB_MAX_DIM ? THUMB_MAX_DIM / longest : 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(w * k));
+    canvas.height = Math.max(1, Math.round(h * k));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    // The same family-encoding rule as downscaleDataUrl: JPEG sources
+    // stay JPEG (photos have no alpha and encode far smaller), every
+    // other family re-encodes PNG (preserving alpha).
+    const isJpeg = /^data:image\/jpe?g/.test(dataUrl);
+    return isJpeg ? canvas.toDataURL("image/jpeg", 0.85) : canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The Image tab's editor (session 41, RA-54) — the reference's measured
  * dropzone chrome (dashed border, the hidden file input, the lucide-image
@@ -1005,7 +1051,7 @@ function ImagePanel({
   // this shared commit helper, the patch compared WHOLE — the
   // fill-paint precedence doctrine makes { fillImage, fillGradient:
   // null, fillImageFit: null } a unit, not three fields.
-  const commitUpload = (fillImage: string) => {
+  const commitUpload = (fillImage: string, fillImageThumb: string | null) => {
     setBusy(false);
     // Session 112 (S112-C — the sixtieth audit's B92-I1 leg (a), the
     // client half): the upload-time AGGREGATE pre-emption. The board's
@@ -1031,7 +1077,7 @@ function ImagePanel({
       });
       return;
     }
-    const patch = { fillImage, fillGradient: null, fillImageFit: null };
+    const patch = { fillImage, fillImageThumb, fillGradient: null, fillImageFit: null };
     // Session 107 (S107-A — the fifty-fifth audit's A-I1): the guard
     // reads the LIVE element, not the render-time prop. The FileReader
     // + downscaleDataUrl continuation lands after an async window
@@ -1047,7 +1093,26 @@ function ImagePanel({
     // zero-match commit never flips saveState, never pushes history,
     // never wipes redo, never arms the PUT).
     const live = useEditorStore.getState().elements.find((el) => el.id === element.id) ?? element;
-    if (patchDiffers(live, patch)) update(patch);
+    // Session 113 (S113-B / A-L3 — the sixty-first audit): the
+    // TARGET-SCOPE closure. The commit's continuation lands after an
+    // async window (FileReader + downscaleDataUrl + thumbnailFor),
+    // and the mobile Sheet's shared `update` helper reads
+    // selectedIds at CALL time — a selection that went multi inside
+    // the window received the image patch on EVERY member (the
+    // S107-A class at TARGET scope; the desktop panel's closure was
+    // safe — it captures render-time selectedIds). The commit is
+    // id-scoped now: the upload's targets are the element's own id,
+    // frozen at arm time. The S109-A id-match guard keeps the
+    // deleted-mid-window floor (a zero-match commit never flips
+    // saveState, never pushes history, never wipes redo, never arms
+    // the PUT) — the same no-op `update()` rode, one layer down.
+    // Session 113 (S113-D — B92-I1 leg (b)): the patch carries the
+    // thumb — a re-upload regenerates the identical patch (the
+    // deterministic canvas encode) and the S106-A no-op guard holds.
+    if (patchDiffers(live, patch)) {
+      const s = useEditorStore.getState();
+      s.updateElements([element.id], patch, s.gestureSnapshot === null);
+    }
   };
 
   const readFile = (file: File | undefined) => {
@@ -1081,8 +1146,8 @@ function ImagePanel({
         // decode failure degrades to the original — the upload's own
         // contract, never a broken fill.
         downscaleDataUrl(dataUrl)
-          .then((stored) => commitUpload(stored))
-          .catch(() => commitUpload(dataUrl));
+          .then((stored) => thumbnailFor(stored).then((thumb) => commitUpload(stored, thumb)))
+          .catch(() => commitUpload(dataUrl, null));
       } else {
         setBusy(false);
         toast.show({ title: "Unsupported image", description: "PNG, JPG, GIF, WebP, or SVG images are supported." });
@@ -1802,7 +1867,36 @@ export function selectionWouldCommit(
     kind === "fill"
       ? { fill: next, fillGradient: null, fillImage: null, fillImageFit: null }
       : { stroke: next };
-  return selected.some((el) => patchDiffers(el, patch));
+  // Session 113 (S113-B / A-I1 — the sixty-first audit): the
+  // color-identity alignment. The single-scope fallback compares
+  // through expandShortHex (the S105-A doctrine: a stored 3-digit
+  // hex's expanded pick is the SAME color — the model already carries
+  // it); the raw patchDiffers form below made the two scopes disagree
+  // on the same user action (a "#f00"-filled member's "#ff0000"
+  // re-pick: a no-op at single scope, a commit at selection scope —
+  // the scope-mismatch class one stance short of aligned). The kind's
+  // own color key joins through the expanded identity; the CLEARING
+  // SIBLINGS keep the RAW patchDiffers compare (they are structural
+  // nulls, never color strings — a gradient/image-painting member
+  // still commits on the fill patch, the S78-D paint-precedence
+  // form), and the seam's own census stays ELEVEN (patchDiffers
+  // remains the entry compare).
+  const key = kind === "fill" ? "fill" : "stroke";
+  return selected.some((el) => {
+    if (!patchDiffers(el, patch)) return false;
+    const current = el[key] ?? null;
+    if (current === null || next === null) return true;
+    if (
+      kind === "fill" &&
+      (el.fillGradient !== null || el.fillImage !== null || el.fillImageFit !== null)
+    ) {
+      return true;
+    }
+    return (
+      (expandShortHex(current) ?? "").toUpperCase() !==
+      (expandShortHex(next) ?? "").toUpperCase()
+    );
+  });
 }
 
 export function MultiSelectionSection({

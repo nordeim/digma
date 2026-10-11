@@ -273,11 +273,17 @@ export function elementsToSvg(
 }
 
 /** The download filename from the project name: path-hostile characters
- * stripped, whitespace collapsed, trimmed — "design" when empty. */
+ * stripped, whitespace collapsed, trimmed — "design" when empty.
+ * Session 113 (S113-D — the carried \w finding): the historical
+ * [^\w\s-] class is ASCII-ONLY — a project named "café" exported as
+ * "caf", a CJK name collapsed to the "design" fallback. The unicode
+ * property class [^\p{L}\p{N}\s_-] preserves Unicode letters and
+ * numbers (browsers accept Unicode anchor.download names) while still
+ * stripping path-hostile punctuation. */
 export function exportFilename(name: string | null | undefined): string {
   if (!name) return "design";
   const cleaned = name
-    .replace(/[^\w\s-]/g, "")
+    .replace(/[^\p{L}\p{N}\s_-]/gu, "")
     .replace(/\s+/g, " ")
     .trim();
   return cleaned === "" ? "design" : cleaned;

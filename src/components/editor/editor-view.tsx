@@ -587,7 +587,28 @@ function useAutosave(): AutosaveHandle {
           softLeaveDescriptor.projectId === state.projectId &&
           softLeaveDescriptor.elements === state.elements &&
           softLeaveDescriptor.backgroundColor === state.backgroundColor;
-        if (!machineCarriesThisState) {
+        // Session 113 (S113-A / A-L1 — the sixty-first audit): the
+        // payload-dead exemption reaches the SOFT-LEAVE boundary. The
+        // terminal's own declaration claims "the same unsaved state
+        // never re-uploads" — but this cleanup fired its own PUT
+        // guarded only on save-state and the in-flight descriptor: on
+        // a payload-dead board (saveState parked at "unsaved" per the
+        // terminal's own arm, no live flight — the finally nulls the
+        // descriptor) the cleanup PUT the EXACT body the terminal just
+        // refused, a doomed >=32 MB upload per soft-leave — the very
+        // churn the terminal exists to stop, one boundary short of
+        // complete. The pagehide path was already safe (its 60 KB
+        // Blob guard skips) and the same-instance swap path too
+        // (flushNow early-returns; the drain's exemption resolves
+        // immediately) — only this boundary leaked. The guard
+        // registers the RESOLVED transport (the S87-A doctrine: never
+        // leave the registry in a state the re-entry path doesn't
+        // expect — a same-project re-entry mount awaits it before its
+        // GET) and skips the PUT; the else-if chain keeps the teardown
+        // tail below unconditional.
+        if (payloadDeadRef !== null && payloadDeadRef === state.elements) {
+          registerLeaveTransport(state.projectId, Promise.resolve());
+        } else if (!machineCarriesThisState) {
           // Session 85 (S85-A): the at-unmount transport records itself —
           // a same-project re-entry mount awaits it before its GET (the
           // PUT/GET race closure; see the registry's module-level note).

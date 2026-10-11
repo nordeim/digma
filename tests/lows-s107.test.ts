@@ -55,8 +55,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1491";
-const FILES = "174";
+const UNIT = "1526";
+const FILES = "175";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -84,7 +84,12 @@ function componentWindow(name: string): string {
 /** The commitUpload helper body inside the ImagePanel window. */
 function commitUploadHelper(): string {
   const w = componentWindow("ImagePanel");
-  const helper = w.match(/const commitUpload = \(fillImage: string\) => \{[\s\S]*?\n  \};/);
+  // Session 113 (S113-D — a legitimate contract update): the helper's
+  // signature gained the fillImageThumb parameter (the ≤320px list
+  // re-encode rides the same guarded commit).
+  const helper = w.match(
+    /const commitUpload = \(fillImage: string, fillImageThumb: string \| null\) => \{[\s\S]*?\n  \};/,
+  );
   expect(helper).not.toBeNull();
   return helper![0];
 }
@@ -136,13 +141,20 @@ describe("S107-A the upload guard's live-state read (A-I1 — the headline, the 
     // (the fill-paint precedence doctrine); no raw update() survives
     // inside the continuation itself.
     const w = componentWindow("ImagePanel");
-    expect(w).toMatch(/\.then\(\(stored\) => commitUpload\(stored\)\)/);
-    expect(w).toMatch(/\.catch\(\(\) => commitUpload\(dataUrl\)\)/);
+    // Session 113 (S113-D): both branches still route through the ONE
+    // helper — the success through the thumbnailFor re-encode, the
+    // fallback with a null thumb.
+    expect(w).toMatch(
+      /\.then\(\(stored\) => thumbnailFor\(stored\)\.then\(\(thumb\) => commitUpload\(stored, thumb\)\)\)/,
+    );
+    expect(w).toMatch(/\.catch\(\(\) => commitUpload\(dataUrl, null\)\)/);
     const cont = w.match(/downscaleDataUrl\(dataUrl\)[\s\S]*?\}\);/);
     expect(cont).not.toBeNull();
     expect(cont![0]).not.toMatch(/update\(\{/);
     const helper = commitUploadHelper();
-    expect(helper).toMatch(/const patch = \{ fillImage, fillGradient: null, fillImageFit: null \};/);
+    expect(helper).toMatch(
+      /const patch = \{ fillImage, fillImageThumb, fillGradient: null, fillImageFit: null \};/,
+    );
     expect(helper).toMatch(/setBusy\(false\)/);
   });
 

@@ -41,6 +41,7 @@ function el(partial: Partial<DesignElementDTO>): DesignElementDTO {
     fillGradient: null,
     fillImage: null,
     fillImageFit: null,
+    fillImageThumb: null,
     visible: true,
     locked: false,
     sortOrder: 0,
@@ -318,5 +319,21 @@ describe("exportFilename", () => {
 
   it("keeps alphanumerics, dashes, underscores, and single spaces", () => {
     expect(exportFilename("Portfolio_2026 - v3")).toBe("Portfolio_2026 - v3");
+  });
+
+  // Session 113 (S113-D — the carried \w finding): the historical
+  // [^\w\s-] class stripped every non-ASCII letter ("café" -> "caf",
+  // "设计" -> the empty fallback) — \w is the ASCII-only class. The
+  // unicode property form preserves Unicode letters and numbers while
+  // still stripping path-hostile punctuation.
+  it("preserves unicode letters and numbers (session 113 — the \\w ASCII-only class replaced)", () => {
+    expect(exportFilename("café")).toBe("café");
+    expect(exportFilename("设计")).toBe("设计");
+    expect(exportFilename("Boîte à outils")).toBe("Boîte à outils");
+  });
+
+  it("still strips path-hostile punctuation beside unicode text", () => {
+    expect(exportFilename("方案/最终:版本*?")).toBe("方案最终版本");
+    expect(exportFilename("   ")).toBe("design");
   });
 });

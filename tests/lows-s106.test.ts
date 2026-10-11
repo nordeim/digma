@@ -54,8 +54,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1491";
-const FILES = "174";
+const UNIT = "1526";
+const FILES = "175";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -94,7 +94,9 @@ describe("S106-A the image-upload no-op commits (A-M1 — the headline, the fami
     // against the element through the same patchDiffers seam the
     // S102-E/S103-A/S104-A/S105-A closures ride.
     const w = componentWindow("ImagePanel");
-    const helper = w.match(/const commitUpload = \(fillImage: string\) => \{[\s\S]*?\n  \};/);
+    const helper = w.match(
+      /const commitUpload = \(fillImage: string, fillImageThumb: string \| null\) => \{[\s\S]*?\n  \};/,
+    );
     expect(helper).not.toBeNull();
     expect(helper![0]).toMatch(/setBusy\(false\)/);
     // Session 107 (S107-A — a legitimate contract update): the guard's
@@ -105,12 +107,24 @@ describe("S106-A the image-upload no-op commits (A-M1 — the headline, the fami
     // compare evaluate its truth against the past). The guard still
     // precedes the update; the seam call itself is unchanged.
     const guardIdx = helper![0].indexOf("patchDiffers(live, patch)");
-    const updateIdx = helper![0].indexOf("update(patch)");
+    // Session 113 (S113-B — a legitimate contract update): the commit
+    // is ID-SCOPED now — updateElements([element.id], patch, …) — the
+    // mobile Sheet's shared `update` read selectedIds at CALL time and
+    // the upload's async window could land the image patch on a
+    // post-window multi-selection (the A-L3 target-scope member). The
+    // guard still precedes the commit; the S109-A id-match guard keeps
+    // the deleted-mid-window floor.
+    const updateIdx = helper![0].indexOf("updateElements([element.id], patch");
     expect(guardIdx).toBeGreaterThan(-1);
     expect(updateIdx).toBeGreaterThan(guardIdx);
     // the patch is the WHOLE sibling-clearing unit (the fill-paint
-    // precedence doctrine — not three independent fields).
-    expect(helper![0]).toMatch(/const patch = \{ fillImage, fillGradient: null, fillImageFit: null \};/);
+    // precedence doctrine — not three independent fields). Session
+    // 113 (S113-D): the thumb joins the unit (a re-upload regenerates
+    // the identical patch — the deterministic canvas encode keeps the
+    // S106-A no-op guard honest).
+    expect(helper![0]).toMatch(
+      /const patch = \{ fillImage, fillImageThumb, fillGradient: null, fillImageFit: null \};/,
+    );
   });
 
   it("DEFECT: the downscale success AND the decode-failure fallback both route through the helper", () => {
@@ -120,8 +134,15 @@ describe("S106-A the image-upload no-op commits (A-M1 — the headline, the fami
     // upload's own degrade contract: a failed decode never breaks the
     // fill).
     const w = componentWindow("ImagePanel");
-    expect(w).toMatch(/\.then\(\(stored\) => commitUpload\(stored\)\)/);
-    expect(w).toMatch(/\.catch\(\(\) => commitUpload\(dataUrl\)\)/);
+    // Session 113 (S113-D — a legitimate contract update): the success
+    // branch re-encodes the thumb BEFORE the commit (thumbnailFor — a
+    // best-effort ≤320px re-encode on the stored bytes); the fallback
+    // commits with a null thumb (a failed encode never breaks the
+    // fill).
+    expect(w).toMatch(
+      /\.then\(\(stored\) => thumbnailFor\(stored\)\.then\(\(thumb\) => commitUpload\(stored, thumb\)\)\)/,
+    );
+    expect(w).toMatch(/\.catch\(\(\) => commitUpload\(dataUrl, null\)\)/);
     // no surviving raw update() inside the continuation itself.
     const cont = w.match(/downscaleDataUrl\(dataUrl\)[\s\S]*?\}\);/);
     expect(cont).not.toBeNull();

@@ -82,8 +82,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1491";
-const FILES = "174";
+const UNIT = "1526";
+const FILES = "175";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -214,9 +214,13 @@ describe("S99-C the leave-transport keyed registry (A99-L3)", () => {
       /function registerLeaveTransport\(projectId: string, done: Promise<unknown>\): void/,
     );
     const calls = EDITOR_VIEW.match(/registerLeaveTransport\(/g) ?? [];
-    // The definition itself + exactly TWO call sites (the exit-path
-    // machineFlight form and the cleanup-path flightDone form).
-    expect(calls.length).toBe(3);
+    // The definition itself + exactly THREE call sites (the exit-path
+    // machineFlight form, the cleanup-path flightDone form, and the
+    // S113-A payload-dead RESOLVED form — the soft-leave exemption's
+    // own registration: a payload-dead board registers the resolved
+    // transport so the re-entry path never waits on a flight that
+    // will never fly).
+    expect(calls.length).toBe(4);
   });
 
   it("SURVIVAL: the same-project await + the cancelled check ride through (the S85-A contract)", () => {

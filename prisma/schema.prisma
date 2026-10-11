@@ -64,7 +64,17 @@ model Project {
   // same transaction as the create — a create that never commits
   // never counts. Rows written before this column existed read 0
   // until their board's next PUT recomputes the truth (the seed and
-  // every suite database start fresh).
+  // every suite database start fresh). Session 113 (S113-E / B-I4 —
+  // the sixty-first audit): the LEGACY ZERO-COUNTER x POST
+  // INTERSECTION, named — a pre-S112-C database upgraded in place
+  // reads every counter 0, so a legacy image-heavy board accepts up
+  // to the full 24 MB of NEW image bytes on top of its existing
+  // payload before its first PUT recomputes the truth; the board then
+  // rides the documented sticky wedge (validation.ts) with the
+  // payloadDeadRef terminal + deletion recovery handling the client.
+  // The counter deliberately EXCLUDES fillImageThumb (S113-D): it
+  // measures the full-fill payload the POST bound guards; the 32 MB
+  // body cap subsumes the thumb's tens of KB.
   fillImageBytes   Int      @default(0)
   lastOpenedAt    DateTime @default(now())
   createdAt       DateTime @default(now())
@@ -91,6 +101,21 @@ model DesignElement {
   fillGradient String? // JSON: { type: "linear"|"radial", angle: 0-360, stops: [{ color, position: 0-100 }] } — the Gradient tab (session 41, RA-54)
   fillImage   String? // data URL — the Image tab's uploaded fill (session 41, RA-54; wins over fillGradient)
   fillImageFit String? // "cover"|"contain"|"auto"|"stretch" — the Image tab's Background Size select (session 43, RA-61; stretch maps to "100% 100%" at the paint seam; null = cover)
+  // Session 113 (S113-D — B92-I1 leg (b), the sixty-first audit's
+  // deferred-queue front): the ~320px LIST-FAMILY re-encode of
+  // fillImage, generated client-side at upload time (thumbnailFor in
+  // properties-panel.tsx) and shipped in the fillImage slot by the
+  // four list routes' withThumbFills projection (src/lib/editor.ts).
+  // Null = no thumb (a legacy row pre-dating the codec, or a
+  // best-effort encode failure) — the graceful fallback ships the
+  // full image. The editor canvas and the detail GET read the FULL
+  // fillImage; the thumb exists for the list projection's bandwidth
+  // (a ~500 KB payload per image-bearing row becomes ~10-50 KB). The
+  // duplicate route's ...rest copy carries it losslessly; the
+  // elements PUT round-trips it through the client DTO (a PUT that
+  // dropped it would wipe every thumb on save). NOT counted by
+  // fillImageBytes (see the counter's comment above).
+  fillImageThumb String?
   stroke      String?
   strokeWidth Float    @default(0)
   radius      Float    @default(0) // corner radius

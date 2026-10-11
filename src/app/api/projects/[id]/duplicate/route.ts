@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
+import { THUMBNAIL_ELEMENT_SELECT, withThumbFills } from "@/lib/editor";
 import { PROJECT_LIMIT } from "@/lib/validation";
 import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
@@ -140,5 +140,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   // has no first-party consumer today, so the impact was API-consumer-
   // only — but the envelope contract is uniform now.
   if (!project) return fail("NOT_FOUND", "Project not found", 404);
-  return ok({ project }, 201);
+  // Session 113 (S113-D — B92-I1 leg (b)): the duplicate response
+  // rides the thumb projection (the copy's rows carried their thumbs
+  // through the lossless ...rest copy above).
+  return ok({ project: withThumbFills(project) }, 201);
 }

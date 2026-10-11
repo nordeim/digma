@@ -26,6 +26,7 @@ function el(partial: Partial<DesignElementDTO>): DesignElementDTO {
     fillGradient: null,
     fillImage: null,
     fillImageFit: null,
+    fillImageThumb: null,
     visible: true,
     locked: false,
     sortOrder: 0,

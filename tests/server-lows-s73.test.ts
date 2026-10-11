@@ -38,15 +38,24 @@ describe("S73-B — the duplicate post-commit null guard (B-F1)", () => {
   it("the re-read answers 404 when the copy vanished before the response", () => {
     // THE DEFECT PIN: pre-fix the re-read's result feeds ok() unguarded —
     // a concurrent DELETE between the commit and the re-read answers a
-    // success-status envelope with a null payload.
+    // success-status envelope with a null payload. Session 113 (S113-D):
+    // the slice's closing bound rides the withThumbFills response form
+    // (the raw indexOf on the pre-S113 shape would answer -1 and slice
+    // away the tail — the F89 hollow-bound class).
     const reRead = route.indexOf("const project = await db.project.findUnique({");
     expect(reRead).toBeGreaterThan(-1);
-    const body = route.slice(reRead, route.indexOf("return ok({ project }, 201);"));
+    const closeIdx = route.indexOf("return ok({ project: withThumbFills(project) }, 201);");
+    expect(closeIdx).toBeGreaterThan(reRead);
+    const body = route.slice(reRead, closeIdx);
     expect(body).toMatch(/if \(!project\) return fail\("NOT_FOUND", "Project not found", 404\);/);
   });
 
   it("the 201 still carries the copy (the happy path unchanged)", () => {
-    expect(route).toMatch(/return ok\(\{ project \}, 201\);/);
+    // Session 113 (S113-D — a legitimate contract update): the copy's
+    // response rides the withThumbFills projection (the list-family
+    // shape — a duplicated board's list payload ships thumbs; the
+    // detail GET keeps the full images).
+    expect(route).toMatch(/return ok\(\{ project: withThumbFills\(project\) \}, 201\);/);
   });
 });
 

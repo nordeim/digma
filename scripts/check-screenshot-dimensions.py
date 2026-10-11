@@ -754,6 +754,18 @@ S121["ref-05-teams-empty-state"] = (1440, 900)
 # its own smoke probe project — all deleted before any capture).
 S122 = dict(S121)
 
+# s123 mapping (session 113 — the 89th reference audit's evidence set + the
+# S113 capture set). The standing S123 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S113 tree); no NEW
+# witness this session (the S113 pass is payload-terminal guard internals +
+# an id-scoped upload commit + a server-side thumb projection with the
+# graceful legacy fallback rendering seeded boards byte-identically + pin
+# repairs + an operator script — every change guard-internals +
+# server-side-projection + record-level with identical observable behavior
+# on the seeded flows; the thumb projection pair rides its own smoke probe
+# project, deleted before any capture).
+S123 = dict(S122)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -852,6 +864,8 @@ def expected_for(name: str):
         return S121.get(Path(name).stem)
     if name.startswith("ref-audit-s122/"):
         return S122.get(Path(name).stem)
+    if name.startswith("ref-audit-s123/"):
+        return S123.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -955,6 +969,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s120").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s121").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s122").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s123").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

@@ -154,6 +154,15 @@ export type DesignElementDTO = {
    * paints as cover (the reference's upload default). Stretch maps to the
    * reference's "100% 100%" backgroundSize at the paint seam. */
   fillImageFit: string | null;
+  /** Session 113 (S113-D — B92-I1 leg (b)): the ~320px list-family
+   * re-encode of fillImage, generated client-side at upload time by
+   * thumbnailFor and shipped in the fillImage slot by the four
+   * list-family routes' withThumbFills projection. Null = no thumb (a
+   * legacy row pre-dating the codec, or a best-effort encode failure) —
+   * the graceful fallback ships the full image. The editor canvas and
+   * the detail GET always read the FULL fillImage; this field exists
+   * for the list projection's bandwidth. */
+  fillImageThumb: string | null;
   visible: boolean;
   locked: boolean;
   sortOrder: number;
@@ -186,6 +195,33 @@ export type ProjectDTO = {
 // type/wire divergence: a future consumer trusting the declared shape
 // would read undefined. The Omit set and the SELECT's omission set are
 // now the same set (pinned by tests/server-lows-s75.test.ts).
+/** Session 113 (S113-D — B92-I1 leg (b), the sixty-first audit's
+ * deferred-queue front): the ONE list-family projection. The four
+ * thumbnail routes (the list GET, the PATCH response, the POST
+ * response, the duplicate response) used to ship the FULL fillImage
+ * data URL to paint a ~320px card thumbnail; this helper swaps the
+ * row's ~320px `fillImageThumb` re-encode into the `fillImage` slot
+ * so every existing consumer (ThumbnailElementDTO, fillPaintFor, the
+ * CanvasThumbnail) stays shape-stable. THE GRACEFUL LEGACY FALLBACK:
+ * a row without a thumb (a pre-S113 board, or a best-effort encode
+ * failure) keeps shipping its full image — exactly the pre-S113
+ * behavior, zero visible degradation for boards saved before the
+ * codec existed. The response's thumb field is nulled (the list
+ * family never needs it — the wire cost is the point). The detail
+ * GET and the editor canvas are NOT projected: they read the full
+ * rows (the canvas renders at zoom; the PUT round-trips the thumb).
+ * Pure and server-safe (no DOM — a plain record map). */
+export function withThumbFills<P extends { elements: unknown[] }>(project: P): P {
+  return {
+    ...project,
+    elements: project.elements.map((el) => {
+      const row = el as Record<string, unknown>;
+      const thumb = typeof row.fillImageThumb === "string" ? row.fillImageThumb : null;
+      return { ...row, fillImage: thumb ?? row.fillImage ?? null, fillImageThumb: null };
+    }),
+  };
+}
+
 export type ThumbnailElementDTO = Omit<DesignElementDTO, "name" | "locked" | "sortOrder" | "projectId">;
 
 /** The list-family project shape: the project fields + the projected
@@ -212,6 +248,7 @@ export const THUMBNAIL_ELEMENT_SELECT = {
   fillGradient: true,
   fillImage: true,
   fillImageFit: true,
+  fillImageThumb: true,
   stroke: true,
   strokeWidth: true,
   radius: true,
@@ -419,6 +456,7 @@ export function defaultElementFor(
     fillGradient: null,
     fillImage: null,
     fillImageFit: null,
+    fillImageThumb: null,
     visible: true,
     locked: false,
     sortOrder,
@@ -949,6 +987,19 @@ export function clampFillImage(value: unknown): string | null {
   return value;
 }
 
+/** Session 113 (S113-D — B92-I1 leg (b)): the thumbnail's own sanitize
+ * seam. A ~320px re-encode is tens of KB — the TIGHTER cap (a scripted
+ * consumer must not store a second full image in the thumb field,
+ * defeating the list projection's bandwidth purpose). The whitelist
+ * and the 700K ceiling ride the ONE clampFillImage seam itself (the
+ * family's single source); this clamp only narrows the ceiling. */
+export const FILL_IMAGE_THUMB_MAX_CHARS = 200_000;
+export function clampFillImageThumb(value: unknown): string | null {
+  const passed = clampFillImage(value);
+  if (passed === null || passed.length > FILL_IMAGE_THUMB_MAX_CHARS) return null;
+  return passed;
+}
+
 /** The element row shape the elements routes persist (session 70's
  * S70-B / L-A2 — the three-convention row-builder dedup): every field
  * clamp the POST and the PUT previously hand-rolled twice, in ONE seam.
@@ -983,6 +1034,7 @@ export function buildElementRow(
   fillGradient: string | null;
   fillImage: string | null;
   fillImageFit: string | null;
+  fillImageThumb: string | null;
   stroke: string | null;
   strokeWidth: number;
   radius: number;
@@ -1028,6 +1080,10 @@ export function buildElementRow(
           })(),
     fillImage: clampFillImage(raw?.fillImage),
     fillImageFit: clampFillImageFit(raw?.fillImageFit),
+    // Session 113 (S113-D — B92-I1 leg (b)): the thumb rides the ONE
+    // row-builder seam in BOTH modes — the client DTO round-trips it
+    // (a PUT that dropped it would wipe every thumb on save).
+    fillImageThumb: clampFillImageThumb(raw?.fillImageThumb),
     stroke:
       raw?.stroke === null
         ? null

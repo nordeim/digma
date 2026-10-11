@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { DEFAULT_CANVAS_BACKGROUND, THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
+import { DEFAULT_CANVAS_BACKGROUND, THUMBNAIL_ELEMENT_SELECT, withThumbFills } from "@/lib/editor";
 import { readBoundedJson, clampColor, clampTemplate, clampText, PROJECT_LIMIT } from "@/lib/validation";
 import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
@@ -51,7 +51,11 @@ export async function GET(request: NextRequest) {
     include: { elements: { orderBy: { sortOrder: "asc" }, select: THUMBNAIL_ELEMENT_SELECT } },
   });
 
-  return ok({ projects });
+  // Session 113 (S113-D — B92-I1 leg (b)): the list-family thumb
+  // projection — each project's rows ship the ~320px fillImageThumb
+  // re-encode in the fillImage slot (the graceful legacy fallback in
+  // withThumbFills keeps a thumb-less row on its full image).
+  return ok({ projects: projects.map((p) => withThumbFills(p)) });
 }
 
 /** POST /api/projects — create a project (the Create New Design dialog). */
@@ -152,5 +156,8 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", "Too many projects (max 500)", 400);
   }
 
-  return ok({ project }, 201);
+  // Session 113 (S113-D): the POST response rides the same thumb
+  // projection (the array is empty today — a create seeds no elements —
+  // the wiring stays honest if template-seeding ever lands).
+  return ok({ project: withThumbFills(project) }, 201);
 }

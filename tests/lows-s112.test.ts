@@ -281,7 +281,12 @@ describe("S112-A the multi-selection color-guard scope (A-L1 — the headline)",
       expect(row).toMatch(/wouldCommit=/);
     }
     // The Fill row's truth joins the clearing siblings (the S78-D form).
-    expect(section).toMatch(/selectionWouldCommit\(selected, (fill|next|stroke|next\)|\w+), "fill"\)|"fill"\)/);
+    // Session 113 (S113-C / A-L2 — the sixty-first audit's pin-layer
+    // repair): the pre-fix alternation
+    // (…\), "fill"\)|"fill"\)) matched any text containing "fill") —
+    // it could not discriminate the Fill row from the Stroke row. The
+    // concrete wiring form.
+    expect(section).toMatch(/wouldCommit=\{\(fill\) => selectionWouldCommit\(selected, fill, "fill"\)\}/);
   });
 
   it("SURVIVAL (source): the single-scope HexColorRow consumers carry NO wouldCommit (the default single-value compare)", () => {
@@ -289,20 +294,35 @@ describe("S112-A the multi-selection color-guard scope (A-L1 — the headline)",
     // the Solid tab's Fill row, the single-selection Stroke row, and
     // the CanvasBackground row. None of them may pass the prop — the
     // S105-A contract is byte-identical for the single scope.
+    // Session 113 (S113-C / A-L2 — the sixty-first audit's pin-layer
+    // repair): BOTH pre-fix slices here were HOLLOW — indexOf('"Solid"')
+    // and indexOf('"Gradient"') both answered -1 (the file's literals
+    // are value="solid" — lowercase, never the quoted capitalized
+    // forms) so slice(-1, -1) was the EMPTY STRING, and
+    // indexOf("Transform") (a header-comment mention at char 1333)
+    // preceded indexOf("TEXT section") (char 57120) so start > end —
+    // both assertions passed VACUOUSLY (the F89 lesson at the pin's
+    // own slice bounds: the fixture must match the model's real
+    // shape). The slices ride the STABLE CODE LITERALS now — the
+    // export-function boundaries — and every slice carries a LENGTH
+    // FLOOR (an empty slice makes an ABSENT pin pass trivially).
     const solidSection = panelSource.slice(
-      panelSource.indexOf('"Solid"'),
-      panelSource.indexOf('"Gradient"'),
+      panelSource.indexOf("export function FillStrokeSection("),
+      panelSource.indexOf("export function TransformSection("),
     );
+    expect(solidSection.length).toBeGreaterThan(200); // the slice found the section
     expect(solidSection).not.toMatch(/wouldCommit=/);
     const textSection = panelSource.slice(
-      panelSource.indexOf("TEXT section"),
-      panelSource.indexOf("Transform"),
+      panelSource.indexOf("export function TextSection("),
+      panelSource.indexOf("function guardedUpdate("),
     );
+    expect(textSection.length).toBeGreaterThan(200); // the slice found the section
     expect(textSection).not.toMatch(/wouldCommit=/);
     const bgSection = panelSource.slice(
       panelSource.indexOf("export function CanvasBackgroundSection("),
       panelSource.indexOf("export function MultiSelectionSection("),
     );
+    expect(bgSection.length).toBeGreaterThan(200); // the slice found the section
     expect(bgSection).not.toMatch(/wouldCommit=/);
   });
 });
@@ -475,7 +495,13 @@ describe("S112-C the board-size write bound + the autosave payload terminal (B92
 
   it("DEFECT (source): the smoke fillImage pair present (the 34th under the bound succeeds; the 35th answers the recovery 400)", () => {
     expect(smokeSource).toMatch(/34 max-length image elements fit under the aggregate bound/);
-    expect(smokeSource).toMatch(/the 35th image element answers the recovery-naming 400/);
+    // Session 113 (S113-E / B-I5 — the collateral re-anchor): the
+    // probe POSTs a FRESH over-bound element for its body read (the
+    // loop's own 35th set IMG_LAST; the body probe is a 36th POST —
+    // equally over-bound, the check verifies exactly what matters);
+    // the label now names the over-bound form, not the miscounted
+    // ordinal.
+    expect(smokeSource).toMatch(/an over-bound image element answers the recovery-naming 400/);
     // The burn rides its own XFF identity (never the localhost bucket).
     expect(smokeSource).toMatch(/203\.0\.113\.91/);
   });

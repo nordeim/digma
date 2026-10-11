@@ -121,11 +121,14 @@ describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
     // Session 111 (S111-D): 63 -> 66 — the smoke invite-dedup trio.
     // Session 112 (S112-B/S112-C): 66 -> 71 — the crud-limiter trio +
     // the fillImage pair.
-    expect(doc).toMatch(/71 .*smoke|smoke.*71|71 checks/);
+    // Session 113 (S113-D): 71 -> 73 — the fillImageThumb projection
+    // pair.
+    expect(doc).toMatch(/73 .*smoke|smoke.*73|73 checks/);
     expect(doc).toMatch(/262 .*Playwright|Playwright.*262|262 checks/);
     expect(doc.includes("28 E2E checks")).toBe(false);
     expect(doc.includes("51 Playwright checks")).toBe(false);
     expect(doc.includes("61 smoke")).toBe(false);
+    expect(doc.includes("71 smoke")).toBe(false);
     expect(doc.includes("63 smoke")).toBe(false);
     expect(doc.includes("64 smoke")).toBe(false);
     expect(doc.includes("259 Playwright")).toBe(false);
