@@ -640,14 +640,28 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     }),
 
   restoreSnapshot: (snapshot) =>
-    set((state) => ({
-      // A revert is a mutation like any other: the CURRENT state goes onto
-      // `past` first, so Ctrl+Z undoes the revert itself (session 27).
-      past: [...state.past, snapshotOf(state)].slice(-60),
-      future: [],
-      elements: snapshot.elements.map((el) => ({ ...el })),
-      backgroundColor: snapshot.backgroundColor,
-      selectedIds: state.selectedIds.filter((id) => snapshot.elements.some((el) => el.id === id)),
-      saveState: "unsaved",
-    })),
+    set((state) => {
+      // Session 114 (S114-B / A114-L1 — the sixty-second audit's
+      // no-op-commit family completion, the eleventh arm): the AI
+      // Revert is reachable with the CURRENT state already equal to
+      // the stored pre-apply snapshot (undo the apply's commits, then
+      // click Revert) — the arm pushed an IDENTICAL-value snapshot
+      // into history (the next Ctrl+Z visibly did nothing), wiped
+      // redo, flipped the badge, and armed a byte-identical PUT. The
+      // S110-A census had classified this arm "by-definition real" —
+      // falsified by that constructible window (the F97 class). The
+      // guard rides the S111-A value-compare seam: an identical
+      // restore behaves as a no-op, never a phantom change.
+      if (snapshotsEqual(snapshotOf(state), snapshot)) return {};
+      return {
+        // A revert is a mutation like any other: the CURRENT state goes onto
+        // `past` first, so Ctrl+Z undoes the revert itself (session 27).
+        past: [...state.past, snapshotOf(state)].slice(-60),
+        future: [],
+        elements: snapshot.elements.map((el) => ({ ...el })),
+        backgroundColor: snapshot.backgroundColor,
+        selectedIds: state.selectedIds.filter((id) => snapshot.elements.some((el) => el.id === id)),
+        saveState: "unsaved",
+      };
+    }),
 }));

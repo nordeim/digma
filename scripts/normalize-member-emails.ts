@@ -92,14 +92,22 @@ async function main() {
 
   // THE ONE TRANSACTION: the deletes and the rewrites land atomically —
   // a failure mid-script leaves the database exactly as it was.
-  await db.$transaction(async (tx) => {
-    if (doomed.length > 0) {
-      await tx.teamMember.deleteMany({ where: { id: { in: doomed } } });
-    }
-    for (const r of rewritable) {
-      await tx.teamMember.update({ where: { id: r.id }, data: { email: r.email } });
-    }
-  });
+  // Session 114 (S114-E / B114-L3): the route family's own timeout
+  // doctrine for row-heavy interactive transactions (duplicate and
+  // elements both ride 30s) — Prisma's default 5s window aborts the
+  // worst-case dirty DB (a 100x100 member board of all-rewrites is
+  // up to 10,000 sequential awaits) exactly when the script matters.
+  await db.$transaction(
+    async (tx) => {
+      if (doomed.length > 0) {
+        await tx.teamMember.deleteMany({ where: { id: { in: doomed } } });
+      }
+      for (const r of rewritable) {
+        await tx.teamMember.update({ where: { id: r.id }, data: { email: r.email } });
+      }
+    },
+    { timeout: 30_000 },
+  );
   console.log("[normalize-member-emails] applied.");
 }
 

@@ -157,7 +157,18 @@ export async function POST(request: NextRequest, { params }: Params) {
         where: { id },
         select: { fillImageBytes: true },
       });
-      const addBytes = typeof row.fillImage === "string" ? row.fillImage.length : 0;
+      // Session 114 (S114-A / B114-M1 — the sixty-second audit's
+      // headline): the thumb length joins the sum. The S113-D codec
+      // admitted up to 200K thumb chars per row while this bound
+      // counted the full fill alone — a scripted client could stack
+      // image-less rows of near-cap thumbs past every cumulative
+      // check (the 32 MB body cap bounds a REQUEST, never a BOARD).
+      // Both stored fill families ride the counter now; the honest
+      // heaviest-image board's element ceiling moves ~34 -> ~32 (each
+      // heaviest element carries its ~10-50 KB thumb beside its fill).
+      const addBytes =
+        (typeof row.fillImage === "string" ? row.fillImage.length : 0) +
+        (typeof row.fillImageThumb === "string" ? row.fillImageThumb.length : 0);
       if ((liveBytes?.fillImageBytes ?? 0) + addBytes > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
         overImageCap = true;
         return null;
@@ -288,7 +299,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
   // save of image-bearing rows) must keep saving. Counter maintenance
   // only.
   const total = rows.reduce(
-    (sum, r) => sum + (typeof r.fillImage === "string" ? r.fillImage.length : 0),
+    (sum, r) =>
+      sum +
+      (typeof r.fillImage === "string" ? r.fillImage.length : 0) +
+      (typeof r.fillImageThumb === "string" ? r.fillImageThumb.length : 0),
     0,
   );
 

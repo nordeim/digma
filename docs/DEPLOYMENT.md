@@ -160,6 +160,28 @@ re-login mints a versioned cookie. Do not schedule this deploy mid-workday
 if you can avoid it; subsequent deploys do not repeat the eviction (only a
 password reset increments the version for an individual account).
 
+**One-time member-email normalization when crossing the session-111
+boundary (pre-S111 databases):** the `@@unique([teamId, email])`
+constraint that session 111 added is case-sensitive under SQLite's
+binary collation — an in-place database carrying pre-S111 member rows
+with mixed-case duplicates makes `bun run db:push` itself abort when
+it recreates the table. The upgrade path is the one-shot operator
+script `scripts/normalize-member-emails.ts` (the dedup-first policy:
+keep the earliest `createdAt` survivor per `(teamId, normalized
+email)`, delete the later duplicates, then rewrite the survivors to
+the shared `normalizeEmail` form — NULL and empty-string emails stay
+untouched):
+
+```bash
+bunx tsx scripts/normalize-member-emails.ts --dry-run   # inspect first
+bunx tsx scripts/normalize-member-emails.ts             # apply, then db:push
+```
+
+The script is idempotent (a second run finds zero duplicates and zero
+rewrites) and lands its deletes + rewrites in one 30s-bounded
+transaction — a failure mid-script leaves the database exactly as it
+was.
+
 ## 6. Verification checklist
 
 ```bash

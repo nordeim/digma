@@ -75,7 +75,10 @@ export function authRateLimit(ip: string, now: number = Date.now()): RateLimitRe
 // Session 67 (S67-C — the fifteenth audit's M-2, the documented B-15):
 // the assistant's DEDICATED bucket. The pre-fix route had no limiter at
 // all — an authenticated caller drove unbounded LLM completions (API cost
-// burn + up to 60s of held server work per request). The bucket is its
+// burn + held server work — unbounded on the self-hosted posture until
+// S114-D, now bounded at 25s by the route's own LLM_REQUEST_TIMEOUT_MS
+// race, with `maxDuration` remaining the serverless-only hint the
+// standalone server ignores). The bucket is its
 // OWN `ai:` prefix, NEVER the shared `auth:` key: the e2e/smoke suites
 // drive this route from the same localhost IP as their auth calls, so a
 // shared bucket would break their budgets (the documented deferral

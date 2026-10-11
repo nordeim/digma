@@ -13,7 +13,10 @@ export const dynamic = "force-dynamic";
  * attempts ceiling). The reference's Resend carries NO cooldown (live-measured
  * un-disabled and timerless after a resend) — the clone matches. The code
  * travels in the response (the self-hosted in-app delivery: no email
- * service — the register route documents the same deviation). */
+ * service — the register route documents the same deviation; under
+ * DIGMA_DISABLE_IN_APP_OTP=1 the delivered code nulls and the 6 digits
+ * go nowhere until a real email service owns the delivery — the ADR-014
+ * suppression family). */
 export async function POST(request: NextRequest) {
   const limit = authRateLimit(clientIpOf(request.headers));
   if (!limit.allowed) {

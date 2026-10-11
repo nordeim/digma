@@ -72,9 +72,12 @@ model Project {
   // payload before its first PUT recomputes the truth; the board then
   // rides the documented sticky wedge (validation.ts) with the
   // payloadDeadRef terminal + deletion recovery handling the client.
-  // The counter deliberately EXCLUDES fillImageThumb (S113-D): it
-  // measures the full-fill payload the POST bound guards; the 32 MB
-  // body cap subsumes the thumb's tens of KB.
+  // The counter measures the stored fill-family payload (fillImage +
+  // fillImageThumb — S114-A / B114-M1: the sixty-second audit closed
+  // the thumb channel; a per-REQUEST cap can never stand in for this
+  // CUMULATIVE bound). The honest heaviest-image board's element
+  // ceiling sits at ~32 (each ≤700K fill carries its ~10-50 KB thumb
+  // beside it). The 32 MB body cap still bounds any single request.
   fillImageBytes   Int      @default(0)
   lastOpenedAt    DateTime @default(now())
   createdAt       DateTime @default(now())

@@ -1001,6 +1001,13 @@ async function thumbnailFor(dataUrl: string): Promise<string | null> {
     // No intrinsic size (some SVGs) — no honest thumbnail.
     if (w <= 0 || h <= 0) return null;
     const longest = Math.max(w, h);
+    // Session 114 (S114-C / A114-L2): an already-small source IS its
+    // own thumb — the list projection's graceful fallback ships it in
+    // the fillImage slot at the same size, so a k=1 re-encode would
+    // only store a SECOND near-identical copy (JPEG generation loss
+    // included) and double the small-image board's editor payloads
+    // with zero list-projection benefit.
+    if (longest <= THUMB_MAX_DIM) return null;
     const k = longest > THUMB_MAX_DIM ? THUMB_MAX_DIM / longest : 1;
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(w * k));
@@ -1066,11 +1073,20 @@ function ImagePanel({
     // fillImage (a re-pick on this element REPLACES its bytes, never
     // adds to them — the S107-A live-read window applies) plus the
     // incoming stored length, against the shared constant.
+    // Session 114 (S114-A / B114-M1): the client's mirror of the
+    // server's both-family arithmetic — the board's stored bytes are
+    // the full fills PLUS their thumbs (the 24 MB bound counts both
+    // since the sixty-second audit), so the pre-empting sum rides the
+    // same terms: every OTHER element's two fill-family strings (a
+    // re-pick REPLACES this element's bytes, never adds to them —
+    // the S107-A live-read window applies) plus the incoming pair.
     const othersBytes = useEditorStore.getState().elements.reduce(
-      (sum, el) => sum + (el.id === element.id ? 0 : (el.fillImage?.length ?? 0)),
+      (sum, el) =>
+        sum +
+        (el.id === element.id ? 0 : (el.fillImage?.length ?? 0) + (el.fillImageThumb?.length ?? 0)),
       0,
     );
-    if (othersBytes + fillImage.length > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
+    if (othersBytes + fillImage.length + (fillImageThumb?.length ?? 0) > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
       toast.show({
         title: "Board images full",
         description: "This board's images are at the aggregate cap — remove an image before adding more.",

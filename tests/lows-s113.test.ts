@@ -315,7 +315,14 @@ describe("S113-B the upload/selection seam pair (A-L3 + A-I1)", () => {
     expect(panelCollapsed).toMatch(
       /useEditorStore\.getState\(\)\.elements\.find\(\(el\) => el\.id === element\.id\) \?\? element/,
     );
-    expect(panelCollapsed).toMatch(/othersBytes \+ fillImage\.length > FILL_IMAGE_PROJECT_LIMIT_BYTES/);
+    // Session 114 (S114-A / B114-M1): the pre-emption's compare gained
+    // the thumb term (the both-family arithmetic — the server's 24 MB
+    // bound counts fillImage + fillImageThumb since the sixty-second
+    // audit); the pin re-anchors onto the widened form, the floor of
+    // the compare and the shared constant unchanged.
+    expect(panelCollapsed).toMatch(
+      /othersBytes \+ fillImage\.length \+ \(fillImageThumb\?\.length \?\? 0\) > FILL_IMAGE_PROJECT_LIMIT_BYTES/,
+    );
   });
 });
 

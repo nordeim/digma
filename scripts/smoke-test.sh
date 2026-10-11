@@ -571,10 +571,17 @@ if [ -n "$THUMB_P_ID" ]; then
   THUMB_LIST=$(curl -s -b /tmp/smoke-cookies.txt "$BASE/api/projects")
   # The thumb-bearing row ships the THUMB (never its full image); the
   # legacy row ships its FULL image; the response's thumb field is nulled.
+  # Session 114 (S114-E / B114-L1): the third arm discriminates the
+  # projection's thumb-NULLING half — the null-grep alone matches the
+  # legacy row's DB null even if withThumbFills regressed to
+  # copy-not-move (the response would ship the thumb TWICE, doubling
+  # the thumb wire cost, and the pair stayed green). A correct
+  # projection answers ZERO populated thumb fields in the list body.
   echo "$THUMB_LIST" | grep -q "$THUMB_TA" && ! echo "$THUMB_LIST" | grep -q "$THUMB_A" \
     && ok "the list family ships the THUMB re-encode in the fillImage slot" \
     || bad "the fillImageThumb projection (thumb row): $THUMB_LIST"
   echo "$THUMB_LIST" | grep -q "$THUMB_B" && echo "$THUMB_LIST" | grep -q '"fillImageThumb":null' \
+    && ! echo "$THUMB_LIST" | grep -q '"fillImageThumb":"data:' \
     && ok "a thumb-less legacy row keeps its FULL image (the graceful fallback)" \
     || bad "the fillImageThumb legacy fallback: $THUMB_LIST"
   curl -s -o /dev/null -b /tmp/smoke-cookies.txt -X DELETE "$BASE/api/projects/$THUMB_P_ID"

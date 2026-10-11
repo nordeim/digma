@@ -86,8 +86,15 @@ export async function POST(request: NextRequest, { params }: Params) {
           // image-byte total is exactly the source's; a zero default
           // here would under-count the copy and under-enforce the
           // POST-side cumulative bound against it.
+          // Session 114 (S114-A / B114-M1): the seed sums BOTH stored
+          // fill families (the full fill and its thumb) — the counter
+          // the POST bound consults measures the whole fill payload,
+          // and the duplicate is a whole-board copy of exactly that.
           fillImageBytes: source.elements.reduce(
-            (sum, el) => sum + (typeof el.fillImage === "string" ? el.fillImage.length : 0),
+            (sum, el) =>
+              sum +
+              (typeof el.fillImage === "string" ? el.fillImage.length : 0) +
+              (typeof el.fillImageThumb === "string" ? el.fillImageThumb.length : 0),
             0,
           ),
         },

@@ -766,6 +766,18 @@ S122 = dict(S121)
 # project, deleted before any capture).
 S123 = dict(S122)
 
+# s124 mapping (session 114 — the 90th reference audit's evidence set + the
+# S114 capture set). The standing S124 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S114 tree); no NEW
+# witness this session (the S114 pass is cumulative-bound arithmetic at
+# the four sites + a no-op-removal store guard + a null-answering small-
+# source guard + an LLM duration bound that never fires on the
+# deterministic path the capture boots + probe/doc/transaction repairs —
+# every change guard-internals + server-side-counting + record-level with
+# identical observable behavior on the seeded flows; the thumb-bound
+# arithmetic rides its own smoke probe rows, deleted before any capture).
+S124 = dict(S123)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -866,6 +878,8 @@ def expected_for(name: str):
         return S122.get(Path(name).stem)
     if name.startswith("ref-audit-s123/"):
         return S123.get(Path(name).stem)
+    if name.startswith("ref-audit-s124/"):
+        return S124.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -970,6 +984,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s121").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s122").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s123").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s124").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

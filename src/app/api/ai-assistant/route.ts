@@ -7,6 +7,15 @@ import { aiRateLimit, clientIpOf } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+// Session 114 (S114-D / A114-I1 + B114-L4 — the deferred-queue front's
+// call): the SERVER-SIDE duration bound the self-hosted posture lacked.
+// The SDK's fetch carries no signal (a hanging upstream held the handler
+// open indefinitely — maxDuration is the serverless hint the standalone
+// server ignores, and the client's own 30s abort recovers the panel but
+// never cancels the handler). 25s sits 5s INSIDE the client's abort so
+// the deterministic fallback arrives usable, not as a dead reply.
+const LLM_REQUEST_TIMEOUT_MS = 25_000;
+
 /**
  * POST /api/ai-assistant — the editor's AI design assistant.
  *
@@ -95,27 +104,44 @@ export async function POST(request: NextRequest) {
         "Canvas coordinate space: x 0-1000, y 0-700 typical. Keep replies short.",
       ].join("\n");
 
-      const completion = await zai.chat.completions.create({
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: message },
-        ],
-        thinking: { type: "disabled" },
-      });
+      // Session 114 (S114-D): the race bounds the handler — a rejection
+      // (timeout OR SDK failure) lands in the catch below and the
+      // deterministic fallback answers. The timer clears on EVERY exit
+      // (a fast SDK rejection must not strand a pending timer).
+      let llmTimer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const completion = await Promise.race([
+          zai.chat.completions.create({
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: message },
+            ],
+            thinking: { type: "disabled" },
+          }),
+          new Promise<never>((_, reject) => {
+            llmTimer = setTimeout(
+              () => reject(new Error("LLM request exceeded the 25s bound")),
+              LLM_REQUEST_TIMEOUT_MS,
+            );
+          }),
+        ]);
 
-      // Session 101 (S101-E / B101-I1): the completion text rides a 64KB
-      // cap before the JSON scan — the user-supplied side was already
-      // bounded (message 1000, ids ≤64×100, ops ≤50 after sanitize) while
-      // the model's reply buffered unbounded (the SDK call sets no
-      // max_tokens; a pathological repetition glitch is the realistic
-      // case, and 64KB is ~100× the headroom the accepted ops need).
-      const text = (completion.choices[0]?.message?.content ?? "").slice(0, 65_536);
-      const jsonStart = text.indexOf("{");
-      const jsonEnd = text.lastIndexOf("}");
-      if (jsonStart >= 0 && jsonEnd > jsonStart) {
-        const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
-        const sanitized = sanitizeLlmOperations(parsed, targetIds);
-        if (sanitized) command = sanitized;
+        // Session 101 (S101-E / B101-I1): the completion text rides a 64KB
+        // cap before the JSON scan — the user-supplied side was already
+        // bounded (message 1000, ids ≤64×100, ops ≤50 after sanitize) while
+        // the model's reply buffered unbounded (the SDK call sets no
+        // max_tokens; a pathological repetition glitch is the realistic
+        // case, and 64KB is ~100× the headroom the accepted ops need).
+        const text = (completion.choices[0]?.message?.content ?? "").slice(0, 65_536);
+        const jsonStart = text.indexOf("{");
+        const jsonEnd = text.lastIndexOf("}");
+        if (jsonStart >= 0 && jsonEnd > jsonStart) {
+          const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+          const sanitized = sanitizeLlmOperations(parsed, targetIds);
+          if (sanitized) command = sanitized;
+        }
+      } finally {
+        if (llmTimer) clearTimeout(llmTimer);
       }
     } catch (error) {
       // SDK unavailable / malformed output — the deterministic fallback already
