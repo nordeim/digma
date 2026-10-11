@@ -282,6 +282,18 @@ export function AiAssistant() {
         // properties-panel.tsx's update helper); the drag's snapshot
         // stays INTACT. The canvas and panel arm sites carry the same
         // interleave discipline (the S66-B foreign-ride family).
+        // Session 117 (S117-C / A117-I2 — the deferred registration):
+        // the commit=true fallback shares the S117-C inverted-order
+        // form — a reply landing inside an open typing burst's 150ms
+        // idle pushes the burst's pre-typing snapshot AFTER the
+        // apply's own snapshots (the intent-order inversion; every
+        // state stays reachable, no entry lost — the A88-I1 posture).
+        // The flush-first fix would need the slider-gesture module
+        // to discriminate the idle-armed TEXT burst (flushable) from
+        // the ACTIVE slider drag this fallback exists to protect —
+        // reset() handles both identically, so the honest
+        // layer-scoped fix ceiling is this note + the deferred
+        // queue registration.
         const coalesce =
           operation.patch.scale !== undefined &&
           Object.keys(patch).length > 0 &&

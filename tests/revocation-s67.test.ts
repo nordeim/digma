@@ -81,7 +81,14 @@ describe("the versioned session token (S67-A / M-1)", () => {
   it("the standing signature + TTL semantics survive (preservation)", () => {
     const source = src("src/lib/auth.ts");
     expect(source).toMatch(/timingSafeEqual\(a, b\)/);
-    expect(source).toMatch(/Number\(expiry\) < Date\.now\(\)/);
+    // Session 117 (S117-E / B117-I1) re-anchor: the expiry liveness
+    // check folded into the finite guard — the NaN-expiry member the
+    // sixty-fifth audit added beside the tokenVersion integer check
+    // (the old bare `Number(expiry) < Date.now()` form let
+    // Number("abc") === NaN pass the compare). The TTL semantics are
+    // unchanged: a finite past expiry still rejects.
+    expect(source).toMatch(/const expiryMs = Number\(expiry\);/);
+    expect(source).toMatch(/!Number\.isFinite\(expiryMs\) \|\| expiryMs < Date\.now\(\)/);
   });
 });
 

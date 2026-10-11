@@ -47,7 +47,12 @@ describe("the honesty batch — validation comment (S76-F / B-L2)", () => {
     // + the S112-C construction-route closure) — the window widens
     // 600 -> 1200 (the live-measured distance; the 1.45 GB arithmetic
     // and the honest two-claims form it anchors are unchanged).
-    const doc = validation.slice(Math.max(0, idx - 1200), idx).replace(/[*\s]+/g, " ");
+    // Session 117 re-anchor (S117-A / B117-M1): the non-fill channel
+    // census amendment grows the block again (the rowStoredBytes seam
+    // + the constructible-from-scratch form) — the window widens
+    // 1200 -> 3400 (the same doctrine-comment growth family; the
+    // 1.45 GB arithmetic and the two-claims form are unchanged).
+    const doc = validation.slice(Math.max(0, idx - 3400), idx).replace(/[*\s]+/g, " ");
     expect(doc).toMatch(/1\.45 GB/);
     expect(doc).not.toMatch(/2000-element board of image fills sits far under/);
   });

@@ -145,6 +145,17 @@ export function Canvas() {
     }
 
     if (tool === "text") {
+      // Session 117 (S117-C / A117-L2 — the sixty-fifth audit's second
+      // Low): the S66-A flush joins the text arm — the one
+      // store-mutating canvas branch that pushed its snapshot
+      // (addElement commits history synchronously) while a panel
+      // typing burst sat armed inside its 150ms idle window: the
+      // burst's blur terminal then pushed the PRE-burst snapshot
+      // AFTER the add's, inverting the history intent order (the
+      // first Ctrl+Z reverted the typing and the fresh element
+      // together). The flush lands the burst's own entry FIRST — the
+      // hit branch below and the resize arm carry the same doctrine.
+      resetSliderGesture();
       const { addElement } = useEditorStore.getState();
       // Session 61 (S61-F / A-L-5): the cap-refused add answers the user
       // (the store returns null — a silent dead click would be the
@@ -797,7 +808,10 @@ function CanvasElement({
 
 // Session 49 (S49-1): the memoization the zoom-prop comments always
 // described, now actually implemented. The store's updates are immutable
-// (unchanged elements keep their object identity), so React.memo's default
+// (unchanged elements keep their object identity — every mutation arm
+// guards the unchanged member's reference; S117-B / A117-L1 closed the
+// renumber span's own exception: reorderElements' unconditional spread
+// had rebuilt EVERY identity on a real reorder), so React.memo's default
 // shallow compare gives the documented behavior: a drag re-renders only the
 // dragged element, a selection change only the members whose `selected`
 // flipped, a zoom change only frames (every other type receives `undefined`

@@ -526,10 +526,21 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       const moving = state.elements.filter((el) => fromIdSet.has(el.id));
       const rest = state.elements.filter((el) => !fromIdSet.has(el.id));
       const clamped = clamp(toIndex, 0, rest.length);
-      const next = [...rest.slice(0, clamped), ...moving, ...rest.slice(clamped)].map((el, i) => ({
-        ...el,
-        sortOrder: i,
-      }));
+      // Session 117 (S117-B / A117-L1 — the sixty-fifth audit's first
+      // Low): the renumber keeps the REFERENCE when the value
+      // survives — the members outside the moved span (their index
+      // unchanged) keep both value AND identity, so the memoized
+      // canvas skips them (the S49-1 contract the pre-fix
+      // unconditional spread broke: ONE layers drag re-rendered every
+      // element on the board — at ELEMENT_LIMIT a full-board
+      // re-render per reorder, the React.memo shallow compare on
+      // element defeated for members whose value never moved). A
+      // gapped server sortOrder still renumbers wherever values
+      // differ — the compare is per-member, never a sequence
+      // assumption.
+      const next = [...rest.slice(0, clamped), ...moving, ...rest.slice(clamped)].map((el, i) =>
+        el.sortOrder === i ? el : { ...el, sortOrder: i },
+      );
       // Session 78 (S78-C / A-L2): the no-op bail. A drop onto the
       // neighbor's own lower half computes an insertion index that
       // reproduces the IDENTICAL order (verified by index math: elements

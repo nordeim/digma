@@ -217,7 +217,21 @@ export function withThumbFills<P extends { elements: unknown[] }>(project: P): P
     elements: project.elements.map((el) => {
       const row = el as Record<string, unknown>;
       const thumb = typeof row.fillImageThumb === "string" ? row.fillImageThumb : null;
-      return { ...row, fillImage: thumb ?? row.fillImage ?? null, fillImageThumb: null };
+      // Session 117 (S117-D / B117-L1 — the sixty-fifth audit's third
+      // Low): the thumb ships only when the row is IMAGE-BEARING —
+      // buildElementRow admits fillImage and fillImageThumb
+      // independently, so a scripted elements POST carrying only a
+      // thumb stored a row whose list-family projection shipped
+      // fillImage = thumb (an image the canvas, the detail GET, and
+      // the export never render — fillPaintFor reads the null
+      // fillImage). The two intended arms are unchanged: a
+      // thumb-bearing image row ships the thumb; a legacy image row
+      // keeps its full image.
+      return {
+        ...row,
+        fillImage: row.fillImage != null ? (thumb ?? row.fillImage) : null,
+        fillImageThumb: null,
+      };
     }),
   };
 }
@@ -332,16 +346,57 @@ export const ELEMENT_LIMIT = 2000;
 
 // Session 112 (S112-C — the sixtieth audit's B92-I1 leg (a), the s111
 // plan's deferred front): the single seam for the board's AGGREGATE
-// IMAGE-BYTE ceiling, shared by the server's POST-side cumulative
+// STORED-BYTE ceiling, shared by the server's POST-side cumulative
 // bound and the client's upload-time pre-emption (the ELEMENT_LIMIT
 // pattern — one source of truth for the server cap and the client
-// clamp). 24 MB sits under the 32 MB request-body cap with headroom
-// for the non-image JSON of a full 2000-row list (~600 KB), so a
-// board constructed under this bound always fits the autosave PUT;
-// the PUT itself deliberately enforces only its body cap (the ~30 MB
+// clamp). Session 117 (S117-A / B117-M1 — the sixty-fifth audit's
+// headline) completes the channel census: the bound counts BOTH
+// stored fill families PLUS the three free-text fields at their
+// JSON-escaped wire lengths (rowStoredBytes below — a backslash
+// doubles, a control char expands 1 -> 6 under the slice-only S99-B
+// clamp that admits both), so a board constructed under this bound
+// always fits the autosave PUT with the FIXED per-row serialization
+// (~380 chars measured — ids, coordinates, timestamps, field names,
+// JSON syntax) left outside the count: at ELEMENT_LIMIT the whole
+// fixed slack is ~0.76 MB, bounded inside the 8 MB headroom this
+// constant holds under the 32 MB body cap; the PUT itself
+// deliberately enforces only its body cap (the ~30 MB
 // heaviest-legitimate form doctrine — see the elements route's
 // counter-maintenance comment).
 export const FILL_IMAGE_PROJECT_LIMIT_BYTES = 24_000_000;
+
+// Session 117 (S117-A / B117-M1 — the sixty-fifth audit's headline):
+// the per-row STORED-BYTE term — the one seam every bound site shares
+// (the FILL_IMAGE_PROJECT_LIMIT_BYTES pattern above). The channel
+// census enumerates every field the row builder's clamps ADMIT (the
+// F101 member — a per-request cap can never stand in for a cumulative
+// bound, and a bound's census may not stop at the image fields):
+// BOTH stored fill families at their raw lengths (data URLs carry no
+// JSON-escapable characters) PLUS the three NON-FILL free-text
+// fields at their JSON-ESCAPED lengths — the wire form the autosave
+// PUT actually serializes (a backslash doubles, a control char
+// expands 1 -> 6; a 2000-char control-char text measures 2000 raw
+// but 12006 on the wire). Pre-fix the counter summed the fills
+// alone, so a scripted client stacked ~9.8 MB of max-length text
+// rows through full-list PUTs the counter scored 0, then drove the
+// fill gate to its ceiling — a board whose next full-list PUT
+// serialized past the 32 MB body cap (the sticky wedge,
+// constructible from scratch).
+export function rowStoredBytes(row: {
+  fillImage?: string | null;
+  fillImageThumb?: string | null;
+  text?: string | null;
+  name?: string | null;
+  fillGradient?: string | null;
+}): number {
+  return (
+    (row.fillImage != null ? row.fillImage.length : 0) +
+    (row.fillImageThumb != null ? row.fillImageThumb.length : 0) +
+    (row.text != null ? JSON.stringify(row.text).length : 0) +
+    (row.name != null ? JSON.stringify(row.name).length : 0) +
+    (row.fillGradient != null ? JSON.stringify(row.fillGradient).length : 0)
+  );
+}
 
 /** Session 64 (S64-G — the twelfth audit's A-4): the ONE typing-target
  * predicate, single-sourced. The editor shell and the canvas had carried

@@ -23,6 +23,7 @@ import {
   patchDiffers,
   rangeFillPercent,
   removeGradientStop,
+  rowStoredBytes,
   shouldDownscale,
   type DesignElementDTO,
   type GradientFill,
@@ -1083,13 +1084,21 @@ function ImagePanel({
     // same terms: every OTHER element's two fill-family strings (a
     // re-pick REPLACES this element's bytes, never adds to them —
     // the S107-A live-read window applies) plus the incoming pair.
+    // Session 117 (S117-A / B117-M1): the client's mirror rides the
+    // same shared rowStoredBytes seam — the non-fill free-text
+    // members (text/name/fillGradient at their JSON-escaped wire
+    // lengths) join both fill families, the same census the server's
+    // three sites ride. The incoming term is the PROJECTED post-
+    // upload row: the upload patch clears fillGradient while text and
+    // name survive beside the incoming fill pair, so the pre-emption
+    // answers the row that would actually land.
     const othersBytes = useEditorStore.getState().elements.reduce(
-      (sum, el) =>
-        sum +
-        (el.id === element.id ? 0 : (el.fillImage?.length ?? 0) + (el.fillImageThumb?.length ?? 0)),
+      (sum, el) => sum + (el.id === element.id ? 0 : rowStoredBytes(el)),
       0,
     );
-    if (othersBytes + fillImage.length + (fillImageThumb?.length ?? 0) > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
+    const selfRow = useEditorStore.getState().elements.find((el) => el.id === element.id);
+    const incomingBytes = rowStoredBytes({ ...selfRow, fillImage, fillImageThumb, fillGradient: null });
+    if (othersBytes + incomingBytes > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
       toast.show({
         title: "Board images full",
         description: "This board's images are at the aggregate cap — remove an image before adding more.",

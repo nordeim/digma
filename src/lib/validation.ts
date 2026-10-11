@@ -178,19 +178,26 @@ export function safeFromUrl(raw: string | null | undefined): string {
  * not "far under" (the 2000 × ~722 KB full-image board ≈ 1.45 GB
  * sits far OVER — the elements PUT's own arithmetic — and the S67-B
  * abuse family the cap exists to stop). The sticky-wedge honest form
- * (the S112-D amendment): the scripted elements POST path's fillImage
- * bytes are bounded since S112-C (the maintained Project.fillImageBytes
- * counter against the shared 24 MB constant), so the construction
- * route that could stack a stored board past this line is closed; a
- * board that nevertheless sits over it (a legacy row set predating
- * the counter) wedges the full-list PUT — every save answers the
- * payload-too-large 400 until enough image elements are deleted that
- * the serialized body crosses back under the cap (the recovery path
- * the client's payloadDeadRef terminal rides: the same-state never
- * re-uploads, and deleting image elements re-arms the flush), and any
- * reload before that crossing reverts the deletion work (the last
- * persisted list predates it — close the tab only after the badge
- * reads saved again). */
+ * (the S112-D amendment, completed by S117-A / B117-M1 — the
+ * sixty-fifth audit's headline): the scripted elements POST path's
+ * stored bytes are bounded since S112-C (the maintained
+ * Project.fillImageBytes counter against the shared 24 MB constant),
+ * and since S117-A the census enumerates the NON-FILL channel too —
+ * the rowStoredBytes seam counts text/name/fillGradient at their
+ * JSON-escaped wire lengths beside both fill families (the pre-fix
+ * fills-only arithmetic let a scripted client stack ~9.8 MB of
+ * max-length text rows the counter scored 0, then drive the fill
+ * gate to its ceiling — the wedge constructible from scratch), so
+ * the construction route that could stack a stored board past this
+ * line is closed; a board that nevertheless sits over it (a legacy
+ * row set predating the census) wedges the full-list PUT — every
+ * save answers the payload-too-large 400 until enough image elements
+ * are deleted that the serialized body crosses back under the cap
+ * (the recovery path the client's payloadDeadRef terminal rides: the
+ * same-state never re-uploads, and deleting image elements re-arms
+ * the flush), and any reload before that crossing reverts the
+ * deletion work (the last persisted list predates it — close the tab
+ * only after the badge reads saved again). */
 export const REQUEST_BODY_LIMIT_BYTES = 32_000_000;
 
 /** Pure: does the request's declared content-length exceed the cap?

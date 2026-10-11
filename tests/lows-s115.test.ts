@@ -330,9 +330,14 @@ describe("S115-D the zero-addBytes gate (B115-I1)", () => {
   });
 
   it("SURVIVAL (source): the addBytes both-family declaration stays (the S114-A anchor)", () => {
-    expect(elementsCollapsed).toMatch(
-      /const addBytes = \(typeof row\.fillImage === "string" \? row\.fillImage\.length : 0\) \+ \(typeof row\.fillImageThumb === "string" \? row\.fillImageThumb\.length : 0\);/,
-    );
+    // Session 117 re-anchor (S117-A / B117-M1, the F89 form with
+    // provenance): the sixty-fifth audit's headline folded the
+    // two-term declaration into the ONE shared rowStoredBytes seam —
+    // both fill families PLUS the non-fill free-text members
+    // (text/name/fillGradient at their JSON-escaped wire lengths).
+    // The declaration survives inside the seam; the zero-add gate's
+    // addBytes term is unchanged.
+    expect(elementsCollapsed).toMatch(/const addBytes = rowStoredBytes\(row\);/);
   });
 
   it("SURVIVAL (source): the recovery-naming envelope + the counter forms stay", () => {

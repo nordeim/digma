@@ -72,12 +72,18 @@ model Project {
   // payload before its first PUT recomputes the truth; the board then
   // rides the documented sticky wedge (validation.ts) with the
   // payloadDeadRef terminal + deletion recovery handling the client.
-  // The counter measures the stored fill-family payload (fillImage +
-  // fillImageThumb — S114-A / B114-M1: the sixty-second audit closed
-  // the thumb channel; a per-REQUEST cap can never stand in for this
-  // CUMULATIVE bound). The honest heaviest-image board's element
-  // ceiling sits at ~32 (each ≤700K fill carries its ~10-50 KB thumb
-  // beside it). The 32 MB body cap still bounds any single request.
+  // The counter measures the board's stored VARIABLE-field bytes
+  // (fillImage + fillImageThumb since S114-A / B114-M1: the
+  // sixty-second audit closed the thumb channel; PLUS the three
+  // free-text fields text/name/fillGradient at their JSON-escaped
+  // wire lengths since S117-A / B117-M1 — the sixty-fifth audit's
+  // headline closed the non-fill channel: a per-REQUEST cap can
+  // never stand in for this CUMULATIVE bound, and the census may not
+  // stop at the image fields — the rowStoredBytes seam in
+  // src/lib/editor.ts). The honest heaviest-image board's element
+  // ceiling sits at ~31 (each ≤700K fill carries its ~10-50 KB thumb
+  // and its own escaped name/gradient terms beside it). The 32 MB
+  // body cap still bounds any single request.
   fillImageBytes   Int      @default(0)
   lastOpenedAt    DateTime @default(now())
   createdAt       DateTime @default(now())

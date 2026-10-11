@@ -6,7 +6,7 @@ import { readBoundedJson, clampColor, clampNumber, isElementType } from "@/lib/v
 // Session 70 (S70-B): the row-builder family (buildElementRow +
 // clampFillImage + the field clamps) lives in the ONE seam —
 // src/lib/editor.ts — consumed by both handlers below.
-import { buildElementRow, ELEMENT_LIMIT, FILL_IMAGE_PROJECT_LIMIT_BYTES } from "@/lib/editor";
+import { buildElementRow, ELEMENT_LIMIT, FILL_IMAGE_PROJECT_LIMIT_BYTES, rowStoredBytes } from "@/lib/editor";
 import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -166,9 +166,18 @@ export async function POST(request: NextRequest, { params }: Params) {
       // Both stored fill families ride the counter now; the honest
       // heaviest-image board's element ceiling moves ~34 -> ~32 (each
       // heaviest element carries its ~10-50 KB thumb beside its fill).
-      const addBytes =
-        (typeof row.fillImage === "string" ? row.fillImage.length : 0) +
-        (typeof row.fillImageThumb === "string" ? row.fillImageThumb.length : 0);
+      // Session 117 (S117-A / B117-M1 — the sixty-fifth audit's
+      // headline): the channel census completes — the non-fill
+      // members (text/name/fillGradient at their JSON-escaped wire
+      // lengths) join both fill families through the ONE shared
+      // rowStoredBytes seam. Pre-fix a scripted client stacked
+      // ~9.8 MB of max-length text rows through full-list PUTs this
+      // counter scored 0 (the fills-only arithmetic), then drove the
+      // fill gate to its 24 MB ceiling — the stored board's next PUT
+      // serialized past the 32 MB body cap (the sticky wedge
+      // constructible from scratch, the S112-C "always fits"
+      // invariant falsified through the channel the census missed).
+      const addBytes = rowStoredBytes(row);
       // Session 115 (S115-D / B115-I1): the zero-add gate — an
       // image-less row stores no fill-family bytes, so it can never
       // be "the write that would push the board past the bound" (the
@@ -179,6 +188,13 @@ export async function POST(request: NextRequest, { params }: Params) {
       // mid-recovery got the image-cap 400 for a write that stored
       // no image bytes. The counter only grows through addBytes > 0
       // paths, all still gated — no channel opens.
+      // Session 117 (S117-A): the promise survives the census
+      // completion verbatim — a write that adds NOTHING never rejects;
+      // with the name member now counted every POST-built row answers
+      // addBytes > 0 (the defaulted name), so the gate's live member
+      // is the five-field-empty form the row builder itself never
+      // emits — the recovery path (deletions + the PUT recompute) is
+      // unchanged.
       if (addBytes > 0 && (liveBytes?.fillImageBytes ?? 0) + addBytes > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
         overImageCap = true;
         return null;
@@ -307,14 +323,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
   // bound: its own 32 MB body cap subsumes it, and the ~30 MB
   // heaviest-legitimate PUT form (the S76-F doctrine — a max-ceiling
   // save of image-bearing rows) must keep saving. Counter maintenance
-  // only.
-  const total = rows.reduce(
-    (sum, r) =>
-      sum +
-      (typeof r.fillImage === "string" ? r.fillImage.length : 0) +
-      (typeof r.fillImageThumb === "string" ? r.fillImageThumb.length : 0),
-    0,
-  );
+  // only. Session 117 (S117-A / B117-M1): the recompute rides the
+  // shared rowStoredBytes seam — the non-fill free-text members join
+  // both fill families at their JSON-escaped wire lengths (the same
+  // census the POST gate and the duplicate seed ride).
+  const total = rows.reduce((sum, r) => sum + rowStoredBytes(r), 0);
 
   // Session 56 (S56-H — L-2): the response read runs INSIDE the interactive
   // transaction. The old outside-read could interleave with a concurrent

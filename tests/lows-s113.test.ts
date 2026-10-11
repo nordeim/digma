@@ -326,8 +326,16 @@ describe("S113-B the upload/selection seam pair (A-L3 + A-I1)", () => {
     // bound counts fillImage + fillImageThumb since the sixty-second
     // audit); the pin re-anchors onto the widened form, the floor of
     // the compare and the shared constant unchanged.
+    // Session 117 re-anchor (S117-A / B117-M1): the compare rides the
+    // shared rowStoredBytes seam now — the incoming term is the
+    // projected post-upload row (the pair + the surviving text/name
+    // members; the upload patch clears fillGradient), the same census
+    // the server's three sites ride.
     expect(panelCollapsed).toMatch(
-      /othersBytes \+ fillImage\.length \+ \(fillImageThumb\?\.length \?\? 0\) > FILL_IMAGE_PROJECT_LIMIT_BYTES/,
+      /const incomingBytes = rowStoredBytes\(\{ \.\.\.selfRow, fillImage, fillImageThumb, fillGradient: null \}\);/,
+    );
+    expect(panelCollapsed).toMatch(
+      /if \(othersBytes \+ incomingBytes > FILL_IMAGE_PROJECT_LIMIT_BYTES\) \{/,
     );
   });
 });

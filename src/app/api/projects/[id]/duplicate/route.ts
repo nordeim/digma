@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { THUMBNAIL_ELEMENT_SELECT, withThumbFills } from "@/lib/editor";
+import { rowStoredBytes, THUMBNAIL_ELEMENT_SELECT, withThumbFills } from "@/lib/editor";
 import { PROJECT_LIMIT } from "@/lib/validation";
 import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
@@ -90,13 +90,12 @@ export async function POST(request: NextRequest, { params }: Params) {
           // fill families (the full fill and its thumb) — the counter
           // the POST bound consults measures the whole fill payload,
           // and the duplicate is a whole-board copy of exactly that.
-          fillImageBytes: source.elements.reduce(
-            (sum, el) =>
-              sum +
-              (typeof el.fillImage === "string" ? el.fillImage.length : 0) +
-              (typeof el.fillImageThumb === "string" ? el.fillImageThumb.length : 0),
-            0,
-          ),
+          // Session 117 (S117-A / B117-M1): the seed rides the shared
+          // rowStoredBytes seam — the non-fill free-text members
+          // (text/name/fillGradient at their JSON-escaped wire
+          // lengths) join both fill families, the same census the
+          // POST gate and the PUT recompute ride.
+          fillImageBytes: source.elements.reduce((sum, el) => sum + rowStoredBytes(el), 0),
         },
       });
       if (source.elements.length > 0) {

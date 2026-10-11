@@ -201,29 +201,46 @@ beforeEach(() => {
 
 describe("S114-A the thumb channel joins the cumulative bound (B114-M1 — the headline)", () => {
   it("DEFECT (source): the elements POST's addBytes sums BOTH fill families", () => {
-    expect(elementsCollapsed).toMatch(
-      /const addBytes = \(typeof row\.fillImage === "string" \? row\.fillImage\.length : 0\) \+ \(typeof row\.fillImageThumb === "string" \? row\.fillImageThumb\.length : 0\);/,
+    // Session 117 re-anchor (S117-A / B117-M1, the F89 form with
+    // provenance): the sixty-fifth audit's headline folded the
+    // two-term form into the ONE shared rowStoredBytes seam — the
+    // non-fill free-text members (text/name/fillGradient at their
+    // JSON-escaped wire lengths) join both fill families. The
+    // both-fill-families claim survives INSIDE the seam.
+    expect(elementsCollapsed).toMatch(/const addBytes = rowStoredBytes\(row\);/);
+    expect(editorLibSource).toMatch(
+      /row\.fillImage != null \? row\.fillImage\.length : 0[\s\S]*row\.fillImageThumb != null \? row\.fillImageThumb\.length : 0/,
     );
   });
 
   it("DEFECT (source): the PUT recompute's reduce sums BOTH fill families", () => {
-    expect(elementsCollapsed).toMatch(
-      /sum \+ \(typeof r\.fillImage === "string" \? r\.fillImage\.length : 0\) \+ \(typeof r\.fillImageThumb === "string" \? r\.fillImageThumb\.length : 0\)/,
-    );
+    // Session 117 re-anchor (S117-A): the reduce rides the shared
+    // rowStoredBytes seam — the census carries both fill families
+    // plus the non-fill free-text members.
+    expect(elementsCollapsed).toMatch(/const total = rows\.reduce\(\(sum, r\) => sum \+ rowStoredBytes\(r\), 0\);/);
   });
 
   it("DEFECT (source): the duplicate route's counter seed sums BOTH fill families", () => {
+    // Session 117 re-anchor (S117-A): the seed rides the shared
+    // rowStoredBytes seam.
     expect(duplicateCollapsed).toMatch(
-      /sum \+ \(typeof el\.fillImage === "string" \? el\.fillImage\.length : 0\) \+ \(typeof el\.fillImageThumb === "string" \? el\.fillImageThumb\.length : 0\)/,
+      /fillImageBytes: source\.elements\.reduce\(\(sum, el\) => sum \+ rowStoredBytes\(el\), 0\),/,
     );
   });
 
   it("DEFECT (source): the client's aggregate pre-emption counts others' thumbs AND the incoming thumb", () => {
+    // Session 117 re-anchor (S117-A): the client's mirror rides the
+    // same shared rowStoredBytes seam — the others' reduce and the
+    // projected post-upload row (the incoming pair + the surviving
+    // text/name members; the upload patch clears fillGradient).
     expect(panelCollapsed).toMatch(
-      /\(el\.fillImage\?\.length \?\? 0\) \+ \(el\.fillImageThumb\?\.length \?\? 0\)/,
+      /const othersBytes = useEditorStore\.getState\(\)\.elements\.reduce\( \(sum, el\) => sum \+ \(el\.id === element\.id \? 0 : rowStoredBytes\(el\)\), 0, \);/,
     );
     expect(panelCollapsed).toMatch(
-      /othersBytes \+ fillImage\.length \+ \(fillImageThumb\?\.length \?\? 0\) > FILL_IMAGE_PROJECT_LIMIT_BYTES/,
+      /const incomingBytes = rowStoredBytes\(\{ \.\.\.selfRow, fillImage, fillImageThumb, fillGradient: null \}\);/,
+    );
+    expect(panelCollapsed).toMatch(
+      /if \(othersBytes \+ incomingBytes > FILL_IMAGE_PROJECT_LIMIT_BYTES\) \{/,
     );
   });
 

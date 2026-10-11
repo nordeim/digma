@@ -72,7 +72,17 @@ export function parseSessionToken(token: string | undefined | null): ParsedSessi
   const a = Buffer.from(signature, "hex");
   const b = Buffer.from(expected, "hex");
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  if (Number(expiry) < Date.now()) return null;
+  // Session 117 (S117-E / B117-I1 — the sixty-fifth audit's fine
+  // print): the expiry's own finite guard. Number("abc") is NaN and
+  // NaN < Date.now() is false, so a non-numeric expiry segment
+  // survived the liveness check. Unreachable through the mint sites
+  // (the expiry rides the HMAC payload — forging requires the
+  // secret, and the dev-only fallback is the documented
+  // everything-forgeable posture); the hardening joins the
+  // tokenVersion integer check above (the server's clampNumber
+  // posture at the token layer).
+  const expiryMs = Number(expiry);
+  if (!Number.isFinite(expiryMs) || expiryMs < Date.now()) return null;
   return { userId, tokenVersion };
 }
 
