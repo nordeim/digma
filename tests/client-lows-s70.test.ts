@@ -91,8 +91,11 @@ describe("the line-width clamp symmetry (S70-D / L-A7)", () => {
     // never the product); the intent (line → 0, non-line → 1 — the draw
     // commit's own contract) is byte-identical inside the helper.
     const store = src("src/components/editor/editor-store.ts");
-    expect(store).toMatch(/width: clampSizeField\(el\.width \* factor, el\.type\)/);
-    expect(store).toMatch(/height: clampSizeField\(el\.height \* factor, el\.type\)/);
+    // Session 116 (S116-A — the F89 re-anchor): the products ride const
+    // locals now (the value-diff guard's compare); the type-aware floor
+    // is unchanged inside the helper.
+    expect(store).toMatch(/const width = clampSizeField\(el\.width \* factor, el\.type\);/);
+    expect(store).toMatch(/const height = clampSizeField\(el\.height \* factor, el\.type\);/);
     expect(store).not.toMatch(/width: Math\.max\(el\.width \* factor, 1\)/);
     expect(store).not.toMatch(/height: Math\.max\(el\.height \* factor, 0\)/);
   });

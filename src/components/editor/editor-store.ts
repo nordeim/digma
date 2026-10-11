@@ -388,38 +388,53 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   scaleElements: (ids, factor, commit = true) =>
     set((state) => {
       const idSet = new Set(ids);
-      const next = state.elements.map((el) =>
-        idSet.has(el.id)
-          // Session 70 (S70-D / L-A7): both floors are type-aware
-          // (line → 0, non-line → 1) — the pre-fix width floored at 1
-          // for every type and the height at 0 for every type,
-          // disagreeing with each other AND the resize/panel forms.
-          // Session 86 (S86-B / A86-L2): the products ride the shared
-          // clampSizeField (the S84-B helper mirroring the server's
-          // clampNumber(raw?.width, 0, 100000, …) bound) — the floor
-          // survives unchanged and the 100000 CEILING joins it. The
-          // sanitizer bounds the MULTIPLIER (0.05..20) but never the
-          // PRODUCT: an ×20 scale on a >5000-wide element reached
-          // 100000..400000, rendered locally, then visibly teleported
-          // to the server's bound when the store-replacing PUT landed
-          // (the S84-B teleport family's multiplicative member — every
-          // sibling path was already bounded).
-          ? {
-              ...el,
-              width: clampSizeField(el.width * factor, el.type),
-              height: clampSizeField(el.height * factor, el.type),
-            }
-          : el,
-      );
+      // Session 116 (S116-A / A116-L1 — the sixty-fourth audit's Low
+      // lead): the value-diff guard joins the S109-A id-match guard —
+      // the S115-A sibling completion, the no-op family's LAST
+      // unguarded mutation arm. A factor that maps back to identity
+      // (the identity factor 1, or a clamp-saturated product — a
+      // 0-extent line, a dimension already at the 100000 ceiling)
+      // committed new same-value object identities, flipped saveState
+      // "unsaved", pushed history, wiped redo, and armed the 800ms
+      // byte-identical full-list PUT. The one shipped caller (the AI
+      // apply's scale arm) guards upstream through scaleWouldChange —
+      // but the S115-A doctrine is layer-scoped, never caller-scoped
+      // (the F96 form); a future programmatic caller re-opens the
+      // no-op commit without this guard. The unchanged member keeps
+      // its reference (the memoized canvas skips it).
+      let matched = false;
+      let changed = false;
+      const next = state.elements.map((el) => {
+        if (!idSet.has(el.id)) return el;
+        matched = true;
+        // Session 70 (S70-D / L-A7): both floors are type-aware
+        // (line → 0, non-line → 1) — the pre-fix width floored at 1
+        // for every type and the height at 0 for every type,
+        // disagreeing with each other AND the resize/panel forms.
+        // Session 86 (S86-B / A86-L2): the products ride the shared
+        // clampSizeField (the S84-B helper mirroring the server's
+        // clampNumber(raw?.width, 0, 100000, …) bound) — the floor
+        // survives unchanged and the 100000 CEILING joins it. The
+        // sanitizer bounds the MULTIPLIER (0.05..20) but never the
+        // PRODUCT: an ×20 scale on a >5000-wide element reached
+        // 100000..400000, rendered locally, then visibly teleported
+        // to the server's bound when the store-replacing PUT landed
+        // (the S84-B teleport family's multiplicative member — every
+        // sibling path was already bounded).
+        const width = clampSizeField(el.width * factor, el.type);
+        const height = clampSizeField(el.height * factor, el.type);
+        if (width === el.width && height === el.height) return el;
+        changed = true;
+        return { ...el, width, height };
+      });
       // Session 109 (S109-A — the fifty-seventh audit's A-L1): the same
       // id-match guard as updateElements — a zero-match scale never
       // flips saveState, never pushes history, never wipes redo (the
       // AI apply's scale arm passes the LLM's id list; a stale id in
       // the batch must not arm a phantom PUT for the surviving members'
       // sake, and an ALL-stale batch must arm nothing at all).
-      let matched = false;
-      for (const el of state.elements) if (idSet.has(el.id)) { matched = true; break; }
       if (!matched) return {};
+      if (!changed) return {};
       // Session 80 (S80-C / A-L2): the optional commit mirrors
       // updateElements' own form — the AI apply's combined scale+patch
       // operation coalesces into ONE history entry through the gesture

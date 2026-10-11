@@ -297,7 +297,10 @@ export function AiAssistant() {
         // "1 action(s) performed" over an UNCHANGED canvas — the exact
         // opposite of the footer's own honest-count doctrine (RA-2 /
         // the S62-F cap-annotation family). Both halves report their
-        // truth against the LIVE elements (the S61-E re-read doctrine)
+        // truth against the POST-SCALE projection (the S61-E re-read
+        // doctrine + the S116-B amendment: the patch's width/height —
+        // fields the scale half owns — must compare against the rows
+        // the scale arm is about to leave, never the pre-scale capture)
         // and through the ONE patchDiffers seam / the S86-B
         // clampSizeField product compare the store itself rides.
         const liveElements = useEditorStore.getState().elements;
@@ -312,9 +315,36 @@ export function AiAssistant() {
                 el.height !==
                   clampSizeField(el.height * (operation.patch.scale ?? 1), el.type)),
           );
+        // Session 116 (S116-B / A116-L2 — the sixty-fourth audit's
+        // second Low): the projection — the same clamped products the
+        // scale arm will commit, applied to the rows the patch's truth
+        // is computed against. The pre-fix compare rode the PRE-scale
+        // capture, so a combined {scale:2, width:200} on a 200-wide
+        // element answered patchWouldChange FALSE (200 === 200
+        // pre-scale) and the explicit width was silently dropped — the
+        // element ended at 400. The apply's truth and the S115-A store
+        // guard's own LIVE truth now agree (updateElements fires after
+        // scaleElements — patchDiffers against the post-scale
+        // element). The mirror case — a patch equal to the POST-scale
+        // value — answers FALSE here (the store's own guard would
+        // no-op it anyway); a patch differing from either form lands
+        // its explicit instruction.
+        const scaleFactor = operation.patch.scale ?? 1;
+        const truthRows =
+          operation.patch.scale !== undefined
+            ? liveElements.map((el) =>
+                targetSet.has(el.id)
+                  ? {
+                      ...el,
+                      width: clampSizeField(el.width * scaleFactor, el.type),
+                      height: clampSizeField(el.height * scaleFactor, el.type),
+                    }
+                  : el,
+              )
+            : liveElements;
         const patchWouldChange =
           Object.keys(patch).length > 0 &&
-          liveElements.some((el) => targetSet.has(el.id) && patchDiffers(el, patch));
+          truthRows.some((el) => targetSet.has(el.id) && patchDiffers(el, patch));
         if (coalesce && (scaleWouldChange || patchWouldChange)) store.beginGesture();
         if (operation.patch.scale !== undefined) {
           if (scaleWouldChange) {

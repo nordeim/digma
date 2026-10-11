@@ -175,7 +175,10 @@ describe("scaleElements gains the commit parameter (S80-C / A-L2)", () => {
     // clampSizeField comment block sits between the signature and the
     // commit branch; the intent (the uncommitted branch skips the past
     // push) is unchanged.
-    const body = storeSource.slice(start, start + 2600);
+    // Session 116 (S116-A — the doctrine-comment growth family): the
+    // window widened again (2600 -> 3400) — the value-diff guard's own
+    // doctrine block joins the seam; the intent is unchanged.
+    const body = storeSource.slice(start, start + 3400);
     expect(body).toMatch(/commit(?:\s*=\s*true)?\s*,?/);
     // The uncommitted branch skips the past push.
     expect(body).toMatch(/if\s*\(commit\)/);
@@ -192,9 +195,12 @@ describe("the AI apply coalesces a scale+patch operation into ONE history entry 
     // sits between the coalesce derivation and the gesture pair; the
     // gesture now arms/ends ONLY when either half would really change
     // (a no-op instruction never opens a gesture at all).
+    // Session 116 (S116-B — the doctrine-comment growth family): the
+    // window widened again (3400 -> 4700) — the truthRows projection's
+    // doctrine block joins the seam; the intent is unchanged.
     const start = assistant.indexOf("operation.patch.scale !== undefined");
     expect(start).toBeGreaterThanOrEqual(0);
-    const body = assistant.slice(start, start + 3400);
+    const body = assistant.slice(start, start + 4700);
     expect(body).toMatch(/beginGesture\(\)/);
     expect(body).toMatch(/endGesture\(\)/);
   });
@@ -202,8 +208,10 @@ describe("the AI apply coalesces a scale+patch operation into ONE history entry 
   it("the combined halves commit false (the gesture's endGesture owns the single push)", () => {
     // Session 105 (S105-B): the window widened 1600 -> 3400 with the
     // truth block's insertion (same re-anchor form as above).
+    // Session 116 (S116-B): 3400 -> 4700 with the projection block
+    // (same re-anchor form as above).
     const start = assistant.indexOf("operation.patch.scale !== undefined");
-    const body = assistant.slice(start, start + 3400);
+    const body = assistant.slice(start, start + 4700);
     expect(body).toMatch(/scaleElements\(\s*targets,\s*operation\.patch\.scale,\s*(?:coalesce|combined)\s*\?\s*false\s*:\s*(?:true|undefined)/);
     expect(body).toMatch(/updateElements\(\s*targets,\s*patch,\s*(?:coalesce|combined)\s*\?\s*false\s*:\s*(?:true|undefined)/);
   });

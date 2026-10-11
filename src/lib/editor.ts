@@ -408,6 +408,16 @@ export const SCALE_MAX = 20;
  * mobile properties Sheet rides the SHARED PropertiesSections
  * composition, so one seam covers both surfaces. */
 export function clampPositionField(value: number): number {
+  // Session 116 (S116-C / A116-I1 — the sixty-fourth audit's hardening
+  // fine print): the finite guard joins the server's clampNumber
+  // posture — Math.min(Math.max(NaN, …)) passes NaN through, and a
+  // future computed-value caller could inject it (local state
+  // poisons: every later arithmetic stays NaN until the PUT's
+  // JSON.stringify nulls it and the server answers its own fallback —
+  // the S84-B teleport family's NaN member). Zero constructible
+  // paths today; the guard is the layer's own doctrine, not a
+  // caller's. The neutral member of each domain is the fallback.
+  if (!Number.isFinite(value)) return 0;
   return Math.min(Math.max(value, -POSITION_BOUND), POSITION_BOUND);
 }
 
@@ -416,12 +426,18 @@ export function clampPositionField(value: number): number {
  * server's 100000 ceiling joins it. */
 export function clampSizeField(value: number, type: ElementType): number {
   const floor = type === "line" ? 0 : 1;
+  // Session 116 (S116-C / A116-I1): the NaN guard — the type-aware
+  // floor is this domain's own neutral member.
+  if (!Number.isFinite(value)) return floor;
   return Math.min(Math.max(value, floor), SIZE_MAX);
 }
 
 export function clampFontSizeField(value: number): number {
   // Session 103 (S103-C / A-L3): the named bound — buildElementRow's
   // fontSize spelling rides the same member (one domain, one map).
+  // Session 116 (S116-C / A116-I1): the NaN guard — FONT_SIZE_MIN is
+  // this domain's floor-neutral member.
+  if (!Number.isFinite(value)) return FONT_SIZE_MIN;
   return Math.min(Math.max(value, FONT_SIZE_MIN), FONT_SIZE_MAX);
 }
 

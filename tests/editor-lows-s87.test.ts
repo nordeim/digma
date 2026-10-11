@@ -237,8 +237,11 @@ describe("the S87 survival family (the sibling contracts unchanged)", () => {
   });
 
   it("SURVIVAL — scaleElements' clampSizeField products ride through unchanged (S86-B)", () => {
-    expect(storeSource).toMatch(/width: clampSizeField\(el\.width \* factor, el\.type\)/);
-    expect(storeSource).toMatch(/height: clampSizeField\(el\.height \* factor, el\.type\)/);
+    // Session 116 (S116-A — the F89 re-anchor): the products ride const
+    // locals now (the value-diff guard's compare); the consumption is
+    // unchanged.
+    expect(storeSource).toMatch(/const width = clampSizeField\(el\.width \* factor, el\.type\);/);
+    expect(storeSource).toMatch(/const height = clampSizeField\(el\.height \* factor, el\.type\);/);
   });
 
   it("SURVIVAL — the draw-commit cap contract rides through (the ELEMENT_LIMIT toast form)", () => {

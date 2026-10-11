@@ -789,6 +789,17 @@ S124 = dict(S123)
 # observable behavior on the seeded flows).
 S125 = dict(S124)
 
+# s126 mapping (session 116 — the 92nd reference audit's evidence set + the
+# S116 capture set). The standing S126 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S116 tree); no NEW
+# witness this session (the S116 pass is a scaleElements value-diff guard
+# that only REMOVES same-value commits + an AI-apply projection that only
+# corrects which combined ops the deterministic fallback never emits + NaN
+# hardening-guards behind zero constructible paths + comment-truth —
+# every change guard-internals + projection-truth + comment-form with
+# identical observable behavior on the seeded flows).
+S126 = dict(S125)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -893,6 +904,8 @@ def expected_for(name: str):
         return S124.get(Path(name).stem)
     if name.startswith("ref-audit-s125/"):
         return S125.get(Path(name).stem)
+    if name.startswith("ref-audit-s126/"):
+        return S126.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -999,6 +1012,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s123").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s124").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s125").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s126").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

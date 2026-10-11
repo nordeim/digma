@@ -200,11 +200,15 @@ describe("scaleElements clamps the product to the server's bound (S86-B / A86-L2
     // server's clampNumber(raw?.width, 0, 100000, …) bound) joins the
     // multiplicative path — every sibling (the panel fields, the
     // sanitizer's width/height patches) is already bounded.
+    // Session 116 (S116-A — the F89 re-anchor at the pin's own layer):
+    // the products moved from the object-literal shorthand onto const
+    // locals (the value-diff guard compares them against the live
+    // fields before spreading); the consumption claim is unchanged.
     expect(storeSource).toMatch(
-      /width: clampSizeField\(el\.width \* factor, el\.type\)/
+      /const width = clampSizeField\(el\.width \* factor, el\.type\);/
     );
     expect(storeSource).toMatch(
-      /height: clampSizeField\(el\.height \* factor, el\.type\)/
+      /const height = clampSizeField\(el\.height \* factor, el\.type\);/
     );
     // The bare multiplicative forms are gone.
     expect(storeSource).not.toMatch(

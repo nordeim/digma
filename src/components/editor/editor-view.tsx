@@ -1149,7 +1149,9 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
 // counterpart; the bottom-left panel-chip bar is hidden below md, so no
 // collision) and meets the F34 touch floor (min-h-11/min-w-11 = 44px —
 // the Present-exit convention; the zoom chips are the reference-measured
-// 36px chrome and stay untouched). The surface is a BOTTOM Sheet — the
+// ~34px chrome and stay untouched — the S116-C honest datum: the live
+// reference measures the cluster at 34x34, no 36px button exists — the
+// session-108 record's own figure). The surface is a BOTTOM Sheet — the
 // mobile-nav drawer's contract family (Radix focus trap, Escape + scrim
 // close, body scroll lock, native focus return through SheetTrigger) —
 // carrying the SHARED PropertiesSections composition (S52-1: the SAME
@@ -2003,7 +2005,8 @@ export function EditorView({ user }: { user: HeaderUser }) {
                   cluster carries no such flex arithmetic, renders at every
                   viewport (the F37 rule), and the export is a canvas
                   action. The chip chrome is the cluster family
-                  (reference-measured 36px, like the Keyboard chip). */}
+                  (reference-measured ~34px, like the Keyboard chip — the
+                  S116-C honest datum: the live reference measures 34x34). */}
               {/* Session 54 (S54-A): the Download chip became a FORMAT
                   MENU — the session-65 suggestion ("a second download
                   option would be a menu, not a new seam"). The trigger

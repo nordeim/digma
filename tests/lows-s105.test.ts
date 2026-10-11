@@ -69,8 +69,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1577";
-const FILES = "177";
+const UNIT = "1596";
+const FILES = "178";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -489,7 +489,11 @@ describe("S105-G the two documented postures (B-L4 + B-L5)", () => {
     expect(mirrorIdx).toBe(-1);
     const fnIdx = EDITOR_LIB.indexOf("export function clampSizeField");
     expect(fnIdx).toBeGreaterThan(-1);
-    const docWindow = EDITOR_LIB.slice(Math.max(0, fnIdx - 1200), fnIdx);
+    // Session 116 (S116-C — the doctrine-comment growth family): the
+    // window widened 1200 -> 2000 — the NaN-guard comment inside
+    // clampPositionField (the S116-C hardening) sits between the
+    // two-layer doctrine phrase and clampSizeField's signature.
+    const docWindow = EDITOR_LIB.slice(Math.max(0, fnIdx - 2000), fnIdx);
     expect(docWindow).toMatch(/two-layer/i);
     expect(docWindow).toMatch(/storage/i);
   });
