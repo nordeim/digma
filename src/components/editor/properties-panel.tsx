@@ -1008,7 +1008,10 @@ async function thumbnailFor(dataUrl: string): Promise<string | null> {
     // included) and double the small-image board's editor payloads
     // with zero list-projection benefit.
     if (longest <= THUMB_MAX_DIM) return null;
-    const k = longest > THUMB_MAX_DIM ? THUMB_MAX_DIM / longest : 1;
+    // Session 115 (S115-C / A115-I1): the ternary's false-arm died
+    // with the guard above — longest > THUMB_MAX_DIM always holds
+    // here, and the honest k is the plain ratio.
+    const k = THUMB_MAX_DIM / longest;
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(w * k));
     canvas.height = Math.max(1, Math.round(h * k));

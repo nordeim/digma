@@ -116,8 +116,11 @@ model DesignElement {
   // (a ~500 KB payload per image-bearing row becomes ~10-50 KB). The
   // duplicate route's ...rest copy carries it losslessly; the
   // elements PUT round-trips it through the client DTO (a PUT that
-  // dropped it would wipe every thumb on save). NOT counted by
-  // fillImageBytes (see the counter's comment above).
+  // dropped it would wipe every thumb on save). Counted by
+  // fillImageBytes alongside fillImage — the counter measures the
+  // stored fill-family payload, both families summed at every bound
+  // site (S114-A / B114-M1 closed the thumb channel the S113-D
+  // codec opened; see the counter's comment above).
   fillImageThumb String?
   stroke      String?
   strokeWidth Float    @default(0)

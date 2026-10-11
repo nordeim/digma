@@ -169,7 +169,17 @@ export async function POST(request: NextRequest, { params }: Params) {
       const addBytes =
         (typeof row.fillImage === "string" ? row.fillImage.length : 0) +
         (typeof row.fillImageThumb === "string" ? row.fillImageThumb.length : 0);
-      if ((liveBytes?.fillImageBytes ?? 0) + addBytes > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
+      // Session 115 (S115-D / B115-I1): the zero-add gate — an
+      // image-less row stores no fill-family bytes, so it can never
+      // be "the write that would push the board past the bound" (the
+      // comment's own trigger). Pre-fix, a board whose counter
+      // already sat over 24 MB (legacy pre-S112, or the documented
+      // adversarial ~31 MB single-PUT posture) rejected EVERY POST
+      // including image-less ones — an operator adding a text box
+      // mid-recovery got the image-cap 400 for a write that stored
+      // no image bytes. The counter only grows through addBytes > 0
+      // paths, all still gated — no channel opens.
+      if (addBytes > 0 && (liveBytes?.fillImageBytes ?? 0) + addBytes > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
         overImageCap = true;
         return null;
       }

@@ -12,6 +12,7 @@ import {
   defaultElementFor,
   DEFAULT_CANVAS_BACKGROUND,
   ELEMENT_LIMIT,
+  patchDiffers,
   type DesignElementDTO,
   type EditorTool,
   type ElementType,
@@ -150,12 +151,14 @@ function snapshotOf(state: {
 // Session 111 (S111-A / A-L1 — the fifty-ninth audit's gesture-seam
 // completion): the snapshot-identity compare for endGesture's net-zero
 // guard. Value-based per element: the gesture seam's own writes spread
-// ({ ...el, x, y }) and share every NESTED object reference with the
-// pre-gesture state (fillGradient, stops), so a strict per-key ===
-// compare is exact for the unchanged case and flips the moment any
-// nested edit lands (the changed member carries a fresh reference).
-// Object.keys order is stable within one lineage (every write path
-// spreads), so the key-set compare is order-safe.
+// ({ ...el, x, y }) and every DesignElementDTO field is an
+// all-primitive value or a JSON string field (fillGradient serializes
+// as a string — Session 115 / S115-C / A115-I3: the pre-fix comment
+// claimed nested-object reference sharing the DTO never carries), so
+// a strict per-key === compare is exact for the unchanged case and
+// flips the moment any edit lands. Object.keys order is stable within
+// one lineage (every write path spreads), so the key-set compare is
+// order-safe.
 function snapshotsEqual(a: Snapshot, b: Snapshot): boolean {
   if (a.backgroundColor !== b.backgroundColor) return false;
   if (a.elements.length !== b.elements.length) return false;
@@ -344,13 +347,37 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       // blocked the PATCH, never the commit's state transition). A
       // zero-match commit never flips saveState, never pushes history,
       // never wipes redo — never arms the PUT.
+      //
+      // Session 115 (S115-A / A115-L1 — the sixty-third audit's
+      // headline): the value-diff guard joins the id-match. The
+      // canvas resize write-back (canvas.tsx, commit=false) was the
+      // family's last unguarded caller — a clamp-saturated drag (an
+      // element already at the width floor dragged against it, a
+      // bound-pinned element dragged outward) committed a
+      // same-value patch on EVERY pointermove: new identities,
+      // saveState "unsaved", the 800ms subscriber arming a
+      // byte-identical full-list PUT. The guard compares the LIVE
+      // element through the ONE patchDiffers seam — the arm
+      // recomputes absolutely from startBounds, so a call-site guard
+      // comparing the gesture's captured el would strand an
+      // out-and-back gesture's intermediate value (the return tick
+      // differs from the live row, not from the start). A same-value
+      // commit never flips saveState, never pushes history, never
+      // wipes redo — never arms the PUT (the S109-A doctrine, its
+      // PUT-arm member).
       let matched = false;
+      let changed = false;
       const next = state.elements.map((el) => {
         if (!idSet.has(el.id)) return el;
         matched = true;
-        return { ...el, ...patch };
+        if (patchDiffers(el, patch)) {
+          changed = true;
+          return { ...el, ...patch };
+        }
+        return el;
       });
       if (!matched) return {};
+      if (!changed) return {};
       const base: Partial<EditorStore> = { elements: next, saveState: "unsaved" };
       if (commit) {
         return { ...base, past: [...state.past, snapshotOf(state)].slice(-60), future: [] };

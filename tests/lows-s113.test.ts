@@ -308,6 +308,12 @@ describe("S113-B the upload/selection seam pair (A-L3 + A-I1)", () => {
       panelSource.indexOf("const commitUpload ="),
       panelSource.indexOf("const readFile ="),
     );
+    // Session 115 (S115-C / A115-I2 — the F100 hollow-slice class):
+    // the absent pin's own length floor — an anchor rename would
+    // empty the slice and pass this pin hollow (the S113-D present
+    // pin on the same boundaries backstops it today; the floor makes
+    // this pin self-sufficient).
+    expect(commitSlice.length).toBeGreaterThan(2000);
     expect(commitSlice).not.toMatch(/\bupdate\(patch\)/);
   });
 

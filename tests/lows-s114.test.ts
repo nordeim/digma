@@ -301,7 +301,10 @@ describe("S114-C the thumbnailFor small-source guard (A114-L2)", () => {
   it("DEFECT (source): a source at or under the thumb dimension answers null (an already-small source IS its own thumb)", () => {
     const longestIdx = panelSource.indexOf("const longest = Math.max(w, h);");
     expect(longestIdx).toBeGreaterThan(0);
-    const kIdx = panelSource.indexOf("const k = longest", longestIdx);
+    // Session 115 (S115-C / A115-I1 — the F89 re-anchor): the k-form
+    // anchor follows the simplified ratio (the ternary's false-arm
+    // died with the guard above it).
+    const kIdx = panelSource.indexOf("const k = THUMB_MAX_DIM / longest;", longestIdx);
     // The F100 closeIdx-greater floor — the zone must be a real slice.
     expect(kIdx).toBeGreaterThan(longestIdx);
     const guardZone = panelSource.slice(longestIdx, kIdx);
@@ -314,7 +317,12 @@ describe("S114-C the thumbnailFor small-source guard (A114-L2)", () => {
     const body = panelSource.slice(idx, idx + 2400);
     expect(body.length).toBeGreaterThan(600);
     expect(body).toMatch(/if \(w <= 0 \|\| h <= 0\) return null;/);
-    expect(body).toMatch(/const k = longest > THUMB_MAX_DIM \? THUMB_MAX_DIM \/ longest : 1;/);
+    // Session 115 (S115-C / A115-I1 — the F89 re-anchor): the ternary's
+    // false-arm died with the S114-C guard above it — the honest k is
+    // the plain ratio, re-anchored here from the delivered
+    // `longest > THUMB_MAX_DIM ? THUMB_MAX_DIM / longest : 1` form.
+    expect(body).toMatch(/const k = THUMB_MAX_DIM \/ longest;/);
+    expect(body).not.toMatch(/longest > THUMB_MAX_DIM \? THUMB_MAX_DIM \/ longest : 1/);
     expect(body).toMatch(/canvas\.toDataURL\("image\/jpeg", 0\.85\)/);
     expect(body).toMatch(/canvas\.toDataURL\("image\/png"\)/);
     expect(body).toMatch(/catch \{[\s\S]*?return null;/);
