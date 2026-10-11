@@ -89,6 +89,41 @@ export function aiRateLimit(ip: string, now: number = Date.now()): RateLimitResu
   return checkRate(buckets, `ai:${ip}`, AI_LIMIT, AI_WINDOW_MS, now);
 }
 
+// Session 112 (S112-B — the sixtieth audit's B-I4, the s111 plan's
+// deferred front, the s112 measured design): the scoped `crud:` bucket
+// for the FIVE creation routes (projects POST, duplicate POST, teams
+// POST, members POST, elements POST). Pre-fix, an authenticated caller
+// could drive unbounded row creation — each call is cheap, but the
+// absolute ceilings (PROJECT_LIMIT 500 / TEAM_LIMIT 100 /
+// MEMBER_LIMIT 100 / ELEMENT_LIMIT 2000) bound only the TOTALS, never
+// the RATE (a scripted loop reaches every ceiling in seconds and the
+// duplicate route multiplies up to 2000 element rows per call). 60
+// creations / 5 min per IP sits far above every legitimate UI flow
+// (the Create-dialog/invite/duplicate interactions are human-scale)
+// while capping scripted burn. The bucket is its OWN `crud:` prefix,
+// NEVER the shared `auth:`/`ai:` keys (the S67-C doctrine — the
+// smoke/e2e suites drive these routes from the same localhost IP as
+// their auth and assistant calls). THE ELEMENTS PUT IS EXCLUDED BY
+// DESIGN: the client's 800ms-debounced autosave rides the PUT (an
+// active editing session fires one PUT per quiet edit batch plus an
+// exit flush on every navigation — hundreds per session, exactly the
+// legitimate traffic a rate cap must never throttle); the PUT's own
+// abuse surface is independently bounded by the 32 MB body cap, the
+// ELEMENT_LIMIT ceiling, and the 30s transaction timeout. The measured
+// suite burn: smoke's in-bucket execution count is single-digit per
+// run (the S112-B burn probe rides its own dedicated XFF identity),
+// and the e2e suite's is ~31 (the fixture-creating specs plus the
+// UI-driven dialog pair — comfortably under 60; the `page.route`
+// interception sites in the specs are route MOCKS, never server
+// calls).
+const CRUD_LIMIT = 60;
+const CRUD_WINDOW_MS = 5 * 60 * 1000;
+
+/** Creation-route wrapper: 60 mutations / 5 min per IP. */
+export function crudRateLimit(ip: string, now: number = Date.now()): RateLimitResult {
+  return checkRate(buckets, `crud:${ip}`, CRUD_LIMIT, CRUD_WINDOW_MS, now);
+}
+
 /**
  * The declared proxy-topology trust depth (session 69, S69-A — the
  * seventeenth audit's M-A, the promoted M-class carry-over).

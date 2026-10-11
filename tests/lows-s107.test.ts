@@ -55,8 +55,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1459";
-const FILES = "173";
+const UNIT = "1491";
+const FILES = "174";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -151,6 +151,10 @@ describe("S107-A the upload guard's live-state read (A-I1 — the headline, the 
     // whitelist are the contracts the live read rides ON — untouched.
     // The patchDiffers census stays TEN (the guard still calls the
     // seam; the compare TARGET changes, not the call).
+    // Session 112 re-anchor: the census grows to ELEVEN with the
+    // S112-A selectionWouldCommit helper (the multi-selection rows'
+    // scope truth — the same legitimate-contract-update form the
+    // S106/S107 deliveries themselves rode).
     const w = componentWindow("ImagePanel");
     expect(w).toMatch(/if \(!file \|\| busy\) return;/);
     expect(w).toMatch(/500 \* 1024/);
@@ -158,7 +162,7 @@ describe("S107-A the upload guard's live-state read (A-I1 — the headline, the 
     // escaped-plus svg\+xml — the s106 pin-design repair's form.
     expect(w).toMatch(/data:image\\\/\(png\|jpe\?g\|gif\|svg\\\+xml\|webp\);base64,/);
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(10);
+    expect(guarded?.length).toBe(11);
   });
 });
 
@@ -185,7 +189,12 @@ describe("S107-B the dead-export twin unexport (B-L2 — the S104-I/S105-C famil
     expect(RATE_LIMIT).toContain("): RateLimitResult {");
     expect(RATE_LIMIT).toContain("): RateLimitResult {");
     const count = (RATE_LIMIT.match(/\): RateLimitResult \{/g) || []).length;
-    expect(count).toBe(3);
+    // Session 112 re-anchor: the S112-B crudRateLimit wrapper joins
+    // the family — the annotation count grows 3 -> 4 (checkRate +
+    // authRateLimit + aiRateLimit + crudRateLimit; the legitimate
+    // contract update, the same form the S107 delivery rode on the
+    // census family).
+    expect(count).toBe(4);
   });
 });
 

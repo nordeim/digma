@@ -69,8 +69,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1459";
-const FILES = "173";
+const UNIT = "1491";
+const FILES = "174";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -141,8 +141,13 @@ describe("S105-A the color-swatch no-op commits (A-M1 — the headline, the fami
     const w = componentWindow("HexColorRow");
     const emptyIdx = w.indexOf('if (next === "") {');
     expect(emptyIdx).toBeGreaterThan(-1);
-    const branch = w.slice(emptyIdx, emptyIdx + 800);
-    expect(branch).toMatch(/if \(value !== null\)/);
+    // Session 112 re-anchor: the S112-A scope comment grows the branch
+    // (800 -> 950) and the guard itself is now the selection-scope
+    // ternary — wouldCommit(null) owns the multi-target truth while
+    // `value !== null` stands as the single-scope fallback arm (the
+    // S105-A contract preserved exactly at its own scope).
+    const branch = w.slice(emptyIdx, emptyIdx + 950);
+    expect(branch).toMatch(/wouldCommit\(null\)\s*:\s*value !== null\)/);
     expect(branch).toMatch(/onChange\(null\)/);
   });
 
@@ -196,8 +201,11 @@ describe("S105-A the color-swatch no-op commits (A-M1 — the headline, the fami
     // commit helper joins the seam — the census grows to TEN (the
     // file-input channel, the member that lived outside the control
     // census entirely — lesson F93's very form).
+    // Session 112 (S112-A): the selectionWouldCommit helper joins the
+    // seam — the census grows to ELEVEN (the multi-selection rows'
+    // scope truth; the legitimate contract update).
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(10);
+    expect(guarded?.length).toBe(11);
   });
 });
 

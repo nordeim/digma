@@ -166,6 +166,23 @@ function useAutosave(): AutosaveHandle {
       toast.error("Session expired", "Your session has expired — sign in again to save your changes.");
     }
 
+    // Session 112 (S112-C / A-I4 — the sixtieth audit): the
+    // DETERMINISTIC-PAYLOAD terminal. The 401 family has its terminal
+    // above; the elements PUT's 400 payload-cap family ("too large" —
+    // the 32 MB body cap, the only reachable deterministic member)
+    // had NONE: consecutiveFailures + setUnsaved re-armed the 800ms
+    // timer and the machine re-serialized and re-uploaded the
+    // over-cap body at ~1.1s intervals FOREVER — retrying can never
+    // fix a validation failure. The terminal is STATE-KEYED, unlike
+    // the 401's permanent flag: this payloadDeadRef holds the exact
+    // elements ARRAY REFERENCE that crossed the cap — the same
+    // unsaved state never re-uploads (the flush entry below
+    // early-returns), while ANY state change (the recovery path —
+    // deleting image-bearing elements builds a new array through the
+    // store's immutable updates) re-arms the flush; a successful
+    // save clears the terminal.
+    let payloadDeadRef: DesignElementDTO[] | null = null;
+
     async function ensureProject(): Promise<string | null> {
       const store = useEditorStore.getState();
       if (store.projectId) return store.projectId;
@@ -225,6 +242,14 @@ function useAutosave(): AutosaveHandle {
       // why). The subscriber may keep re-arming the timer on new
       // edits; each flush no-ops here.
       if (sessionDead) return;
+      // Session 112 (S112-C / A-I4): the payload-dead terminal — the
+      // SAME unsaved state that already crossed the body cap never
+      // re-uploads (retrying a body the cap will reject again can
+      // never succeed; the ~1.1s loop was pure churn). A NEW state
+      // (the recovery path — the user deleted image elements, the
+      // store built a new array) does not match the ref and the flush
+      // proceeds.
+      if (payloadDeadRef !== null && payloadDeadRef === store.elements) return;
       flushing = true;
       // Session 56 (S56-B — H-2): the edit-during-flight guard. The
       // elements ARRAY REFERENCE and the project identity are captured
@@ -303,6 +328,28 @@ function useAutosave(): AutosaveHandle {
             if (!disposed) useEditorStore.getState().setUnsaved();
             return;
           }
+          // Session 112 (S112-C / A-I4 — the sixtieth audit): the
+          // DETERMINISTIC payload-cap family gets its own terminal —
+          // the 400 "too large" answers (the body-cap envelope, its
+          // message family byte-pinned by the smoke suite's runtime
+          // probes) can never succeed on retry. The terminal is
+          // state-keyed (payloadDeadRef — see its declaration); the
+          // guidance toast fires on the TRANSITION (the first
+          // crossing, or a still-over-cap NEW state after a change),
+          // and the badge honestly reads "Unsaved" (the work is not
+          // saved and cannot be until image elements come off the
+          // board).
+          if (response.status === 400 && /too large/i.test(body?.error?.message ?? "")) {
+            if (payloadDeadRef !== capturedElements) {
+              payloadDeadRef = capturedElements;
+              toast.error(
+                "Autosave failed",
+                "This board is too large to save — remove some images, then try again.",
+              );
+            }
+            if (!disposed) useEditorStore.getState().setUnsaved();
+            return;
+          }
           consecutiveFailures += 1;
           if (consecutiveFailures === 1) {
             toast.error("Autosave failed", body?.error?.message ?? "Your changes are not saved yet.");
@@ -313,6 +360,11 @@ function useAutosave(): AutosaveHandle {
           return;
         }
         consecutiveFailures = 0;
+        // Session 112 (S112-C): a successful save clears the payload
+        // terminal — the recovery path completed (the state that
+        // crossed the cap was edited back under it and the PUT
+        // succeeded); the machine is fully live again.
+        payloadDeadRef = null;
         // Session 57 (S57-B — M-1): a disposed instance performs NO
         // further store mutation — the success handling below (the
         // reference guard's setUnsaved, the gesture deferral's
@@ -429,6 +481,12 @@ function useAutosave(): AutosaveHandle {
     // case on the dead-session path.
     const machineBusy = () =>
       !sessionDead &&
+      // Session 112 (S112-C / A-I4): the payload-dead state joins the
+      // dead-session exemption — a payload-dead board's "unsaved" is
+      // honest-IDLE (nothing will ever drain it until the state
+      // changes; the S81-B disjunct alone would spin the drain's full
+      // 5s deadline for a flush that early-returns).
+      !(payloadDeadRef !== null && payloadDeadRef === useEditorStore.getState().elements) &&
       (flushing || pending || useEditorStore.getState().saveState === "unsaved");
     drainRef.current = async () => {
       const deadline = Date.now() + 5_000;
@@ -1385,8 +1443,12 @@ export function EditorView({ user }: { user: HeaderUser }) {
   // never in the effect's sync body directly). Four path families, one
   // honest taxonomy (the S111-B re-anchor — the S110-C form's own path
   // census missed two families): (1) the plain mount without a
-  // registered transport and (2) the adoption path both re-arm the
-  // loading flag in the sync prefix, before the first await; (3) the
+  // registered transport re-arms the loading flag in the sync prefix,
+  // before the first await, and (2) the adoption path settles it there
+  // (a redundant false write — the S112-D verb split of the S111-B
+  // shared "re-arm": the adoption re-run follows a COMPLETED first run
+  // whose flag write already landed, so its own setLoading(false) can
+  // only re-assert the settled state, never arm the gate); (3) the
   // different-project swap path awaits the S80-A drain before it; (4)
   // the re-entry mount with a registered leave transport awaits the
   // S85-A transport first (its designed case — that await sits inside

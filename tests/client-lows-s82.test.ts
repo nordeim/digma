@@ -94,17 +94,24 @@ describe("the drain's busy predicate exempts the 401 terminal (S82-B / A82-L1)",
     // THE DEFECT PIN: pre-fix the predicate read
     // `flushing || pending || saveState === "unsaved"` with no terminal
     // exemption — a dead session parked the drain at the 5s deadline.
+    // Session 112 re-anchor: the S112-C payload-dead exemption joins
+    // AFTER the !sessionDead prefix (with its doctrine comment between
+    // the && and the operand), so the prefix form is anchored without
+    // the immediate-parenthesis tail — the exemption chain's head is
+    // the contract, not the parenthesization of its second member.
     const site = view.indexOf("const machineBusy = () =>");
     expect(site).toBeGreaterThanOrEqual(0);
-    const predicate = view.slice(site, site + 300);
-    expect(predicate).toMatch(/!sessionDead\s*&&\s*\(/);
+    const predicate = view.slice(site, site + 700);
+    expect(predicate).toMatch(/!sessionDead\s*&&/);
   });
 
   it("the exemption keeps the S81-B armed-debounce disjunct (the widened predicate's own contract)", () => {
     // The S81-B widening must survive the S82-B exemption — the
     // predicate still sees the debounce-armed state on a LIVE session.
+    // Session 112 re-anchor: the window widens with the S112-C
+    // payload-dead exemption's doctrine comment (300 -> 700).
     const site = view.indexOf("const machineBusy = () =>");
-    const predicate = view.slice(site, site + 300);
+    const predicate = view.slice(site, site + 700);
     expect(predicate).toMatch(/flushing\s*\|\|\s*pending/);
     expect(predicate).toMatch(/saveState\s*===\s*"unsaved"/);
   });

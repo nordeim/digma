@@ -241,8 +241,11 @@ describe("the hex row's abandoned-draft blur-restore (S79-E / A-L1)", () => {
     // own re-anchor form). Session 105 (S105-A — the same family's
     // second widening): the swatch color-identity guard + the
     // empty-draft null guard's doctrine comments grow the row further —
-    // 3700 -> 5300 (the live-measured distance).
-    const body = panel.slice(start, start + 5300);
+    // 3700 -> 5300 (the live-measured distance). Session 112 (S112-A —
+    // the same family's third widening): the wouldCommit prop's doctrine
+    // block + the three branch guards' scope comments grow the row again
+    // — 5300 -> 6700 (the live-measured distance).
+    const body = panel.slice(start, start + 6700);
     expect(body).toMatch(/onBlur=\{\(\)\s*=>\s*setDraft\(value\s*\?\?\s*""\)\}/);
   });
 

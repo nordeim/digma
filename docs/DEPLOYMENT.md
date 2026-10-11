@@ -165,7 +165,7 @@ password reset increments the version for an individual account).
 ```bash
 curl -s https://your-host/api/health          # {"status":"ok",...}
 bun run lint && bun run typecheck && bun run test
-./scripts/smoke-test.sh                       # 66 smoke checks (local, dev server stopped)
+./scripts/smoke-test.sh                       # 71 smoke checks (local, dev server stopped)
 bun run test:e2e                              # 262 Playwright checks (local, needs a build)
 ```
 

@@ -743,6 +743,17 @@ S121 = dict(S120)
 # the capture folds into the next script derivation (F95).
 S121["ref-05-teams-empty-state"] = (1440, 900)
 
+# s122 mapping (session 112 — the 88th reference audit's evidence set + the
+# S112 capture set). The standing S122 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S112 tree); no NEW
+# witness this session (the S112 pass is selection-scope-guard internals +
+# a server-side limiter/bound + comment repairs with identical observable
+# behavior on the seeded flows — the multi-selection unify needs a
+# heterogeneous marquee selection the seeded journeys never perform, the
+# crud 429 rides its own smoke XFF burn, and the fillImage bound rides
+# its own smoke probe project — all deleted before any capture).
+S122 = dict(S121)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -839,6 +850,8 @@ def expected_for(name: str):
         return S120.get(Path(name).stem)
     if name.startswith("ref-audit-s121/"):
         return S121.get(Path(name).stem)
+    if name.startswith("ref-audit-s122/"):
+        return S122.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -941,6 +954,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s119").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s120").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s121").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s122").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

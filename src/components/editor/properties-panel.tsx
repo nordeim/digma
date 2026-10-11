@@ -18,6 +18,7 @@ import {
   cornerRadiusMax,
   defaultGradient,
   downscaledDimensions,
+  FILL_IMAGE_PROJECT_LIMIT_BYTES,
   parseGradient,
   patchDiffers,
   rangeFillPercent,
@@ -312,12 +313,26 @@ function HexColorRow({
   label,
   value,
   onChange,
+  wouldCommit,
 }: {
   /** Omitted when the section heading already carries the label (Canvas
       Properties' single Background Color row — reference layout). */
   label?: string;
   value: string | null;
   onChange: (value: string | null) => void;
+  /** Session 112 (S112-A / A-L1 — the sixtieth audit's headline): the
+      optional SELECTION-SCOPE would-change truth. The S105-A
+      color-identity guard compares against `value` — the FIRST
+      selected member's color — but the multi-selection rows commit to
+      ALL selected ids: a heterogeneous selection picking the row's
+      displayed color was silently suppressed (the second member kept
+      its old fill — a dead control for the unify intent). When this
+      prop is supplied it OWNS the would-change decision at all three
+      branch guards (swatch, complete-hex, empty-draft); when absent
+      the single-value compare stands, byte-identical for the four
+      single-scope consumers (Text Color, the Solid tab's Fill row,
+      the single-selection Stroke row, the Canvas Background row). */
+  wouldCommit?: (next: string | null) => boolean;
 }) {
   const [draft, setDraft] = React.useState(value ?? "");
   const [prevValue, setPrevValue] = React.useState(value);
@@ -352,9 +367,14 @@ function HexColorRow({
             // the short-hex-expanded form (a stored 3-digit hex's
             // expanded pick is the same color — the model already
             // carries it); a null→color pick is ALWAYS a real commit.
+            // Session 112 (S112-A): a supplied wouldCommit OWNS the
+            // decision at the selection's scope; the single-value
+            // compare is the fallback, never the multi-target truth.
             if (
               value === null ||
-              event.target.value.toUpperCase() !== (expandShortHex(value) ?? "").toUpperCase()
+              (wouldCommit
+                ? wouldCommit(event.target.value)
+                : event.target.value.toUpperCase() !== (expandShortHex(value) ?? "").toUpperCase())
             ) {
               sliderGesture.textTick();
               onChange(event.target.value);
@@ -380,7 +400,12 @@ function HexColorRow({
               // snapshot and flipped the badge for a structurally
               // identical patch. The clear is real only when the field
               // actually holds a value.
-              if (value !== null) onChange(null);
+              // Session 112 (S112-A): with wouldCommit supplied the
+              // clear's truth moves to the selection's scope — the
+              // clear commits iff SOME member has something to clear
+              // (the first member may already be transparent while
+              // others still paint).
+              if (wouldCommit ? wouldCommit(null) : value !== null) onChange(null);
             } else if (
               /^#[0-9a-fA-F]{6}$/.test(next) &&
               // Session 103 (S103-A / A-L2 — the text-input surface the
@@ -392,8 +417,11 @@ function HexColorRow({
               // compare is the COLOR identity (case-insensitive): a
               // different case of the same color is not a commit — the
               // model already carries that color; the draft keeps the
-              // user's spelling.
-              next.toUpperCase() !== (value ?? "").toUpperCase()
+              // user's spelling. Session 112 (S112-A): a supplied
+              // wouldCommit owns the decision at the selection's scope.
+              (wouldCommit
+                ? wouldCommit(next)
+                : next.toUpperCase() !== (value ?? "").toUpperCase())
             ) {
               onChange(next);
             }
@@ -979,6 +1007,30 @@ function ImagePanel({
   // null, fillImageFit: null } a unit, not three fields.
   const commitUpload = (fillImage: string) => {
     setBusy(false);
+    // Session 112 (S112-C — the sixtieth audit's B92-I1 leg (a), the
+    // client half): the upload-time AGGREGATE pre-emption. The board's
+    // image bytes are bounded server-side at the elements POST
+    // (FILL_IMAGE_PROJECT_LIMIT_BYTES, one shared source); the client's
+    // own persistence path is the full-list PUT whose 32 MB body cap
+    // answers a crossing with a DETERMINISTIC 400 the autosave machine
+    // would otherwise retry forever (the payloadDeadRef terminal's
+    // sibling defense). Pre-empting HERE converts the failure from
+    // post-hoc (a looping autosave) to pre-hoc (a refused upload the
+    // user can act on): the sum runs over every OTHER element's
+    // fillImage (a re-pick on this element REPLACES its bytes, never
+    // adds to them — the S107-A live-read window applies) plus the
+    // incoming stored length, against the shared constant.
+    const othersBytes = useEditorStore.getState().elements.reduce(
+      (sum, el) => sum + (el.id === element.id ? 0 : (el.fillImage?.length ?? 0)),
+      0,
+    );
+    if (othersBytes + fillImage.length > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
+      toast.show({
+        title: "Board images full",
+        description: "This board's images are at the aggregate cap — remove an image before adding more.",
+      });
+      return;
+    }
     const patch = { fillImage, fillGradient: null, fillImageFit: null };
     // Session 107 (S107-A — the fifty-fifth audit's A-I1): the guard
     // reads the LIVE element, not the render-time prop. The FileReader
@@ -1725,6 +1777,34 @@ export function CanvasBackgroundSection({
 // all (the canvas chip needs an EMPTY selection). The desktop panel AND
 // the mobile Sheet (editor-view.tsx's MobilePropertiesEditor) consume
 // this SAME component, so the two surfaces can never drift.
+
+/**
+ * Session 112 (S112-A / A-L1 — the sixtieth audit's headline): the
+ * SELECTION-SCOPE would-change truth for the multi-selection color
+ * rows. The S105-A color-identity guard inside HexColorRow compares
+ * against the row's `value` — the FIRST selected member's color —
+ * while the multi rows commit to ALL selected ids: a heterogeneous
+ * selection picking the row's displayed color was silently suppressed
+ * (the second member kept its old fill — a dead control for the unify
+ * intent). The truth moves to the layer that owns the commit target
+ * (the F96 doctrine): the pick commits iff SOME member's patch
+ * differs — for the fill kind the clearing siblings join the compare
+ * (the S78-D paint-precedence form: a member painting a gradient or
+ * image changes when the patch nulls those siblings); for the stroke
+ * kind the patch is the bare field (no clearing siblings exist).
+ */
+export function selectionWouldCommit(
+  selected: DesignElementDTO[],
+  next: string | null,
+  kind: "fill" | "stroke",
+): boolean {
+  const patch: Partial<DesignElementDTO> =
+    kind === "fill"
+      ? { fill: next, fillGradient: null, fillImage: null, fillImageFit: null }
+      : { stroke: next };
+  return selected.some((el) => patchDiffers(el, patch));
+}
+
 export function MultiSelectionSection({
   first,
   update,
@@ -1732,11 +1812,27 @@ export function MultiSelectionSection({
   first: DesignElementDTO;
   update: (patch: Partial<DesignElementDTO>) => void;
 }) {
+  // Session 112 (S112-A): the selection's OWN members — the rows'
+  // would-commit truth is evaluated against every selected element,
+  // never the first member alone (the store subscriptions mirror the
+  // panel's own S74-B Set-membership form).
+  const elements = useEditorStore((s) => s.elements);
+  const selectedIds = useEditorStore((s) => s.selectedIds);
+  const selectedIdSet = new Set(selectedIds);
+  const selected = elements.filter((el) => selectedIdSet.has(el.id));
+
   return (
     <section aria-label="Multiple selection" className="space-y-3">
       <HexColorRow
         label="Fill Color"
         value={first.fill ?? null}
+        // Session 112 (S112-A / A-L1): the would-commit truth at the
+        // SELECTION's scope — the unify case (picking the row's
+        // displayed color onto a heterogeneous selection) commits for
+        // every member the patch would change; the all-same no-op
+        // (a uniform selection re-picking the shared value) stays a
+        // no-op (the S105-A doctrine, correctly scoped).
+        wouldCommit={(fill) => selectionWouldCommit(selected, fill, "fill")}
         // Session 59 (S59-E — the seventh audit's A-L-3): the value
         // commits AS-IS — null CLEARS the fill across the selection
         // (the Stroke row's own contract, the single-selection Solid
@@ -1753,7 +1849,14 @@ export function MultiSelectionSection({
         // documented form (session 33) mirrored here.
         onChange={(fill) => update({ fill, fillGradient: null, fillImage: null, fillImageFit: null })}
       />
-      <HexColorRow label="Stroke" value={first.stroke ?? null} onChange={(stroke) => update({ stroke })} />
+      <HexColorRow
+        label="Stroke"
+        value={first.stroke ?? null}
+        // Session 112 (S112-A): the same selection-scope truth for the
+        // stroke contract (no clearing siblings — the bare field).
+        wouldCommit={(stroke) => selectionWouldCommit(selected, stroke, "stroke")}
+        onChange={(stroke) => update({ stroke })}
+      />
     </section>
   );
 }

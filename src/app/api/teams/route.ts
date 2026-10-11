@@ -1,9 +1,10 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { readBoundedJson, clampColor, clampText, TEAM_LIMIT, normalizeEmail } from "@/lib/validation";
 import { memberColorFor, memberDisplayFor } from "@/lib/team";
+import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,18 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   const user = await requireSession();
   if (!user) return fail("UNAUTHENTICATED", "Sign in to create teams", 401);
+
+  // Session 112 (S112-B — the sixtieth audit's B-I4): the scoped
+  // `crud:` bucket — 60 creations / 5 min per IP, after the session
+  // gate, before the parse (the ai-assistant route's own ordering;
+  // the team + inline first member is the two-row creation form).
+  const limit = crudRateLimit(clientIpOf(request.headers));
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { ok: false as const, error: { code: "RATE_LIMITED", message: "Too many requests. Try again later." } },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
 
   // Session 68 (S68-A — the sixteenth audit's M-A): the S67-B parse
   // guard reaches every request.json() site — App Router handlers

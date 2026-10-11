@@ -48,8 +48,8 @@ import * as exportLib from "../src/lib/export-png";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1459";
-const FILES = "173";
+const UNIT = "1491";
+const FILES = "174";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -182,8 +182,12 @@ describe("S103-A the no-op family's last two members (A-L1 + A-L2 — the headli
     // Session 106 (S106-A — the file-input member): the upload commit
     // helper joins the seam — the census grows to TEN (the legitimate
     // contract update; the channel lived outside the control census).
+    // Session 112 (S112-A — the multi-selection scope member): the
+    // exported selectionWouldCommit helper joins the seam — the census
+    // grows to ELEVEN (the selection-scope truth the two multi rows
+    // consume; the legitimate contract update).
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(10);
+    expect(guarded?.length).toBe(11);
     expect(PANEL).toMatch(/patchDiffers\(element, \{ textAlign: align \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "linear" \}\)/);
     expect(PANEL).toMatch(/patchDiffers\(gradient, \{ type: "radial" \}\)/);
@@ -333,9 +337,10 @@ describe("S103-E the docs/infra fold (B-L1 + B-L2 + B-I1 + B-I2)", () => {
   it("DEFECT: the doc-lows-s69 count pin's title matches its own 262 assertion", () => {
     // RED pre-fix: the title said "(63 smoke / 260 e2e)" while the
     // body's assertion (re-anchored at S85-F) requires 262.
-    expect(S69_SPEC).toMatch(/\(66 smoke \/ 262 e2e\)/);
+    expect(S69_SPEC).toMatch(/\(71 smoke \/ 262 e2e\)/);
     expect(S69_SPEC).not.toMatch(/\(63 smoke \/ 262 e2e\)/);
 expect(S69_SPEC).not.toMatch(/\(64 smoke \/ 262 e2e\)/);
+expect(S69_SPEC).not.toMatch(/\(66 smoke \/ 262 e2e\)/);
   });
 
   it("DEFECT: the smoke boot line strips the parent shell's app knobs (the env -u mechanism)", () => {
@@ -362,7 +367,7 @@ expect(S69_SPEC).not.toMatch(/\(64 smoke \/ 262 e2e\)/);
     expect(ENV_EXAMPLE).toMatch(/DIGMA_SITE_URL/);
     expect(DEPLOYMENT).toMatch(/DIGMA_SITE_URL/);
     expect(AGENTS).toMatch(/DIGMA_SITE_URL/);
-    expect(S69_SPEC).toMatch(/66 .*smoke/);
+    expect(S69_SPEC).toMatch(/71 .*smoke/);
     expect(S69_SPEC).toMatch(/262/);
     expect(SMOKE).toMatch(/REFUSED: DATABASE_URL is exported in the parent shell/);
   });

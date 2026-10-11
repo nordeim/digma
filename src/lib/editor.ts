@@ -293,6 +293,19 @@ export const FALLBACK_WHITE = "#FFFFFF";
 // source of truth for the server caps and the client clamp.
 export const ELEMENT_LIMIT = 2000;
 
+// Session 112 (S112-C — the sixtieth audit's B92-I1 leg (a), the s111
+// plan's deferred front): the single seam for the board's AGGREGATE
+// IMAGE-BYTE ceiling, shared by the server's POST-side cumulative
+// bound and the client's upload-time pre-emption (the ELEMENT_LIMIT
+// pattern — one source of truth for the server cap and the client
+// clamp). 24 MB sits under the 32 MB request-body cap with headroom
+// for the non-image JSON of a full 2000-row list (~600 KB), so a
+// board constructed under this bound always fits the autosave PUT;
+// the PUT itself deliberately enforces only its body cap (the ~30 MB
+// heaviest-legitimate form doctrine — see the elements route's
+// counter-maintenance comment).
+export const FILL_IMAGE_PROJECT_LIMIT_BYTES = 24_000_000;
+
 /** Session 64 (S64-G — the twelfth audit's A-4): the ONE typing-target
  * predicate, single-sourced. The editor shell and the canvas had carried
  * two hand-maintained copies that had already drifted (the shell's copy

@@ -1,18 +1,33 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
 import { PROJECT_LIMIT } from "@/lib/validation";
+import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
 /** POST /api/projects/[id]/duplicate — copy a project and its elements. */
-export async function POST(_request: NextRequest, { params }: Params) {
+export async function POST(request: NextRequest, { params }: Params) {
   const user = await requireSession();
   if (!user) return fail("UNAUTHENTICATED", "Sign in to duplicate projects", 401);
+
+  // Session 112 (S112-B — the sixtieth audit's B-I4): the scoped
+  // `crud:` bucket — THE row-multiplier of the family (each call
+  // copies up to 2000 element rows; 500 projects x 2000 rows is the
+  // million-row posture the absolute ceilings permit at full burn).
+  // After the session gate, before the source read (the ai-assistant
+  // route's own ordering).
+  const limit = crudRateLimit(clientIpOf(request.headers));
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { ok: false as const, error: { code: "RATE_LIMITED", message: "Too many requests. Try again later." } },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
 
   const { id } = await params;
   const source = await db.project.findUnique({
@@ -65,6 +80,16 @@ export async function POST(_request: NextRequest, { params }: Params) {
           description: source.description,
           template: source.template,
           backgroundColor: source.backgroundColor,
+          // Session 112 (S112-C — the maintained counter): the copy's
+          // fillImageBytes is seeded from the source rows in the SAME
+          // transaction — the duplicate is a whole-board copy, so its
+          // image-byte total is exactly the source's; a zero default
+          // here would under-count the copy and under-enforce the
+          // POST-side cumulative bound against it.
+          fillImageBytes: source.elements.reduce(
+            (sum, el) => sum + (typeof el.fillImage === "string" ? el.fillImage.length : 0),
+            0,
+          ),
         },
       });
       if (source.elements.length > 0) {

@@ -148,7 +148,12 @@ describe("the drain's busy predicate includes the debounce-armed state (S81-B / 
     // declaration itself; the intent (the disjuncts) is unchanged.
     const site = view.indexOf("const machineBusy = () =>");
     expect(site).toBeGreaterThanOrEqual(0);
-    const predicate = view.slice(site, site + 300);
+    // Session 112 re-anchor (the S82-B form's own family): the S112-C
+    // payload-dead exemption joins the predicate between the S82-B
+    // prefix and the disjuncts, and its doctrine comment grows the
+    // span — the window widens 300 -> 700 (the live-measured distance
+    // to the disjunct line; the intent — the disjuncts — is unchanged).
+    const predicate = view.slice(site, site + 700);
     expect(predicate).toMatch(/flushing\s*\|\|\s*pending/);
     expect(predicate).toMatch(/saveState\s*===\s*"unsaved"/);
   });

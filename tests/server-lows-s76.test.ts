@@ -42,7 +42,12 @@ describe("the honesty batch — validation comment (S76-F / B-L2)", () => {
     // whitespace before matching.)
     const validation = src("src/lib/validation.ts");
     const idx = validation.indexOf("REQUEST_BODY_LIMIT_BYTES = ");
-    const doc = validation.slice(Math.max(0, idx - 600), idx).replace(/[*\s]+/g, " ");
+    // Session 112 re-anchor: the S112-D sticky-wedge amendment grows
+    // the doc block (the recovery path + the reload-reverts fine print
+    // + the S112-C construction-route closure) — the window widens
+    // 600 -> 1200 (the live-measured distance; the 1.45 GB arithmetic
+    // and the honest two-claims form it anchors are unchanged).
+    const doc = validation.slice(Math.max(0, idx - 1200), idx).replace(/[*\s]+/g, " ");
     expect(doc).toMatch(/1\.45 GB/);
     expect(doc).not.toMatch(/2000-element board of image fills sits far under/);
   });

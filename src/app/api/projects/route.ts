@@ -1,9 +1,10 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { DEFAULT_CANVAS_BACKGROUND, THUMBNAIL_ELEMENT_SELECT } from "@/lib/editor";
 import { readBoundedJson, clampColor, clampTemplate, clampText, PROJECT_LIMIT } from "@/lib/validation";
+import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,18 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const user = await requireSession();
   if (!user) return fail("UNAUTHENTICATED", "Sign in to create projects", 401);
+
+  // Session 112 (S112-B — the sixtieth audit's B-I4): the scoped
+  // `crud:` bucket — 60 creations / 5 min per IP, after the session
+  // gate, before the parse (a malformed request burns no parse work
+  // once the bucket is dry; the ai-assistant route's own ordering).
+  const limit = crudRateLimit(clientIpOf(request.headers));
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { ok: false as const, error: { code: "RATE_LIMITED", message: "Too many requests. Try again later." } },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
 
   // Session 68 (S68-A — the sixteenth audit's M-A): the S67-B parse
   // guard reaches every request.json() site — App Router handlers

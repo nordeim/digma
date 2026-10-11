@@ -444,6 +444,104 @@ if [ -n "$TEAM_ID" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+step "== Crud rate limit (session 112 — the S112-B bucket at RUNTIME) =="
+# Session 112 (S112-B / B-I4, the s111 plan's deferred front): the scoped
+# `crud:` bucket for the FIVE creation routes — 60 mutations / 5 min per
+# IP, answering the auth family's documented 429 + Retry-After envelope.
+# The burn rides its OWN dedicated XFF identity (the S82-D body-cap
+# precedent): the limiter keys on the client IP, so the suite's session
+# cookie burns a fresh bucket and the localhost identity the CRUD checks
+# above use is never touched (its in-bucket count stays single-digit).
+# The 60 created rows are deleted after (DELETE is not a creation route
+# — no bucket burn), and the runner's pristine re-seed follows the gate.
+SMOKE_XFF90="203.0.113.90"
+CRUD_OK=0
+CRUD_LAST=""
+CRUD_IDS=""
+for i in $(seq 1 61); do
+  RESP=$(curl -s -w "\n%{http_code}" -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects" \
+    -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF90" \
+    -d "{\"name\":\"Crud Burn $i\"}")
+  CODE=$(echo "$RESP" | tail -1)
+  if [ "$CODE" = "201" ]; then
+    CRUD_OK=$((CRUD_OK + 1))
+    NEW_ID=$(echo "$RESP" | head -1 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+    [ -n "$NEW_ID" ] && CRUD_IDS="$CRUD_IDS $NEW_ID"
+  fi
+  CRUD_LAST="$CODE"
+done
+[ "$CRUD_LAST" = "429" ] && [ "$CRUD_OK" = "60" ] \
+  && ok "crud rate limit engages on the 61st creation (the bucket's 60 all 201)" \
+  || bad "crud burn (bucket 201s: $CRUD_OK, 61st: $CRUD_LAST)"
+CRUD_HDRS=$(curl -s -D - -o /dev/null -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF90" \
+  -d '{"name":"Crud Over Limit"}')
+echo "$CRUD_HDRS" | grep -qi "^retry-after: " \
+  && ok "the crud 429 carries Retry-After" \
+  || bad "the crud 429 carries Retry-After: $(echo "$CRUD_HDRS" | head -1)"
+CRUD_BODY=$(curl -s -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF90" \
+  -d '{"name":"Crud Over Limit 2"}')
+echo "$CRUD_BODY" | grep -q '"RATE_LIMITED"' \
+  && ok "the crud 429 envelope carries RATE_LIMITED" \
+  || bad "the crud 429 envelope carries RATE_LIMITED: $CRUD_BODY"
+for BURN_ID in $CRUD_IDS; do
+  curl -s -o /dev/null -b /tmp/smoke-cookies.txt -X DELETE "$BASE/api/projects/$BURN_ID"
+done
+
+# ---------------------------------------------------------------------------
+step "== Board image bound (session 112 — the S112-C fillImage aggregate at RUNTIME) =="
+# Session 112 (S112-C / B92-I1 leg (a)): the maintained
+# Project.fillImageBytes counter plus the shared 24 MB constant bound the
+# board's CUMULATIVE stored image bytes at the elements POST — the
+# construction route the 32 MB body cap alone never covered (the sticky
+# wedge the validation.ts cap comment documents). The probe rides its own
+# XFF identity (the crud bucket sees only this section's calls — 1 create
+# + 36 element POSTs, comfortably under 60): 34 max-length image elements
+# (700,000 chars each — clampFillImage's own per-element cap) fit under
+# the aggregate bound (23.8 MB), and the 35th crosses it (24.5 MB > 24
+# MB) answering the recovery-naming 400. The burn project is deleted
+# after (DELETE is not a creation route).
+SMOKE_XFF91="203.0.113.91"
+BURNP=$(curl -s -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects" \
+  -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF91" \
+  -d '{"name":"Image Bound Burn","description":"created by smoke-test.sh","template":"blank"}')
+BURNP_ID=$(echo "$BURNP" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['project']['id'])" 2>/dev/null)
+if [ -n "$BURNP_ID" ]; then
+  # The 700 KB JSON body exceeds the kernel's per-argument limit
+  # (MAX_ARG_STRLEN 128 KB) — the body rides a temp file, the S82-D
+  # --data-binary @file form (identical bytes for every POST; the
+  # per-element cap is clampFillImage's own 700,000 chars).
+  FILL_BODY=/tmp/smoke-fillbody.json
+  { printf '{"type":"image","fillImage":"data:image/png;base64,';
+    head -c 699978 /dev/zero | tr '\0' 'A';
+    printf '"}';
+  } > "$FILL_BODY"
+  IMG_OK=0
+  IMG_LAST=""
+  for i in $(seq 1 35); do
+    CODE=$(curl -s -o /dev/null -w "%{http_code}" -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects/$BURNP_ID/elements" \
+      -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF91" \
+      --data-binary @"$FILL_BODY")
+    [ "$CODE" = "201" ] && IMG_OK=$((IMG_OK + 1))
+    IMG_LAST="$CODE"
+  done
+  [ "$IMG_OK" = "34" ] && [ "$IMG_LAST" = "400" ] \
+    && ok "34 max-length image elements fit under the aggregate bound (the 35th crosses)" \
+    || bad "image bound burn (201s: $IMG_OK, 35th: $IMG_LAST)"
+  IMG_BODY=$(curl -s -b /tmp/smoke-cookies.txt -X POST "$BASE/api/projects/$BURNP_ID/elements" \
+    -H "Content-Type: application/json" -H "X-Forwarded-For: $SMOKE_XFF91" \
+    --data-binary @"$FILL_BODY")
+  echo "$IMG_BODY" | grep -q 'remove some image fills before adding more' \
+    && ok "the 35th image element answers the recovery-naming 400" \
+    || bad "the 35th image element answers the recovery-naming 400: $IMG_BODY"
+  rm -f "$FILL_BODY"
+  curl -s -o /dev/null -b /tmp/smoke-cookies.txt -X DELETE "$BASE/api/projects/$BURNP_ID"
+else
+  bad "image bound burn project unavailable: $BURNP"
+fi
+
+# ---------------------------------------------------------------------------
 step "== AI assistant (degrade-not-fail) =="
 AI=$(curl -s -b /tmp/smoke-cookies.txt -X POST "$BASE/api/ai-assistant" \
   -H "Content-Type: application/json" -d '{"message":"Add 3 red circles","targetIds":[]}')

@@ -154,8 +154,8 @@ const skill = readFileSync(
 // Session 92 (S92-E): re-anchored again — 1150 unit / 154 files /
 // 63 smoke (unchanged) / 262 e2e (unchanged — lows-s92 +9, the S92
 // low-batch pins); the intents unchanged.
-const UNIT = "1459";
-const SMOKE = "66";
+const UNIT = "1491";
+const SMOKE = "71";
 const E2E = "262";
 
 describe("the stale-count family is corrected (S81-E / B81-L-family)", () => {

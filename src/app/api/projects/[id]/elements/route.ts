@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
@@ -6,7 +6,8 @@ import { readBoundedJson, clampColor, clampNumber, isElementType } from "@/lib/v
 // Session 70 (S70-B): the row-builder family (buildElementRow +
 // clampFillImage + the field clamps) lives in the ONE seam —
 // src/lib/editor.ts — consumed by both handlers below.
-import { buildElementRow, ELEMENT_LIMIT } from "@/lib/editor";
+import { buildElementRow, ELEMENT_LIMIT, FILL_IMAGE_PROJECT_LIMIT_BYTES } from "@/lib/editor";
+import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,20 @@ export async function POST(request: NextRequest, { params }: Params) {
   const user = await requireSession();
   if (!user) return fail("UNAUTHENTICATED", "Sign in to edit elements", 401);
 
+  // Session 112 (S112-B — the sixtieth audit's B-I4): the scoped
+  // `crud:` bucket — 60 creations / 5 min per IP, after the session
+  // gate, before the resource read and the parse (the ai-assistant
+  // route's own ordering). The PUT below is EXCLUDED by design — the
+  // 800ms-debounced autosave rides it (the rate-limit.ts comment
+  // carries the measured arithmetic).
+  const limit = crudRateLimit(clientIpOf(request.headers));
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { ok: false as const, error: { code: "RATE_LIMITED", message: "Too many requests. Try again later." } },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const { id } = await params;
   const project = await loadProject(id);
   if (!project) return fail("NOT_FOUND", "Project not found", 404);
@@ -82,6 +97,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   // DELETE), and the FK violation previously escaped as an unstructured
   // 500. The members POST's S69-C form answers it through the envelope.
   let overCap = false;
+  let overImageCap = false;
   let element: Awaited<ReturnType<typeof db.designElement.create>> | null = null;
   try {
     element = await db.$transaction(async (tx) => {
@@ -120,12 +136,48 @@ export async function POST(request: NextRequest, { params }: Params) {
       // consumes the ONE shared seam (create mode synthesizes the
       // omitted-field defaults; the clamps live in src/lib/editor.ts
       // beside the domain types).
-      return tx.designElement.create({
+      const row = buildElementRow(body, sortOrder, "create");
+
+      // Session 112 (S112-C — the sixtieth audit's B92-I1 leg (a), the
+      // POST-side cumulative fillImage bound): the scripted single-
+      // element path is the ONLY construction route with no aggregate
+      // bound — the PUT carries the 32 MB body cap, but the POST can
+      // stack up to 2000 rows x ~700 KB of fillImage (the sticky-wedge
+      // board the validation.ts cap comment documents: once the
+      // full-list body exceeds 32 MB, every autosave PUT 400s until
+      // enough image elements are deleted, and any reload before the
+      // crossing reverts the deletion work). The maintained
+      // Project.fillImageBytes counter (recomputed by every PUT,
+      // seeded by the duplicate route) plus the shared 24 MB constant
+      // close the construction route — the write that would push the
+      // board past the bound answers the recovery-naming 400 INSIDE
+      // the transaction, BEFORE the create — the same TOCTOU-safe
+      // form the ELEMENT_LIMIT check above rides.
+      const liveBytes = await tx.project.findUnique({
+        where: { id },
+        select: { fillImageBytes: true },
+      });
+      const addBytes = typeof row.fillImage === "string" ? row.fillImage.length : 0;
+      if ((liveBytes?.fillImageBytes ?? 0) + addBytes > FILL_IMAGE_PROJECT_LIMIT_BYTES) {
+        overImageCap = true;
+        return null;
+      }
+
+      const created = await tx.designElement.create({
         data: {
           projectId: id,
-          ...buildElementRow(body, sortOrder, "create"),
+          ...row,
         },
       });
+      // Session 112 (S112-C): the counter increments in the SAME
+      // transaction — a create that never commits never counts.
+      if (addBytes > 0) {
+        await tx.project.update({
+          where: { id },
+          data: { fillImageBytes: { increment: addBytes } },
+        });
+      }
+      return created;
     });
   } catch (error) {
     // Session 72 (S72-C / L-B1): a vanished project between the
@@ -152,6 +204,16 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
   if (overCap) {
     return fail("VALIDATION", "Too many elements (max 2000)", 400);
+  }
+  if (overImageCap) {
+    // Session 112 (S112-C): the recovery-naming envelope — the copy
+    // names the ACTION the user can take (the ceiling is on the
+    // board's image bytes, not the element count).
+    return fail(
+      "VALIDATION",
+      "This board's images are too large — remove some image fills before adding more",
+      400,
+    );
   }
   if (!element) {
     // Unreachable (the transaction either created the row or set the
@@ -216,6 +278,20 @@ export async function PUT(request: NextRequest, { params }: Params) {
     buildElementRow(raw, index, "replace"),
   );
 
+  // Session 112 (S112-C — the maintained counter): the full-list
+  // replace RECOMPUTES the project's fillImageBytes from its own
+  // in-memory rows — the delete-then-recreate just rewrote every row,
+  // so the exact new total is one reduce away and no drift can survive
+  // a save. The PUT deliberately does NOT enforce the 24 MB fillImage
+  // bound: its own 32 MB body cap subsumes it, and the ~30 MB
+  // heaviest-legitimate PUT form (the S76-F doctrine — a max-ceiling
+  // save of image-bearing rows) must keep saving. Counter maintenance
+  // only.
+  const total = rows.reduce(
+    (sum, r) => sum + (typeof r.fillImage === "string" ? r.fillImage.length : 0),
+    0,
+  );
+
   // Session 56 (S56-H — L-2): the response read runs INSIDE the interactive
   // transaction. The old outside-read could interleave with a concurrent
   // PUT landing between this request's commit and its read — returning a
@@ -236,7 +312,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
       }
       await tx.project.update({
         where: { id },
-        data: { updatedAt: new Date(), ...(backgroundColor ? { backgroundColor } : {}) },
+        data: {
+          updatedAt: new Date(),
+          fillImageBytes: total,
+          ...(backgroundColor ? { backgroundColor } : {}),
+        },
       });
       return tx.designElement.findMany({
         where: { projectId: id },

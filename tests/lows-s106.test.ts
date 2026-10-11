@@ -54,8 +54,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1459";
-const FILES = "173";
+const UNIT = "1491";
+const FILES = "174";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -133,8 +133,11 @@ describe("S106-A the image-upload no-op commits (A-M1 — the headline, the fami
     // gradient-stop button + the guardedUpdate helper + the stop
     // position + the S105-A stop color) — the upload commit is the
     // tenth consumer.
+    // Session 112 (S112-A — a legitimate contract update): the
+    // selectionWouldCommit helper joins the seam — the census grows to
+    // ELEVEN (the multi-selection rows' scope truth).
     const guarded = PANEL.match(/patchDiffers\(/g);
-    expect(guarded?.length).toBe(10);
+    expect(guarded?.length).toBe(11);
   });
 
   it("SURVIVAL: the upload's own contracts stay (the cap, the whitelist, the busy gate)", () => {
