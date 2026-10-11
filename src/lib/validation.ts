@@ -106,6 +106,20 @@ export function clampTextAlign(value: unknown): string | null {
   return TEXT_ALIGNS.has(value) ? value : null;
 }
 
+// Session 111 (S111-D / B-I3 — the fifty-ninth audit): the email
+// normalization seam — one source for the auth family's existing
+// trim().toLowerCase() contract, now consumed by all SEVEN
+// email-reading sites (register, login, verify-otp, resend-otp,
+// forgot-password + the two invite paths). The invite reads carried
+// bare trim() while the whole auth family normalized — and the new
+// (teamId, email) unique constraint rides a BINARY-collation SQLite
+// index, so without the shared normalization the constraint is
+// bypassable by case variation (Alex@digma.app != alex@digma.app).
+export function normalizeEmail(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw.trim().toLowerCase();
+}
+
 // Session 46 (RA-65/RA-66): the reference's /reset-password landing page
 // keys its two states on the ?token= query param — only a NON-EMPTY token
 // opens the "Set new password" form; a missing, empty, or differently-named
@@ -157,10 +171,13 @@ export function safeFromUrl(raw: string | null | undefined): string {
 // copies up to 2000 element rows per call).
 
 /** The aggregate request-body ceiling: 32 MB — the documented
- * self-hosted ceiling (a typical image-carrying board sits far under
- * it at ~30 MB of data-URL prose; the 2000 × ~722 KB full-image
- * board ≈ 1.45 GB sits far OVER — the elements PUT's own arithmetic —
- * and the S67-B abuse family the cap exists to stop). Note the
+ * self-hosted ceiling. Two claims, kept separate (the S111-C
+ * comment-truth repair — the S76-F rewording's own compound residual):
+ * typical image-carrying boards sit FAR UNDER the cap, while a ~30 MB
+ * board is the heaviest-legitimate form that fits JUST under it —
+ * not "far under" (the 2000 × ~722 KB full-image board ≈ 1.45 GB
+ * sits far OVER — the elements PUT's own arithmetic — and the S67-B
+ * abuse family the cap exists to stop). Note the
  * scripted elements POST path has no aggregate cap below this line,
  * so a stored board larger than 32 MB is constructible — after which
  * every full-list PUT answers the payload-too-large 400 until the

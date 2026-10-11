@@ -73,7 +73,10 @@ describe("the db log line + the unified member color (session 64, S64-F / B-6 + 
     // contract is pinned on the transactional create.
     const createIdx = teamsSource.indexOf("tx.team.create(");
     expect(createIdx).toBeGreaterThan(-1);
-    const createBody = teamsSource.slice(createIdx, createIdx + 900);
+    // Session 111 (S111-D): the window widened 900 -> 1300 — the
+    // structural-exemption comment (7 lines) sits between the create's
+    // opening and the member-color derivation below it.
+    const createBody = teamsSource.slice(createIdx, createIdx + 1300);
     expect(createBody).toMatch(/memberColorFor\(memberEmail\)/);
     expect(teamsSource).toMatch(/import \{ memberColorFor, memberDisplayFor \} from "@\/lib\/team"/);
   });

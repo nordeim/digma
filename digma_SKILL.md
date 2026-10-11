@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite traced-schema trap trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.88.0
+version: 1.89.0
 last_updated: 2026-10-10
-project_state: "1433 unit checks green · 262 Playwright checks green · 63 smoke checks green · build 27 routes"
+project_state: "1459 unit checks green · 262 Playwright checks green · 66 smoke checks green · build 27 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -68,7 +68,7 @@ project_state: "1433 unit checks green · 262 Playwright checks green · 63 smok
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.1 | 1433 checks; `*.test.ts` only |
+| Unit tests | Vitest | ≥5.0.1 | 1459 checks; `*.test.ts` only |
 | E2E tests | Playwright | ≥1.63.0 | 262 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
@@ -239,9 +239,9 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 1433/1433
+bun run test          # 1459/1459
 bun run build         # 27 routes; static+public copied into standalone
-./scripts/smoke-test.sh   # 63/63 (health, auth gate, CRUD, AI, rate limit, logout, the S82-D body-cap pair)
+./scripts/smoke-test.sh   # 66/66 (health, auth gate, CRUD, AI, rate limit, logout, the S82-D body-cap pair, the S111-D invite-dedup trio)
 bun run test:e2e      # 262/262 (39 spec files + the setup project; the mobile-nav 10-check suite, the sessionNN-fixes discriminators)
 git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 ```
@@ -408,6 +408,8 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 
 
 97. **F97 — the session-110 family: a CLOSURE claim is itself a census claim — the census must be re-derived at the closing layer in the SAME commit that closes it; and an evidence script's PASS/FAIL counters do not close the squat vector. THE CLOSURE-CLAIM MEMBER (A-L1 — the headline): the S109-A fix closed the no-op commit family's "store-level member" with a closure comment framing the member as singular — while THREE sibling arms (`deleteElements`, `toggleVisibility`, `toggleLock`) carried the IDENTICAL unguarded shape in the same store, one screen down, written by the same doctrine's earlier sessions. The F96 lesson ("verify a no-op claim at the layer that owns the state transition") was itself applied one arm-pair at a time: the fix verified the two arms the finder named, never re-deriving the layer's own full census. The lesson generalizes: when a fix closes a FAMILY at a LAYER, the closing commit must enumerate the layer's complete arm census (the eight-arm mutation census closed this session — addElements, updateElements, scaleElements, moveElements, deleteElements, reorderElements, toggleVisibility, toggleLock, setBackgroundColor) and state which members are by-definition real (loadProject/markSaved/restoreSnapshot) and which commit nothing (selection/view ops); otherwise the closure is a claim about the arms someone looked at. THE SAME-VALUE/EMPTY-BATCH SIBLINGS (A-I1 + A-I2): the family's shape is not only id-match — an empty batch and a same-value commit are the same no-op class wearing different predicates (the guard's QUESTION changes, not its layer). THE EVIDENCE-SCRIPT MEMBER (B-L1): verify-nav-s110.sh carried PASS/FAIL counters with exit 1 — the fail-loud form — yet booted :3000 with no pre-kill, no port-squat refusal, and no never-up gate: a lingering server answers the health loop while the fresh boot dies EADDRINUSE silently, and every check certifies the WRONG build with exit 0. The counters measure the CHECKS' truth; the squat vector lives in the BOOT's truth — two different axes, and only the boot-axis triple (pre-kill + refusal + never-up) closes it. The general rule: EVERY surface that boots a server to measure it carries the triple, and a new booting surface is born WITH it (the S108-A lesson F95's echo: a new script form must land with its fail-loud gate in the same commit — a new BOOT form must land with its squat triple in the same commit). THE ORDINAL MEMBER (B-I1): the 86th audit's clip pass was recorded as "the 46th consecutive" — the committed chain (84th=45th, 85th=46th) makes it the 47th; an ordinal claim is arithmetic on the record chain, and the record must state the POST-RUN state, never the pre-run state mis-stated as the run's result.**
+
+98. **F98 — the session-111 family: a census claim must enumerate the SEAMS' own members too — the arms a layer owns are not only its named actions; and a parity gate gated on an unmeasurable reference is answered by MEASURING the reference, not by deferring forever. THE GESTURE-SEAM MEMBER (A-L1 — the headline): the S110-A closure enumerated the store's eight MUTATION arms and called the census closed — but the gesture-seam trio (beginGesture/endGesture/cancelGesture) was absent from the enumeration entirely, and endGesture pushes past + wipes future (a history-committing arm with a reachable no-op case: drag right, drag back, release — every terminal discriminates on 'an event happened,' never 'the net state differs'). The generalization: a layer's census covers every member that performs the census'd OPERATION (history commits), not only the members shaped like the previously-fixed ones — the gesture seam COMMITS history through a different door (the terminal arms), and 'different door' is not 'different layer.' The guard lands at the layer that owns the transition (endGesture itself), never in the terminals — the F96 doctrine's third application. THE VALUE-BASED FLAG MEMBER (A-L1 sub-item): 'moved' was MEMBERSHIP-based (idSet.has && !locked) — a flag whose name claims a VALUE property must test the VALUE (the clamp-aware position compare), and the identity-preserving bail doubles as a memoization win (unchanged elements keep their identity through the map). THE PATH-CENSUS RECURSION (A-L2): the S110-C 'honest path-qualified form' was itself a path-census claim that missed two families (the re-entry-mount-with-transport await; the fallback-path Promise.resolve) — F97 recurring inside its own product one session later; a taxonomy's completeness is auditable the same way a census is. THE PROVENANCE MEMBER (B-L1): a derivation may bump SESSION ordinals (88th nav session, S111-cycle) but never a HISTORICAL closure attribution (the S110-B port-squat closure belongs to the fifty-eighth audit forever) — 'which audit closed X' is a fact about the past, not a label about the present. THE MEASUREMENT MEMBER (B-I3): the TeamMember invite-dedup question sat deferred for five sessions behind 'the parity question: does the reference dedup?' — the 87th audit MEASURED the reference (zero teams, dead Create-Team chrome, no reachable invite flow) and the gate dissolved: no reference behavior exists to mirror, so the clone's dedup is the working superset (the mobile-nav/eye-toggle family precedent). The general rule: a deferred item gated on reference behavior gets a MEASUREMENT step scheduled into the next reference audit — 'unknown' is a queue state, not a permanent residence; and a uniqueness constraint riding a BINARY-collation index needs CASE NORMALIZATION at every write site (the shared normalizeEmail seam), or the constraint is bypassable by case variation.**
 
 ## §13 Pitfalls to Avoid
 
@@ -629,7 +631,7 @@ Prisma models (5): `User` (email unique, scrypt passwordHash, avatarColor), `Pro
 | GuardedNumberInput — the S21-2 empty-draft guard on the inline value inputs (session 53: Rotation value / Opacity value / gradient stop positions) + the CanvasBackgroundSection mobile surface (the Edit-canvas-properties chip, mutually exclusive with the element chip) | `src/components/editor/properties-panel.tsx` + `src/components/editor/editor-view.tsx` (MobileCanvasProperties) + `tests/guarded-number-input.test.ts` + `tests/canvas-background-section.test.ts` |
 | The export format menu (session 54: the honest “Download” trigger opening the PNG + SVG items; `downloadSvg` prepends the XML declaration — the saved file carries no HTTP charset header; both formats share the one `triggerBlobDownload` anchor) + the three Sheets' `SheetDescription` purpose wiring | `src/components/editor/editor-view.tsx` (the zoom-cluster menu) + `src/lib/export-png.ts` (`downloadSvg`/`triggerBlobDownload`) + `tests/export-menu.test.ts` + `tests/sheet-descriptions.test.ts` |
 | Per-element Scale + transform chain `translate scale rotate` (ADR-012) | `src/lib/editor.ts` (model + bounds), `canvas.tsx` (render + visual-space resize) |
-| Smoke suite | `scripts/smoke-test.sh` (63 checks) |
+| Smoke suite | `scripts/smoke-test.sh` (66 checks) |
 | Design tokens | `src/app/globals.css` `@theme` |
 | Push procedure | `docs/ssh_git_wrapper_v3.py` + `docs/how-to-git-push-using-ssh-wrapper_SKILL.md` |
 | Demo login | `demo@digma.app` / `Digma1234!` |

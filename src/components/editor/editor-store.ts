@@ -147,6 +147,31 @@ function snapshotOf(state: {
   return { elements: state.elements.map((el) => ({ ...el })), backgroundColor: state.backgroundColor };
 }
 
+// Session 111 (S111-A / A-L1 — the fifty-ninth audit's gesture-seam
+// completion): the snapshot-identity compare for endGesture's net-zero
+// guard. Value-based per element: the gesture seam's own writes spread
+// ({ ...el, x, y }) and share every NESTED object reference with the
+// pre-gesture state (fillGradient, stops), so a strict per-key ===
+// compare is exact for the unchanged case and flips the moment any
+// nested edit lands (the changed member carries a fresh reference).
+// Object.keys order is stable within one lineage (every write path
+// spreads), so the key-set compare is order-safe.
+function snapshotsEqual(a: Snapshot, b: Snapshot): boolean {
+  if (a.backgroundColor !== b.backgroundColor) return false;
+  if (a.elements.length !== b.elements.length) return false;
+  for (let i = 0; i < a.elements.length; i += 1) {
+    const x = a.elements[i] as unknown as Record<string, unknown>;
+    const y = b.elements[i] as unknown as Record<string, unknown>;
+    const xk = Object.keys(x);
+    const yk = Object.keys(y);
+    if (xk.length !== yk.length) return false;
+    for (const k of xk) {
+      if (x[k] !== y[k]) return false;
+    }
+  }
+  return true;
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -386,11 +411,19 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       // S23-3): a multi-selection that includes locked elements (e.g. via
       // Select All, which selects every VISIBLE element) drags only its
       // unlocked members. saveState flips only when something moved.
+      // Session 111 (S111-A / A-L1 — the zero-delta member): "moved" is
+      // VALUE-based, not membership-based — the pre-fix flag flipped on
+      // idSet.has(el.id) && !el.locked, so a zero-delta call (a
+      // duplicate/zero-delta pointermove, dx=dy=0) committed new
+      // same-value identities and flipped "unsaved" while nothing
+      // moved, and a move whose delta the position bound absorbed
+      // (already at ±100000) did the same. The clamp-aware compare
+      // also keeps the UNCHANGED member's identity (the map returns
+      // el itself), so the memoized canvas skips it entirely.
       const idSet = new Set(ids);
       let moved = false;
       const elements = state.elements.map((el) => {
         if (idSet.has(el.id) && !el.locked) {
-          moved = true;
           // Session 87 (S87-B / A87-L1): the accumulated position joins the
           // bounded set — the server's buildElementRow clamps x/y to
           // ±100000, and the store-replacing PUT response would otherwise
@@ -398,11 +431,13 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
           // max-zoom-out drags reach it: 2000 screen px at zoom 0.1 =
           // 20000 units each). The S84-B helper at the accumulation's
           // consumer, mirroring the panel fields and scaleElements.
-          return {
-            ...el,
-            x: clampPositionField(el.x + dx),
-            y: clampPositionField(el.y + dy),
-          };
+          const nx = clampPositionField(el.x + dx);
+          const ny = clampPositionField(el.y + dy);
+          if (nx !== el.x || ny !== el.y) {
+            moved = true;
+            return { ...el, x: nx, y: ny };
+          }
+          return el;
         }
         return el;
       });
@@ -548,15 +583,32 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   // Session 56 (S56-A): the gesture seam — see the type comment above.
   beginGesture: () => set((state) => ({ gestureSnapshot: snapshotOf(state) })),
+  // Session 111 (S111-A / A-L1 — the no-op commit family's gesture-seam
+  // completion, the ninth arm the S110-A census missed): the NET-ZERO
+  // gesture guard. The pre-fix arm's only bail was the null-snapshot
+  // one — every terminal discriminates on "an event happened" (the
+  // canvas sets moved on ANY pointermove; the panel's markText sets
+  // changed on any real commit), never "the net state differs" — so
+  // drag right 50px, drag back, release pushed an INERT history entry
+  // (the next Ctrl+Z visibly did nothing), wiped the redo stack, and
+  // the per-move moveElements calls had already armed a byte-identical
+  // PUT: verbatim the S78-C pre-fix symptom list, one seam over. The
+  // guard compares the armed snapshot to the live state AT THE LAYER
+  // THAT OWNS THE TRANSITION (the F96/F97 doctrine — not in the
+  // terminals); identity behaves as cancelGesture: no past push, no
+  // future wipe, the snapshot simply clears.
   endGesture: () =>
-    set((state) =>
-      state.gestureSnapshot
-        ? {
-            past: [...state.past, state.gestureSnapshot].slice(-60),
-            future: [],
-            gestureSnapshot: null,
-          }
-        : {}),
+    set((state) => {
+      if (!state.gestureSnapshot) return {};
+      if (snapshotsEqual(state.gestureSnapshot, snapshotOf(state))) {
+        return { gestureSnapshot: null };
+      }
+      return {
+        past: [...state.past, state.gestureSnapshot].slice(-60),
+        future: [],
+        gestureSnapshot: null,
+      };
+    }),
   cancelGesture: () => set({ gestureSnapshot: null }),
 
   undo: () =>

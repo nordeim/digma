@@ -1382,15 +1382,20 @@ export function EditorView({ user }: { user: HeaderUser }) {
 
   // Load the project once — setState lands INSIDE the async function
   // (after the same-project skip's early return — the S77-E placement:
-  // never in the effect's sync body directly; on the plain-mount and
-  // adoption paths it runs in the sync prefix before the first await,
-  // while on the swap path the S80-A drain and the S85-A
-  // leave-transport awaits precede it — the S110-C re-anchor, the
-  // honest form of the S109-B header whose universal "before the
-  // first await" claim the swap path falsified). Unknown or missing
-  // projectId NEVER dead-ends: the editor opens in "Untitled" mode
-  // (reference parity, ADR-009) and the first autosave creates the
-  // backing project.
+  // never in the effect's sync body directly). Four path families, one
+  // honest taxonomy (the S111-B re-anchor — the S110-C form's own path
+  // census missed two families): (1) the plain mount without a
+  // registered transport and (2) the adoption path both re-arm the
+  // loading flag in the sync prefix, before the first await; (3) the
+  // different-project swap path awaits the S80-A drain before it; (4)
+  // the re-entry mount with a registered leave transport awaits the
+  // S85-A transport first (its designed case — that await sits inside
+  // the projectId guard, OUTSIDE the swap block, so it is not
+  // swap-scoped). The Untitled/fallback paths settle the loading flag
+  // only after the Promise.resolve microtask boundary.
+  // Unknown or missing projectId NEVER dead-ends: the editor opens in
+  // "Untitled" mode (reference parity, ADR-009) and the first autosave
+  // creates the backing project.
   React.useEffect(() => {
     let cancelled = false;
     (async () => {

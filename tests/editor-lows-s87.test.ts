@@ -138,8 +138,12 @@ describe("the canvas gesture clamps at the last unbounded consumers (S87-B / A87
     // raw. The S84-B helper (mirroring the server's
     // clampNumber(raw?.x, -100000, 100000, …) bound) joins the
     // accumulated path.
-    expect(storeSource).toMatch(/x: clampPositionField\(el\.x \+ dx\)/);
-    expect(storeSource).toMatch(/y: clampPositionField\(el\.y \+ dy\)/);
+    // Session 111 (S111-A) re-anchor: the clamp moved into the value-
+    // based compare (const nx/ny) — the doctrine (the accumulated
+    // position is clamped on both products) unchanged, the form is the
+    // S111-A delta guard's own.
+    expect(storeSource).toMatch(/const nx = clampPositionField\(el\.x \+ dx\)/);
+    expect(storeSource).toMatch(/const ny = clampPositionField\(el\.y \+ dy\)/);
     // The bare accumulated forms are gone.
     expect(storeSource).not.toMatch(/x: el\.x \+ dx,/);
     expect(storeSource).not.toMatch(/y: el\.y \+ dy,/);

@@ -727,6 +727,22 @@ S119 = dict(S118)
 # commit is unreachable through any seeded journey's normal flow).
 S120 = dict(S119)
 
+# s121 mapping (session 111 — the 87th reference audit's evidence set + the
+# S111 capture set). The standing S121 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S111 tree); no NEW
+# witness this session (the S111 pass is gesture-guard-internals +
+# header-comment + invite-dedup with identical observable behavior on the
+# seeded flows — the net-zero gesture needs a drag-and-return the seeded
+# journeys never perform, and the 409 re-invite rides the smoke suite's
+# own fixture team, deleted before any capture).
+S121 = dict(S120)
+# The B-I3 reference-measurement probe (session 111): the ad-hoc sixth
+# shot of the 87th audit — the reference Teams EMPTY STATE (the gate
+# lift's evidence: zero teams, dead Create-Team chrome). Desktop-sized
+# like the script's ref-00; if the datum is ever promoted to standing,
+# the capture folds into the next script derivation (F95).
+S121["ref-05-teams-empty-state"] = (1440, 900)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -821,6 +837,8 @@ def expected_for(name: str):
         return S119.get(Path(name).stem)
     if name.startswith("ref-audit-s120/"):
         return S120.get(Path(name).stem)
+    if name.startswith("ref-audit-s121/"):
+        return S121.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -922,6 +940,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s118").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s119").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s120").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s121").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

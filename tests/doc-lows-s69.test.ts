@@ -99,7 +99,7 @@ describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
     expect(doc.includes("25 routes total")).toBe(false);
   });
 
-  it("the verification checklist carries the real counts (63 smoke / 262 e2e)", () => {
+  it("the verification checklist carries the real counts (66 smoke / 262 e2e)", () => {
     // Session 103 (S103-E / B-I1): the TITLE re-anchored to 262 — the
     // S85-F re-anchor updated the assertion below but missed the
     // title's own parenthetical (the title/assertion pair must agree).
@@ -118,11 +118,14 @@ describe("the DEPLOYMENT.md refresh (S69-D / L-G)", () => {
     // family grep must include the TESTS THAT PIN THE NUMBERS, not
     // only the doctrine files). The red pin broke the unit gate at
     // 960/961 — this re-anchor repairs it.
-    expect(doc).toMatch(/63 .*smoke|smoke.*63|63 checks/);
+    // Session 111 (S111-D): 63 -> 64 — the smoke invite-dedup trio.
+    expect(doc).toMatch(/66 .*smoke|smoke.*66|66 checks/);
     expect(doc).toMatch(/262 .*Playwright|Playwright.*262|262 checks/);
     expect(doc.includes("28 E2E checks")).toBe(false);
     expect(doc.includes("51 Playwright checks")).toBe(false);
     expect(doc.includes("61 smoke")).toBe(false);
+    expect(doc.includes("63 smoke")).toBe(false);
+    expect(doc.includes("64 smoke")).toBe(false);
     expect(doc.includes("259 Playwright")).toBe(false);
   });
 

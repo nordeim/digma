@@ -185,9 +185,19 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     // PRESERVATION PIN: the store's existing gesture contract — the
     // snapshot captures the PRE-gesture state, endGesture pushes THAT
     // snapshot as the ONE history entry.
+    // Session 111 (S111-A) re-anchor: endGesture gained the NET-ZERO
+    // guard (the armed snapshot compared to the live state; identity
+    // behaves as cancel — the S78-C no-op class, one seam over). The
+    // doctrine survives: a LIVE gesture still pushes exactly the armed
+    // pre-gesture snapshot as the one history entry; the guard only
+    // stops the INERT push when nothing net-changed.
     expect(storeSource).toMatch(/beginGesture: \(\) => set\(\(state\) => \(\{ gestureSnapshot: snapshotOf\(state\) \}\)\)/);
+    expect(storeSource).toMatch(/function snapshotsEqual\(a: Snapshot, b: Snapshot\): boolean/);
     expect(storeSource).toMatch(
-      /endGesture: \(\)\s*=>\s*set\(\(state\)\s*=>\s*state\.gestureSnapshot\s*\?\s*\{\s*past: \[\.\.\.state\.past, state\.gestureSnapshot\]\.slice\(-60\),/,
+      /if \(snapshotsEqual\(state\.gestureSnapshot, snapshotOf\(state\)\)\) \{\s*return \{ gestureSnapshot: null \};/,
+    );
+    expect(storeSource).toMatch(
+      /past: \[\.\.\.state\.past, state\.gestureSnapshot\]\.slice\(-60\),/,
     );
   });
 });

@@ -335,18 +335,26 @@ describe("S110-C the load-effect header's path-qualified re-anchor (A-L2 — the
   });
 
   it("DEFECT (source): the honest path-qualified form is PRESENT (the S110-C marker + the swap-path acknowledgment)", () => {
+    // Session 111 (S111-B) re-anchor: the header gained the four-family
+    // taxonomy — the S110-C marker now rides the S111-B block's own
+    // back-reference ("the S110-C form's own path census missed two
+    // families"), and the swap-path acknowledgment survives inside it.
     expect(viewSource).toMatch(/S110-C/);
     expect(viewSource).toMatch(/swap path/);
     expect(viewSource).toMatch(/drain/);
-    expect(viewSource).toMatch(/leave-transport/);
+    expect(viewSource).toMatch(/re-entry mount/);
   });
 
   it("SURVIVAL (source): the universally-true core survives (never in the effect's sync body directly)", () => {
     const loadStart = viewNormalized.indexOf("Load the project once");
     expect(loadStart).toBeGreaterThan(-1);
-    const header = viewNormalized.slice(loadStart, loadStart + 900);
+    const header = viewNormalized.slice(loadStart, loadStart + 1200);
     expect(header).toMatch(/never in the effect's sync body directly/);
-    expect(header).toMatch(/plain-mount and adoption paths/);
+    // Session 111 (S111-B): the two-family form ("plain-mount and
+    // adoption paths") became the four-family taxonomy — the survival
+    // pin re-anchors onto its honest current form.
+    expect(header).toMatch(/adoption path/ );
+    expect(header).toMatch(/plain mount/);
   });
 });
 

@@ -137,9 +137,11 @@ describe("the PAD's testing table and inline counts are honest (S83-E)", () => {
     expect(PAD).toMatch(/session82-fixes\.spec\.ts` \| 1 \|/);
   });
 
-  it("the §3.2 smoke line says 63 HTTP checks", () => {
-    expect(PAD).toMatch(/smoke-test\.sh\s+# 63 HTTP checks/);
+  it("the §3.2 smoke line says 66 HTTP checks", () => {
+    expect(PAD).toMatch(/smoke-test\.sh\s+# 66 HTTP checks/);
     expect(PAD).not.toMatch(/smoke-test\.sh\s+# 56 HTTP checks/);
+    expect(PAD).not.toMatch(/smoke-test\.sh\s+# 63 HTTP checks/);
+    expect(PAD).not.toMatch(/smoke-test\.sh\s+# 64 HTTP checks/);
   });
 
   it("the §11 line-count column carries the current realities", () => {
@@ -162,9 +164,11 @@ describe("digma_SKILL's counts are honest (S83-E)", () => {
     expect(SKILL).not.toMatch(/~101 lines/);
   });
 
-  it("Appendix B's smoke row says 63 checks", () => {
+  it("Appendix B's smoke row says 66 checks", () => {
     expect(SKILL).not.toMatch(/\(58 checks\)/);
-    expect(SKILL).toMatch(/smoke-test\.sh[^\n]*63/);
+    expect(SKILL).not.toMatch(/\(63 checks\)/);
+    expect(SKILL).not.toMatch(/\(64 checks\)/);
+    expect(SKILL).toMatch(/smoke-test\.sh[^\n]*66/);
   });
 
   it("the primitives list includes the vendored select", () => {

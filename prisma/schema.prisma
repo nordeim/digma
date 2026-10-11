@@ -135,4 +135,16 @@ model TeamMember {
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([teamId])
+  // Session 111 (S111-D / B-I3 — the fifty-ninth audit, the reference
+  // gate LIFTED): the compound uniqueness — a (teamId, email) pair
+  // commits exactly once. The 87th reference audit measured the
+  // reference app carrying ZERO teams with dead Create-Team chrome and
+  // no reachable invite flow, so no reference behavior exists to
+  // mirror; this is the clone's working superset (the mobile-nav /
+  // eye-toggle family precedent). SQLite unique indexes treat NULLs
+  // as distinct, so the nullable email stays multi-insertable (the
+  // API always writes a non-empty normalized value — the
+  // normalizeEmail seam; a bare-trim read would leave the BINARY
+  // collation bypassable by case variation).
+  @@unique([teamId, email])
 }

@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { readBoundedJson, clampColor, clampText, TEAM_LIMIT } from "@/lib/validation";
+import { readBoundedJson, clampColor, clampText, TEAM_LIMIT, normalizeEmail } from "@/lib/validation";
 import { memberColorFor, memberDisplayFor } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +64,11 @@ export async function POST(request: NextRequest) {
   // the format check (the members route's identical form) — the
   // clampText-then-regex shape truncated a 200+ char address first and
   // stored the mangled remainder when it still matched.
-  const memberEmail = typeof body?.memberEmail === "string" ? body.memberEmail.trim() : "";
+  // Session 111 (S111-D / B-I3): the read joins the shared
+  // normalizeEmail seam (the members route's identical form — the
+  // case-normalized value is what the (teamId, email) unique
+  // constraint and the invite route both compare against).
+  const memberEmail = normalizeEmail(body?.memberEmail);
   if (memberEmail.length > 200) {
     return fail("VALIDATION", "Email is too long (max 200)", 400);
   }
@@ -100,6 +104,12 @@ export async function POST(request: NextRequest) {
           name,
           description,
           color,
+          // Session 111 (S111-D / B-I3 — the structural exemption): the
+          // inline first member is the FIRST row of a brand-new team
+          // (one memberEmail per create), so no dedup sentinel runs
+          // here and the new (teamId, email) unique constraint cannot
+          // fire — the team's id does not exist until this very create
+          // commits it. The invite path owns the dedup contract.
           ...(memberEmail
             ? {
                 members: {

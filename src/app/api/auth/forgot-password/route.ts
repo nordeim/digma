@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
-import { readBoundedJson } from "@/lib/validation";
+import { normalizeEmail, readBoundedJson } from "@/lib/validation";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,9 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
   const body = parsed.value;
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  // Session 111 (S111-D / B-I3): the shared normalizeEmail seam — the
+  // auth family's trim().toLowerCase() contract, one source.
+  const email = normalizeEmail(body?.email);
 
   // Session 66 (S66-C — the fourteenth audit's B-4): the S62-G caps family
   // reaches the sibling public routes (no default body-size cap in App

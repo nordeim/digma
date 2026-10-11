@@ -419,6 +419,26 @@ BADMEMBER=$(curl -s -o /dev/null -w "%{http_code}" -b /tmp/smoke-cookies.txt -X 
   -H "Content-Type: application/json" -d '{"email":"not-an-email"}')
 [ "$BADMEMBER" = "400" ] && ok "member with invalid email rejected 400" || bad "member with invalid email rejected 400 (got $BADMEMBER)"
 
+# Session 111 (S111-D / B-I3 — the fifty-ninth audit, the reference gate
+# LIFTED): the re-invite dedup — a second invite of the SAME email into
+# the SAME team answers 409 CONFLICT (the register family's envelope),
+# never a second member row. The case-variant form (SMOKE@…) proves the
+# normalizeEmail seam: the BINARY-collation unique index would otherwise
+# treat it as a distinct pair.
+DUPMEMBER=$(curl -s -o /dev/null -w "%{http_code}" -b /tmp/smoke-cookies.txt -X POST "$BASE/api/teams/$TEAM_ID/members" \
+  -H "Content-Type: application/json" -d '{"email":"SMOKE@digma.app"}')
+[ "$DUPMEMBER" = "409" ] && ok "duplicate invite (case-variant) rejected 409" || bad "duplicate invite (case-variant) rejected 409 (got $DUPMEMBER)"
+DUPBODY=$(curl -s -b /tmp/smoke-cookies.txt -X POST "$BASE/api/teams/$TEAM_ID/members" \
+  -H "Content-Type: application/json" -d '{"email":"smoke@digma.app"}')
+echo "$DUPBODY" | grep -q 'already on the team' && ok "the 409 carries the human copy" || bad "the 409 carries the human copy: $DUPBODY"
+MEMBERCOUNT=$(curl -s -b /tmp/smoke-cookies.txt "$BASE/api/teams" | python3 -c "
+import json, sys
+teams = json.load(sys.stdin)['data']['teams']
+team = next((t for t in teams if t['id'] == '$TEAM_ID'), None)
+print(len(team['members']) if team else -1)
+" 2>/dev/null)
+[ "$MEMBERCOUNT" = "1" ] && ok "the re-invites never appended a row (still 1 member)" || bad "the re-invites never appended a row (got $MEMBERCOUNT members)"
+
 if [ -n "$TEAM_ID" ]; then
   curl -s -b /tmp/smoke-cookies.txt -X DELETE "$BASE/api/teams/$TEAM_ID" >/dev/null
 fi

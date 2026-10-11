@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
-import { readBoundedJson, clampText, MEMBER_LIMIT } from "@/lib/validation";
+import { readBoundedJson, clampText, MEMBER_LIMIT, normalizeEmail } from "@/lib/validation";
 import { memberColorFor, memberDisplayFor } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -27,13 +27,13 @@ export async function POST(request: NextRequest, { params }: Params) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
   const body = parsed.value;
-  // Session 98 (S98-A — B98-L2, the forty-sixth audit): the member
-  // email REJECTS over-length BEFORE the format check — the auth
-  // family's contract (register answers the honest 400 while this
-  // route's clampText truncated first, storing a MANGLED address whose
-  // truncation still matched the regex). The two invite paths must
-  // answer identically to the auth family.
-  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  // Session 111 (S111-D / B-I3 — the fifty-ninth audit, the reference
+  // gate LIFTED): the email read joins the shared normalizeEmail seam.
+  // The pre-fix form was a bare trim() while the whole auth family
+  // normalized — and the new (teamId, email) unique constraint rides
+  // a BINARY-collation SQLite index, so a case-variant re-invite
+  // (Alex@… vs alex@…) would bypass a trim-only dedup.
+  const email = normalizeEmail(body?.email);
   if (email.length > 200) {
     return fail("VALIDATION", "Email is too long (max 200)", 400);
   }
@@ -64,9 +64,26 @@ export async function POST(request: NextRequest, { params }: Params) {
   // throws past the envelope. Answer 404 instead: the invite target
   // no longer exists.
   let overCap = false;
+  let duplicate = false;
   let member;
   try {
     member = await db.$transaction(async (tx) => {
+      // Session 111 (S111-D / B-I3 — the fifty-ninth audit, the
+      // reference gate LIFTED): the dedup sentinel, INSIDE the
+      // transaction and BEFORE the ceiling check — a re-invite of a
+      // live email must diagnose 409 CONFLICT (the register family's
+      // envelope; no reference text exists to mirror — the 87th audit
+      // measured the reference carrying ZERO teams with dead
+      // Create-Team chrome and no reachable invite flow, so the
+      // clone's dedup is the working superset). The schema's new
+      // @@unique([teamId, email]) backs the race window (the P2002
+      // arm below); this sentinel answers the honest 409 for the
+      // sequential case.
+      const existing = await tx.teamMember.findFirst({ where: { teamId: id, email } });
+      if (existing) {
+        duplicate = true;
+        return null;
+      }
       const memberCount = await tx.teamMember.count({ where: { teamId: id } });
       if (memberCount >= MEMBER_LIMIT) {
         overCap = true;
@@ -98,7 +115,18 @@ export async function POST(request: NextRequest, { params }: Params) {
     ) {
       return fail("UNAVAILABLE", "The invite took too long to save — the database timed out. Try again.", 503);
     }
+    // Session 111 (S111-D / B-I3): the P2002 race arm — the register
+    // family's S64-E form. The sentinel and the create run in one
+    // transaction, but SQLite's serialization makes the constraint
+    // the floor: a concurrent same-pair insert that slips past the
+    // sentinel answers the same honest 409, never an unstructured 500.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return fail("CONFLICT", "This member is already on the team", 409);
+    }
     throw error;
+  }
+  if (duplicate) {
+    return fail("CONFLICT", "This member is already on the team", 409);
   }
   if (overCap) {
     return fail("VALIDATION", "Too many members (max 100)", 400);

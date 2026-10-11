@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { generateVerifyCode, hashPassword } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
-import { readBoundedJson, USER_LIMIT } from "@/lib/validation";
+import { normalizeEmail, readBoundedJson, USER_LIMIT } from "@/lib/validation";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,9 @@ export async function POST(request: NextRequest) {
     return fail("VALIDATION", "Request body too large (max 32 MB)", 400);
   }
   const body = parsed.value;
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  // Session 111 (S111-D / B-I3): the shared normalizeEmail seam — the
+  // auth family's trim().toLowerCase() contract, one source.
+  const email = normalizeEmail(body?.email);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
