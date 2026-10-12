@@ -1,4 +1,80 @@
-I'll continue Session 118 from where it left off — the doc claim-site re-anchoring (1646/180 count family). Let me first verify the workspace state survived the crash.
+Workspace intact on `main`, clean tree. Now let me pull the latest changes:
+Pull brought in `docs/session_204.md` (new). Now let me set up my task plan and review the core documents:
+Session 117 (65th audit) is complete and pushed; `session_204.md` is its narration. My current run is **Session 118 — the 66th Mode C audit cycle**. Let me read the remaining docs:
+AGENTS.md is dense (213KB persisted). Let me extract key sections via targeted reads:
+Full picture confirmed. My run is **Session 118 — the 66th Mode C audit cycle**. Let me check remaining core docs:
+Docs confirmed: PAD v1.96.0, SKILL v1.95.0, gates at 1621/179/73/262. Now let me verify the S117 seams in source and check the skills catalog:
+All S117 seams verified intact. Now checking test file, skills catalog, and scripts:
+All checks pass. Now setting up the environment hermetically (Task: baseline):
+Environment trap confirmed live (foreign `DATABASE_URL` in parent shell). `.env` exists but DB has residue (23.9MB). Setting up hermetically:
+PRISTINE CONTRACT 1/2/6/1/3 ✓ (users=1, projects=2, elements=6, teams=1, members=3). Environment rebuilt hermetically. Now deriving the s118 scripts from the s117 forms:
+Fixing derivation residues:
+All three s118 scripts derived cleanly (42/22/8 raw diff lines, zero residue). Now running the baseline six gates:
+Unit gate GREEN: 1621/1621 across 179 files — matches S117 delivery exactly. Build gate next:
+Build ✓ — 27 routes, both SEO routes ƒ Dynamic. Smoke gate next:
+Smoke 73/73 ✓. Now the e2e gate (the long one):
+**E2E 262/262 zero-flake on first pass** — F59 corollary holds (37th consecutive). All six baseline gates GREEN. Now the parity gates — starting with the 94th reference audit:
+**94th reference audit: NO DRIFT** — all standing datums verified, clip pin byte-identical (55th consecutive). Now the 95th mobile-nav verification:
+All parity gates GREEN (ref audit NO DRIFT · nav 9/9 · SEO 4/4). Now launching **the 66th Mode C audit** — two fresh-eyes auditors in parallel:
+Both auditors returned: combined **0 Critical / 0 High / 0 Medium / 3 Low / 6 Informational**. Per the F78 doctrine, now lead-verifying every finding in source:
+A118-L1 **verified REAL** — pointerdown honors shift, commit drops it. Checking the DragState shape and AI apply arms:
+A118-L2 **verified REAL**. Let me study the apply's update arm (the S81-A fallback pattern) to design the fix:
+Let me read the slider-gesture module to understand the fix ceiling for the AI-apply arms:
+Now let me map which surfaces arm idle-timer bursts vs pointer gestures (the discrimination design):
+The discrimination is exact — sliders never hold an idle timer; text/field bursts always do. One primitive fixes both the add/delete arms AND the A117-I2 deferred member. Let me verify the remaining findings:
+All findings verified. Checking the seed structure and existing pin harness patterns for the fix design:
+Let me check the remaining design details — select callers, the apply entry point, and the s117 pins my changes will touch:
+Design complete — the A117-I2 pin tokens (`A117-I2`, `deferred`) can survive my amendment. Checking marquee test coverage:
+No e2e marquee test uses Shift — the fix is e2e-safe. All design details confirmed. Writing the remediation plan:
+Plan written and validated against the codebase (every fix design checked at its seam). Now the TDD RED phase — studying the s117 spec structure first:
+Now writing the RED-phase spec. First, checking the apply entry point and imports:
+Writing the RED-phase spec now:
+RED phase: 15 failed / 10 passed — one SURVIVAL pin (schema census story) fails due to a line-wrap in the regex match. Per the pin-label doctrine, repairing the pin design (use the collapsed form):
+**RED CONFIRMED: 14 defect pins RED / 11 survival GREEN (25 pins).** Now the GREEN phase — starting with S118-A (the headline):
+S118-A complete. Now **S118-B** — the flushIdleBurst primitive:
+Now the ai-assistant.tsx changes — import, flush call, and the A117-I2 note amendment:
+S118-B complete. Checking for circular imports (ai-assistant ↔ properties-panel):
+No cycles — the graph stays acyclic (canvas already set the properties-panel import precedent). Now **S118-C** — the script token isolation:
+S118-C complete. Now **S118-D** — the fine prints. First the PresentOverlay memoization:
+Now the seed counter (D2) and the schema comment truth:
+Now the schema comment truth + editor.ts worst-case comment + canvas registration + store select registration:
+Now D3 (editor.ts worst-case comment) and D4/D5 (registrations):
+All GREEN-phase code is in. Running the full s118 spec:
+24/25 — the A118-I3 pin's slice boundary starts at the code line, excluding my comment above it. Per the F89 form, re-anchoring the slice:
+**GREEN 25/25.** Now the full unit gate to enumerate the collateral family:
+Collateral family: only doc-lows-s86 (the PAD §11 line-count rows). Getting the live counts:
+All 8 rows identified. Updating the PAD §11 rows with live counts + enriched S118 seam descriptions:
+doc-lows-s86 green. Now the **count-family re-anchor** (1646 = 1621 + 25 / 180 files). Enumerating every claim site:
+The Bash shell session appears to have crashed (4 consecutive tool failures). Let me verify other tools still work:
+The environment's tool layer has stopped responding — Bash failed 5 times consecutively, and Glob/Read also failed. Per my operating rules, I must stop retrying and inform you:
+
+## ⚠️ Environment Failure — Session Restart Needed
+
+The tool calls are timing out/failing repeatedly across multiple tools (shell, file search, file read). **Please click the restart button in the top right corner to restart the session and try again.**
+
+### Good news: all completed work is saved on disk
+
+The repo working tree at `/home/z/my-project/digma` holds everything done this cycle (**Session 118 — the 66th Mode C audit**, uncommitted):
+
+| Completed | Status |
+|---|---|
+| Baseline six gates | ✅ lint · typecheck · 1621/179 unit · 27 routes · 73 smoke · 262 e2e zero-flake |
+| Parity gates | ✅ 94th ref audit **NO DRIFT** (clip pin 55th consecutive) · 95th mobile-nav 9/9 · SEO 4/4 |
+| 66th Mode C audit (2 fresh-eyes auditors, lead-verified) | ✅ 0 Critical / 0 High / 0 Medium / **3 Low / 6 Informational** |
+| `docs/remediation-plan-session118.md` | ✅ written |
+| TDD: `tests/lows-s118.test.ts` | ✅ RED 14/11 confirmed → **GREEN 25/25** |
+| S118-A shift+marquee additive commit | ✅ canvas.tsx |
+| S118-B `flushIdleBurst` primitive + AI-apply flush (closes A117-I2 deferred member) | ✅ properties-panel.tsx + ai-assistant.tsx |
+| S118-C script token isolation (nav117→nav118) | ✅ |
+| S118-D fine prints (PresentOverlay memo, seed census-true counter, worst-case comment, 2 registrations) | ✅ |
+| Collateral: PAD §11 rows (8 files) + 20 spec constants onto 1646/180 | ✅ |
+
+### Remaining after restart
+1. Verify count residue clean + update doc claim sites (PAD §7.1/§7.4/appendix, README/CLAUDE/AGENTS/digma_SKILL)
+2. AGENTS session-118 bullet · digma_SKILL v1.96.0 + lesson F105 · PAD v1.97.0 · session_205.md
+3. Full gate re-run + re-run verify-nav/seo-check on fixed scripts + capture + dimension check
+4. Worklog update → commit + SSH wrapper push to main
+
 Workspace was reset. Let me check the base directory and re-clone the repo.
 Repo cloned. Since the environment was fully reset, the uncommitted Session 118 work is lost — I need to check what state the repo is in and whether any S118 work was committed before the crash.
 Repo is at the post-Session-117 state (commit 09b9b1e) — the in-flight Session 118 work was lost in the environment reset and must be re-executed. Let me set up my task plan and work through it systematically.
