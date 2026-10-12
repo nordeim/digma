@@ -77,11 +77,17 @@ describe("the shortcuts stand-down guard covers the open Radix Select (S82-A / A
   it("the widened selector is the GUARD's (the return-immediately site), not another querySelector call site", () => {
     // editor-view.tsx carries other querySelector calls; the pin must
     // anchor on the guard's own block — the one followed by the return
-    // that stands the shortcuts down.
+    // that stands the shortcuts down. Session 120 (the F89 en-route
+    // repair): the original \\);\\s*\\n\\s*return; regex matched the
+    // UNDO branch's store.undo();-then-return 500 chars downstream — a
+    // co-incident pattern, not the guard's form — exposed when the
+    // S120-A registration comment pushed that branch past the window;
+    // the re-anchor pins the guard's own closing-paren-then-return
+    // block, which is what the title always claimed.
     const site = view.indexOf("document.querySelector(");
     expect(site).toBeGreaterThanOrEqual(0);
     const after = view.slice(site, site + 600);
-    expect(after).toMatch(/\);\s*\n\s*return;/);
+    expect(after).toMatch(/\)\s*\{\s*return;/);
   });
 });
 

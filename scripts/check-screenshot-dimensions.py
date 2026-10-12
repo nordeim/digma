@@ -839,6 +839,20 @@ S128 = dict(S127)
 # flows).
 S129 = dict(S128)
 
+# s130 mapping (session 120 — the 96th reference audit's evidence set + the
+# S120 capture set). The standing S130 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S120 tree); no NEW
+# witness this session (the S120 pass is a keyboard-history entry flush
+# that no-ops without an armed burst and never touches the active drag —
+# no seeded journey arms a burst then hits Ctrl+Z — + an assistant
+# loading gate whose placeholder only renders during the load while every
+# witness waits for the editor to render, the h-80 wrapper always
+# rendering — the parity datum unchanged — + a test-level census comment
+# re-anchor + script-level pin families and derivations — every change
+# burst-ordering + load-gating with identical observable behavior on the
+# seeded flows).
+S130 = dict(S129)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -951,6 +965,8 @@ def expected_for(name: str):
         return S128.get(Path(name).stem)
     if name.startswith("ref-audit-s129/"):
         return S129.get(Path(name).stem)
+    if name.startswith("ref-audit-s130/"):
+        return S130.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1061,6 +1077,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s127").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s128").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s129").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s130").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

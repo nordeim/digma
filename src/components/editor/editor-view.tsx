@@ -12,7 +12,7 @@ import { Toolbar } from "./toolbar";
 import { Canvas } from "./canvas";
 import { LayersPanel } from "./layers-panel";
 import { ComponentsPanel } from "./components-panel";
-import { CanvasBackgroundSection, MultiSelectionSection, PropertiesPanel, PropertiesSections, resetSliderGesture } from "./properties-panel";
+import { CanvasBackgroundSection, MultiSelectionSection, PropertiesPanel, PropertiesSections, flushIdleBurst, resetSliderGesture } from "./properties-panel";
 import { AiAssistant } from "./ai-assistant";
 import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
@@ -760,6 +760,26 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
       ) {
         return;
       }
+      // Session 120 (S120-A / A120-L1 — the sixty-eighth audit's first
+      // Low): the keyboard-history ENTRY FLUSH — the intent-order
+      // family's KEYBOARD member. The click family's consumers commit
+      // safely post-blur (focus change precedes the click's own
+      // handler), but a KEYBOARD event moves no focus — that ordering
+      // never fires — and isTypingTarget's S64-G/S83-G carve-out
+      // (type="color"/type="range" are NOT typing targets) makes these
+      // shortcuts REACHABLE exactly where an idle-armed color-swatch
+      // burst can sit (the swatch's onChange arms the 150ms text
+      // burst, terminated only by onBlur). Without the flush, a
+      // Ctrl+Z inside the window pops a past entry older than the
+      // pending color change while endGesture's future:[] then
+      // destroys the redo the undo just created (and Delete inverts
+      // the history intent order). The primitive flushes ONLY the
+      // idle-armed text/field burst (an active slider drag passes
+      // untouched — the S118-B discrimination), landing the burst's
+      // entry FIRST; the zoom/view arms below don't mutate history,
+      // and their early flush is semantically identical to the idle
+      // terminal firing 150ms later.
+      flushIdleBurst();
       const store = useEditorStore.getState();
       const meta = event.ctrlKey || event.metaKey;
 
@@ -2091,9 +2111,24 @@ export function EditorView({ user }: { user: HeaderUser }) {
           </div>
 
           {/* AI assistant — bottom of the canvas column. The reference wraps
-              it in an h-80 (320px) border-t column. */}
+              it in an h-80 (320px) border-t column. Session 120 (S120-B /
+              A120-L2 — the sixty-eighth audit's second Low): the assistant
+              renders only OUTSIDE the loading gate — an interactive send
+              during a stalled mount GET captures the OUTGOING project's
+              scope (the store singleton still holds it), and the reply's
+              apply would mutate the WRONG project with no transporter
+              (the mount-run flush pair skips by the S81-B guard; the
+              800ms timer fires into loadProject's "saved" stamp). The
+              wrapper ALWAYS renders — the parity datum (the reference's
+              320px chat column) stays measurable at every instant. */}
           <div className="h-80 flex-shrink-0 border-t border-editor-border bg-editor-panel">
-            <AiAssistant />
+            {loading ? (
+              <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                Loading assistant…
+              </div>
+            ) : (
+              <AiAssistant />
+            )}
           </div>
         </div>
 

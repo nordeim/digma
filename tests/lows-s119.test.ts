@@ -158,9 +158,13 @@ describe("S119-A the frozen-row repair (B119-L1 — the headline)", () => {
         }
       }
     }
-    // The table-alive floor: 54 rows today across the four docs.
-    expect(rows.length).toBeGreaterThanOrEqual(45);
-    expect(impossible).toEqual([]);
+    // The table-alive floor: deliberately conservative below the live
+    // table (the S120-C figure-free form — never a hand-maintained
+    // live-row figure that the next doc addition silently outdates;
+    // the failure messages carry the live count at the moment of
+    // failure).
+    expect(rows.length, `censused only ${rows.length} rows`).toBeGreaterThanOrEqual(45);
+    expect(impossible, `${impossible.length} impossible of ${rows.length} censused rows`).toEqual([]);
   });
 
   it("SURVIVAL (docs): the live S118 rows stay — 1646 = 1621 + 25 / 180 (the over-sweep inverse guard)", () => {
