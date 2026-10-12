@@ -663,6 +663,26 @@ const sliderGesture = (() => {
       activeSurface = null;
       armed = null;
     },
+    // Session 118 (S118-B / A118-L2 — the sixty-sixth audit's second
+    // Low): the IDLE-BURST FLUSH. The S117-C delivery registered the
+    // AI apply's inverted-order form as a fix ceiling — "the
+    // slider-gesture module's inability to discriminate the
+    // idle-armed TEXT burst (flushable) from the ACTIVE slider drag
+    // (must not be touched)" — but the discrimination is the
+    // module's OWN STATE: begin() clears the idle before every
+    // slider arm and slider ticks never re-arm it, so idleTimer
+    // !== null holds EXACTLY when an idle-armed text/field burst is
+    // in flight (every textTick re-arms the 150ms idle). The
+    // primitive flushes ONLY that burst — a changed one's entry
+    // lands in history FIRST, an unchanged one cancels — and passes
+    // an ACTIVE slider drag (idleTimer === null) through untouched:
+    // the S81-A fallback's own posture. A canvas-foreign gesture
+    // passes through finish's ownership guard as ever.
+    flushIdleBurst: () => {
+      if (idleTimer === null) return;
+      clearIdle();
+      if (activeSurface !== null) finish(activeSurface);
+    },
   };
 })();
 
@@ -674,6 +694,15 @@ const sliderGesture = (() => {
 // skip arming entirely, regressing the one-entry-per-gesture
 // contract to per-tick flooding).
 export const resetSliderGesture = () => sliderGesture.reset();
+
+// Session 118 (S118-B): the AI apply's flush handle — the apply's
+// synchronous arms (add/delete, and the update arm's coalesce
+// arming) flush an armed panel burst FIRST, the S117-C doctrine
+// reaching the one store-mutating surface the canvas arms never
+// covered. The primitive itself discriminates (see the module
+// comment): only the idle-armed burst flushes, never the active
+// drag.
+export const flushIdleBurst = () => sliderGesture.flushIdleBurst();
 
 function SliderRow({
   label,

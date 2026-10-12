@@ -4,6 +4,7 @@ import * as React from "react";
 import { Bot, RotateCcw, Send, WandSparkles } from "lucide-react";
 
 import { useEditorStore, type EditorSnapshot } from "./editor-store";
+import { flushIdleBurst } from "./properties-panel";
 import { toast } from "@/hooks/use-toast";
 import type { AiOperation } from "@/lib/ai-assistant";
 import { clampText } from "@/lib/validation";
@@ -168,6 +169,20 @@ export function AiAssistant() {
     // Returns the number of operations ACTUALLY applied (post-locked-filter)
     // — the honest count the reply footer renders (the reference's own
     // count is claimed-success theater over an unchanged canvas, RA-2).
+    //
+    // Session 118 (S118-B / A118-L2 — the sixty-sixth audit's second
+    // Low): the ENTRY FLUSH. The apply's arms commit synchronously —
+    // a reply landing inside an open panel burst's 150ms idle pushed
+    // the apply's snapshots BEFORE the burst's own terminal pushed
+    // the PRE-burst snapshot (the intent-order inversion, the
+    // S117-C/A117-I2 class). The flushIdleBurst primitive lands the
+    // burst's entry FIRST (an unchanged one cancels); an ACTIVE
+    // slider drag passes untouched (the S81-A posture), and after a
+    // flush gestureSnapshot === null so the update arm's coalesce
+    // engages instead of the commit=true fallback — the A117-I2
+    // deferred member CLOSED. One call covers every arm below (the
+    // add arm, the delete arm, the update arm's coalescing pair).
+    flushIdleBurst();
     const store = useEditorStore.getState();
     let applied = 0;
     for (const operation of operations) {
@@ -282,18 +297,20 @@ export function AiAssistant() {
         // properties-panel.tsx's update helper); the drag's snapshot
         // stays INTACT. The canvas and panel arm sites carry the same
         // interleave discipline (the S66-B foreign-ride family).
-        // Session 117 (S117-C / A117-I2 — the deferred registration):
-        // the commit=true fallback shares the S117-C inverted-order
-        // form — a reply landing inside an open typing burst's 150ms
-        // idle pushes the burst's pre-typing snapshot AFTER the
-        // apply's own snapshots (the intent-order inversion; every
-        // state stays reachable, no entry lost — the A88-I1 posture).
-        // The flush-first fix would need the slider-gesture module
-        // to discriminate the idle-armed TEXT burst (flushable) from
-        // the ACTIVE slider drag this fallback exists to protect —
-        // reset() handles both identically, so the honest
-        // layer-scoped fix ceiling is this note + the deferred
-        // queue registration.
+        // Session 117 (S117-C / A117-I2 — the deferred registration,
+        // CLOSED by session 118's S118-B): the commit=true fallback
+        // shared the S117-C inverted-order form — a reply landing
+        // inside an open typing burst's 150ms idle pushed the
+        // burst's pre-typing snapshot AFTER the apply's own
+        // snapshots (the intent-order inversion; every state stays
+        // reachable, no entry lost — the A88-I1 posture). The
+        // fix-ceiling note — the module's inability to discriminate
+        // the idle-armed TEXT burst (flushable) from the ACTIVE
+        // slider drag this fallback exists to protect — DISSOLVED:
+        // begin()'s clearIdle makes idleTimer the exact
+        // discriminator, and the apply's entry now rides the
+        // flushIdleBurst primitive (the deferred member closed; the
+        // fallback remains for its true posture, the active drag).
         const coalesce =
           operation.patch.scale !== undefined &&
           Object.keys(patch).length > 0 &&

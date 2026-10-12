@@ -265,6 +265,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   panBy: (dx, dy) => set((state) => ({ panX: state.panX + dx, panY: state.panY + dy })),
 
+  // Session 118 (S118-D5 / A118-I5 — the sixty-sixth audit's fifth
+  // Informational): the additive member's registration. The union
+  // form's consumers: the layers-panel's shift-click
+  // (select([id], true)) and the canvas marquee's shift commit
+  // (S118-A — drag.shift rides the captured flag); the plain form
+  // replaces (every other consumer). A117-I1's documented residual
+  // rides here: select/deselectAll always commit a fresh selectedIds
+  // array even when content-identical — outside the no-op family's
+  // doctrine (no saveState/history/PUT member is touched),
+  // noise-level cost only.
   select: (ids, additive) =>
     set((state) => ({
       selectedIds: additive

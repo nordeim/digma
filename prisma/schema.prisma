@@ -63,8 +63,10 @@ model Project {
   // the source rows, and the elements POST increments it inside the
   // same transaction as the create — a create that never commits
   // never counts. Rows written before this column existed read 0
-  // until their board's next PUT recomputes the truth (the seed and
-  // every suite database start fresh). Session 113 (S113-E / B-I4 —
+  // until their board's next PUT recomputes the truth (every suite
+  // database starts fresh, and the seed itself seeds the counter
+  // CENSUS-TRUE from its own rows since S118-D2 — the rowStoredBytes
+  // sum, never the column default). Session 113 (S113-E / B-I4 —
   // the sixty-first audit): the LEGACY ZERO-COUNTER x POST
   // INTERSECTION, named — a pre-S112-C database upgraded in place
   // reads every counter 0, so a legacy image-heavy board accepts up

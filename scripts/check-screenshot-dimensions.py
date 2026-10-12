@@ -813,6 +813,20 @@ S126 = dict(S125)
 # on the seeded flows).
 S127 = dict(S126)
 
+# s128 mapping (session 118 — the 94th reference audit's evidence set + the
+# S118 capture set). The standing S128 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S118 tree); no NEW
+# witness this session (the S118 pass is a shift+marquee additive commit
+# that only changes WHICH selection a shift+drag commits — the plain
+# marquee path byte-identical, no seeded journey shift-marquees — + a
+# flush primitive that no-ops without an armed burst and never touches
+# the active drag + a script-token isolation at the evidence layer + a
+# memoized overlay whose body is untouched + a census-true seed counter
+# 105 bytes under every bound + comment re-anchors — every change
+# selection-intent + flush-ordering + render-identity + comment-form
+# with identical observable behavior on the seeded flows).
+S128 = dict(S127)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -921,6 +935,8 @@ def expected_for(name: str):
         return S126.get(Path(name).stem)
     if name.startswith("ref-audit-s127/"):
         return S127.get(Path(name).stem)
+    if name.startswith("ref-audit-s128/"):
+        return S128.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1029,6 +1045,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s125").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s126").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s127").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s128").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

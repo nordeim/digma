@@ -8,6 +8,13 @@ import { PrismaClient } from "@prisma/client";
 // key) drifted silently against src/lib/auth.ts. The seam is node:crypto
 // only, so this bare-PrismaClient script imports it safely.
 import { hashPassword } from "../src/lib/password";
+// Session 118 (S118-D2 / A118-I2 — the sixty-sixth audit's second
+// Informational): the seed imports the pure rowStoredBytes seam for
+// its census-true counter below (the same ONE-seam doctrine —
+// editor.ts is import-free beyond the shared validation helpers, and
+// bun resolves the tsconfig paths this script's hashPassword import
+// already rides).
+import { rowStoredBytes } from "../src/lib/editor";
 
 const db = new PrismaClient();
 
@@ -37,17 +44,6 @@ async function main() {
   });
 
   // ---- Project 1: a starter canvas with a few shapes (Blank Canvas) ----
-  const p1 = await db.project.create({
-    data: {
-      name: "Marketing Hero Banner",
-      description: "Landing page hero concept for the Q3 campaign.",
-      template: "blank",
-      backgroundColor: "#0D1117",
-      lastOpenedAt: daysAgo(2),
-      createdAt: daysAgo(8),
-    },
-  });
-
   const p1elements: Array<{
     type: string;
     name?: string;
@@ -77,6 +73,27 @@ async function main() {
     { type: "rectangle", name: "CTA Button", x: 160, y: 300, width: 160, height: 44, fill: "#3B82F6", radius: 8, sortOrder: 4 },
     { type: "text", name: "CTA Label", x: 196, y: 312, width: 90, height: 20, text: "Get started", fontSize: 14, fontWeight: "600", textAlign: "left", sortOrder: 5 },
   ];
+
+  const p1 = await db.project.create({
+    data: {
+      name: "Marketing Hero Banner",
+      description: "Landing page hero concept for the Q3 campaign.",
+      template: "blank",
+      backgroundColor: "#0D1117",
+      // Session 118 (S118-D2 / A118-I2): the CENSUS-TRUE counter. The
+      // seed writes its rows directly (no bound site ever runs against
+      // a fresh database), and post-S117-A the counted payload
+      // includes the seeded names/text — the same rowStoredBytes
+      // seam the duplicate route rides. Pre-fix the column default
+      // left the counter at 0 while the board carried counted bytes;
+      // the fresh-database contract is the counter equaling its
+      // board's counted sum from the first read. (The elements array
+      // now precedes the create — the counter consumes it.)
+      fillImageBytes: p1elements.reduce((sum, el) => sum + rowStoredBytes(el), 0),
+      lastOpenedAt: daysAgo(2),
+      createdAt: daysAgo(8),
+    },
+  });
 
   for (const el of p1elements) {
     await db.designElement.create({

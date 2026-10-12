@@ -360,9 +360,10 @@ export const ELEMENT_LIMIT = 2000;
 // JSON syntax) left outside the count: at ELEMENT_LIMIT the whole
 // fixed slack is ~0.76 MB, bounded inside the 8 MB headroom this
 // constant holds under the 32 MB body cap; the PUT itself
-// deliberately enforces only its body cap (the ~30 MB
-// heaviest-legitimate form doctrine — see the elements route's
-// counter-maintenance comment).
+// deliberately enforces only its body cap (the ~25 MB
+// heaviest-legitimate form — the census bound + the fixed slack,
+// re-anchored onto the post-S117-A arithmetic by S118-D3; see the
+// elements route's counter-maintenance comment).
 export const FILL_IMAGE_PROJECT_LIMIT_BYTES = 24_000_000;
 
 // Session 117 (S117-A / B117-M1 — the sixty-fifth audit's headline):

@@ -1129,6 +1129,16 @@ function PresentOverlay({ onExit }: { onExit: () => void }) {
   );
 }
 
+// Session 118 (S118-D1 / A118-I1 — the sixty-sixth audit's first
+// Informational): the memoized overlay. The shell re-renders on every
+// store change while presenting (selection, zoom, tool, saveState —
+// the shell subscribes broadly), and the overlay's own output depends
+// only on elements/backgroundColor/scale; the stable exit callback
+// below keeps the memo honest (a fresh arrow identity would defeat
+// it). The function body is untouched — the s103/s104/present-
+// integrity pins ride its forms.
+const MemoizedPresentOverlay = React.memo(PresentOverlay);
+
 // ---------------------------------------------------------------------------
 // The mobile properties surface (session 50 S50-2 → extended session 52
 // S52-2 — the working superset). The properties panel renders `hidden …
@@ -1411,6 +1421,13 @@ export function EditorView({ user }: { user: HeaderUser }) {
 
   const [loading, setLoading] = React.useState(true);
   const [presenting, setPresenting] = React.useState(false);
+  // Session 118 (S118-D1 / A118-I1): the STABLE EXIT — the memo's
+  // prop stability. The inline arrow handed PresentOverlay a fresh
+  // onExit identity per shell render, so every store change while
+  // presenting re-rendered the fullscreen overlay's whole scaled
+  // canvas subtree for nothing; the useCallback form pins the prop
+  // for the overlay's lifetime.
+  const exitPresent = React.useCallback(() => setPresenting(false), []);
 
   // Panel visibility — INDEPENDENT toggles driven by the bottom-left chips
   // (measured from the reference: Layers and Components are separate w-60
@@ -2121,7 +2138,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
         ))}
       </div>
 
-      {presenting && <PresentOverlay onExit={() => setPresenting(false)} />}
+      {presenting && <MemoizedPresentOverlay onExit={exitPresent} />}
 
       {/* Session 49 (S49-2): the shortcuts help dialog (opens via the
           Keyboard chip in the zoom cluster or the ? key). */}

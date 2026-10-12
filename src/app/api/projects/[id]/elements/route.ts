@@ -320,9 +320,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
   // in-memory rows — the delete-then-recreate just rewrote every row,
   // so the exact new total is one reduce away and no drift can survive
   // a save. The PUT deliberately does NOT enforce the 24 MB fillImage
-  // bound: its own 32 MB body cap subsumes it, and the ~30 MB
-  // heaviest-legitimate PUT form (the S76-F doctrine — a max-ceiling
-  // save of image-bearing rows) must keep saving. Counter maintenance
+  // bound: its own 32 MB body cap subsumes it, and the ~25 MB
+  // heaviest-legitimate PUT form (the S76-F doctrine, re-anchored
+  // onto the post-S117-A arithmetic by S118-D3 — a max-ceiling save
+  // under the completed census: the 24 MB counted bound + the fixed
+  // per-row slack) must keep saving. Counter maintenance
   // only. Session 117 (S117-A / B117-M1): the recompute rides the
   // shared rowStoredBytes seam — the non-fill free-text members join
   // both fill families at their JSON-escaped wire lengths (the same
@@ -361,8 +363,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
       });
     }, { timeout: 30_000 });
     // Session 73 (S73-C — B-F2): the replace transaction deletes and
-    // recreates up to ELEMENT_LIMIT rows — a legitimate ~30 MB of
-    // fillImage data-URLs under the 32 MB body cap. Prisma's DEFAULT
+    // recreates up to ELEMENT_LIMIT rows — a legitimate ~25 MB body
+    // under the 32 MB cap (the census bound + the fixed slack,
+    // S118-D3's re-anchor). Prisma's DEFAULT
     // interactive-transaction timeout is 5s; a max-ceiling save on a
     // slow self-hosted disk (the documented deploy posture) can exceed
     // it, and the P2028-family abort matched neither P2025 nor P2003 —

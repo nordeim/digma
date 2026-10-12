@@ -11,7 +11,8 @@ import { boundsOf, canvasFontFamily, clampPositionField, clampSizeField, clampZo
 // ---------------------------------------------------------------------------
 // The canvas: a DOM-element canvas (the reference's approach — absolutely
 // positioned divs inside a pan/zoom wrapper over a 20px grid). Supports
-// drawing (shape tools), marquee + click + shift-click selection, moving,
+// drawing (shape tools), marquee + click + shift-click selection (the
+// shift+marquee form commits ADDITIVELY — session 118, S118-A), moving,
 // 8-handle resizing, panning (hand tool / space / middle button / wheel),
 // and ctrl+wheel zoom.
 
@@ -20,7 +21,7 @@ type DragState =
   | { kind: "draw"; type: DesignElementDTO["type"]; startX: number; startY: number; x: number; y: number; w: number; h: number }
   | { kind: "move"; startX: number; startY: number; lastX: number; lastY: number; ids: string[]; moved?: boolean }
   | { kind: "resize"; handle: Handle; startBounds: { x: number; y: number; w: number; h: number }; el: DesignElementDTO; moved?: boolean }
-  | { kind: "marquee"; startX: number; startY: number; x: number; y: number; w: number; h: number }
+  | { kind: "marquee"; startX: number; startY: number; x: number; y: number; w: number; h: number; shift: boolean }
   | { kind: "pan"; lastX: number; lastY: number };
 
 type Handle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
@@ -218,7 +219,11 @@ export function Canvas() {
       // Session 64 (S64-G / A-5): same container capture — the marquee
       // survives the pointer crossing into the chrome.
       (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-      setDrag({ kind: "marquee", startX: point.x, startY: point.y, x: point.x, y: point.y, w: 0, h: 0 });
+      // Session 118 (S118-A): the gesture captures the modifier AT
+      // POINTERDOWN — the commit consumes the captured flag, never a
+      // re-read (the key may lift mid-drag; the intent was armed at
+      // the start).
+      setDrag({ kind: "marquee", startX: point.x, startY: point.y, x: point.x, y: point.y, w: 0, h: 0, shift: event.shiftKey });
     }
   }
 
@@ -375,7 +380,25 @@ export function Canvas() {
             b.maxY <= drag.y + drag.h
           );
         });
-        if (inside.length > 0) store.select(inside.map((el) => el.id));
+        if (inside.length > 0) {
+          // Session 118 (S118-A / A118-L1 — the sixty-sixth audit's
+          // first Low): the ADDITIVE commit. The pointerdown arm
+          // honors shift — `if (!event.shiftKey) deselectAll()`
+          // preserves the selection a shift+drag starts from — but
+          // the commit replaced it with the marquee's inside set
+          // alone: every previously-selected element outside the
+          // rect silently dropped (the additive intent falsified at
+          // commit). The store's own select(ids, additive) union
+          // form is the one seam — the layers-panel shift-click
+          // already rides it; the marquee commit now passes the
+          // gesture's captured flag. UNION semantics: an inside
+          // element already selected stays selected (no toggle);
+          // an empty shift+marquee preserves the selection (the
+          // commit fires only when inside.length > 0); the plain
+          // marquee is byte-identical (shift === false -> the
+          // replace form).
+          store.select(inside.map((el) => el.id), drag.shift);
+        }
       }
     } else if (drag.kind === "move" || drag.kind === "resize") {
       // The live edits avoided history pushes; push the PRE-gesture

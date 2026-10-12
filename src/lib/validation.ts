@@ -173,8 +173,11 @@ export function safeFromUrl(raw: string | null | undefined): string {
 /** The aggregate request-body ceiling: 32 MB — the documented
  * self-hosted ceiling. Two claims, kept separate (the S111-C
  * comment-truth repair — the S76-F rewording's own compound residual):
- * typical image-carrying boards sit FAR UNDER the cap, while a ~30 MB
- * board is the heaviest-legitimate form that fits JUST under it —
+ * typical image-carrying boards sit FAR UNDER the cap, while a ~25 MB
+ * board is the heaviest-legitimate form that fits JUST under it (the
+ * census bound + the fixed per-row slack — S118-D3's re-anchor onto
+ * the post-S117-A arithmetic; the pre-census 30 MB figure counted
+ * the fills-only bound plus the then-uncounted text channel) —
  * not "far under" (the 2000 × ~722 KB full-image board ≈ 1.45 GB
  * sits far OVER — the elements PUT's own arithmetic — and the S67-B
  * abuse family the cap exists to stop). The sticky-wedge honest form
