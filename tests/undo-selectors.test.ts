@@ -36,8 +36,14 @@ describe("the shell's boolean undo selectors (session 62, S62-B / A-M3)", () => 
     // every committed mutation.
     expect(viewSource).not.toMatch(/const past = useEditorStore\(\(s\) => s\.past\);/);
     expect(viewSource).not.toMatch(/const future = useEditorStore\(\(s\) => s\.future\);/);
-    // The buttons' disabled props read the booleans.
-    expect(viewSource).toMatch(/disabled=\{!canUndo\}/);
-    expect(viewSource).toMatch(/disabled=\{!canRedo\}/);
+    // The buttons' disabled props read the booleans. Session 121
+    // (S121-A / A121-L1 — the F89 re-anchor): the disabled forms
+    // COMPOSE with the loading gate (!canUndo || loading) — an undo
+    // during the mount/swap GET window would pop the OUTGOING
+    // project's history and the already-attached subscriber's 800ms
+    // timer would persist the mutation after navigation; the pin
+    // rides the composed delivered form.
+    expect(viewSource).toMatch(/disabled=\{!canUndo \|\| loading\}/);
+    expect(viewSource).toMatch(/disabled=\{!canRedo \|\| loading\}/);
   });
 });

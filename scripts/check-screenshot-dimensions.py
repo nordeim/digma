@@ -853,6 +853,19 @@ S129 = dict(S128)
 # seeded flows).
 S130 = dict(S129)
 
+# s131 mapping (session 121 — the 97th reference audit's evidence set + the
+# S121 capture set). The standing S131 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S121 tree); no NEW
+# witness this session (the S121 pass is a loading-gate panel completion
+# whose placeholders only render during the load while every witness
+# waits for the editor to render, the wrappers always rendering — the
+# parity datum unchanged — + a send liveness guard that refuses only when
+# the assistant unmounts mid-send, which no seeded journey does — +
+# process/test/script-level members — every change load-gating +
+# departed-surface refusal with identical observable behavior on the
+# seeded flows).
+S131 = dict(S130)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -967,6 +980,8 @@ def expected_for(name: str):
         return S129.get(Path(name).stem)
     if name.startswith("ref-audit-s130/"):
         return S130.get(Path(name).stem)
+    if name.startswith("ref-audit-s131/"):
+        return S131.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1078,6 +1093,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s128").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s129").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s130").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s131").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

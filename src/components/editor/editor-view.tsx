@@ -699,7 +699,20 @@ function useAutosave(): AutosaveHandle {
 // in the pure seam (src/lib/editor.ts) — the shell and the canvas consume
 // the SAME export; the two local copies had drifted apart.
 
-function useEditorShortcuts(onOpenShortcuts: () => void) {
+function useEditorShortcuts(onOpenShortcuts: () => void, loading: boolean) {
+  // Session 121 (S121-A / A121-L1 — the sixty-ninth audit's first Low):
+  // the keyboard modality's LOADING STAND-DOWN. The S77-E/S120-B
+  // loading-gate family's one remaining event modality — the window
+  // listener's closure is mount-stale for component state (the
+  // keydown effect's deps are [onOpenShortcuts], so a closure read of
+  // `loading` would freeze at the mount-render's value forever), so
+  // the gate reads this effect-synced ref instead. The ref's own sync
+  // effect keeps the listener's attach identity stable (no re-attach
+  // per loading flip — the F37 identity discipline).
+  const loadingRef = React.useRef(true);
+  React.useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
   React.useEffect(() => {
     // Session 66 (S66-C — the fourteenth audit's A-5): the window-level
     // drop guard. The S65-D dropzone wired the DASHED zone itself, but a
@@ -780,6 +793,19 @@ function useEditorShortcuts(onOpenShortcuts: () => void) {
       // and their early flush is semantically identical to the idle
       // terminal firing 150ms later.
       flushIdleBurst();
+      //
+      // Session 121 (S121-A / A121-L1): the loading stand-down — the
+      // SAME closure's keyboard member. The handler's closure is
+      // mount-stale for component state (the effect deps are
+      // [onOpenShortcuts]), so the gate reads the effect-synced
+      // loadingRef, never a closure capture of `loading`. Placed AFTER
+      // the entry flush (the outgoing project's armed burst still
+      // commits where it belongs — the flush's own placement argument)
+      // and BEFORE the store capture (no NEW mutations reach the
+      // outgoing store through the keyboard during the window — the
+      // button family's disabled={loading} is the pointer modality's
+      // member of the same closure).
+      if (loadingRef.current) return;
       const store = useEditorStore.getState();
       const meta = event.ctrlKey || event.metaKey;
 
@@ -1484,7 +1510,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
   const canUndo = useEditorStore((s) => s.past.length > 0);
   const canRedo = useEditorStore((s) => s.future.length > 0);
 
-  useEditorShortcuts(React.useCallback(() => setShortcutsOpen(true), []));
+  useEditorShortcuts(React.useCallback(() => setShortcutsOpen(true), []), loading);
   // Session 56 (S56-C): the flush handle — exit() routes through it.
   const flushNow = useAutosave();
 
@@ -1859,7 +1885,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
           <button
             type="button"
             onClick={() => useEditorStore.getState().undo()}
-            disabled={!canUndo}
+            disabled={!canUndo || loading}
             aria-label="Undo"
             // Session 78 (S78-F / A-L4): the 44px floor in the phone band
             // (p-2 + h-4 w-4 = 32x32 pre-fix); the tablet band and the
@@ -1871,7 +1897,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
           <button
             type="button"
             onClick={() => useEditorStore.getState().redo()}
-            disabled={!canRedo}
+            disabled={!canRedo || loading}
             aria-label="Redo"
             // Session 78 (S78-F / A-L4): the Undo twin's phone-band floor.
             className="max-[480px]:min-h-11 max-[480px]:min-w-11 p-2 text-gray-400 transition-colors hover:text-white disabled:opacity-50"
@@ -1945,9 +1971,15 @@ export function EditorView({ user }: { user: HeaderUser }) {
           <button
             type="button"
             onClick={() => setPresenting(true)}
+            disabled={loading}
             aria-label="Present"
             // Session 78 (S78-F / A-L4): the Share twin's phone-band floor.
-            className="max-[480px]:min-h-11 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
+            // Session 121 (S121-A / A121-L1): the loading-gate member —
+            // presenting during the mount/swap GET window would present
+            // the OUTGOING project's board (the store singleton still
+            // holds it); the chrome stays rendered and measurable (the
+            // clip pins) while the action stands down for the window.
+            className="max-[480px]:min-h-11 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:pointer-events-none disabled:opacity-50"
           >
             <Play className="inline h-4 w-4" aria-hidden />
             <span className="ml-2 hidden sm:inline">Present</span>
@@ -1963,17 +1995,43 @@ export function EditorView({ user }: { user: HeaderUser }) {
             reference renders Layers and Components side by side). Both stay
             hidden below md: the mobile editor keeps a full-width canvas —
             a deliberate improvement over the reference, which squeezes all
-            columns to unreadable widths at 390px. */}
+            columns to unreadable widths at 390px.
+            Session 121 (S121-A / A121-L1 — the sixty-ninth audit's first
+            Low): the panel CONTENT joins the S120-B loading gate — the
+            S77-E census named only "the header, the canvas", so these
+            columns kept painting the OUTGOING project through the
+            mount/swap GET window (the Layers rows, the Properties
+            edits — and Present/Download/undo/redo in the header, plus
+            the below-lg mobile chips). The WRAPPERS always render (the
+            parity datum — the reference's measured w-60/w-72 columns
+            stay visible at every instant); the content gates with the
+            Canvas's own placeholder form; the header actions carry
+            disabled={loading}; the mobile chips compose the S102-F
+            mount gate with the load gate. */}
         {panels.layers && isMd && (
           <div className="hidden w-60 flex-shrink-0 flex-col border-r border-editor-border bg-editor-panel md:flex">
             <div className="min-h-0 flex-1">
-              <LayersPanel />
+              {loading ? (
+                <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                  Loading layers…
+                </div>
+              ) : (
+                <LayersPanel />
+              )}
             </div>
           </div>
         )}
         {panels.components && isMd && (
           <div className="hidden w-60 flex-shrink-0 flex-col border-r border-editor-border bg-editor-panel md:flex">
-            <ComponentsPanel />
+            <div className="min-h-0 flex-1">
+              {loading ? (
+                <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                  Loading components…
+                </div>
+              ) : (
+                <ComponentsPanel />
+              )}
+            </div>
           </div>
         )}
 
@@ -2063,7 +2121,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
                   asChild
                   className="rounded-lg border border-editor-border bg-editor-panel p-2 text-gray-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
-                  <button type="button" aria-label="Download" title="Download">
+                  <button type="button" aria-label="Download" title="Download" disabled={loading}>
                     <Download className="h-4 w-4" aria-hidden />
                   </button>
                 </DropdownMenuTrigger>
@@ -2101,13 +2159,13 @@ export function EditorView({ user }: { user: HeaderUser }) {
                 (true) leaves the chips absent server-side, added at
                 below-lg hydration — the same semantics the S75-E pins
                 describe. */}
-            {!isLg && <MobilePropertiesEditor />}
+            {!isLg && !loading && <MobilePropertiesEditor />}
             {/* Session 53 (S53-C): the canvas-properties counterpart —
                 the same bottom-right slot when NOTHING is selected (the
                 two chips are mutually exclusive). See
                 MobileCanvasProperties. The S102-F mount gate applies to
                 this twin identically. */}
-            {!isLg && <MobileCanvasProperties />}
+            {!isLg && !loading && <MobileCanvasProperties />}
           </div>
 
           {/* AI assistant — bottom of the canvas column. The reference wraps
@@ -2135,7 +2193,17 @@ export function EditorView({ user }: { user: HeaderUser }) {
         {/* Right: properties (chip-toggled). */}
         {panels.properties && isLg && (
           <div className="hidden w-72 flex-shrink-0 border-l border-editor-border bg-editor-panel lg:flex">
-            <PropertiesPanel />
+            {/* Session 121 (S121-A / A121-L1): the properties column's
+                content joins the loading gate — the S120-B wrapper form
+                (the w-72 column always renders; the panel never edits
+                the OUTGOING project through the GET window). */}
+            {loading ? (
+              <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                Loading properties…
+              </div>
+            ) : (
+              <PropertiesPanel />
+            )}
           </div>
         )}
       </div>

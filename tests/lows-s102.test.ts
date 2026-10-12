@@ -63,8 +63,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1672";
-const FILES = "182";
+const UNIT = "1688";
+const FILES = "183";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -258,8 +258,14 @@ describe("S102-F the mobile chips' mount gating (A-I1 — the S75-E residual)", 
     // RED pre-fix: both components mounted unconditionally — their
     // wrappers were CSS-only lg:hidden, so the O(n) first-selected
     // find ran on every store commit at ANY viewport.
-    expect(EDITOR_VIEW).toMatch(/\{!isLg && <MobilePropertiesEditor \/>\}/);
-    expect(EDITOR_VIEW).toMatch(/\{!isLg && <MobileCanvasProperties \/>\}/);
+    // Session 121 (S121-A / A121-L1 — the F89 re-anchor): the mounts
+    // COMPOSE the S102-F gate with the load gate (!isLg && !loading)
+    // — the chips unmount for the mount/swap GET window so the Sheets
+    // can never open against the OUTGOING project's store below lg;
+    // the pin rides the composed delivered form, what its title's
+    // "mount gating" claim has meant since the S102-F delivery.
+    expect(EDITOR_VIEW).toMatch(/\{!isLg && !loading && <MobilePropertiesEditor \/>\}/);
+    expect(EDITOR_VIEW).toMatch(/\{!isLg && !loading && <MobileCanvasProperties \/>\}/);
   });
 });
 

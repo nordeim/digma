@@ -111,6 +111,33 @@ export function AiAssistant() {
   const [input, setInput] = React.useState("");
   const [sending, setSending] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  // Session 121 (S121-B / A121-L2 — the sixty-ninth audit's second
+  // Low): the send LIVENESS guard. The send's await can OUTLIVE the
+  // editor's unmount — a plain exit (Back) changes neither the
+  // store's projectId nor its boardEpoch, so the mid-flight
+  // scope/epoch belts PASS on the departed singleton: the reply's
+  // applyOperations would mutate a store no surface ever PUTs (the
+  // unmount cleanup registered nothing — saveState was "saved" at
+  // exit; the subscriber is gone; the pagehide listener is removed)
+  // and the next mount's loadProject silently wipes the edit — the
+  // S120-B closure's own claim ("an edit that didn't exist at unmount
+  // time must never be created") falsified by exactly this window.
+  // The guard: this component's own cleanup sets the ref false, and a
+  // dead surface refuses SILENTLY — the transcript died with the
+  // unmount, so the scope-refusal branch's honest message would
+  // render into a departed tree. The guard COMPOSES with the belts
+  // (it never replaces them): alive covers the plain-exit window,
+  // the belts cover the alive window's scope swaps. The S120-B gate's
+  // own swap unmount is covered by the same ref (the assistant
+  // unmounts when loading re-arms). The effect body resets the ref
+  // true — the StrictMode remount form.
+  const aliveRef = React.useRef(true);
+  React.useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
 
   // Session 78 (S78-A / A-M1 — the twenty-sixth audit's headline): the
   // transcript's project-scope guard. The messages state and its revert
@@ -502,6 +529,12 @@ export function AiAssistant() {
         }),
       });
       const body = await response.json().catch(() => null);
+      // Session 121 (S121-B / A121-L2): the liveness guard — a
+      // departed surface refuses SILENTLY (no draft restore into a
+      // dead input, no toast onto the next page, no apply into the
+      // departed store); placed BEFORE the response-error branch and
+      // the preApply capture so the refusal covers every observable.
+      if (!aliveRef.current) return;
       if (!response.ok || !body?.ok) {
         // Session 106 (S106-B — A-L1): the S105-B closure restored the
         // draft on the NETWORK failure only; this branch (a 500, a 429
