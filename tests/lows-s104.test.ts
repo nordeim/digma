@@ -68,8 +68,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1688";
-const FILES = "183";
+const UNIT = "1703";
+const FILES = "184";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 

@@ -46,6 +46,12 @@ export function generateVerifyCode(): string {
 // the 401 envelope family stays byte-identical). LAZY: computed once on
 // the first miss, never a cold-start scrypt on every module import —
 // the login route is the only consumer.
+// Session 122 (S122-D / B122-I2): the LAZY form's fine print — the
+// process's FIRST unknown-email miss pays this hash's scrypt ON TOP of
+// the verify (a one-shot 2x sample vs the constant-work envelope);
+// every subsequent miss is equalized. One sample per process lifetime,
+// behind the 10/IP/15min limiter, on a route whose register sibling
+// openly enumerates by design — the registered posture.
 let equalizerHash: string | null = null;
 
 export function timingEqualizerHash(): string {

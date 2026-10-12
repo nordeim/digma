@@ -86,11 +86,19 @@ describe("the session-58 Low batch (S58-F)", () => {
     expect(onShare).not.toBeNull();
     // The empty-store-projectId guard precedes the clipboard write…
     expect(onShare![0]).toMatch(/const store = useEditorStore\.getState\(\);/);
-    expect(onShare![0]).toMatch(/if \(!store\.projectId\) \{/);
+    // Session 122 (S122-B / A122-L2 — the F89 re-anchor): the guard
+    // composes the store truth with the URL truth — the singleton's
+    // projectId is STALE through a plain mount's loading window, so
+    // the original !projectId form alone passed on the previous
+    // project's id while the URL pointed at a dead one. The composed
+    // form keeps the original S58-F arm as its first member.
+    expect(onShare![0]).toMatch(/if \(!store\.projectId \|\| urlId !== store\.projectId\) \{/);
     // …with the honest unavailable toast (never a copied empty link).
     expect(onShare![0]).toMatch(/Share unavailable/);
     // The clipboard write stays guarded AFTER the early return.
-    const guardIdx = onShare![0].indexOf("if (!store.projectId)");
+    const guardIdx = onShare![0].indexOf(
+      "if (!store.projectId || urlId !== store.projectId)",
+    );
     const clipIdx = onShare![0].indexOf("navigator.clipboard");
     expect(clipIdx).toBeGreaterThan(guardIdx);
   });

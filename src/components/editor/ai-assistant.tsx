@@ -613,6 +613,15 @@ export function AiAssistant() {
         },
       ]);
     } catch {
+      // Session 122 (S122-A / A122-L1): the catch is the liveness
+      // guard's REJECTION path — the S121-B guard at the decode covers
+      // only the RESOLVED continuation, but a network failure (or the
+      // 30s abort) lands HERE after the surface departed: the restore
+      // and the toast are the two observables the S121-B registration
+      // claimed were covered ("no draft restore into a dead input, no
+      // toast onto the next page" — falsified one branch short). A
+      // departed surface restores NOTHING and toasts NOWHERE.
+      if (!aliveRef.current) return;
       // Session 105 (S105-B / A-L5 — the draft-loss edge): the send
       // path cleared the draft BEFORE the await; a network failure
       // degraded to this toast and the operator's typed prompt was

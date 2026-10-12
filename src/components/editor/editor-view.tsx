@@ -805,6 +805,19 @@ function useEditorShortcuts(onOpenShortcuts: () => void, loading: boolean) {
       // outgoing store through the keyboard during the window — the
       // button family's disabled={loading} is the pointer modality's
       // member of the same closure).
+      //
+      // Session 122 (S122-C / A122-I1): the census's honest exclusion —
+      // the pointer modality's viewport-class members stay live through
+      // the window BY DESIGN: the Toolbar's setTool and the zoom
+      // cluster's setZoom/zoomIn/zoomOut never flip saveState, never
+      // push history, never arm the PUT (the S61-C load reset wipes
+      // them — the residual is a silently dropped click, never the
+      // persisted mutation that motivated the stand-down), and the
+      // save-state badge renders the outgoing project's individually
+      // true readings. The keyboard/pointer asymmetry is the
+      // deliberate safe-direction form (the F108 member's registered
+      // exemption — the same registration form the Share button's
+      // URL-scoped exclusion took in S121-D).
       if (loadingRef.current) return;
       const store = useEditorStore.getState();
       const meta = event.ctrlKey || event.metaKey;
@@ -1763,11 +1776,28 @@ export function EditorView({ user }: { user: HeaderUser }) {
     // id), a link that opens a fresh EMPTY Untitled editor for the
     // recipient. The guard: an honest unavailable toast until the first
     // autosave adopts the created id.
+    // Session 122 (S122-B / A122-L2): the URL-truth composition — the
+    // store singleton's projectId is STALE through a plain mount's
+    // loading window (the unmount flush never clears it), so the
+    // original !store.projectId guard PASSED on the previous project's
+    // id while the URL pointed at an unknown/dead one (the 404 falls
+    // back to Untitled AFTER the window — a false "Share link copied"
+    // carrying a dead URL). The composed guard refuses whenever the
+    // URL's project hasn't been ADOPTED by the store yet: still
+    // loading, or dead — the truthful statement about the link the
+    // copy would carry. The BUTTON stays ungated (the S121-D honest
+    // exclusion: the URL already points at the incoming project; the
+    // fix composes the GUARD, never the button).
     const store = useEditorStore.getState();
-    if (!store.projectId) {
+    const urlId =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("projectId") ?? ""
+        : "";
+    if (!store.projectId || urlId !== store.projectId) {
       toast.show({
         title: "Share unavailable",
-        description: "This design hasn't been saved yet — give it a moment, then try again.",
+        description:
+          "This design is still loading or hasn't been saved yet — give it a moment, then try again.",
       });
       return;
     }
