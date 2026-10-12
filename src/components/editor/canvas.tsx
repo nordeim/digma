@@ -345,6 +345,23 @@ export function Canvas() {
         // S84-B helpers mirroring the server's buildElementRow bounds; a
         // draw started after a deep pan could otherwise commit past
         // ±100000 and visibly teleport on the store-replacing save).
+        // Session 119 (S119-B / A119-I1 — the sixty-seventh audit's
+        // first Informational): the ordering-safety registration. This
+        // arm's addElement pushes history synchronously with no
+        // slider-gesture flush — unlike the three flushing siblings
+        // (the text-tool branch, the hit branch, the resize arm) — and
+        // the safety is the EVENT ORDERING, not a flush: the
+        // pointerdown that armed this draw already blurred any focused
+        // panel input (focus change precedes pointerup in every
+        // mainstream engine), so an armed text/field burst's terminal
+        // fired before this commit could land, and any draw outlasting
+        // the 150ms idle is covered by the idle terminal regardless.
+        // The residual (registered, not constructible on a mainstream
+        // engine today): a platform whose canvas pointerdown does not
+        // blur a focused input would re-open the S117-C/A118-L2
+        // inversion through this arm — a refactor moving this commit
+        // into pointerdown, or a focus-retaining surface, must
+        // re-derive the ordering. The flush census stays 3.
         if (
           store.addElement({
             type: drag.type,
