@@ -81,6 +81,19 @@ export async function POST(request: NextRequest) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         return fail("NOT_FOUND", "User not found", 404);
       }
+      // Session 124 (S124-A / B124-L1): the transaction-abort family
+      // reaches the singleton-write siblings the S77-G/S78-B sweep
+      // missed — P2024 = timed out waiting for a pool connection,
+      // P2028 = a transaction timeout. Transient by nature; the
+      // envelope answers 503 with the human copy, never a bare 500
+      // past it (the S56-H no-bare-throw discipline this route's own
+      // comments enforce).
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === "P2024" || error.code === "P2028")
+      ) {
+        return fail("UNAVAILABLE", "The request took too long — the database timed out. Try again.", 503);
+      }
       throw error;
     }
     // Session 67 (S67-C / M-3): the OTP suppression knob — the recovery

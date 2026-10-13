@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
@@ -79,24 +80,44 @@ export async function POST(request: NextRequest) {
   // whose read interleaved before this commit lands count 0 (the token is
   // already consumed) and answers the invalid-token 400 instead of
   // overwriting the just-reset password on the bare row id.
-  const result = await db.user.updateMany({
-    where: { id: user.id, resetToken, resetTokenExpiresAt: { gt: new Date() } },
-    data: {
-      passwordHash: hashPassword(newPassword),
-      resetToken: null,
-      resetTokenExpiresAt: null,
-      // Session 67 (S67-A — the fifteenth audit's M-1): the eviction. Every
-      // cookie minted before this reset embeds the pre-increment version and
-      // dies at the getSessionUser comparison — a stolen/observed session no
-      // longer outlives the reset performed specifically to kill it.
-      tokenVersion: { increment: 1 },
-    },
-  });
-  // A zero count means the token went stale between the pre-read and
-  // this commit (the racing-replay shape — a concurrent reset consumed
-  // it first): the invalid-token 400, never a success envelope.
-  if (result.count === 0) {
-    return fail("VALIDATION", INVALID_TOKEN_MESSAGE, 400);
+  // Session 124 (S124-A / B124-L1): the write window wraps — the
+  // transaction-abort family reaches the route the S77-G/S78-B
+  // sweep missed entirely (this handler carried NO catch): P2024 =
+  // timed out waiting for a pool connection, P2028 = a transaction
+  // timeout. Transient by nature; the envelope answers 503 with
+  // the human copy, never a bare 500 past it (the S56-H
+  // no-bare-throw discipline; the verify-otp sibling's same form).
+  // The P2025 arm stays absent BY DESIGN: updateMany answers a
+  // vanished row with count 0 — the invalid-token 400 below already
+  // covers it; the code never throws P2025.
+  try {
+    const result = await db.user.updateMany({
+      where: { id: user.id, resetToken, resetTokenExpiresAt: { gt: new Date() } },
+      data: {
+        passwordHash: hashPassword(newPassword),
+        resetToken: null,
+        resetTokenExpiresAt: null,
+        // Session 67 (S67-A — the fifteenth audit's M-1): the eviction. Every
+        // cookie minted before this reset embeds the pre-increment version and
+        // dies at the getSessionUser comparison — a stolen/observed session no
+        // longer outlives the reset performed specifically to kill it.
+        tokenVersion: { increment: 1 },
+      },
+    });
+    // A zero count means the token went stale between the pre-read and
+    // this commit (the racing-replay shape — a concurrent reset consumed
+    // it first): the invalid-token 400, never a success envelope.
+    if (result.count === 0) {
+      return fail("VALIDATION", INVALID_TOKEN_MESSAGE, 400);
+    }
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The request took too long — the database timed out. Try again.", 503);
+    }
+    throw error;
   }
 
   return ok({ message: "Password reset successfully" });

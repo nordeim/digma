@@ -1938,7 +1938,26 @@ export function EditorView({ user }: { user: HeaderUser }) {
         <div className="ml-auto flex flex-shrink-0 items-center gap-2">
           <button
             type="button"
-            onClick={() => useEditorStore.getState().undo()}
+            onClick={() => {
+              // Session 124 (S124-B / A124-I1): the pointer twin's
+              // gesture stand-down — the S123-A closure reached the
+              // keyboard arms only, and this onClick dispatched with
+              // nothing but the loading gate: a mid-drag click on the
+              // header Undo popped a past entry whose redo the
+              // still-live drag's ticks then committed over
+              // (history-free, on the UNDONE base), and the terminal
+              // endGesture's future:[] destroyed the redo the undo
+              // just created — the A120-L1/A123-L1 symptom family
+              // through the POINTER modality. The closure is the
+              // keyboard form's mirror: capture the store, stand down
+              // through a live gesture, then dispatch. The button
+              // stays enabled through the window — the honest refusal
+              // is the dropped click, never a disabled control that
+              // flickers per-drag.
+              const store = useEditorStore.getState();
+              if (store.gestureSnapshot) return;
+              store.undo();
+            }}
             disabled={!canUndo || loading}
             aria-label="Undo"
             // Session 78 (S78-F / A-L4): the 44px floor in the phone band
@@ -1950,7 +1969,13 @@ export function EditorView({ user }: { user: HeaderUser }) {
           </button>
           <button
             type="button"
-            onClick={() => useEditorStore.getState().redo()}
+            onClick={() => {
+              // Session 124 (S124-B / A124-I1): the Redo twin's same
+              // stand-down (the keyboard closure's pointer member).
+              const store = useEditorStore.getState();
+              if (store.gestureSnapshot) return;
+              store.redo();
+            }}
             disabled={!canRedo || loading}
             aria-label="Redo"
             // Session 78 (S78-F / A-L4): the Undo twin's phone-band floor.

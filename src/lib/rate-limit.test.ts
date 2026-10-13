@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { checkRate, clientIpOf, type RateBuckets } from "@/lib/rate-limit";
 
-// The fixed-window limiter (ADR-009 in the inherited architecture): pure
+// The fixed-window limiter (the PAD §6 Security Architecture's
+// rate-limiting row — the S5 control; the citation re-anchored in
+// session 124, S124-D / B124-I3, same as the source file's header):
+// pure
 // core, opportunistic eviction, retry-after math.
 
 describe("checkRate", () => {

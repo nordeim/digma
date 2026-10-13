@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { getSessionUser, type SessionUser } from "./auth";
 
-// The uniform API envelope (ADR-006 in the inherited architecture):
-// every handler except /api/health returns { ok: true, data } or
+// The uniform API envelope (the PAD §3 Application Architecture
+// convention — the ok()/fail() envelope paragraph; the historical
+// "ADR-006 in the inherited architecture" citation re-anchored in
+// session 124, S124-D / B124-I3: the inherited template's registry
+// never existed in this repo, and the PAD's own ADR-006 is the
+// AI-assistant degrade decision — an unrelated decision a reader
+// following the old citation landed on): every handler except /api/health returns
+// { ok: true, data } or
 // { ok: false, error: { code, message } } — the health route is the
 // documented liveness carve-out (a bare { status, app, ts } probe
 // shape, pinned by doc-lows-s83 against the README).

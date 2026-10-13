@@ -56,6 +56,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
       return fail("NOT_FOUND", "Team not found", 404);
     }
+    // Session 124 (S124-A / B124-L1): the transaction-abort family —
+    // P2024 = timed out waiting for a pool connection, P2028 = a
+    // transaction timeout. Transient by nature; the envelope answers
+    // 503 with the human copy, never a bare 500 past it (the S56-H
+    // no-bare-throw discipline; the projects sibling's same form).
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The update took too long — the database timed out. Try again.", 503);
+    }
     throw error;
   }
 }
@@ -77,6 +88,15 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
       return fail("NOT_FOUND", "Team not found", 404);
+    }
+    // Session 124 (S124-A / B124-L1): the DELETE twin's same arm —
+    // the transient abort answers the structured 503, never a bare
+    // 500 (the S56-H discipline; the PATCH sibling's form).
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The delete took too long — the database timed out. Try again.", 503);
     }
     throw error;
   }

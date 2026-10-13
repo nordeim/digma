@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { setSessionCookie } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
@@ -90,87 +91,114 @@ export async function POST(request: NextRequest) {
   // session; count === 0 means the code is wrong OR concurrently stale
   // (a Resend regenerated it) OR the ceiling tripped mid-flight — the
   // wrong-code family below answers every one of those.
-  const verifiedResult = await db.user.updateMany({
-    where: { id: user.id, verifyCode: code, verifyAttempts: { lt: MAX_VERIFY_ATTEMPTS } },
-    data: { verified: true, verifyCode: null, verifyAttempts: 0 },
-  });
-  if (verifiedResult.count === 1) {
-    // Verified: clear the pending code and open the session (the register
-    // route never sets the cookie — this is the flow's session landing).
-    // Session 67 (S67-A): the select carries tokenVersion so the mint
-    // embeds the holder's live version (a later reset evicts this
-    // cookie).
-    const verified = await db.user.findUnique({
-      where: { id: user.id },
-      select: { id: true, email: true, name: true, avatarColor: true, tokenVersion: true },
+  // Session 124 (S124-A / B124-L1): the write window wraps — the
+  // transaction-abort family reaches the route the S77-G/S78-B
+  // sweep missed entirely (this handler carried NO catch): P2024 =
+  // timed out waiting for a pool connection, P2028 = a transaction
+  // timeout. Transient by nature; the envelope answers 503 with
+  // the human copy, never a bare 500 past it (the S56-H
+  // no-bare-throw discipline). The window covers both conditional
+  // updateManys and the re-selects — every write and read the
+  // handler performs after the ceiling check. The P2025 arm stays
+  // absent BY DESIGN: updateMany answers a vanished row with
+  // count 0 (the wrong-code family below already covers it), and
+  // findUnique answers null (the !verified branch) — the code
+  // throws P2025 from NEITHER.
+  try {
+    const verifiedResult = await db.user.updateMany({
+      where: { id: user.id, verifyCode: code, verifyAttempts: { lt: MAX_VERIFY_ATTEMPTS } },
+      data: { verified: true, verifyCode: null, verifyAttempts: 0 },
     });
-    if (!verified) {
-      return fail("VALIDATION", "Enter the 6-digit code from your email", 400);
+    if (verifiedResult.count === 1) {
+      // Verified: clear the pending code and open the session (the register
+      // route never sets the cookie — this is the flow's session landing).
+      // Session 67 (S67-A): the select carries tokenVersion so the mint
+      // embeds the holder's live version (a later reset evicts this
+      // cookie).
+      const verified = await db.user.findUnique({
+        where: { id: user.id },
+        select: { id: true, email: true, name: true, avatarColor: true, tokenVersion: true },
+      });
+      if (!verified) {
+        return fail("VALIDATION", "Enter the 6-digit code from your email", 400);
+      }
+      // The version rides the cookie, not the response body (shape
+      // unchanged).
+      const { tokenVersion: mintVersion, ...verifiedUser } = verified;
+      const response = ok({ user: verifiedUser });
+      await setSessionCookie(verified.id, mintVersion, response);
+      return response;
     }
-    // The version rides the cookie, not the response body (shape
-    // unchanged).
-    const { tokenVersion: mintVersion, ...verifiedUser } = verified;
-    const response = ok({ user: verifiedUser });
-    await setSessionCookie(verified.id, mintVersion, response);
-    return response;
-  }
 
-  if (verifiedResult.count === 0) {
-    // Session 62 (S62-E / B-M2): the counter is a conditional
-    // updateMany — the pre-fix read-modify-write (the findUnique read
-    // above, then this update) UNDERCOUNTED under concurrency: N
-    // simultaneous wrong codes all read the same verifyAttempts and
-    // wrote the same increment, so the 5-attempt ceiling let a
-    // concurrent guess loop through. The conditional increment is
-    // atomic at the database; count === 0 means the ceiling was
-    // already reached (the exhausted 429).
-    //
-    // Session 73 (S73-H — B-F6): the half-dead first disjunct died —
-    // reaching this line implies the atomic update matched ZERO rows
-    // (the count === 1 path returned above), so the old
-    // `user.verifyCode !== code ||` guard was always true here and
-    // TypeScript could not prove the function exhaustive. The live
-    // condition stands alone.
-    const result = await db.user.updateMany({
-      where: { id: user.id, verifyAttempts: { lt: MAX_VERIFY_ATTEMPTS } },
-      data: { verifyAttempts: { increment: 1 } },
-    });
-    if (result.count === 0) {
-      return fail("VERIFY_LOCKED", EXHAUSTED_MESSAGE, 429);
+    if (verifiedResult.count === 0) {
+      // Session 62 (S62-E / B-M2): the counter is a conditional
+      // updateMany — the pre-fix read-modify-write (the findUnique read
+      // above, then this update) UNDERCOUNTED under concurrency: N
+      // simultaneous wrong codes all read the same verifyAttempts and
+      // wrote the same increment, so the 5-attempt ceiling let a
+      // concurrent guess loop through. The conditional increment is
+      // atomic at the database; count === 0 means the ceiling was
+      // already reached (the exhausted 429).
+      //
+      // Session 73 (S73-H — B-F6): the half-dead first disjunct died —
+      // reaching this line implies the atomic update matched ZERO rows
+      // (the count === 1 path returned above), so the old
+      // `user.verifyCode !== code ||` guard was always true here and
+      // TypeScript could not prove the function exhaustive. The live
+      // condition stands alone.
+      const result = await db.user.updateMany({
+        where: { id: user.id, verifyAttempts: { lt: MAX_VERIFY_ATTEMPTS } },
+        data: { verifyAttempts: { increment: 1 } },
+      });
+      if (result.count === 0) {
+        return fail("VERIFY_LOCKED", EXHAUSTED_MESSAGE, 429);
+      }
+      // Session 70 (S70-D): the display derives from the POST-INCREMENT
+      // read — the pre-fix `user.verifyAttempts + 1` reused the stale
+      // findUnique value, so a concurrent attempt made the "N attempts
+      // remaining" message lie.
+      const fresh = await db.user.findUnique({
+        where: { id: user.id },
+        select: { verifyAttempts: true },
+      });
+      const attempts = fresh?.verifyAttempts ?? MAX_VERIFY_ATTEMPTS;
+      if (attempts >= MAX_VERIFY_ATTEMPTS) {
+        // The fifth wrong code trips the ceiling (session 45, RA-62: the
+        // reference answers 429 here, not 400).
+        return fail("VERIFY_LOCKED", EXHAUSTED_MESSAGE, 429);
+      }
+      // The reference's measured decrementing counter: 5 wrong codes max, so
+      // the first wrong attempt reads "4 attempts remaining."
+      return fail("VALIDATION", `Invalid verification code. ${MAX_VERIFY_ATTEMPTS - attempts} attempts remaining.`, 400);
     }
-    // Session 70 (S70-D): the display derives from the POST-INCREMENT
-    // read — the pre-fix `user.verifyAttempts + 1` reused the stale
-    // findUnique value, so a concurrent attempt made the "N attempts
-    // remaining" message lie.
-    const fresh = await db.user.findUnique({
-      where: { id: user.id },
-      select: { verifyAttempts: true },
-    });
-    const attempts = fresh?.verifyAttempts ?? MAX_VERIFY_ATTEMPTS;
-    if (attempts >= MAX_VERIFY_ATTEMPTS) {
-      // The fifth wrong code trips the ceiling (session 45, RA-62: the
-      // reference answers 429 here, not 400).
-      return fail("VERIFY_LOCKED", EXHAUSTED_MESSAGE, 429);
-    }
-    // The reference's measured decrementing counter: 5 wrong codes max, so
-    // the first wrong attempt reads "4 attempts remaining."
-    return fail("VALIDATION", `Invalid verification code. ${MAX_VERIFY_ATTEMPTS - attempts} attempts remaining.`, 400);
-  }
 
-  // Session 74 (S74-H — B74-F6): the terminal return. A unique-id
-  // updateMany answers exactly 0 or 1, and both counts returned above —
-  // but noImplicitReturns is off, so nothing but a source pin holds the
-  // function's totality. The impossible-count fall-through previously
-  // returned undefined (an empty 200). The vanished-user race family's
-  // own form answers here: the user row the handler read at the top can
-  // only be gone through an out-of-band DB mutation mid-request (no
-  // user-delete endpoint exists). Session 75 (S75-G / B75-F4) corrected
-  // the earlier claim that the whole family uniformly answers with the
-  // NOT_FOUND status: the SAME handler's count===1 re-select above
-  // answers its own vanished-user race with the no-enumeration 400
-  // (the verify flow's deliberate form: the caller already submitted
-  // the email + code, and the message is the flow's own); THIS terminal
-  // closes only the impossible-count fall-through, answering the
-  // envelope instead of an empty 200.
-  return fail("NOT_FOUND", "User not found", 404);
+    // Session 74 (S74-H — B74-F6): the terminal return. A unique-id
+    // updateMany answers exactly 0 or 1, and both counts returned above —
+    // but noImplicitReturns is off, so nothing but a source pin holds the
+    // function's totality. The impossible-count fall-through previously
+    // returned undefined (an empty 200). The vanished-user race family's
+    // own form answers here: the user row the handler read at the top can
+    // only be gone through an out-of-band DB mutation mid-request (no
+    // user-delete endpoint exists). Session 75 (S75-G / B75-F4) corrected
+    // the earlier claim that the whole family uniformly answers with the
+    // NOT_FOUND status: the SAME handler's count===1 re-select above
+    // answers its own vanished-user race with the no-enumeration 400
+    // (the verify flow's deliberate form: the caller already submitted
+    // the email + code, and the message is the flow's own); THIS terminal
+    // closes only the impossible-count fall-through, answering the
+    // envelope instead of an empty 200.
+    return fail("NOT_FOUND", "User not found", 404);
+  } catch (error) {
+    // Session 124 (S124-A / B124-L1): the family arm — the structured
+    // 503 for the transient aborts, everything else rethrowing past
+    // the envelope only when Prisma itself misbehaved (the honest
+    // unknown-error posture every sibling carries).
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2024" || error.code === "P2028")
+    ) {
+      return fail("UNAVAILABLE", "The request took too long — the database timed out. Try again.", 503);
+    }
+    throw error;
+  }
 }

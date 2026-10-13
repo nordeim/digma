@@ -109,6 +109,17 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         stored = false;
+      } else if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === "P2024" || error.code === "P2028")
+      ) {
+        // Session 124 (S124-A / B124-L1): the transaction-abort family
+        // — P2024 = timed out waiting for a pool connection, P2028 =
+        // a transaction timeout. The transient abort is a SERVER
+        // condition, never an account state — the 503 surfaces
+        // honestly without enumeration (the no-enumeration 200 covers
+        // the message body, never a dead database).
+        return fail("UNAVAILABLE", "The request took too long — the database timed out. Try again.", 503);
       } else {
         throw error;
       }

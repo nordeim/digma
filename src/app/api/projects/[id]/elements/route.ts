@@ -26,6 +26,17 @@ async function loadProject(id: string) {
  * clone's client loads the board through GET /api/projects/[id],
  * which ships the same full rows through its include). The session
  * guard + the 404 keep it safe to expose either way.
+ * Session 124 (S124-C / B124-I2): the FULL-ROW ship registered —
+ * every sibling list-family route rides the THUMBNAIL_ELEMENT_SELECT
+ * projection (S70-D/S113-D: the projects list, recent, and the
+ * projects/[id] detail's thumbnail include all ship the ~320px
+ * re-encode in the fillImage slot); this route alone ships full
+ * rows by design — the API-consumer contract needs the unsanitized
+ * element payload, and the no-first-party-consumer posture above is
+ * what makes the asymmetry safe. The payload truth: the worst-case
+ * aggregate is the ~25 MB heaviest-legitimate board at ELEMENT_LIMIT
+ * (the S117-A arithmetic), inside the 32 MB body-cap family the PUT
+ * rides — bounded by the session guard + the 404, never a projection.
  */
 export async function GET(_request: NextRequest, { params }: Params) {
   const user = await requireSession();

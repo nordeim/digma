@@ -2560,3 +2560,25 @@ Work Log:
 
 Stage Summary:
 - Session 123 delivered and pushed to main: the keyboard history arms' gesture stand-down (S123-A — the A120-L1 family's active-gesture window closed), the upload liveness guard (S123-B — the S121-B/S122-A liveness family's last client member), the armText matching-armed idle skip (S123-C); gate green at 1718 unit / 185 files / 73 smoke / 262 e2e; docs at PAD v1.102.0 / digma_SKILL v1.101.0 + F110
+
+---
+Task ID: 40
+Agent: main (Super Z orchestrator)
+Task: Session 124 delivery — the 72nd Mode C audit cycle (the abort-envelope/pointer-standdown/full-row-registration pass) + push
+
+Work Log:
+- Workspace cloned fresh TWICE this cycle (the sandbox reset lost the in-flight S124 tree both times — the run re-executed from scratch at 68d8b18 each time); the environment rebuilt hermetically (bun install, .env from .env.example with DATABASE_URL="file:../db/custom.db", db/ at the repo root, schema push + seed, chromium-1243 re-provisioned) — PRISTINE CONTRACT 1/2/6/1/3; every command under env -u DATABASE_URL
+- All S123 seams verified intact in source; the baseline six gates GREEN: lint · typecheck · unit 1718/1718 across 185 files · build 27 routes · smoke 73/73 · e2e 262/262 (6.9m, zero flakes)
+- The three s124 scripts derived from the s123 forms via the persisted script (22/66/6 raw diff lines, zero run-ordinal residue); the parity gates GREEN: the 100th reference audit NO DRIFT (the clip pin byte-identical Share:L385-R458,Present:L466-R551 — the 61st consecutive session; the login first-try) · the 101st mobile-nav verification 9/9 (the Tailwind v4 class-A guard) · SEO 4/4
+- The 72nd Mode C audit (two fresh-eyes auditors, the tree byte-identical to the audited HEAD — every seam re-walked by the lead): 0 Critical / 0 High / 0 Medium / 1 Low / 3 Informational — B124-L1 the ten bare-write route sites (P2025-only catches or none; a P2024/P2028 abort rethrowing past the envelope as an unstructured 500); A124-I1 the header undo/redo pointer arms' missing gesture stand-down (the S123-A closure's pointer twin); B124-I2 the elements list GET's unregistered full-row ship; B124-I3 the three stale "inherited architecture" ADR citations; B124-I4 the post-smoke DB state
+- docs/remediation-plan-session124.md written and validated; TDD RED 13/6 confirmed; GREEN 19/19 after three F89 pin repairs (the citation-FORM regex recalibration + the 700->1400 window widening, the S102-B precedent)
+- S124-A applied at all ten sites (the family arm P2024/P2028 -> the structured 503 UNAVAILABLE envelope; verify-otp/reset-password gaining the wrapped write window + the Prisma import, their P2025 arms absent BY DESIGN — updateMany answers count 0); S124-B the pointer stand-down (the keyboard form's mirror); S124-C the full-row registration; S124-D the citation re-anchor onto the PAD §3/§6
+- The collateral family (3 failures): the PAD §11 rows (editor-view 2309->2334, forgot-password 122->133, reset-password 103->124, elements 402->413, rate-limit 185->190, all with the enriched S124 seam descriptions) + the reset-url-gate window widened 1700->2400; the count-family re-anchor 1737 = 1718 + 19 unit / 186 files across every live claim site (the 20 UNIT + 19 FILES spec constants; the AGENTS/CLAUDE/README/digma_SKILL/PAD sites); the LIVE ANCHOR family (10 failures) resolved by the docs step
+- The docs: the AGENTS session-124 seam bullet · the digma_SKILL v1.102.0 bump with lesson F111 (the sibling-census member; the modality-twin member; the citation-truth member) · the PAD v1.103.0 (title + chain + revision block + the §7.1 lows-s124 row) · session_218.md
+- Final gates on the exact final tree: lint · typecheck · 1737/1737 across 186 files · build 27 routes · smoke 73/73 · e2e 262/262 zero flakes; nav 9/9 + SEO 4/4 re-run on the FINAL S124 build; the capture ALL CAPTURED (the s124 script derived at 29 raw diff lines; every standing witness re-verified LIVE); the 11 outside-window e2e-touched witness PNGs restored; the post-capture DB contract PRISTINE 1/2/6/1/3; the dimension checker's s134 mapping 709/709
+- Commit created on main; the SSH-wrapper push per docs/how-to-git-push-using-ssh-wrapper_SKILL.md
+
+Stage Summary:
+- Delivered S124-A (the headline: the transaction-abort envelope family's completion across the ten singleton-write sibling sites), S124-B (the pointer arms' gesture stand-down), S124-C (the full-row registration at the list GET seam), S124-D (the three-site citation re-anchor)
+- Gates: 1737 unit / 186 files · 73 smoke · 262 e2e zero flakes · nav 9/9 (101st session) · SEO 4/4 · the 100th ref audit NO DRIFT (clip pin 61st consecutive) · dimensions 709/709
+- Docs aligned: PAD v1.103.0, digma_SKILL v1.102.0 + F111, AGENTS session-124 bullet, session_218.md, this worklog

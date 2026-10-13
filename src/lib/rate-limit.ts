@@ -1,5 +1,10 @@
-// Fixed-window per-IP rate limiting for the auth endpoints (ADR-009 in the
-// inherited architecture). The pure core keeps the window math and eviction
+// Fixed-window per-IP rate limiting for the auth endpoints (the PAD §6
+// Security Architecture's rate-limiting row — the S5 control; the
+// historical "ADR-009 in the inherited architecture" citation
+// re-anchored in session 124, S124-D / B124-I3: the inherited
+// template's registry never existed in this repo, and the PAD's own
+// ADR-009 is the Untitled editor decision). The pure core keeps the
+// window math and eviction
 // unit-testable without timers; buckets live in process memory — per-process
 // only (single-node deploy), and restarting the server clears them.
 

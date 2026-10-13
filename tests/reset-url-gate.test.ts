@@ -48,8 +48,10 @@ describe("the in-app reset link's production gate (session 64, S64-D / B-1)", ()
     // assignment is conditional on the knob NOT being set. Session 102
     // (S102-B): the window widened 900 -> 1700 — the P2025 guard's
     // try/catch + the stored flag sit between the knob read and the
-    // assignment now; the gate's ORDER is unchanged.
-    const before = routeSource.slice(Math.max(0, idx - 1700), idx);
+    // assignment now; the gate's ORDER is unchanged. Session 124
+    // (S124-A / B124-L1): widened 1700 -> 2400 — the transaction-abort
+    // family arm joined the same catch, the same class.
+    const before = routeSource.slice(Math.max(0, idx - 2400), idx);
     expect(before).toMatch(/DIGMA_DISABLE_IN_APP_RESET/);
     expect(before).toMatch(/!== "1"/);
   });
