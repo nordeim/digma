@@ -538,9 +538,30 @@ const sliderGesture = (() => {
       // and never ends it.
       armed = null;
     }
-    const idleSurface = activeSurface ?? surface;
-    clearIdle();
-    idleTimer = setTimeout(() => finish(idleSurface), 150);
+    // Session 123 (S123-C / A123-I2): the matching-armed ride — a
+    // DIFFERENT surface's arm landing under the closure's OWN live
+    // gesture (finger-2 committing a number field mid-slider-drag —
+    // the touch interleaving the S66-A foreign-ride guard never
+    // enumerated: it covers the store carrying a gesture this
+    // closure did NOT arm, and the matching arm rode with no branch
+    // at all). The idle re-arm must not carry the LIVE gesture's
+    // surface token: the 150ms terminal would pass the ownership
+    // check and endGesture MID-DRAG — the per-tick history flooding
+    // the S62-A seam exists to prevent, and the slider's own
+    // pointerup terminal would no-op on the already-null
+    // activeSurface. The gesture's OWN terminals (pointerup/cancel)
+    // stay the sole enders; the riding commit coalesces into the
+    // gesture's single history entry.
+    const ridingOwnLiveGesture =
+      armed !== null &&
+      activeSurface !== null &&
+      activeSurface !== surface &&
+      store.gestureSnapshot === armed;
+    if (!ridingOwnLiveGesture) {
+      const idleSurface = activeSurface ?? surface;
+      clearIdle();
+      idleTimer = setTimeout(() => finish(idleSurface), 150);
+    }
   };
   // Session 104 (S104-A / A-M1): the text path's mark primitive — the
   // burst's changed-flag, set ONLY on a consumer-reported real commit.
@@ -1077,6 +1098,29 @@ function ImagePanel({
   const inputId = `image-upload-${element.id}`;
   const [busy, setBusy] = React.useState(false);
 
+  // Session 123 (S123-B / A123-I1): the upload liveness guard — the
+  // S121-B/S122-A family's last client member. The upload chain
+  // (FileReader onload → downscaleDataUrl → thumbnailFor →
+  // commitUpload) is an async continuation that can OUTLIVE this
+  // surface's mount: the unmount cleanup ran while saveState was
+  // still "saved" (the patch hadn't committed), so NO leave
+  // transport was registered — the continuation's updateElements
+  // then flipped the departed singleton "unsaved" with no
+  // subscriber, timer, or pagehide listener left to flush it, and
+  // the next mount's loadProject silently wiped the patch (the
+  // upload silently dropped). A departed surface commits NOTHING
+  // and toasts NOWHERE — the guard composes with the id-match floor
+  // (S109-A) and the no-op-commit guard (S106-A), never replaces
+  // them. The effect body resets the ref true — the StrictMode
+  // remount form.
+  const aliveRef = React.useRef(true);
+  React.useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
+
   // Session 106 (S106-A — the fifty-fourth audit's A-M1): the no-op
   // family's FILE-INPUT member. The S102-E/S103-A/S104-A/S105-A sweeps
   // enumerated the controls' input modalities (click/select, text,
@@ -1092,6 +1136,11 @@ function ImagePanel({
   // fill-paint precedence doctrine makes { fillImage, fillGradient:
   // null, fillImageFit: null } a unit, not three fields.
   const commitUpload = (fillImage: string, fillImageThumb: string | null) => {
+    // Session 123 (S123-B): the store-mutating seam — a departed
+    // surface commits NOTHING (the continuation's updateElements is
+    // the observable that would flip the departed singleton
+    // "unsaved" with no flush left).
+    if (!aliveRef.current) return;
     setBusy(false);
     // Session 112 (S112-C — the sixtieth audit's B92-I1 leg (a), the
     // client half): the upload-time AGGREGATE pre-emption. The board's
@@ -1184,6 +1233,9 @@ function ImagePanel({
     setBusy(true);
     const reader = new FileReader();
     reader.onload = () => {
+      // Session 123 (S123-B): the onload head — no toast onto the
+      // departed page, and the downscale chain never starts.
+      if (!aliveRef.current) return;
       const dataUrl = String(reader.result ?? "");
       // Session 56 (S56-E — the Mode C audit's M-4): accept exactly the
       // server's five families. The old bare startsWith("data:image/")
@@ -1211,6 +1263,9 @@ function ImagePanel({
       }
     };
     reader.onerror = () => {
+      // Session 123 (S123-B): the onerror head — the upload-failed
+      // toast never pops on the departed page.
+      if (!aliveRef.current) return;
       setBusy(false);
       toast.show({ title: "Upload failed", description: "Could not read the image file. Please try again." });
     };

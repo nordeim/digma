@@ -822,6 +822,30 @@ function useEditorShortcuts(onOpenShortcuts: () => void, loading: boolean) {
       const store = useEditorStore.getState();
       const meta = event.ctrlKey || event.metaKey;
 
+      // Session 123 (S123-A / A123-L1): the gesture stand-down — the
+      // keyboard history arms are reachable DURING an active gesture
+      // (isTypingTarget's range carve-out makes Ctrl+Z fire with a
+      // slider focused, mid-drag included), and the S120-A entry
+      // flush passes active drags through BY DESIGN (it flushes only
+      // idle-armed bursts — an active drag carries no idle timer; the
+      // pass-through was the FLUSH's scope, never the dispatch's
+      // own). A mid-drag Ctrl+Z popped a past entry and pushed a
+      // redo the still-live drag's ticks then committed over
+      // (history-free, on the UNDONE base), and the terminal
+      // endGesture's future:[] destroyed the redo the undo just
+      // created — the A120-L1 symptom family on the one window its
+      // closure passed through. Delete shares the window
+      // (deleteElements pushes history while the drag holds its
+      // stale snapshot). The stand-down covers the whole handler
+      // tail: the zoom and tool arms below are viewport-class (the
+      // S122-C exemption is the LOADING window's registration — a
+      // different window; through the GESTURE window a dropped
+      // keyboard zoom is the honest refusal, never an integrity
+      // issue), and a keyboard event mid-pointer-gesture is an
+      // interleave the editor does not compose — the drag's terminal
+      // stays the sole committer.
+      if (store.gestureSnapshot) return;
+
       if (meta && event.key.toLowerCase() === "z") {
         event.preventDefault();
         if (event.shiftKey) store.redo();
