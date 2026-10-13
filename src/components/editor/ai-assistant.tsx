@@ -464,7 +464,25 @@ export function AiAssistant() {
     if (message.scopeEpoch !== useEditorStore.getState().boardEpoch) {
       return;
     }
-    useEditorStore.getState().restoreSnapshot(message.revertSnapshot);
+    // Session 125 (S125-A / A125-L1): the gesture stand-down — the
+    // S124-B pointer closure's uncovered sibling. The Revert button is
+    // the OTHER pointer dispatcher of a base-swapping store action:
+    // restoreSnapshot replaces the elements array, pushes the current
+    // state onto past, and wipes future:[] (the A120-L1/A123-L1/
+    // A124-I1 harm family) — a mid-drag revert swaps the base under
+    // the live gesture (the drag's ticks then commit history-free
+    // over the RESTORED base — the ids match the restored copies),
+    // and the terminal endGesture pushes the pre-drag snapshot on
+    // top, so one undo silently un-reverts the Revert. The
+    // armed-burst window rides the same guard — the safe-direction
+    // form, the dropped click the honest refusal, matching the
+    // header pair's S124-B doctrine. The scope/epoch belts keep their
+    // standing order ahead of the guard: a wrong-scope or
+    // wrong-epoch revert refuses before the gesture window is even
+    // consulted.
+    const store = useEditorStore.getState();
+    if (store.gestureSnapshot) return;
+    store.restoreSnapshot(message.revertSnapshot);
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, reverted: true } : m)));
   }
 

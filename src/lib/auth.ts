@@ -10,10 +10,16 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "./db";
 
-// Hand-rolled cookie sessions (ADR-003 in the inherited architecture):
-// scrypt password hashes + stateless HMAC-signed tokens. Auditable crypto
-// using Node built-ins; tokens verify without a session store;
-// timingSafeEqual on both password and signature comparisons.
+// Hand-rolled cookie sessions (PAD ADR-003 — the hand-rolled-sessions
+// decision the PAD's own ADR registry carries at its "ADR-003: Hand-rolled
+// scrypt + HMAC-SHA256 stateless cookie sessions" entry; the historical
+// "ADR-003 in the inherited architecture" parenthetical re-anchored in
+// session 125, S125-C / B125-L1: the fourth site the S124-D sweep missed —
+// the inherited template's registry never existed in this repo, and unlike
+// the ADR-006/ADR-009 cases the number itself was already honest, only the
+// registry framing false): scrypt password hashes + stateless HMAC-signed
+// tokens. Auditable crypto using Node built-ins; tokens verify without a
+// session store; timingSafeEqual on both password and signature comparisons.
 
 const SESSION_COOKIE = "digma_session";
 const SESSION_TTL_DAYS = 7;

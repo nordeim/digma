@@ -1954,6 +1954,17 @@ export function EditorView({ user }: { user: HeaderUser }) {
               // stays enabled through the window — the honest refusal
               // is the dropped click, never a disabled control that
               // flickers per-drag.
+              // Session 125 (A125-I2, the registration): the guard is
+              // non-discriminating BY DESIGN — it covers the ACTIVE-
+              // DRAG window and the ARMED-BURST window alike (an
+              // idle-armed panel-field burst keeps gestureSnapshot
+              // non-null through its 150ms terminal), where the
+              // keyboard twin flushes the burst first (the S120-A
+              // entry flush) and proceeds. The drop through the
+              // armed-burst window is the safe direction — a pointer
+              // click carries no flush of its own, and proceeding
+              // unflushed would recreate the A124-I1 symptom; the
+              // re-click costs one tap and is the honest refusal.
               const store = useEditorStore.getState();
               if (store.gestureSnapshot) return;
               store.undo();

@@ -901,6 +901,17 @@ S133 = dict(S132)
 # observable behavior on the seeded flows).
 S134 = dict(S133)
 
+# s135 mapping (session 125 — the 101st reference audit's evidence set + the
+# S125 capture set). The standing S135 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S125 tree); no NEW
+# witness this session (the S125 pass is a Revert gesture stand-down that
+# refuses only through a live drag + a same-surface slider flush that fires
+# only on a second pointer's same-token press mid-gesture — + the
+# comment/doc-only re-anchor and registrations — every change
+# window-scoped refusal or comment truth with identical observable
+# behavior on the seeded flows).
+S135 = dict(S134)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1023,6 +1034,8 @@ def expected_for(name: str):
         return S133.get(Path(name).stem)
     if name.startswith("ref-audit-s134/"):
         return S134.get(Path(name).stem)
+    if name.startswith("ref-audit-s135/"):
+        return S135.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1138,6 +1151,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s132").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s133").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s134").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s135").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

@@ -264,8 +264,12 @@ describe("the S124 defect set", () => {
   it("DEFECT (source): the pointer stand-down's registration names the family — the keyboard twin, the destroyed redo, the dropped-click honesty", () => {
     const undoAt = editorViewSource.indexOf('aria-label="Undo"');
     const redoAt = editorViewSource.indexOf('aria-label="Redo"');
+    // Session 125 (the S102-B en-route re-anchor class): the window
+    // widens 1400 -> 2600 — the A125-I2 armed-burst registration
+    // clause legitimately joined the S124-B comment block this cycle,
+    // pushing its head phrases past the original window.
     const region = editorViewSource.slice(
-      Math.max(0, undoAt - 1400),
+      Math.max(0, undoAt - 2600),
       Math.min(editorViewSource.length, redoAt + 400),
     );
     const collapsedRegion = collapsed(region);

@@ -579,7 +579,20 @@ const sliderGesture = (() => {
       // (S65-C): only when we still OWN the store's current gesture
       // (a canvas takeover means the superseded gesture is already
       // dead — flushing would push a foreign mid-flight state).
-      if (activeSurface !== null && activeSurface !== surface && changed && ownsCurrentGesture()) {
+      // Session 125 (S125-B / A125-L2): the flush loses the
+      // surface-difference condition — the SAME-SURFACE re-begin
+      // joins the superseding interleave. All panel sliders share
+      // the one "slider" token, so a second pointer's press on a
+      // second slider mid-drag took the same-surface path: no flush,
+      // no fresh arm, and the unconditional changed = false wiped
+      // the first slider's tick record — the terminal finish then
+      // ran cancelGesture and the armed pre-gesture snapshot was
+      // DISCARDED (the first slider's history-free ticks with no
+      // undo entry, and any post-cancel ticks committing per-tick —
+      // the S62-A flooding the gesture seam exists to prevent). The
+      // flush lands the first slider's entry; the arm below gives
+      // the second pointer its own gesture.
+      if (activeSurface !== null && changed && ownsCurrentGesture()) {
         store.endGesture();
       }
       // Session 66 (S66-A — the fourteenth audit's A-2): the
@@ -595,11 +608,17 @@ const sliderGesture = (() => {
       // a mid-drag state) or deleted outright (the field's blur then
       // OWNED the mid-drag snapshot, cancelled it, and the canvas's
       // own pointerup pushed nothing).
+      // Session 125 (S125-B / A125-L2): the arm branch loses its
+      // surface-difference condition too — after the same-surface
+      // flush the store is free and the second pointer needs its OWN
+      // gesture (the pre-fix form left it gestureless: every tick
+      // committing per-tick). The foreign-ride and ride-under forms
+      // are unchanged: a store that is not free never arms here.
       const live = useEditorStore.getState();
-      if ((activeSurface === null || activeSurface !== surface) && live.gestureSnapshot === null) {
+      if (live.gestureSnapshot === null) {
         live.beginGesture();
         armed = useEditorStore.getState().gestureSnapshot;
-      } else if (live.gestureSnapshot !== null && live.gestureSnapshot !== armed) {
+      } else if (live.gestureSnapshot !== armed) {
         // a foreign gesture owns the store — this surface rides under
         // it and never ends it (the ownership guard in finish keeps
         // the bookkeeping clear without touching the store)
