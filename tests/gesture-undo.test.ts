@@ -139,10 +139,23 @@ describe("the canvas gesture wiring (source contract)", () => {
     );
   });
 
-  it("pointer-up pushes the gesture snapshot ONLY when the gesture moved", () => {
-    expect(canvasSource).toMatch(
-      /if \(drag\.moved\) store\.endGesture\(\);\s*else store\.cancelGesture\(\);/,
-    );
+  it("pointer-up ends the gesture through the net-zero guard — the unconditional endGesture (S128-B re-anchor of the moved-flag discrimination)", () => {
+    // Session 128 (S128-B / A128-L2): the terminal's old
+    // `if (drag.moved) endGesture else cancelGesture` discrimination
+    // discarded the armed anchor on a plain click while a foreign-
+    // surface ride (the panel's S66-A ride-under) had committed real
+    // edits under it — no history entry for the ride. The S111-A
+    // net-zero guard at the store layer now owns the click case
+    // (behavior-identical: no push, no future wipe) and pushes the
+    // anchor when the net state differs.
+    const armAt = canvasSource.indexOf('} else if (drag.kind === "move" || drag.kind === "resize") {');
+    expect(armAt).toBeGreaterThan(-1);
+    const endAt = canvasSource.indexOf('setDrag({ kind: "none" });', armAt);
+    expect(endAt).toBeGreaterThan(armAt);
+    const arm = canvasSource.slice(armAt, endAt);
+    expect(arm).toMatch(/store\.endGesture\(\);/);
+    expect(arm).not.toMatch(/store\.cancelGesture\(\);/);
+    expect(arm).not.toMatch(/if \(drag\.moved\)/);
   });
 
   it("the bare pointer-up commit() is GONE (the wrong-direction push)", () => {

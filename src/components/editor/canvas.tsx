@@ -475,12 +475,21 @@ export function Canvas() {
         }
       }
     } else if (drag.kind === "move" || drag.kind === "resize") {
-      // The live edits avoided history pushes; push the PRE-gesture
-      // snapshot captured at pointer-down — but ONLY when the gesture
-      // actually moved. A plain click (kind "move", zero movement)
-      // cancels: no redundant snapshot, and the redo stack survives.
-      if (drag.moved) store.endGesture();
-      else store.cancelGesture();
+      // The live edits avoided history pushes; the terminal pushes the
+      // PRE-gesture snapshot captured at pointer-down. Session 128
+      // (S128-B / A128-L2 — the seventy-sixth audit's Low): the call
+      // is UNCONDITIONAL — the S111-A net-zero guard at the layer
+      // that owns the transition (the F96/F97 doctrine) owns the
+      // plain-click case (identity-equal snapshots: no past push, no
+      // future wipe — behavior-identical to the old cancelGesture
+      // branch), and a foreign-surface RIDE that changed the net
+      // state gets its one coalesced history entry (the panel's
+      // S66-A ride-under commits its ticks with commit=false under
+      // this gesture; the pre-fix moved-flag discrimination
+      // discarded the anchor on a plain click, leaving the ride's
+      // persisted edits with NO history entry — the pre-ride state
+      // unreachable by a single Ctrl+Z).
+      store.endGesture();
     }
 
     setDrag({ kind: "none" });
@@ -671,6 +680,23 @@ export function Canvas() {
                   // stopPropagation, so a middle/right press on a
                   // handle armed the resize gesture.
                   if (drag.kind !== "none") return;
+                  // Session 128 (S128-A / A128-L1 — the seventy-sixth
+                  // audit's Low): the PAN-MODALITY refusal. The
+                  // container's own pointerdown routes pan-intent
+                  // presses to the pan branch (`button === 1 ||
+                  // isPanning()` — the Hand tool or Space held), but
+                  // that branch is unreachable through the
+                  // stopPropagation above, so a pan-intent press
+                  // landing on this 8×8 handle passed the entry guard
+                  // and the button gate and ran the FULL RESIZE ARM —
+                  // an unintended, autosave-persisted element resize
+                  // from a pan-intent press. The dropped press is the
+                  // honest refusal (the S123-A/S124-B/S125-A/S126-A/
+                  // S127-A doctrine); the handle stays a dead zone
+                  // under a pan-intent press — the safe-direction
+                  // trade, the user's pan continuing from any other
+                  // canvas point.
+                  if (isPanning()) return;
                   if (event.button !== 0) return;
                   const el = selected[0]!;
                   (event.target as HTMLElement).setPointerCapture?.(event.pointerId);

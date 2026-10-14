@@ -359,7 +359,12 @@ describe("S118-D the fine prints (A118-I1..I5)", () => {
   it("SURVIVAL (source): the seed's date forms + the idempotent wipe order stay", () => {
     expect(seedSource).toMatch(/lastOpenedAt: daysAgo\(2\)/);
     expect(seedSource).toMatch(/lastOpenedAt: daysAgo\(3\)/);
-    expect(seedSource).toMatch(/await db\.designElement\.deleteMany\(\);/);
+    // Session 128 (S128-E / B128-I1 — the F89/S102-B re-anchor class):
+    // the wipe family rides the interactive transaction's tx client
+    // now (the $transaction wrap, the 30s timeout) — the ORDER is
+    // unchanged (designElement -> project -> teamMember -> team ->
+    // user, the child-first cascade form).
+    expect(seedSource).toMatch(/await tx\.designElement\.deleteMany\(\);/);
   });
 
   it("SURVIVAL (source): the layers-panel shift-click additive consumer stays", () => {

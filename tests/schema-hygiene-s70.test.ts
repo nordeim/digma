@@ -178,3 +178,24 @@ describe("the dead columns are gone (S70-B / L-A1)", () => {
     expect(route).not.toMatch(/\bzIndex:/);
   });
 });
+
+describe("the TeamMember index pair (S128-D / B128-L2)", () => {
+  // Session 128 (S128-D / B128-L2 — the seventy-sixth audit's Low): the
+  // S127-D attribution named this family file, but the pair-form pin
+  // shipped only in tests/lows-s127.test.ts (the per-session spec, its
+  // 22-pin historical record). The invariant now lives in its family
+  // home too — the redundant single-column @@index([teamId]) stayed
+  // dropped (S127-D: the @@unique([teamId, email]) composite's
+  // leftmost prefix serves every teamId-only query — the S71-C
+  // redundant-index doctrine), and the composite unique stays present
+  // (S111-D's duplicate-invite closure).
+  it("the composite unique is present and the redundant single-column index is absent", () => {
+    // The pins anchor on the ATTRIBUTE-at-line-start forms (the
+    // F50(1) lesson: precision over censorship — the schema's own
+    // registration comments legitimately NAME the dropped index in
+    // prose).
+    const schema = src("prisma/schema.prisma");
+    expect(schema).toMatch(/@@unique\(\[teamId, email\]\)/);
+    expect(schema).not.toMatch(/^\s*@@index\(\[teamId\]\)\s*$/m);
+  });
+});
