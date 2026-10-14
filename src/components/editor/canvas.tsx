@@ -16,11 +16,19 @@ import { boundsOf, canvasFontFamily, clampPositionField, clampSizeField, clampZo
 // 8-handle resizing, panning (hand tool / space / middle button / wheel),
 // and ctrl+wheel zoom.
 
+// Session 129 (S129-B / A129-I1 — the seventy-seventh audit's first
+// Informational): the move/resize members' optional `moved` flag is
+// RETIRED — S128-B's unconditional endGesture removed its last reader
+// (the old terminal discrimination on that flag), so it had
+// been write-only since (the dead-member retirement convention: the
+// S72-D dead parameter, the S100-D dead width prop, the S63-G dead
+// avatar-color field — a future reader must not assume it still
+// discriminates anything).
 type DragState =
   | { kind: "none" }
   | { kind: "draw"; pointerId: number; type: DesignElementDTO["type"]; startX: number; startY: number; x: number; y: number; w: number; h: number }
-  | { kind: "move"; pointerId: number; startX: number; startY: number; lastX: number; lastY: number; ids: string[]; moved?: boolean }
-  | { kind: "resize"; pointerId: number; handle: Handle; startBounds: { x: number; y: number; w: number; h: number }; el: DesignElementDTO; moved?: boolean }
+  | { kind: "move"; pointerId: number; startX: number; startY: number; lastX: number; lastY: number; ids: string[] }
+  | { kind: "resize"; pointerId: number; handle: Handle; startBounds: { x: number; y: number; w: number; h: number }; el: DesignElementDTO }
   | { kind: "marquee"; pointerId: number; startX: number; startY: number; x: number; y: number; w: number; h: number; shift: boolean }
   | { kind: "pan"; pointerId: number; lastX: number; lastY: number };
 
@@ -317,7 +325,7 @@ export function Canvas() {
 
     if (drag.kind === "move") {
       store.moveElements(drag.ids, point.x - drag.lastX, point.y - drag.lastY);
-      setDrag({ ...drag, lastX: point.x, lastY: point.y, moved: true });
+      setDrag({ ...drag, lastX: point.x, lastY: point.y });
       return;
     }
 
@@ -368,7 +376,6 @@ export function Canvas() {
         },
         false,
       );
-      setDrag({ ...drag, moved: true });
     }
   }
 

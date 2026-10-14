@@ -35,6 +35,13 @@ async function main() {
   // multi-write surface closed this shape, the normalize-member-emails
   // script the direct form). The 30s timeout mirrors that script's
   // headroom over Prisma's 5s default.
+  // Session 129 (S129-C / B129-I1 — the seventy-seventh audit's first
+  // server-side Informational): the scrypt hash is computed BEFORE the
+  // transaction opens — register's own S83-D form (sync CPU work inside
+  // the SQLite writer window lengthens both the held transaction and
+  // the event-loop block mid-transaction; the hash has no transaction
+  // dependency).
+  const demoPasswordHash = hashPassword("Digma1234!");
   const demoUserId = await db.$transaction(
     async (tx) => {
       // Idempotency: wipe domain data, keep schema.
@@ -48,7 +55,7 @@ async function main() {
         data: {
           email: "demo@digma.app",
           name: "Designer",
-          passwordHash: hashPassword("Digma1234!"),
+          passwordHash: demoPasswordHash,
           avatarColor: "#3B82F6",
         },
       });

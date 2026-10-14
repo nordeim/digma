@@ -152,7 +152,11 @@ describe("the image upload's keyboard path (S66-C / A-6)", () => {
     expect(label![0]).toMatch(/onKeyDown=/);
     // the keydown activates the label's click (which forwards to the
     // hidden input via htmlFor)
-    const kd = source.match(/onKeyDown=\{\(event\) => \{[\s\S]*?\}\}/);
+    // Session 129 (S129-A re-anchor — the F89/S102-B class): the match
+    // scopes to the LABEL's own block — the SliderRow's new keyboard arm
+    // upstream made the file's FIRST onKeyDown the slider's, not the
+    // upload label's.
+    const kd = label![0].match(/onKeyDown=\{\(event\) => \{[\s\S]*?\}\}/);
     expect(kd).not.toBeNull();
     expect(kd![0]).toMatch(/event\.key === "Enter"/);
     expect(kd![0]).toMatch(/event\.key === " "/);

@@ -944,6 +944,16 @@ S137 = dict(S136)
 # flows).
 S138 = dict(S137)
 
+# s139 mapping (session 129 — the 105th reference audit's evidence set + the
+# S129 capture set). The standing S139 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S129 tree); no NEW
+# witness this session (the S129 pass is a keyboard arm that adds a modality
+# no capture journey exercises + the dead-flag retirement pure deletion +
+# the seed hash hoist computing identical rows + the by-design note
+# doc-only — every change window-scoped arm or comment/doc truth with
+# identical observable behavior on the seeded flows).
+S139 = dict(S138)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1074,6 +1084,8 @@ def expected_for(name: str):
         return S137.get(Path(name).stem)
     if name.startswith("ref-audit-s138/"):
         return S138.get(Path(name).stem)
+    if name.startswith("ref-audit-s139/"):
+        return S139.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1193,6 +1205,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s136").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s137").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s138").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s139").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

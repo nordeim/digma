@@ -146,7 +146,11 @@ describe("the editor slider contract (session 15 — the reference's Radix look)
       // became arrow wrappers carrying surface tokens (the interleaving
       // fix) — 600 -> 800 keeps the className inside the window; still
       // the SAME input element.
-      const chunk = after.slice(0, 800);
+      // Session 129 (S129-A — a third legitimate widening): the keyboard
+      // arm added the onKeyDown block (~140 chars) between the pointer
+      // handlers and className on every range input — 800 -> 1100 keeps
+      // the className inside the window; still the SAME input element.
+      const chunk = after.slice(0, 1100);
       expect(chunk, `unstyled range input near: ${chunk.slice(0, 60)}`).toMatch(
         /editor-range/,
       );

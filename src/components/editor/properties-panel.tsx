@@ -474,6 +474,22 @@ function HexColorRow({
 // keystroke re-arms a 150ms idle timer; the idle (or blur) ends the
 // gesture: one history entry per typing burst, and the badge converges
 // to Saved without waiting for a blur that may never come.
+// Session 129 (S129-A / A129-L1 — the seventy-seventh audit's Low):
+// the range input's value-changing keys. The keyboard arm below fires
+// ONLY on these — Tab / F5 / modifier combos must never arm (the arm
+// captures a snapshot and starts the 150ms idle; a non-value key has
+// no change to coalesce).
+const SLIDER_KEYS = new Set([
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "PageUp",
+  "PageDown",
+  "Home",
+  "End",
+]);
+
 const sliderGesture = (() => {
   let changed = false;
   let activeSurface: string | null = null;
@@ -686,6 +702,34 @@ const sliderGesture = (() => {
       armText(surface);
       markText();
     },
+    // Session 129 (S129-A / A129-L1 — the seventy-seventh audit's
+    // Low): the KEYBOARD arm. The five range inputs' gesture
+    // terminals were pointer-bound only — a keyboard-driven change
+    // (the arrow keys with OS key-repeat, PageUp/PageDown, Home/End)
+    // fired onChange with NO gesture armed, and the gesture-aware
+    // update committed a FULL history snapshot + redo wipe
+    // per keypress: holding an arrow across a 0-100 slider evicted the
+    // entire 60-deep past stack in seconds (the S62-A flooding class
+    // through the one dispatch surface the pointer seam never
+    // covered). The keydown arms the coalescing burst BEFORE the
+    // value change (keydown precedes the input's default action);
+    // the onChange's existing tick marks; the 150ms idle terminates
+    // — a key-repeat burst coalesces into ONE entry, a pause >150ms
+    // a fresh intent (the armText begin-on-demand form). NO blur
+    // terminal: a blur mid-pointer-drag would pass the same-surface
+    // token check and end the LIVE drag's gesture (the S126-B class)
+    // — the idle is the keyboard family's sole terminal. The
+    // discrimination at the head is load-bearing (the S123-C
+    // lesson): a live POINTER gesture on this surface (armed via
+    // begin, which clears the idle) must NOT re-arm the idle here —
+    // the 150ms terminal would pass the ownership check and
+    // endGesture MID-DRAG. The keyboard ticks ride the live gesture
+    // with commit=false; the pointer's own terminals stay the sole
+    // enders.
+    keyTick: (surface: string) => {
+      if (activeSurface === surface && idleTimer === null) return;
+      armText(surface);
+    },
     armText,
     markText,
     finish,
@@ -800,6 +844,9 @@ function SliderRow({
           onPointerUp={() => sliderGesture.finish(`slider:${label}`)}
           onPointerCancel={() => sliderGesture.finish(`slider:${label}`)}
           onLostPointerCapture={() => sliderGesture.finish(`slider:${label}`)}
+          onKeyDown={(event) => {
+            if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick(`slider:${label}`);
+          }}
           onChange={(event) => {
             sliderGesture.tick();
             onChange(Number(event.target.value));
@@ -901,6 +948,9 @@ function GradientPanel({
               onPointerUp={() => sliderGesture.finish("slider:Gradient angle")}
               onPointerCancel={() => sliderGesture.finish("slider:Gradient angle")}
               onLostPointerCapture={() => sliderGesture.finish("slider:Gradient angle")}
+              onKeyDown={(event) => {
+                if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick("slider:Gradient angle");
+              }}
               onChange={(event) => {
                 sliderGesture.tick();
                 apply({ ...gradient, angle: Number(event.target.value) });
@@ -1783,6 +1833,9 @@ export function TransformSection({
             onPointerUp={() => sliderGesture.finish("slider:Rotation")}
             onPointerCancel={() => sliderGesture.finish("slider:Rotation")}
             onLostPointerCapture={() => sliderGesture.finish("slider:Rotation")}
+            onKeyDown={(event) => {
+              if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick("slider:Rotation");
+            }}
             onChange={(event) => {
               sliderGesture.tick();
               update({ rotation: Number(event.target.value) });
@@ -1823,6 +1876,9 @@ export function TransformSection({
             onPointerUp={() => sliderGesture.finish("slider:Scale")}
             onPointerCancel={() => sliderGesture.finish("slider:Scale")}
             onLostPointerCapture={() => sliderGesture.finish("slider:Scale")}
+            onKeyDown={(event) => {
+              if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick("slider:Scale");
+            }}
             onChange={(event) => {
               sliderGesture.tick();
               update({ scale: Number(event.target.value) });
@@ -1873,6 +1929,9 @@ export function OpacitySection({
           onPointerUp={() => sliderGesture.finish("slider:Opacity")}
           onPointerCancel={() => sliderGesture.finish("slider:Opacity")}
           onLostPointerCapture={() => sliderGesture.finish("slider:Opacity")}
+          onKeyDown={(event) => {
+            if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick("slider:Opacity");
+          }}
           onChange={(event) => {
             sliderGesture.tick();
             update({ opacity: Number(event.target.value) / 100 });

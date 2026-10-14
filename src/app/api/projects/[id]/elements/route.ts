@@ -233,6 +233,13 @@ export async function POST(request: NextRequest, { params }: Params) {
     // Session 75 (S75-G / B75-F5): the catch joins the family's
     // instanceof dialect (the PUT's own form) — the duck-typed cast
     // would swallow any non-Prisma error carrying the same code string.
+    // Session 129 (S129-D / B129-I2): the P2025 arm stays absent BY DESIGN — the
+    // POST's only single-row-keyed write is the inner tx.project.update
+    // (the S112-C counter increment), which runs only AFTER the
+    // FK-checked tx.designElement.create; SQLite's serialized writers
+    // mean the vanished-project race always answers P2003 at the
+    // create first (the verify-otp sibling's documented-absence form —
+    // re-derive this note if the tx body ever reorders its writes).
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
       return fail("NOT_FOUND", "Project not found", 404);
     }
