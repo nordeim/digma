@@ -72,8 +72,8 @@ const PAD = readFileSync(
 // 1165 -> 1174 unit / 156 -> 157 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "1773";
-const FILES = "188";
+const UNIT = "1795";
+const FILES = "189";
 
 // ---------------------------------------------------------------------------
 // S95-A — the .editor-range track-fill token indirection (the F81
@@ -232,8 +232,11 @@ describe("the canvas onPointerUp none-guard (S95-D — the onPointerMove sibling
     // re-rendered for nothing (memoized children bail; the shell is the
     // cost). The guard is provably safe: with kind === "none" every
     // branch (draw/marquee/move/resize) skips and the only effect is the
-    // same-value write. The exact onPointerMove:215 form.
-    const idx = CANVAS.indexOf("function onPointerUp()");
+    // same-value write. The exact onPointerMove:215 form. (Re-anchored
+    // session 127, S127-B — the pointer-ownership signature: the
+    // optional event joins the head for the foreign-release refusal;
+    // the none-guard contract unchanged.)
+    const idx = CANVAS.indexOf("function onPointerUp(event?: React.PointerEvent)");
     expect(idx).toBeGreaterThanOrEqual(0);
     const head = CANVAS.slice(idx, idx + 400);
     expect(head).toMatch(/if \(drag\.kind === "none"\) return;/);

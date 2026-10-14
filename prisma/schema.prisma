@@ -184,7 +184,13 @@ model TeamMember {
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  @@index([teamId])
+  // Session 127 (S127-D / B127-I1 — the seventy-fifth audit's
+  // Informational): the redundant single-column @@index([teamId]) is
+  // GONE — the S111-D compound uniqueness below carries teamId as its
+  // leftmost prefix, so every teamId-only query rides the unique
+  // index and the single-column copy served none while adding write
+  // amplification to every member write (the S71-C redundant-index
+  // doctrine's missed sibling).
   // Session 111 (S111-D / B-I3 — the fifty-ninth audit, the reference
   // gate LIFTED): the compound uniqueness — a (teamId, email) pair
   // commits exactly once. The 87th reference audit measured the

@@ -2626,3 +2626,23 @@ Stage Summary:
 - Delivered S126-A (the headline: the canvas pointerdown's live-drag entry guard — the two-pointer orphan/overwrite interleave closed), S126-B (the slider terminal's per-input tokens — the release-side twin of S125-B), S126-C (the SKILL per-file count truth), S126-D (the PAD token-form re-anchor + the S9 code swap)
 - Gates: 1773 unit / 188 files · 73 smoke · 262 e2e zero flakes · nav 9/9 (103rd session) · SEO 4/4 · the 102nd ref audit NO DRIFT (clip pin 63rd consecutive) · dimensions 719/719
 - Docs aligned: PAD v1.105.0, digma_SKILL v1.104.0 + F113, AGENTS session-126 bullet, session_222.md, this worklog
+
+---
+Task ID: digma-s127
+Agent: lead (Super Z)
+
+Task: the operator's session-cycle directive for the digma repo — refresh, review mandated docs, 75th Mode C audit, TDD remediation, capture, docs alignment, SSH-wrapper push to main.
+
+Work Log:
+- Workspace SURVIVED (no reset — the pull brought only the operator's session_224.md transcript; the tree at 9851256 = the S126 delivery 7c44f6f + the log pushes); the environment intact (.env with DATABASE_URL="file:../db/custom.db", db/ at root, chromium-1243); the DB PRISTINE 1/2/6/1/3; all S126 seams verified intact in source; tests/lows-s126.test.ts green live 19/19
+- Baseline six gates green: lint / typecheck / 1773 unit / 188 files / build 27 routes / smoke 73/73 (the parent-shell foreign-URL trap refused once — the S73-D mechanism; the post-smoke re-seed) / e2e 262/262 (6.7m, zero flakes)
+- Three s127 scripts derived from the s126 forms (22/66/6, zero residue); parity gates green on the first pass: the 103rd reference audit NO DRIFT (clip byte-identical 64th consecutive) · mobile-nav 9/9 the 104th session · SEO 4/4
+- 75th Mode C audit (two fresh-eyes auditors, findings lead-verified at their seams — and the lead's verification EXTENDED the headline's harm beyond the auditor's fix shape): 0 Critical / 0 High / 1 Medium / 1 Low / 2 Informational (A127-M1 the resize-handle pointerdown's bypass of the S126-A guard — the stopPropagation private entrance — PLUS the drag state's missing pointer identity: the refused pointer's moves still injected through BOTH paths and the foreign release terminated the live drag; A127-I1 the handle's missing button gate; B127-L1 the PAD §10's ten stale-status rows; B127-I1 the TeamMember redundant @@index([teamId]))
+- TDD remediation S127-A..S127-D: the handle's live-drag entry guard + button gate; the drag's pointer ownership (pointerId on the five DragState arms + the foreign-move refusal after the S57-A ghost guard + the foreign-release refusal with the event-optional signature + the handle's up-wrapper event pass-through); the PAD §10 status re-anchors (ten rows) + the status-sweep registration; the redundant index drop + the schema-hygiene pin extension + the schema push
+- 22 pins RED->GREEN in tests/lows-s127.test.ts (16 RED / 6 survival, after five F89 anchor repairs); the collateral family exactly as forecast (3 failures / 3 files: the PAD §11 rows canvas 883->945 / schema 200->206 + two prior-spec pins re-anchored onto the pointerId forms); count family onto 1795/189 (51 sites); the LIVE ANCHOR family (17 failures) resolved by the docs step
+- Final gates green 1795/189 · 73 · 262 (the first run's one toast-dismiss flake non-reproducing — green in isolation and on the full re-run, the F59 corollary's 49th consecutive); nav 9/9 + SEO 4/4 on the FINAL build; the schema push + the pristine re-seed before the capture; capture ALL CAPTURED (the s127 script derived at 25 raw diff lines; every standing witness re-verified LIVE; 0 outside-window e2e-touched PNGs — the capture's set covered every e2e write); DB pristine post-capture; dimension checker 724/724 (the s137 mapping); docs aligned (PAD v1.106.0, digma_SKILL v1.105.0 + F114, AGENTS session-127 bullet, session_225.md)
+
+Stage Summary:
+- Delivered S127-A (the pointerdown face: the handle's live-drag entry guard + button gate — the private entrance closed), S127-B (the move/release face: the drag's pointer ownership — the refused pointer's moves no longer inject through either path, the foreign release no longer terminates), S127-C (the PAD §10 status truth — ten rows flipped onto their closing sessions, the status sweep joined to the per-session checklist), S127-D (the redundant index drop)
+- Gates: 1795 unit / 189 files · 73 smoke · 262 e2e zero flakes · nav 9/9 (104th session) · SEO 4/4 · the 103rd ref audit NO DRIFT (clip 64th consecutive) · dimensions 724/724
+- Docs aligned: PAD v1.106.0, digma_SKILL v1.105.0 + F114, AGENTS session-127 bullet, session_225.md, this worklog

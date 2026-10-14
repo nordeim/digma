@@ -155,13 +155,15 @@ beforeEach(() => {
 
 describe("S118-A the shift+marquee additive commit (A118-L1 — the headline)", () => {
   it("DEFECT (source): the marquee DragState member captures the shift flag at pointerdown", () => {
-    // The type carries the flag...
+    // The type carries the flag... (re-anchored session 127, S127-B —
+    // the pointer-ownership member: pointerId joins every non-none
+    // DragState arm; the shift flag contract unchanged)
     expect(canvasSource).toMatch(
-      /\| \{ kind: "marquee"; startX: number; startY: number; x: number; y: number; w: number; h: number; shift: boolean \}/,
+      /\| \{ kind: "marquee"; pointerId: number; startX: number; startY: number; x: number; y: number; w: number; h: number; shift: boolean \}/,
     );
     // ...and the pointerdown arm captures the live modifier.
     expect(canvasSource).toMatch(
-      /setDrag\(\{ kind: "marquee", startX: point\.x, startY: point\.y, x: point\.x, y: point\.y, w: 0, h: 0, shift: event\.shiftKey \}\);/,
+      /setDrag\(\{ kind: "marquee", pointerId: event\.pointerId, startX: point\.x, startY: point\.y, x: point\.x, y: point\.y, w: 0, h: 0, shift: event\.shiftKey \}\);/,
     );
   });
 

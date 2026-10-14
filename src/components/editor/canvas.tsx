@@ -18,11 +18,11 @@ import { boundsOf, canvasFontFamily, clampPositionField, clampSizeField, clampZo
 
 type DragState =
   | { kind: "none" }
-  | { kind: "draw"; type: DesignElementDTO["type"]; startX: number; startY: number; x: number; y: number; w: number; h: number }
-  | { kind: "move"; startX: number; startY: number; lastX: number; lastY: number; ids: string[]; moved?: boolean }
-  | { kind: "resize"; handle: Handle; startBounds: { x: number; y: number; w: number; h: number }; el: DesignElementDTO; moved?: boolean }
-  | { kind: "marquee"; startX: number; startY: number; x: number; y: number; w: number; h: number; shift: boolean }
-  | { kind: "pan"; lastX: number; lastY: number };
+  | { kind: "draw"; pointerId: number; type: DesignElementDTO["type"]; startX: number; startY: number; x: number; y: number; w: number; h: number }
+  | { kind: "move"; pointerId: number; startX: number; startY: number; lastX: number; lastY: number; ids: string[]; moved?: boolean }
+  | { kind: "resize"; pointerId: number; handle: Handle; startBounds: { x: number; y: number; w: number; h: number }; el: DesignElementDTO; moved?: boolean }
+  | { kind: "marquee"; pointerId: number; startX: number; startY: number; x: number; y: number; w: number; h: number; shift: boolean }
+  | { kind: "pan"; pointerId: number; lastX: number; lastY: number };
 
 type Handle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
@@ -140,7 +140,7 @@ export function Canvas() {
     if (drag.kind !== "none") return;
     if (event.button === 1 || isPanning()) {
       (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
-      setDrag({ kind: "pan", lastX: event.clientX, lastY: event.clientY });
+      setDrag({ kind: "pan", pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY });
       return;
     }
     if (event.button !== 0) return;
@@ -156,6 +156,7 @@ export function Canvas() {
       (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
       setDrag({
         kind: "draw",
+        pointerId: event.pointerId,
         type: drawType,
         startX: point.x,
         startY: point.y,
@@ -235,7 +236,7 @@ export function Canvas() {
       // branch — the element keeps following the pointer across the
       // toolbar/panels instead of committing mid-drag at the leave.
       (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-      setDrag({ kind: "move", startX: point.x, startY: point.y, lastX: point.x, lastY: point.y, ids: nextIds });
+      setDrag({ kind: "move", pointerId: event.pointerId, startX: point.x, startY: point.y, lastX: point.x, lastY: point.y, ids: nextIds });
     } else {
       if (!event.shiftKey) useEditorStore.getState().deselectAll();
       // Session 64 (S64-G / A-5): same container capture — the marquee
@@ -245,7 +246,7 @@ export function Canvas() {
       // POINTERDOWN — the commit consumes the captured flag, never a
       // re-read (the key may lift mid-drag; the intent was armed at
       // the start).
-      setDrag({ kind: "marquee", startX: point.x, startY: point.y, x: point.x, y: point.y, w: 0, h: 0, shift: event.shiftKey });
+      setDrag({ kind: "marquee", pointerId: event.pointerId, startX: point.x, startY: point.y, x: point.x, y: point.y, w: 0, h: 0, shift: event.shiftKey });
     }
   }
 
@@ -261,6 +262,27 @@ export function Canvas() {
       onPointerUp();
       return;
     }
+    // Session 127 (S127-B / A127-M1 — the drag's pointer ownership, the
+    // move face): the FOREIGN-MOVE refusal. The drag state carries its
+    // owning pointerId (every arm sets it), and this handler branches on
+    // drag.kind alone — pre-fix, a second pointer whose pointerdown was
+    // REFUSED (the container's S126-A guard or the handle's S127-A
+    // guard) still injected its pressed moves into the live drag: the
+    // moves pass the ghost guard above (buttons !== 0 — the finger is
+    // down) and arrive through BOTH paths — the handle's own
+    // onPointerMove wrapper (hit-testing on a non-captured pointer over
+    // a handle) and the plain-canvas hit-testing path (an S126-A
+    // residual) — each running moveElements/the resize math with the
+    // inter-finger delta, the element teleporting between the two
+    // pointers. The refusal: the drag answers its OWN pointer's moves;
+    // a foreign pointer's moves are the honest refusal (the live
+    // gesture's own terminals stay the sole enders). The placement
+    // AFTER the S57-A ghost guard is load-bearing: the heal must stay
+    // non-discriminating — the owner's lost-up scenario has NO further
+    // owner events, so an owner-discriminated heal would wedge the
+    // drag; a foreign hover's early termination stays the ghost guard's
+    // own registered safe-direction trade.
+    if (event.pointerId !== drag.pointerId) return;
     const store = useEditorStore.getState();
 
     if (drag.kind === "pan") {
@@ -350,12 +372,25 @@ export function Canvas() {
     }
   }
 
-  function onPointerUp() {
+  function onPointerUp(event?: React.PointerEvent) {
     // A plain hover-out with no gesture in flight (kind "none") has
     // nothing to end — the tail setDrag would write a fresh same-value
     // object identity and re-render the shell for nothing (the
     // onPointerMove none-guard's sibling, session 95 S95-D).
     if (drag.kind === "none") return;
+    // Session 127 (S127-B / A127-M1 — the drag's pointer ownership, the
+    // release face): the FOREIGN-RELEASE refusal. All three container
+    // attachments (up/leave/cancel) flow the event here, and pre-fix
+    // any of them TERMINATED the live drag: a second pointer whose
+    // pointerdown was refused releasing over the canvas, sliding off
+    // its edge (leave), or being canceled by the browser ended the
+    // OWNER's drag mid-flight. The refusal: the drag ends at its OWN
+    // pointer's terminal — a foreign pointer's up/leave/cancel
+    // early-returns. The ghost heal's no-arg call (onPointerUp()
+    // above) is non-discriminating BY DESIGN: the heal-any-pointer
+    // doctrine is the S57-A load-bearing form. The handle's up-wrapper
+    // passes its event — the handle's captured up IS the owner's.
+    if (event && event.pointerId !== drag.pointerId) return;
     const store = useEditorStore.getState();
 
     if (drag.kind === "draw") {
@@ -611,6 +646,32 @@ export function Canvas() {
                 role="presentation"
                 onPointerDown={(event) => {
                   event.stopPropagation();
+                  // Session 127 (S127-A / A127-M1 — the seventy-fifth
+                  // audit's Medium): the handle's LIVE-DRAG entry guard.
+                  // The S59-G one-dispatch contract above stops
+                  // propagation at the handle, so the event never
+                  // reaches the container's S126-A-guarded
+                  // onPointerDown — this site was the ONE canvas
+                  // pointerdown the S126-A closure did not cover. A
+                  // second pointer pressing a handle through a live
+                  // first-pointer move/resize drag ran the unconditional
+                  // beginGesture (OVERWRITING the armed pre-drag
+                  // snapshot — the A125-L2 lost-entry class: one Ctrl+Z
+                  // leaves the element half-moved) and setDrag
+                  // (REPLACING the shared drag state — the A126-M1
+                  // class: the move drag orphaned), and both pointers
+                  // then drove the one resize through their separate
+                  // captures — the dual-drive teleport by the
+                  // inter-finger delta per event until the first
+                  // release. The dropped pointerdown is the honest
+                  // refusal (the S123-A/S124-B/S125-A/S126-A doctrine):
+                  // the live gesture's own terminals stay the sole
+                  // enders. The button gate below (A127-I1): the
+                  // container's own form was unreachable through the
+                  // stopPropagation, so a middle/right press on a
+                  // handle armed the resize gesture.
+                  if (drag.kind !== "none") return;
+                  if (event.button !== 0) return;
                   const el = selected[0]!;
                   (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
                   // Session 56 (S56-A): the resize gesture captures its
@@ -622,6 +683,7 @@ export function Canvas() {
                   useEditorStore.getState().beginGesture();
                   setDrag({
                     kind: "resize",
+                    pointerId: event.pointerId,
                     handle: handle.id,
                     startBounds: { x: el.x, y: el.y, w: el.width, h: el.height },
                     el,
@@ -641,7 +703,7 @@ export function Canvas() {
                 }}
                 onPointerUp={(event) => {
                   event.stopPropagation();
-                  onPointerUp();
+                  onPointerUp(event);
                 }}
               />
             ))}
