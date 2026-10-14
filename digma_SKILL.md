@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite traced-schema trap trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.103.0
+version: 1.104.0
 last_updated: 2026-10-14
-project_state: "1754 unit checks green · 262 Playwright checks green · 73 smoke checks green · build 27 routes"
+project_state: "1773 unit checks green · 262 Playwright checks green · 73 smoke checks green · build 27 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -68,7 +68,7 @@ project_state: "1754 unit checks green · 262 Playwright checks green · 73 smok
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.1 | 1754 checks; `*.test.ts` only |
+| Unit tests | Vitest | ≥5.0.1 | 1773 checks; `*.test.ts` only |
 | E2E tests | Playwright | ≥1.63.0 | 262 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
@@ -153,7 +153,7 @@ All tokens live in ONE plain `@theme` block in `src/app/globals.css` — LITERAL
 
 ## §6 State Management Deep Dive (the ONE Zustand store)
 
-`src/components/editor/editor-store.ts` (483 lines) owns ALL editor state: `projectId`, `projectName`, `backgroundColor`, `elements[]`, `selectedIds[]`, `tool`, `zoom/panX/panY`, `saveState`, `past[]/future[]` undo snapshots (plus `restoreSnapshot` — the AI reply's per-message Revert, session 27: an UNDOABLE restore that pushes the current state onto `past` first, so Ctrl+Z undoes the revert itself). Views and panels READ the store and CALL actions; nothing else owns canvas state.
+`src/components/editor/editor-store.ts` (730 lines) owns ALL editor state: `projectId`, `projectName`, `backgroundColor`, `elements[]`, `selectedIds[]`, `tool`, `zoom/panX/panY`, `saveState`, `past[]/future[]` undo snapshots (plus `restoreSnapshot` — the AI reply's per-message Revert, session 27: an UNDOABLE restore that pushes the current state onto `past` first, so Ctrl+Z undoes the revert itself). Views and panels READ the store and CALL actions; nothing else owns canvas state.
 
 **The replace contract (ADR-005).** Elements are client-sovereign rows: local ids (`local-…`) are created optimistically by `addElements`; the autosave debounces 800ms and `PUT`s the FULL element list to `/api/projects/[id]/elements`; the handler transactionally `deleteMany` + `createMany` (array order = `sortOrder` = z-draw order) and returns fresh server ids; the store remaps ids by index so selection survives. NEVER add per-element PATCH autosave — partial-failure complexity for zero user-visible gain, and it breaks undo/redo and AI batch operations.
 
@@ -184,7 +184,7 @@ client applies operations: add | update (may carry scale) | delete
 
 ## §8 Auth & Security Implementation
 
-**Hand-rolled (ADR-003), 127 lines in `src/lib/auth.ts`:** scrypt password hashes (N=16384, salt:hash format, constant-time compare) + HMAC-SHA256 stateless tokens `userId.version.expiry.signature` in an httpOnly `digma_session` cookie (7-day TTL, `secure` in production) — the four-part versioned form (session 67, S67-A): a password reset increments `tokenVersion` and evicts every previously minted cookie. `getSessionUser()` verifies signature + expiry + user existence + the tokenVersion match on every request.
+**Hand-rolled (ADR-003), 147 lines in `src/lib/auth.ts`:** scrypt password hashes (N=16384, salt:hash format, constant-time compare) + HMAC-SHA256 stateless tokens `userId.version.expiry.signature` in an httpOnly `digma_session` cookie (7-day TTL, `secure` in production) — the four-part versioned form (session 67, S67-A): a password reset increments `tokenVersion` and evicts every previously minted cookie. `getSessionUser()` verifies signature + expiry + user existence + the tokenVersion match on every request.
 
 **Gates:** every page calls `getSessionUser()` + `redirect("/login?from_url=…")`; every data route's first statement is `requireSession()` → 401 envelope. Only `/api/health` and `/api/auth/*` are public.
 
@@ -239,7 +239,7 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 1754/1754
+bun run test          # 1773/1773
 bun run build         # 27 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 71/71 (health, auth gate, CRUD, AI, rate limit, logout, the S82-D body-cap pair, the S111-D invite-dedup trio, the S112-B crud-limiter trio, the S112-C fillImage pair)
 bun run test:e2e      # 262/262 (39 spec files + the setup project; the mobile-nav 10-check suite, the sessionNN-fixes discriminators)
@@ -579,7 +579,7 @@ Rule: portal layers stack Radix-default (`z-50`); the Toaster outranks dialogs s
 
 ## §19 Color & Token Reference (Complete)
 
-The single source is the `@theme` block in `src/app/globals.css` (138 lines). Full table in PAD §5.2. Editor accent colors used on canvas elements (fill defaults): `DEFAULT_FILL` and named colors in `src/lib/editor.ts` — clamped/verified through `src/lib/validation.ts` (hex regex) and `sanitizeLlmOperations` for AI-originated values.
+The single source is the `@theme` block in `src/app/globals.css` (267 lines). Full table in PAD §5.2. Editor accent colors used on canvas elements (fill defaults): `DEFAULT_FILL` and named colors in `src/lib/editor.ts` — clamped/verified through `src/lib/validation.ts` (hex regex) and `sanitizeLlmOperations` for AI-originated values.
 
 Contrast (measured): foreground `#0f172a` on white ≈ 15.9:1 (AAA); muted-foreground `#6b7280` ≈ 5.9:1 (AA); editor text `#e6edf3` on `#0d1117` ≈ 13.4:1 (AAA). Top-bar avatars: `#3B82F6` (user) + `#10B981` ("S") on white text.
 
@@ -656,3 +656,6 @@ Prisma models (5): `User` (email unique, scrypt passwordHash, avatarColor), `Pro
 | Push procedure | `docs/ssh_git_wrapper_v3.py` + `docs/how-to-git-push-using-ssh-wrapper_SKILL.md` |
 | Demo login | `demo@digma.app` / `Digma1234!` |
 | Reference app | `https://digma-371dfd0d.base44.app/` (operator-supplied credentials — ask the repo owner; never commit them) |
+
+
+113. **F113 — the session-126 family: a single-pointer state machine facing multi-pointer events needs an ENTRY GUARD — the census question for every shared drag-state surface is "what happens on the SECOND pointer's arrival", and the harm splits into the ORPHAN (the replaced state strands the armed gesture — no terminal ever runs for it) and the OVERWRITE (the fresh arm destroys the live gesture's undo base mid-flight); a token check that discriminates by FAMILY shares one token across inputs — the census unit for terminals is the INPUT, and the press-side and release-side interleavings are separate doors through the same guard; and per-file line-count claims are an uncovered doc surface — a count sweep is a tree-wide grep at the claim form, including the skill doc's own per-file parentheticals.** THE ENTRY-GUARD MEMBER (A126-M1 — the headline): the canvas's drag machine is one shared state object while pointer events are multi-pointer — a second pointerdown through a live move/resize drag replaced the drag state wholesale; the marquee/pan branches never touch the gesture and the pointerup terminal only ends move/resize, so the armed snapshot was orphaned into the autosave's gesture-deferral PUT loop with every undo arm stood down; the census question for every drag-state surface is "which branches can a second pointer reach while the first drag is live, and does each either refuse or properly end the live gesture first" — the honest refusal (the dropped pointerdown) is the safe-direction form the S123-A/S124-B/S125-A closures established. THE TERMINAL-DISCRIMINATION MEMBER (A126-L1): the S125-B closure fixed the press side of the shared-token interleave but the terminal side still discriminated by family string — after the second pointer armed a fresh gesture, the FIRST pointer's release passed both the token check and the ownership check (the closure's own armed update) and terminated the second gesture; the census question for every terminal guard is "does the check discriminate the INPUT that fired it, or only the family it belongs to" — a per-input token (the label-derived form) makes the stale release early-return, and press-side and release-side interleavings must BOTH be re-derived when a gesture seam changes. THE COUNT-SWEEP MEMBER (B126-L1): the count family re-anchored unit totals and the PAD §11 rows for a hundred cycles while the SKILL doc's own per-file line claims (483/127/138 against live 730/147/267) drifted untouched — a count sweep's universal claim must cover every doc surface that carries the claim form, and the per-file parenthetical is a count claim like any other; the S126-C re-anchor lands the three counts and joins the per-file claims to the per-session re-anchor checklist.

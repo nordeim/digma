@@ -497,6 +497,20 @@ const sliderGesture = (() => {
   };
   const ownsCurrentGesture = () =>
     armed !== null && useEditorStore.getState().gestureSnapshot === armed;
+  // Session 126 (S126-B / A126-L1 — the release-side twin of the
+  // S125-B closure): the token check below discriminates by INPUT,
+  // not by family. All five panel sliders shared the one "slider"
+  // token, so after a second pointer's press armed a FRESH gesture
+  // (the S125-B flush + fresh arm — the closure's own `armed` update
+  // pointing at the second gesture), the FIRST pointer's release on
+  // the first slider passed BOTH this token check and the ownership
+  // check and terminated the SECOND gesture: cancelGesture discarding
+  // its armed snapshot, or endGesture pushing its entry mid-drag, the
+  // surviving ticks then committing per-tick with history (the S62-A
+  // flooding the seam exists to prevent). The per-input tokens (the
+  // SliderRow's `slider:${label}` template + the four inline
+  // per-section forms) make a stale release early-return here: the
+  // active surface's own terminal stays the sole ender.
   const finish = (surface: string) => {
     // Session 64 (S64-B — the twelfth audit's A-2): a terminal signal
     // from a surface that no longer owns the gesture is a NO-OP. The
@@ -782,10 +796,10 @@ function SliderRow({
           max={max}
           step={step}
           value={value}
-          onPointerDown={() => sliderGesture.begin("slider")}
-          onPointerUp={() => sliderGesture.finish("slider")}
-          onPointerCancel={() => sliderGesture.finish("slider")}
-          onLostPointerCapture={() => sliderGesture.finish("slider")}
+          onPointerDown={() => sliderGesture.begin(`slider:${label}`)}
+          onPointerUp={() => sliderGesture.finish(`slider:${label}`)}
+          onPointerCancel={() => sliderGesture.finish(`slider:${label}`)}
+          onLostPointerCapture={() => sliderGesture.finish(`slider:${label}`)}
           onChange={(event) => {
             sliderGesture.tick();
             onChange(Number(event.target.value));
@@ -883,10 +897,10 @@ function GradientPanel({
               max={360}
               step={1}
               value={gradient.angle}
-              onPointerDown={() => sliderGesture.begin("slider")}
-              onPointerUp={() => sliderGesture.finish("slider")}
-              onPointerCancel={() => sliderGesture.finish("slider")}
-              onLostPointerCapture={() => sliderGesture.finish("slider")}
+              onPointerDown={() => sliderGesture.begin("slider:Gradient angle")}
+              onPointerUp={() => sliderGesture.finish("slider:Gradient angle")}
+              onPointerCancel={() => sliderGesture.finish("slider:Gradient angle")}
+              onLostPointerCapture={() => sliderGesture.finish("slider:Gradient angle")}
               onChange={(event) => {
                 sliderGesture.tick();
                 apply({ ...gradient, angle: Number(event.target.value) });
@@ -1765,10 +1779,10 @@ export function TransformSection({
             max={180}
             step={1}
             value={element.rotation}
-            onPointerDown={() => sliderGesture.begin("slider")}
-            onPointerUp={() => sliderGesture.finish("slider")}
-            onPointerCancel={() => sliderGesture.finish("slider")}
-            onLostPointerCapture={() => sliderGesture.finish("slider")}
+            onPointerDown={() => sliderGesture.begin("slider:Rotation")}
+            onPointerUp={() => sliderGesture.finish("slider:Rotation")}
+            onPointerCancel={() => sliderGesture.finish("slider:Rotation")}
+            onLostPointerCapture={() => sliderGesture.finish("slider:Rotation")}
             onChange={(event) => {
               sliderGesture.tick();
               update({ rotation: Number(event.target.value) });
@@ -1805,10 +1819,10 @@ export function TransformSection({
             max={3}
             step={0.1}
             value={element.scale ?? 1}
-            onPointerDown={() => sliderGesture.begin("slider")}
-            onPointerUp={() => sliderGesture.finish("slider")}
-            onPointerCancel={() => sliderGesture.finish("slider")}
-            onLostPointerCapture={() => sliderGesture.finish("slider")}
+            onPointerDown={() => sliderGesture.begin("slider:Scale")}
+            onPointerUp={() => sliderGesture.finish("slider:Scale")}
+            onPointerCancel={() => sliderGesture.finish("slider:Scale")}
+            onLostPointerCapture={() => sliderGesture.finish("slider:Scale")}
             onChange={(event) => {
               sliderGesture.tick();
               update({ scale: Number(event.target.value) });
@@ -1855,10 +1869,10 @@ export function OpacitySection({
           max={100}
           step={1}
           value={Math.round(element.opacity * 100)}
-          onPointerDown={() => sliderGesture.begin("slider")}
-          onPointerUp={() => sliderGesture.finish("slider")}
-          onPointerCancel={() => sliderGesture.finish("slider")}
-          onLostPointerCapture={() => sliderGesture.finish("slider")}
+          onPointerDown={() => sliderGesture.begin("slider:Opacity")}
+          onPointerUp={() => sliderGesture.finish("slider:Opacity")}
+          onPointerCancel={() => sliderGesture.finish("slider:Opacity")}
+          onLostPointerCapture={() => sliderGesture.finish("slider:Opacity")}
           onChange={(event) => {
             sliderGesture.tick();
             update({ opacity: Number(event.target.value) / 100 });

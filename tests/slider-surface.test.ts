@@ -109,8 +109,14 @@ describe("the surface-aware sliderGesture (session 64, S64-B / A-2)", () => {
     // autosave loop) into textTick's begin-on-demand branch — the
     // arm-on-demand line below is the text surface's arm now. The
     // slider's pointerdown pair is unchanged.
-    expect(panelSource).toMatch(/sliderGesture\.begin\("slider"\)/);
-    expect(panelSource).toMatch(/sliderGesture\.finish\("slider"\)/);
+    // Session 126 (S126-B — the per-input re-anchor): the shared
+    // "slider" token became the per-input forms — the SliderRow's
+    // `slider:${label}` template and the inline per-section literals
+    // (the release-side twin of the S125-B closure: a stale release
+    // early-returns at the token check; the shared form is gone).
+    expect(panelSource).toMatch(/sliderGesture\.begin\(`slider:\$\{label\}`\)/);
+    expect(panelSource).toMatch(/sliderGesture\.finish\("slider:Rotation"\)/);
+    expect(panelSource).not.toMatch(/sliderGesture\.(begin|finish)\("slider"\)/);
     // Session 66 (S66-A, en-route): the text surface's arm is the
     // tick's DEFAULT parameter — the swatches and the Content input
     // arm under "text" (their blur terminals match), the number fields

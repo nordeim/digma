@@ -162,8 +162,10 @@ describe("the focus-begin retirement (session 66, S66-A / A-4)", () => {
     // PRESERVATION: the slider surface arms on POINTERDOWN — the drag
     // begins immediately and its terminal is the pointerup family
     // (plus the S65-B unmount reset). The bare-focus defect never
-    // applied here.
-    expect(panelSource).toMatch(/onPointerDown=\{\(\) => sliderGesture\.begin\("slider"\)\}/);
-    expect(panelSource).toMatch(/onPointerUp=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
+    // applied here. Session 126 (S126-B — the per-input re-anchor):
+    // the shared "slider" token became the per-input forms (the
+    // SliderRow template + the inline per-section literals).
+    expect(panelSource).toMatch(/onPointerDown=\{\(\) => sliderGesture\.begin\(`slider:\$\{label\}`\)\}/);
+    expect(panelSource).toMatch(/onPointerUp=\{\(\) => sliderGesture\.finish\("slider:Opacity"\)\}/);
   });
 });

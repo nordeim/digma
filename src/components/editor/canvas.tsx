@@ -116,6 +116,28 @@ export function Canvas() {
 
   // ---- pointer handlers ---------------------------------------------------
   function onPointerDown(event: React.PointerEvent) {
+    // Session 126 (S126-A / A126-M1 — the seventy-fourth audit's
+    // Medium): the LIVE-DRAG entry guard. The drag state machine is
+    // single-pointer (one shared drag) while pointer events are
+    // multi-pointer: a second canvas pointerdown through a live
+    // first-pointer move/resize drag ran the fresh-pointerdown logic
+    // and REPLACED the drag state — the marquee/pan branches never
+    // touch the gesture, and onPointerUp's move/resize arm is the
+    // armed snapshot's only canvas terminal, so the first pointer's
+    // armed gestureSnapshot was ORPHANED (the session-57 H-1 chain:
+    // the autosave's gesture-deferral re-arming the 800ms timer into
+    // a ~1.1s full-list PUT loop, the keyboard and header undo arms
+    // dead through their own stand-downs, panel edits committing
+    // history-free) — or OVERWRITTEN mid-drag by the hit branch's
+    // beginGesture (the pre-drag layout unreachable via undo, the
+    // replaced lastX/lastY teleporting the second selection by the
+    // inter-finger delta). The dropped pointerdown is the honest
+    // refusal (the S123-A/S124-B/S125-A dropped-click doctrine): the
+    // live gesture's own terminals stay the sole enders. The
+    // draw/text arms are unreachable over a live move drag through
+    // the S123-A tool-dispatch stand-down — the orphan branches are
+    // exactly marquee and pan.
+    if (drag.kind !== "none") return;
     if (event.button === 1 || isPanning()) {
       (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
       setDrag({ kind: "pan", lastX: event.clientX, lastY: event.clientY });

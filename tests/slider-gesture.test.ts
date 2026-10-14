@@ -67,10 +67,14 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
     // Session 64 (S64-B — a legitimate contract update): the handlers
     // became arrow wrappers carrying surface tokens (the begin/blur
     // interleaving fix) — the gesture wiring itself is unchanged.
-    expect(body).toMatch(/onPointerDown=\{\(\) => sliderGesture\.begin\("slider"\)\}/);
-    expect(body).toMatch(/onPointerUp=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
-    expect(body).toMatch(/onPointerCancel=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
-    expect(body).toMatch(/onLostPointerCapture=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
+    // Session 126 (S126-B — the per-input re-anchor): the shared
+    // "slider" token became the row's own `slider:${label}` template
+    // (the release-side twin of the S125-B closure — a stale release
+    // early-returns at the token check).
+    expect(body).toMatch(/onPointerDown=\{\(\) => sliderGesture\.begin\(`slider:\$\{label\}`\)\}/);
+    expect(body).toMatch(/onPointerUp=\{\(\) => sliderGesture\.finish\(`slider:\$\{label\}`\)\}/);
+    expect(body).toMatch(/onPointerCancel=\{\(\) => sliderGesture\.finish\(`slider:\$\{label\}`\)\}/);
+    expect(body).toMatch(/onLostPointerCapture=\{\(\) => sliderGesture\.finish\(`slider:\$\{label\}`\)\}/);
   });
 
   it("every inline range slider carries the same gesture handler bundle", () => {
@@ -85,10 +89,15 @@ describe("the slider gesture seam (session 62, S62-A / A-M2)", () => {
       const input = panelSource.slice(inputStart, inputEnd);
       // Session 64 (S64-B — the same legitimate update as the SliderRow
       // pin: surface-token arrow wrappers, same gesture wiring).
-      expect(input).toMatch(/onPointerDown=\{\(\) => sliderGesture\.begin\("slider"\)\}/);
-      expect(input).toMatch(/onPointerUp=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
-      expect(input).toMatch(/onPointerCancel=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
-      expect(input).toMatch(/onLostPointerCapture=\{\(\) => sliderGesture\.finish\("slider"\)\}/);
+      // Session 126 (S126-B — the per-input re-anchor): each inline
+      // slider's token is its OWN aria-label ("slider:Rotation",
+      // "slider:Scale", "slider:Opacity", "slider:Gradient angle") —
+      // the token must equal the input's own label, never the shared
+      // family form.
+      expect(input).toMatch(new RegExp(`onPointerDown=\\{\\(\\) => sliderGesture\\.begin\\("slider:${label}"\\)}`));
+      expect(input).toMatch(new RegExp(`onPointerUp=\\{\\(\\) => sliderGesture\\.finish\\("slider:${label}"\\)}`));
+      expect(input).toMatch(new RegExp(`onPointerCancel=\\{\\(\\) => sliderGesture\\.finish\\("slider:${label}"\\)}`));
+      expect(input).toMatch(new RegExp(`onLostPointerCapture=\\{\\(\\) => sliderGesture\\.finish\\("slider:${label}"\\)}`));
     }
   });
 
