@@ -82,8 +82,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1820";
-const FILES = "191";
+const UNIT = "1839";
+const FILES = "192";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 

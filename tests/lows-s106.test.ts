@@ -54,8 +54,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1820";
-const FILES = "191";
+const UNIT = "1839";
+const FILES = "192";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -206,7 +206,11 @@ describe("S106-B the AI HTTP-error draft restore (A-L1 — the S105-B closure's 
     expect(finallyIdx).toBeGreaterThan(catchIdx);
     const catchBody = AI_PANEL.slice(catchIdx, finallyIdx);
     expect(catchBody).toMatch(/setInput\(message\)/);
-    expect(AI_PANEL.slice(finallyIdx, finallyIdx + 120)).toMatch(/setSending\(false\)/);
+    // Session 130 (S130-D — a legitimate widening, the S102-B
+    // convention): the finally's own registration comment (~280
+    // chars) sits between the block's opening and the guarded
+    // setSending — 120 -> 400 keeps the call inside the window.
+    expect(AI_PANEL.slice(finallyIdx, finallyIdx + 400)).toMatch(/setSending\(false\)/);
   });
 });
 

@@ -648,7 +648,11 @@ export function AiAssistant() {
       setInput(message);
       toast.error("Network error", "The assistant could not be reached.");
     } finally {
-      setSending(false);
+      // Session 130 (S130-D / A130-I4): the F108/F109 liveness census's
+      // last unguarded member — the finally runs on EVERY exit path,
+      // including a mid-send depart; React 18+ treats the setState as a
+      // silent no-op there, but the guard keeps the census honest.
+      if (aliveRef.current) setSending(false);
     }
   }
 

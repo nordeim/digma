@@ -15,6 +15,22 @@ import { getSessionUser, type SessionUser } from "./auth";
 // The client's call() helper unwraps success data or surfaces a destructive
 // toast and returns null — failures never throw into React render.
 
+// Session 130 (S130-C / B130-L7 — the seventy-eighth audit's Reasoned Low,
+// the either-way decision REGISTERED): the read path carries NO P2024/P2028
+// envelope arm — every db.*.findUnique/findFirst/findMany/count site (the
+// six pure-read handlers, the pre-check reads ahead of every write
+// try-block, and getSessionUser's findUnique on every session-gated
+// request) sits outside any try/catch. Under the documented
+// slow-disk/concurrent-writer posture a long interactive transaction
+// (the duplicate/elements-PUT 30s windows) can exhaust the pool wait and
+// a P2024/P2028 rethrows past this envelope as a bare 500. The S124-A
+// write-window arms stay scoped by design; the read-path posture is the
+// documented bounded trade — envelope-consistency only (the client's
+// call() degrades to a toast; server pages hit Next's error boundary; no
+// data harm — the B129-I2 documented-absence form). The mechanical
+// extension (a shared read-path envelope helper wrapping the find sites)
+// is the registered follow-up if the posture ever changes.
+
 export function ok<T>(data: T, status = 200): NextResponse {
   return NextResponse.json({ ok: true as const, data }, { status });
 }

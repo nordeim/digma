@@ -952,7 +952,18 @@ S138 = dict(S137)
 # the seed hash hoist computing identical rows + the by-design note
 # doc-only — every change window-scoped arm or comment/doc truth with
 # identical observable behavior on the seeded flows).
+# s140 mapping (session 130 — the 106th reference audit's evidence set + the
+# S130 capture set). The standing S140 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S130 tree); no NEW
+# witness this session (the S130 pass is a wheel arm that adds an
+# engine-dependent modality no capture journey exercises on the Chromium
+# matrix + the doc-census sweep doc-only + the read-path posture
+# registration comment-only + the finally guard passing identically while
+# alive + the pan capture alignment behavior-identical on the standard
+# journeys — every change window-scoped arm or comment/doc truth with
+# identical observable behavior on the seeded flows).
 S139 = dict(S138)
+S140 = dict(S139)
 
 def png_size(path: Path):
     with path.open("rb") as f:
@@ -1086,6 +1097,8 @@ def expected_for(name: str):
         return S138.get(Path(name).stem)
     if name.startswith("ref-audit-s139/"):
         return S139.get(Path(name).stem)
+    if name.startswith("ref-audit-s140/"):
+        return S140.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1206,6 +1219,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s137").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s138").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s139").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s140").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

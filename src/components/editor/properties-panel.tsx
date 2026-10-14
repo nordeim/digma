@@ -730,6 +730,29 @@ const sliderGesture = (() => {
       if (activeSurface === surface && idleTimer === null) return;
       armText(surface);
     },
+    // Session 130 (S130-A / A130-L1 — the seventy-eighth audit's Low):
+    // the input-modality census's THIRD member — the WHEEL. The S129-A
+    // keyboard arm censused keydown; on engines that deliver
+    // wheel-scroll value adjustment to a FOCUSED range input
+    // (Firefox's long-standing behavior; not Chromium, the e2e
+    // matrix), each wheel notch fires input+change with NO keydown —
+    // the onChange's tick() marked a gesture that was never armed,
+    // and the gesture-aware update committed a FULL history snapshot
+    // + redo wipe PER NOTCH (the S62-A flooding class, one modality
+    // short of the S129-A closure). The five range inputs' onWheel
+    // now rides exactly this keyTick primitive with the same
+    // per-input tokens: the wheel event precedes the engine's
+    // default-action value change exactly as keydown does, so the
+    // arm lands BEFORE the onChange's tick() marks — a continuous
+    // burst coalesces into ONE history entry per 150ms pause. The
+    // head's live-pointer-drag refusal (the S123-C lesson) carries
+    // over by construction, and NO preventDefault — on engines that
+    // never wheel-adjust ranges the arm stays un-marked and the
+    // 150ms idle terminates net-zero (finish with changed === false
+    // → cancelGesture: no history entry, no badge flip, no PUT), the
+    // page scroll staying native. The residual: programmatic/AT
+    // value sets carry no precedable event to hook — the honest
+    // boundary of the census, registered here.
     armText,
     markText,
     finish,
@@ -847,6 +870,7 @@ function SliderRow({
           onKeyDown={(event) => {
             if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick(`slider:${label}`);
           }}
+          onWheel={() => sliderGesture.keyTick(`slider:${label}`)}
           onChange={(event) => {
             sliderGesture.tick();
             onChange(Number(event.target.value));
@@ -951,6 +975,7 @@ function GradientPanel({
               onKeyDown={(event) => {
                 if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick("slider:Gradient angle");
               }}
+              onWheel={() => sliderGesture.keyTick("slider:Gradient angle")}
               onChange={(event) => {
                 sliderGesture.tick();
                 apply({ ...gradient, angle: Number(event.target.value) });
@@ -1836,6 +1861,7 @@ export function TransformSection({
             onKeyDown={(event) => {
               if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick("slider:Rotation");
             }}
+            onWheel={() => sliderGesture.keyTick("slider:Rotation")}
             onChange={(event) => {
               sliderGesture.tick();
               update({ rotation: Number(event.target.value) });
@@ -1879,6 +1905,7 @@ export function TransformSection({
             onKeyDown={(event) => {
               if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick("slider:Scale");
             }}
+            onWheel={() => sliderGesture.keyTick("slider:Scale")}
             onChange={(event) => {
               sliderGesture.tick();
               update({ scale: Number(event.target.value) });
@@ -1932,6 +1959,7 @@ export function OpacitySection({
           onKeyDown={(event) => {
             if (SLIDER_KEYS.has(event.key)) sliderGesture.keyTick("slider:Opacity");
           }}
+          onWheel={() => sliderGesture.keyTick("slider:Opacity")}
           onChange={(event) => {
             sliderGesture.tick();
             update({ opacity: Number(event.target.value) / 100 });

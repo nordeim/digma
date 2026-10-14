@@ -147,7 +147,13 @@ export function Canvas() {
     // exactly marquee and pan.
     if (drag.kind !== "none") return;
     if (event.button === 1 || isPanning()) {
-      (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+      // Session 130 (S130-E / A130-I3): the capture targets the CONTAINER
+      // (currentTarget — the handler's own element), the S64-G
+      // capture-on-container doctrine's last arm. The pre-fix
+      // event.target form captured on the canvas ELEMENT a pan started
+      // over — an element removed mid-pan implicitly releases the
+      // capture and the pan degrades to edge-limited.
+      (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
       setDrag({ kind: "pan", pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY });
       return;
     }

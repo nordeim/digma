@@ -209,7 +209,10 @@ describe("the S122 survival set", () => {
     expect(catchAt).toBeGreaterThan(-1);
     expect(finallyAt).toBeGreaterThan(catchAt);
     expect(catchBlock).toMatch(/setInput\(message\)/);
-    const finallySlice = aiAssistantSource.slice(finallyAt, finallyAt + 120);
+    // Session 130 (S130-D — a legitimate widening, the S102-B
+    // convention): the finally's own registration comment sits between
+    // the block's opening and the guarded setSending — 120 -> 400.
+    const finallySlice = aiAssistantSource.slice(finallyAt, finallyAt + 400);
     expect(finallySlice).toMatch(/setSending\(false\)/);
   });
 
