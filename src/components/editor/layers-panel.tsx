@@ -134,6 +134,15 @@ export function LayersPanel() {
                     const fromId = event.dataTransfer.getData("text/layer-id");
                     if (!fromId || fromId === el.id) return;
                     const store = useEditorStore.getState();
+                    // Session 131 (S131-B / A125-I1): the DnD drop's
+                    // stand-down — the S124-B form at the reorder arm.
+                    // The layers drag itself is HTML5 DnD (onDragStart
+                    // only sets the dataTransfer payload — no gesture
+                    // armed), so the guard never blocks the drop's OWN
+                    // reorder; it refuses only a drop interleaved with
+                    // a live canvas/panel gesture, before the index
+                    // computation runs.
+                    if (store.gestureSnapshot) return;
                     const remaining = store.elements.filter((e) => e.id !== fromId);
                     const targetIndex = remaining.findIndex((e) => e.id === el.id);
                     if (targetIndex === -1) return;
@@ -270,7 +279,25 @@ export function LayersPanel() {
                       aria-label={el.visible ? "Hide layer" : "Show layer"}
                       onClick={(event) => {
                         event.stopPropagation();
-                        useEditorStore.getState().toggleVisibility(el.id);
+                        // Session 131 (S131-B / A125-I1 — the deferred
+                        // queue's head, taken up this cycle): the pointer
+                        // arms' gesture stand-down, the S124-B form. The
+                        // keyboard Delete twin's own registration names
+                        // this exact interleaving as the reason IT stands
+                        // down — a mid-gesture layers click dispatched a
+                        // history-mutating action with the drag's stale
+                        // snapshot still armed (the entry landing in
+                        // past, the redo wiped, a locked element frozen
+                        // mid-drag — order-only harm, the S109-A id-guard
+                        // blocking the dead ticks). The guard is
+                        // non-discriminating BY DESIGN (the A125-I2
+                        // registration): the active-drag window and the
+                        // armed-burst window ride the same refusal, the
+                        // dropped click the honest cost, the re-click one
+                        // tap.
+                        const store = useEditorStore.getState();
+                        if (store.gestureSnapshot) return;
+                        store.toggleVisibility(el.id);
                       }}
                       className="rounded p-1 opacity-0 transition-colors hover:bg-white/10 group-hover:opacity-100 focus:opacity-100"
                     >
@@ -290,7 +317,11 @@ export function LayersPanel() {
                       aria-label={el.locked ? "Unlock layer" : "Lock layer"}
                       onClick={(event) => {
                         event.stopPropagation();
-                        useEditorStore.getState().toggleLock(el.id);
+                        // Session 131 (S131-B / A125-I1): the Lock
+                        // twin's same stand-down.
+                        const store = useEditorStore.getState();
+                        if (store.gestureSnapshot) return;
+                        store.toggleLock(el.id);
                       }}
                       className="rounded p-1 opacity-0 transition-colors hover:bg-white/10 group-hover:opacity-100 focus:opacity-100"
                     >
@@ -330,7 +361,14 @@ export function LayersPanel() {
                       aria-label={`Delete layer ${el.name ?? el.type}`}
                       onClick={(event) => {
                         event.stopPropagation();
-                        useEditorStore.getState().deleteElements([el.id]);
+                        // Session 131 (S131-B / A125-I1): the Trash
+                        // twin's same stand-down (deleteElements pushes
+                        // history while a live drag holds its stale
+                        // snapshot — the A120-L1 symptom family's
+                        // pointer member).
+                        const store = useEditorStore.getState();
+                        if (store.gestureSnapshot) return;
+                        store.deleteElements([el.id]);
                       }}
                       className="rounded p-1 text-red-400 opacity-0 transition-colors hover:bg-red-500/20 group-hover:opacity-100 focus:opacity-100"
                     >

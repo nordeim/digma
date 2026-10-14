@@ -2331,7 +2331,21 @@ export function EditorView({ user }: { user: HeaderUser }) {
         ))}
       </div>
 
-      {presenting && <MemoizedPresentOverlay onExit={exitPresent} />}
+      {/* Session 131 (S131-A / A131-I1 — the S121-A family's last arm):
+          the mount composed with the load gate. The trigger-side gate
+          (disabled={loading}) closed the ENTRY — presenting cannot be
+          ENTERED during a mount/swap GET window; this composes the
+          ALREADY-OPEN side: through a same-route soft swap (browser
+          Back onto another /Editor?projectId= while presenting) the
+          overlay unmounts (the outgoing board's stale fullscreen
+          paint ends) and remounts on the incoming board when the
+          window clears — presenting follows the route, never the
+          outgoing board. The failure path settles on the Untitled
+          fallback with loading false (the load effect's fall-through
+          at the catch), so the composition can never strand the
+          overlay hidden; the S118-D1 memo + the useCallback-stable
+          exit ride unchanged. */}
+      {presenting && !loading && <MemoizedPresentOverlay onExit={exitPresent} />}
 
       {/* Session 49 (S49-2): the shortcuts help dialog (opens via the
           Keyboard chip in the zoom cluster or the ? key). */}

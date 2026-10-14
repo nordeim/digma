@@ -295,7 +295,14 @@ describe("S118-C the script token isolation (A118-L3)", () => {
 describe("S118-D the fine prints (A118-I1..I5)", () => {
   it("DEFECT (source): the PresentOverlay memoized + the render site rides the memoized form", () => {
     expect(editorViewSource).toMatch(/const MemoizedPresentOverlay = React\.memo\(PresentOverlay\);/);
-    expect(editorViewSource).toMatch(/\{presenting && <MemoizedPresentOverlay onExit=\{exitPresent\} \/>\}/);
+    // Session 131 (S131-A / A131-I1 — the F89 re-anchor class): the
+    // mount composition gained the load gate (the S121-A family's
+    // last arm — an already-open overlay unmounts through a
+    // mount/swap GET window instead of painting the outgoing board);
+    // the S118-D1 memo doctrine itself is unchanged.
+    expect(editorViewSource).toMatch(
+      /\{presenting && !loading && <MemoizedPresentOverlay onExit=\{exitPresent\} \/>\}/,
+    );
   });
 
   it("DEFECT (source): the useCallback-stable exit — the memo's prop stability (S118-D1)", () => {
