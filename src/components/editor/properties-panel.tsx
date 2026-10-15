@@ -393,6 +393,26 @@ function HexColorRow({
           onChange={(event) => {
             const next = event.target.value;
             setDraft(next);
+            // Session 132 (S132-B — the A130-I1 resolution, the
+            // deferred queue's head since session 130, retired
+            // BY-DESIGN): the hex TEXT input's arm-less posture IS
+            // the contract, never a gap. The s130 registration named
+            // a per-field arm as the follow-up — but the take-up
+            // found the collision it missed: the S66-B preservation
+            // pin (tests/color-coalesce-s66.test.ts) holds this
+            // input OUT of the burst seam as the DELIBERATE
+            // discrete intent contract (one history entry per complete
+            // entry; coalescing two typed entries into one undo
+            // step is the wrong contract for a field whose commits
+            // are already discrete). The arm would violate that
+            // prior-spec pin. The modality census stands closed:
+            // keyboard — the complete-hex gate means one commit per
+            // deliberate complete entry; wheel/pointer — a text
+            // input takes no value from either modality;
+            // programmatic/AT — the standing S129/S130 residual. A
+            // commit landing under ANY live gesture rides
+            // commit=false at both update helpers (the S66-A
+            // ride-under, traced).
             if (next === "") {
               // Session 105 (S105-A / A-M1 — the no-op family's
               // empty-draft form): clearing a junk draft typed into an

@@ -244,8 +244,11 @@ describe("the hex row's abandoned-draft blur-restore (S79-E / A-L1)", () => {
     // 3700 -> 5300 (the live-measured distance). Session 112 (S112-A —
     // the same family's third widening): the wouldCommit prop's doctrine
     // block + the three branch guards' scope comments grow the row again
-    // — 5300 -> 6700 (the live-measured distance).
-    const body = panel.slice(start, start + 6700);
+    // — 5300 -> 6700 (the live-measured distance). Session 132 (S132-B —
+    // the same family's fourth widening): the A130-I1 by-design
+    // registration comment lands above the empty-draft branch —
+    // 6700 -> 8000 (the live-measured distance 7919).
+    const body = panel.slice(start, start + 8000);
     expect(body).toMatch(/onBlur=\{\(\)\s*=>\s*setDraft\(value\s*\?\?\s*""\)\}/);
   });
 

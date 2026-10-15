@@ -456,7 +456,21 @@ export function Canvas() {
         // disagreed with its own outline exactly where S64-C claims
         // they agree; the rotation-0 fast path returns the historical
         // math exactly, so unrotated selections are unchanged.
-        const inside = elements.filter((el) => {
+        // Session 132 (S132-A / A132-I1 — the eightieth audit's
+        // Informational): the commit reads the LIVE list, never the
+        // render-captured subscription. The marquee is the one
+        // id-consuming canvas drag that ARMS NO GESTURE (selection
+        // is no history/saveState mutation — correct), so the
+        // autosave's gesture-deferral never covers it: a markSaved
+        // response landing mid-marquee remaps local-xxx ids to
+        // server cuids, and a pointerup firing in the sub-frame
+        // window before React's re-render selected the STALE local
+        // ids (a dangling selection self-healing on the next
+        // action). The handler's own store capture — the getState()
+        // form every sibling branch rides — reads the list at commit
+        // time, so a mid-marquee adoption can never strand a
+        // stale-id selection.
+        const inside = store.elements.filter((el) => {
           if (!el.visible || el.locked) return false;
           const b = boundsOf([el]);
           if (!b) return false;

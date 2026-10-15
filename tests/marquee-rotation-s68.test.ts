@@ -69,7 +69,10 @@ describe("the marquee containment runs on the visual footprint (S68-B / M-1)", (
     const drawIdx = source.indexOf('drag.kind === "marquee"', commitIdx + 1);
     const marqueeIdx = drawIdx === -1 ? commitIdx : drawIdx;
     expect(marqueeIdx).toBeGreaterThan(-1);
-    const marqueeBody = source.slice(marqueeIdx, marqueeIdx + 1400);
+    // Session 132 (S132-A — the F89/S102-B legitimate widening): the
+    // live-list registration comment sits between the arm and the
+    // filter — 1400 -> 1800 (the live-measured distance 1689).
+    const marqueeBody = source.slice(marqueeIdx, marqueeIdx + 1800);
     expect(marqueeBody).toMatch(/boundsOf\(/);
     // The old inline unrotated-footprint comparison is GONE from the
     // containment filter (the outline/handles keep their own uses).
