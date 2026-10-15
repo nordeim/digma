@@ -2188,6 +2188,26 @@ export function MultiSelectionSection({
   // would-commit truth is evaluated against every selected element,
   // never the first member alone (the store subscriptions mirror the
   // panel's own S74-B Set-membership form).
+  // Session 135 (S135-B / A135-I2 — the by-design registration, the
+  // S129-D documented-absence form; the read-direction family's
+  // wouldCommit member, the F120 census-extension class): the
+  // render-derived selected rows below close into the would-commit
+  // truth (selectionWouldCommit at the HexColorRow branches) while
+  // the commit target rides the S133-B live selectedIds read — the
+  // truth-evaluation and the commit can reference different
+  // selections through the theoretical sub-frame. The member is
+  // provably IMMUNE to the every-save id churn that powers the
+  // family's other members: selectionWouldCommit compares fill/stroke
+  // VALUES (through patchDiffers), never ids — markSaved's id remap
+  // preserves values, so the stale rows are value-identical to the
+  // fresh rows and the would-commit answer cannot fire through a
+  // remap (the churn-immune member; only a genuine selection-content
+  // change in the sub-frame diverges, and the S133-C rationale
+  // extends verbatim — the unify intent references the rows the user
+  // SAW). The floor: a suppressed color pick for one sub-frame,
+  // zero mutation, self-healing on the next interaction. Registered;
+  // a live-read form would add a re-derivation per pick to fix a
+  // window the root cause cannot open.
   const elements = useEditorStore((s) => s.elements);
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const selectedIdSet = new Set(selectedIds);

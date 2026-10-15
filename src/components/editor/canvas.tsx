@@ -109,6 +109,31 @@ export function Canvas() {
   const selectionBounds = React.useMemo(() => boundsOf(selected), [selected]);
 
   // ---- coordinate conversion -------------------------------------------
+  // Session 135 (S135-A / A135-I1 — the by-design registration, the
+  // S129-D documented-absence form; the read-direction family's VIEWPORT
+  // member, the F120 census-extension class): toCanvas maps the pointer
+  // through the RENDER-CAPTURED viewport trio (the zoom/panX/panY
+  // subscriptions above), consumed at pointer-handler time by every
+  // draw/marquee/move/resize tick — and here the render-captured read
+  // is the CORRECT form, the family's direction INVERTED at this seam —
+  // the RENDER-CONSISTENCY doctrine. The board's own DOM transform
+  // (translate(panX,panY) scale(zoom) —
+  // the container style below) reads the SAME render-pass values, so
+  // the pointer→canvas mapping is always consistent with the viewport
+  // the user SEES: an element dragged mid-render-frame follows the
+  // pointer exactly on screen. A LIVE store read (the S132-A/S133-A/
+  // S134-A getState() form) would map the pointer through a transform
+  // the DOM has not applied yet — the drag visibly diverging from the
+  // pointer for the sub-frame — the one member where the live-read
+  // vocabulary must NOT be applied. The censused window: a wheel-pan
+  // or ctrl+wheel-zoom landing between two pointermove ticks of a live
+  // drag (button held + wheel scrolled — a genuinely reachable desktop
+  // gesture) computes one tick against the rendered viewport —
+  // self-healing the following render (the DOM transform and the
+  // closures re-base together), zero mutation surface (mid-gesture
+  // ticks are history-free; the autosave's gesture-deferral covers
+  // markSaved). No live-read form exists that would improve the
+  // rendered consistency; registered, never flushed.
   function toCanvas(event: { clientX: number; clientY: number }): { x: number; y: number } {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
