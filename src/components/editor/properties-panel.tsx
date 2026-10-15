@@ -1698,17 +1698,22 @@ export function TextSection({
 //
 // Session 136 (S136-C / A136-I2 — the by-design registration, the
 // S129-D documented-absence form): the CHURN-IMMUNE PERIMETER — the
-// A135-I2 datum generalized family-wide. Every section consuming this
-// helper (PositionSize/CornerRadius/Text/FillStroke/Transform/Opacity,
-// both hosts' shared PropertiesSections) closes the RENDER-DERIVED
-// element into the would-commit compare at the patchDiffers seam
-// while the commit target rides the S133-B LIVE selectedIds read —
-// and the patchDiffers helper compares VALUES, never ids, so markSaved's
-// every-save id remap (the delete-then-recreate PUT that rekeys every
-// element on every save) provably cannot fire the would-commit
-// divergence on ANY member of this perimeter: the stale rows are
-// value-identical to the fresh rows (the remap preserves values), so
-// the compare answers identically through the churn. Only a genuine
+// A135-I2 datum generalized family-wide. The five wrapper consumers
+// (PositionSize/CornerRadius/Text/Transform/Opacity, both hosts'
+// shared PropertiesSections) close the RENDER-DERIVED element into
+// the would-commit compare at the patchDiffers seam while the commit
+// target rides the S133-B LIVE selectedIds read — and the sixth
+// section (FillStrokeSection) rides the SAME value-based seam
+// DIRECTLY through its sub-panels (HexColorRow/GradientPanel/
+// ImagePanel), never this wrapper (Session 137 / S137-A / A137-I1:
+// the s136 form over-listed FillStroke as a helper consumer; the
+// membership now pinned at every seam) — and the patchDiffers helper
+// compares VALUES, never ids, so markSaved's every-save id remap
+// (the delete-then-recreate PUT that rekeys every element on every
+// save) provably cannot fire the would-commit divergence on ANY
+// member of this perimeter: the stale rows are value-identical to
+// the fresh rows (the remap preserves values), so the compare
+// answers identically through the churn. Only a genuine
 // selection-CONTENT change in the theoretical sub-frame diverges —
 // the S133-C rationale extends verbatim (the edit intent references
 // the rows the user SAW). The suppressed/over-allowed commit floor:

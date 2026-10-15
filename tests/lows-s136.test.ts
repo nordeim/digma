@@ -164,7 +164,11 @@ describe("S136-C the guardedUpdate perimeter registration (A136-I2 — the churn
   it("DEFECT (source): the registration lands above the helper — patchDiffers compares VALUES never ids, the perimeter is churn-immune, the commit target rides the S133-B live read", () => {
     const fnAt = panelSource.indexOf("function guardedUpdate(");
     expect(fnAt).toBeGreaterThan(-1);
-    const w = panelSource.slice(Math.max(0, fnAt - 1500), fnAt);
+    // Session 137 (S137-A, the documented spec-window repair — the
+    // s134/s135/s136 precedent): the window widens 1500 -> 2000 — the
+    // repaired registration (the enumeration-truth fix) grew past the
+    // frozen window's headroom.
+    const w = panelSource.slice(Math.max(0, fnAt - 2000), fnAt);
     expect(w).toMatch(/A136-I2/);
     expect(w).toMatch(/S136-C/);
     // The perimeter: every section's would-commit compare closes the
