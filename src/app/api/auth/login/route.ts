@@ -76,6 +76,20 @@ export async function POST(request: NextRequest) {
     // THIRD bare site (the B101-I3 ledger counted two); the family
     // closes to zero.
     try {
+      // Session 133 (S133-D / B133-I2 — the registration, the S129-D
+      // documented-absence form): this unconditional update is the B84-I3
+      // stale-verifyCode race's missed sibling — a verify-otp committing
+      // between the login's findUnique and here strands an inert stale
+      // verifyCode on the now-verified row (inert: verify-otp's own
+      // verified pre-check rejects it), and the racing login's 403
+      // VERIFY_EMAIL envelope delivers a code the account can never
+      // complete (verify-otp 400s on the verified account; the card's
+      // Resend 400s per S71-C) — the verify card dead-ends at the code
+      // step, self-healing on back-to-sign-in. The S70-D conditional
+      // form (updateMany where verified:false) is the closure if the
+      // family is ever promoted; registered, not promoted — the
+      // sub-10ms race, the family's standing disposition (PAD §10's
+      // B84-I3 row).
       await db.user.update({ where: { id: user.id }, data: { verifyCode, verifyAttempts: 0 } });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {

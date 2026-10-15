@@ -214,21 +214,33 @@ export function Canvas() {
     // The pre-fix code skipped locked elements here (and rendered them
     // pointer-events:none), turning the lock into a WINDOW — drags fell
     // through and displaced the element underneath.
-    const hit = [...elements]
+    // Session 133 (S133-A / A133-I1 — the eighty-first audit's
+    // Informational): the hit branch rides the S132-A live-list family —
+    // the marquee's commit read closed that audit's own census, and this
+    // branch is the same shape one seam over: the hit test, the
+    // shift-toggle, and the select commit all read the RENDER-CAPTURED
+    // subscription, while markSaved's id remap can land between the
+    // render and this pointerdown — a stale hit.id strands a dangling
+    // selection and arms a dead move-drag (the S109-A id-guard no-ops
+    // every tick; endGesture lands net-zero). The closure reads the
+    // LIVE list at pointerdown time through the handler's own store
+    // capture — the getState() form every sibling branch rides.
+    const store = useEditorStore.getState();
+    const hit = [...store.elements]
       .reverse()
       .find((el) => el.visible && elementIsPointInside(el, point.x, point.y));
 
     if (hit) {
       if (hit.locked) return;
-      const already = selectedIds.includes(hit.id);
+      const already = store.selectedIds.includes(hit.id);
       const nextIds = event.shiftKey
         ? already
-          ? selectedIds.filter((id) => id !== hit.id)
-          : [...selectedIds, hit.id]
+          ? store.selectedIds.filter((id) => id !== hit.id)
+          : [...store.selectedIds, hit.id]
         : already
-          ? selectedIds
+          ? store.selectedIds
           : [hit.id];
-      useEditorStore.getState().select(nextIds);
+      store.select(nextIds);
       // Session 56 (S56-A — the Mode C audit's H-1): capture the PRE-gesture
       // snapshot at pointer-DOWN. The live mutations stay history-free (one
       // entry per gesture); pointer-up pushes THIS snapshot — the old

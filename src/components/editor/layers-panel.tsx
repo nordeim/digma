@@ -57,6 +57,21 @@ export function LayersPanel() {
     elements.length === 0 ||
     (visible.length > 0 && visible.every((el) => selectedSet.has(el.id)));
 
+  // Session 133 (S133-C / A133-I1 — the by-design registration, the
+  // S129-D documented-absence form): the row click's id is
+  // BOUND AT RENDER — the button's onClick closes over el.id from the
+  // render-captured list, so no live-read form exists here (markSaved's
+  // id remap changes ids with no stable key to re-derive; the row the
+  // user clicks IS the stale row). Index-matching through the live list
+  // would trade this window's cosmetic self-healing dangling selection
+  // (the A117-I1 no-guard select — the badge over unhighlighted rows,
+  // self-healing on the next action) for a REAL wrong-element selection
+  // whenever the list content, not just the ids, changed mid-window.
+  // The window itself is the family's theoretical sub-frame (React 18+
+  // flushes external-store updates synchronously; a pointer macrotask
+  // likely never sees it — the same boundary the S132-A marquee closure
+  // named). The id-match guards at updateElements/deleteElements keep
+  // the mutation surface clean; only the selection display can dangle.
   function onRowClick(id: string, event: { shiftKey: boolean }) {
     const store = useEditorStore.getState();
     if (event.shiftKey) {

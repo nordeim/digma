@@ -2238,7 +2238,16 @@ export function PropertiesPanel() {
 
   const update = (patch: Parameters<ReturnType<typeof useEditorStore.getState>["updateElements"]>[1]) =>
     useEditorStore.getState().updateElements(
-      selectedIds,
+      // Session 133 (S133-B / A133-I1 — the eighty-first audit's
+      // Informational, the host-drift repair): the first argument joins
+      // the mobile host's LIVE read — the render-captured selectedIds
+      // closure could commit a post-remap stale id set when markSaved's
+      // local-xxx → cuid remap lands between the render and the commit
+      // (a dropped edit the blur resync heals). The live read at commit
+      // time is the S132-A family form, and the two hosts now share
+      // the one read direction — the mobile twin's own s.selectedIds
+      // form, mirrored here.
+      useEditorStore.getState().selectedIds,
       patch,
       // Session 62 (S62-A — the tenth audit's A-M2): the gesture-aware
       // default commit. Mid-gesture ticks (a slider drag, a text focus
