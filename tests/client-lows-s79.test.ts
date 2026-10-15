@@ -165,10 +165,14 @@ describe("the load-aware transcript reset in the subscription (S79-A / A-M1)", (
   it("the mid-flight refusal extends to the epoch mismatch", () => {
     // THE DEFECT PIN: pre-fix an Untitled send (sendScopeId "") passed
     // the guard unconditionally — a swap mid-await applied the batch
-    // into the new board.
+    // into the new board. Session 134 (S134-D — the F89/S102-B
+    // legitimate-widening class, the epoch pin's first widening): the
+    // A134-I2 by-design registration comment lands above the send
+    // body's targetIds — 6000 -> 7000 (the live-measured distance
+    // 6245).
     const start = assistant.indexOf("async function send");
     expect(start).toBeGreaterThanOrEqual(0);
-    const body = assistant.slice(start, start + 6000);
+    const body = assistant.slice(start, start + 7000);
     expect(body).toMatch(/sendEpoch\s*!==\s*preApply\.boardEpoch/);
     expect(body).toMatch(/const sendScopeId\s*=\s*state\.projectId/);
     // The pinned S78-A refusal forms survive.

@@ -26,6 +26,26 @@ const TYPE_ICON: Record<DesignElementDTO["type"], React.ComponentType<{ classNam
 export function LayersPanel() {
   const elements = useEditorStore((s) => s.elements);
   const selectedIds = useEditorStore((s) => s.selectedIds);
+  // Session 134 (S134-B / A134-L1 — the by-design registration, the
+  // S129-D documented-absence form): the rename session keys on the
+  // RENDER-BOUND row id, and the elements PUT is a transactional
+  // delete-then-recreate with schema-generated cuids — markSaved
+  // rekeys EVERY element id on EVERY successful save (the every-save
+  // id churn), so a save response landing while the user is mid-rename
+  // re-renders the panel with rekeyed rows, the renaming id matches no
+  // row, and the focused input UNMOUNTS with the typed DRAFT lost —
+  // Chromium fires no blur on node removal (the S78-C datum); on the
+  // WebKit path the blur commit rides the stale id and no-ops through
+  // the S109-A id-match guard. The retype cost is the honest refusal
+  // (bounded — a rename draft is short). Index-matching through the
+  // live list would trade this cosmetic draft loss for a REAL
+  // wrong-row rename commit whenever the list content, not just the
+  // ids, changed mid-window — the S133-C rationale verbatim. The
+  // closure form if ever promoted: a store-level REMAP HANDOFF —
+  // markSaved publishing the old-to-new id map this panel could
+  // subscribe to and re-key the session through. Registered, not
+  // promoted (zero mutation surface; the id-stable PUT is the
+  // family's named structural follow-up).
   const [renaming, setRenaming] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
   // Session 78 (S78-C / A-L5): the WebKit blur-on-removal guard. Escape
@@ -158,6 +178,21 @@ export function LayersPanel() {
                     // a live canvas/panel gesture, before the index
                     // computation runs.
                     if (store.gestureSnapshot) return;
+                    // Session 134 (S134-D / A134-I1(b) — the by-design
+                    // registration, the S129-D form): the DnD id pair's
+                    // honest drop-refusal. The dragstart's payload and
+                    // this row's id are both BOUND AT RENDER, and the
+                    // elements PUT rekeys every id on every successful
+                    // save — a mid-drag remap makes the filter/find
+                    // miss and the early returns below DROP the
+                    // reorder (cosmetic, self-healing on the next
+                    // drag). Index-matching would trade the cosmetic
+                    // drop for a REAL wrong-element reorder whenever
+                    // the list content, not just the ids, changed
+                    // mid-window — the S133-C rationale verbatim. The
+                    // window itself is the family's theoretical
+                    // sub-frame (the DnD's own duration vs the
+                    // sub-10ms PUT response window).
                     const remaining = store.elements.filter((e) => e.id !== fromId);
                     const targetIndex = remaining.findIndex((e) => e.id === el.id);
                     if (targetIndex === -1) return;

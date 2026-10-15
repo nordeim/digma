@@ -1343,6 +1343,21 @@ function ImagePanel({
     // Session 113 (S113-D — B92-I1 leg (b)): the patch carries the
     // thumb — a re-upload regenerates the identical patch (the
     // deterministic canvas encode) and the S106-A no-op guard holds.
+    // Session 134 (S134-C / A134-L2 — the by-design registration, the
+    // S129-D documented-absence form): the REMAP strand the S107-A
+    // registration above never censused. The async chain (FileReader
+    // + downscale + thumbnail) holds the file-pick-time element, and
+    // the elements PUT rekeys every id on every successful save — a
+    // save response landing mid-chain makes the live-read's find MISS
+    // (the id is stale, not deleted) and fall to the stale row, so
+    // patchDiffers passes over the fresh state and the commit no-ops
+    // through the S109-A id-match guard: the upload silently drops
+    // (no toast, no fill — the re-pick cost, the honest refusal).
+    // The bytes-cap sum degrades in the safe direction (self
+    // double-counted post-remap — over-strict, never permissive).
+    // Registered, not promoted: the frozen id is the S113-B
+    // target-scope closure's own contract, and the structural fix is
+    // the id-stable PUT — the family's named follow-up.
     if (patchDiffers(live, patch)) {
       const s = useEditorStore.getState();
       s.updateElements([element.id], patch, s.gestureSnapshot === null);
@@ -1791,6 +1806,17 @@ export function FillStrokeSection({
     : parseGradient(element.fillGradient)
       ? "gradient"
       : "solid";
+  // Session 134 (S134-D / A134-I1(c) — the comment-truth repair): the
+  // compare-and-adjust's key carries the element's id, and the
+  // elements PUT rekeys every id on every successful save — so the
+  // EVERY-SAVE churn fires the re-derive on ANY autosave response,
+  // not just "a different element selected" as the original intent
+  // read. The visible cost: a user browsing a non-derived tab
+  // (Gradient open on a solid-fill element) sees the tab SNAP back to
+  // the derived mode whenever a save lands — cosmetic, self-healing,
+  // zero mutation. Registered: no stable element identity exists to
+  // key on (index-matching is the S133-C wrong-element trade), and
+  // the id-stable PUT is the family's named structural follow-up.
   const fillKey = `${element.id}:${derivedFillMode}`;
   if (prevFillKey !== fillKey) {
     setPrevFillKey(fillKey);

@@ -62,6 +62,19 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (body?.description !== undefined) {
     data.description = clampText(body.description, 500);
   }
+  // Session 134 (B134-I2 — the by-design registration, the S129-D
+  // documented-absence form): the fallback below rides the PRE-READ
+  // existing.backgroundColor (the findUnique at the top of the
+  // handler), so a concurrent PATCH committing a new background
+  // between the read and this update — with the racing request's own
+  // color INVALID — writes the STALE pre-read color, silently
+  // regressing the concurrent commit's cosmetic state. Sub-frame
+  // window, API-consumer-only (the UI never sends an invalid color),
+  // cosmetic-only (canvas background), self-healing on the next save.
+  // The sibling seam's safe form is named for the promotion path: the
+  // elements PUT clamps with the empty-string fallback (invalid → ""
+  // → the stored background untouched), trading this route's
+  // "invalid → keep existing" semantics. Registered, not promoted.
   if (body?.backgroundColor !== undefined) {
     data.backgroundColor = clampColor(String(body.backgroundColor), existing.backgroundColor);
   }

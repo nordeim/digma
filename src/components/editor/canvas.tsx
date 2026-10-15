@@ -444,6 +444,23 @@ export function Canvas() {
         // inversion through this arm — a refactor moving this commit
         // into pointerdown, or a focus-retaining surface, must
         // re-derive the ordering. The flush census stays 3.
+        // Session 134 (S134-D / A134-I1(d) — the sibling the S119-B
+        // registration's ordering argument never covered): an ACTIVE
+        // foreign slider drag (finger-1 held on a panel slider,
+        // finger-2 draws on the canvas — the multi-touch surface the
+        // desktop mouse cannot reach). The draw commit's addElement
+        // lands while the slider gesture is ARMED, and finger-1's
+        // release then pushes the slider's pre-drag snapshot AFTER
+        // the add's — the intent-order INVERSION (undo steps the
+        // slider tick before the new element, every state reachable,
+        // NO data loss — the A88-I1 posture class, the same
+        // contrived multi-touch reachability as the registered A121-I1
+        // rename posture). Registered, not flushed: a fourth flush
+        // call would muddy the S66-A census the s118 spec pins, and
+        // the S131-B stand-down family already refuses the panel's
+        // own mutations under a live canvas gesture — this is the
+        // inverse direction (the canvas committing under a live panel
+        // gesture), the draw's own commit.
         if (
           store.addElement({
             type: drag.type,
@@ -737,7 +754,22 @@ export function Canvas() {
                   // canvas point.
                   if (isPanning()) return;
                   if (event.button !== 0) return;
-                  const el = selected[0]!;
+                  // Session 134 (S134-A / A134-I1 — the eighty-second
+                  // audit's Informational, the A133-I1 read-direction
+                  // family's last fixable member): this arm read the
+                  // RENDER-CAPTURED selected memo while markSaved's
+                  // every-save id remap can land between the render and
+                  // the handle pointerdown — the stale el.id armed a
+                  // DEAD RESIZE (the S109-A id-guard no-opping every
+                  // tick, endGesture landing net-zero). The LIVE read at
+                  // pointerdown time — the getState() form the
+                  // S132-A/S133-A closures established — finds the live
+                  // row through the live selection (markSaved remaps
+                  // selectedIds too), the drag's geometry AND identity
+                  // inheriting the fresh id; the memo fallback keeps the
+                  // deleted-mid-window floor (the honest dead arm).
+                  const store = useEditorStore.getState();
+                  const el = store.elements.find((e) => store.selectedIds.includes(e.id)) ?? selected[0]!;
                   (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
                   // Session 56 (S56-A): the resize gesture captures its
                   // pre-gesture snapshot at the handle's pointer-down — the

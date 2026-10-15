@@ -539,6 +539,21 @@ export function AiAssistant() {
         // degrades to the toast family, and the panel recovers. (Above
         // the route's own LLM budget, below human patience for a reply.)
         signal: AbortSignal.timeout(30_000),
+        // Session 134 (A134-I2 — the by-design registration, the S129-D
+        // documented-absence form): the send-time targetIds capture is
+        // INHERENT — the summary and the targets must describe the
+        // board at send — but the elements PUT's every-save id CHURN
+        // rekeys every id on each successful save, and a markSaved
+        // response landing during the multi-second LLM await leaves
+        // the reply's operations targeting STALE ids. The apply
+        // path's live membership filters drop them silently; the
+        // honest floor is the S105-B honest-count doctrine (the
+        // footer truthfully reads "0 action(s) performed" — the
+        // reply text may overclaim) and the user re-sends.
+        // Registered, not remapped: no stable discriminator exists
+        // between "the user changed the selection" and "the ids
+        // rekeyed" — the id-stable PUT is the family's named
+        // structural follow-up.
         body: JSON.stringify({
           message,
           targetIds: state.selectedIds,
