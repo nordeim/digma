@@ -137,6 +137,27 @@ export async function POST(request: NextRequest) {
   const response = ok({ user: { id: user.id, email: user.email, name: user.name, avatarColor: user.avatarColor } });
   // Session 67 (S67-A): the mint carries the holder's live tokenVersion —
   // a later reset (which increments it) evicts this cookie.
+  //
+  // Session 136 (S136-B / B136-I1 — the by-design registration, the
+  // S129-D documented-absence form): the B84-I3 stale-read family's
+  // THIRD member — the mint embeds the tokenVersion from the
+  // TOP-OF-HANDLER `user` read (:43 findUnique), and the scrypt burn
+  // at :51 opens the ~100ms window; a same-account reset-password
+  // (valid token, another tab) committing inside that window
+  // increments the row PAST the read — this fresh login answers 200 +
+  // Set-Cookie, then every getSessionUser compares
+  // row.tokenVersion !== session.tokenVersion and 401s (a
+  // dead-on-arrival mint). FAILS CLOSED: the S67-A designed-eviction
+  // direction ("a later reset evicts this cookie") — an old-password
+  // session dying at reset is the eviction working, and the marginal
+  // case is only a fresh mint landing already-evicted; self-heals on
+  // re-login with the new password. The stale-session-SURVIVES
+  // direction is closed (the conditional reset updateMany increments
+  // on every successful reset). The closure form if the family is
+  // ever promoted: the verify-otp sibling's FRESH RE-SELECT before
+  // mint (verify-otp/route.ts:118-130 — re-select the row after the
+  // await, mint the re-selected version). Registered, not promoted
+  // (one dead mint per race, zero mutation surface).
   await setSessionCookie(user.id, user.tokenVersion, response);
   return response;
 }

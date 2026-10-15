@@ -428,6 +428,28 @@ export function AiAssistant() {
         // operation sources (fallback + LLM) meet the store — never in
         // deleteElements, whose locked-deleting row-trash path stays
         // reference parity.
+        //
+        // Session 136 (S136-D / A136-I3 — the by-design interleaving
+        // trace, the S129-D form): the HANDLE-UNMOUNT-MID-RESIZE trace.
+        // This delete arm is the ONE store-mutating surface that
+        // commits under a live gesture (the registered S81-A/S117-C
+        // programmatic-caller posture — the AI apply answers the send,
+        // never a pointer terminal), so an apply landing while a
+        // resize drag is live can delete the element whose 8×8 handle
+        // HOLDS THE POINTER CAPTURE — the unmount implicitly releases
+        // the capture, and a pointerup landing over non-canvas chrome
+        // (the panel, the header) then leaks the drag state past its
+        // own terminal. The leak SELF-HEALS on the next canvas hover:
+        // the S57-A GHOST GUARD (canvas.tsx's buttons === 0 end path)
+        // ends the stale drag with the pointer buttonless; the dead
+        // ticks in between no-op through the S109-A id-match guard
+        // (the deleted id matches no live row); and the heal's
+        // endGesture pushes the pre-drag snapshot ONE entry after the
+        // delete's — the A88-I1 ORDER-ONLY posture (both entries
+        // reachable via undo, the autosave's gesture-deferral bounding
+        // the window). NO DATA LOSS; every state reachable; the
+        // bounded deferral + the one-entry undo granularity note is
+        // the full blast radius.
         const targets = operation.ids.filter(
           // Session 61 (S61-E — A-L-3): the live-state re-read — same
           // rationale as the update branch above.
