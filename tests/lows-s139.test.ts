@@ -258,23 +258,15 @@ describe("S139-C the PAD claim-site enumeration registration (B139-I1 — all fo
     expect(collapsed(note)).toMatch(/enumeration-completeness|claim sites/i);
   });
 
-  it("DEFECT (docs): the count re-anchor — ALL FOUR PAD sites carry the live 1977/201 count (the revision-entry chain head, the §8 Unit total, the §7.4 checklist row, the §9.2 command row) + the AGENTS session-139 bullet carries the LIVE ANCHOR", () => {
-    // Site 1 — the revision entry: the FIRST Last-Updated chain line is
-    // the live v1.118.0 entry carrying the re-anchored count.
-    const chainHead = padSource.indexOf("**Last Updated:**");
-    expect(chainHead).toBeGreaterThan(-1);
-    const head = padSource.slice(chainHead, chainHead + 6000);
-    expect(head).toContain("v1.118.0");
-    expect(head).toContain("1977 = 1965 + 12 unit / 201 files");
-    // Site 2 — the §8 Unit total row.
-    expect(padSource).toMatch(
-      /\| \*\*Unit total\*\* \| \*\*201 files\*\* \| \*\*1977\*\* \| \| Vitest \|/,
-    );
-    // Site 3 — the §7.4 Pre-PR/Pre-Deploy Checklist row.
-    expect(padSource).toContain("- [ ] `bun run test` → 1977/1977");
-    // Site 4 — the §9.2 command-table row.
-    expect(padSource).toContain("unit tests (1977 checks / 201 files)");
-    // The AGENTS session-139 bullet carries the LIVE ANCHOR.
+  it("DEFECT (docs): the count re-anchor — the v1.118.0 chain entry retains the S139 derivation (the FROZEN record) + the §7.1 row for the s139 spec + the AGENTS session-139 bullet carries the LIVE ANCHOR (the s140 rolling-safe repair: the live-sites figures ROLL every cycle — the pin now guards the FROZEN delivery record and the spec row, the live-pair anchoring moving to the latest cycle's rolling-safe pair-unity pins)", () => {
+    // Site 1 — the revision entry: the v1.118.0 chain entry (the S139
+    // delivery's own record, FROZEN per the F106 live-claim-sites-only
+    // doctrine — retained verbatim below whatever head is live).
+    expect(padSource).toContain("v1.118.0");
+    expect(padSource).toContain("1977 = 1965 + 12 unit / 201 files");
+    // The §7.1 row for the s139 spec (never rolls).
+    expect(padSource).toContain("| `tests/lows-s139.test.ts` | 12 | tests | Vitest |");
+    // The AGENTS session-139 bullet carries the LIVE ANCHOR (frozen).
     expect(agentsSource).toMatch(/session 139, S139-A\.\.S139-E/);
     expect(agentsSource).toMatch(/1977 = 1965 \+ 12 unit \/ 201 files/);
   });

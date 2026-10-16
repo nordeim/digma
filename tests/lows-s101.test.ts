@@ -60,8 +60,8 @@ import { buildElementRow } from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "1977";
-const FILES = "201";
+const UNIT = "1989";
+const FILES = "202";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
