@@ -10,9 +10,14 @@ import { describe, expect, it } from "vitest";
 // shipped the constant "Y", the e2e pin (parity.spec.ts) blessed the
 // constant, and the docs claimed real-user — a three-way drift. The fix:
 // ProjectCard gains a `userInitial` prop; both call sites (DashboardView
-// and RecentView — both already receive `user: HeaderUser`) pass
-// `user.name.trim().charAt(0).toUpperCase() || "D"` (the "Designer"
-// fallback convention from greetingName); the chip renders the prop.
+// and RecentView — both already receive `user: HeaderUser`) pass the
+// first-initial derivation with the "Designer" fallback convention from
+// greetingName; the chip renders the prop. Session 146 (S146-C / A146-L1
+// — the honest prior-spec repair): the derivation moved from
+// `user.name.trim().charAt(0).toUpperCase() || "D"` onto the code-point
+// spread `[...user.name.trim()][0]?.toUpperCase() ?? "D"` — an
+// astral-plane first character renders whole, never a lone-surrogate
+// broken glyph; the empty-name fallback preserved.
 
 const cardSource = readFileSync(
   path.resolve(import.meta.dirname, "../src/components/project-card.tsx"),
@@ -45,11 +50,11 @@ describe("the real-user avatar initial (session 63, S63-C / A-L2)", () => {
 
   it("both call sites derive the initial from the signed-in user's name", () => {
     // DashboardView and RecentView both receive user: HeaderUser — the
-    // initial is the first character of the name, uppercased, with the
-    // "D" (Designer) fallback.
+    // initial is the first CODE POINT of the name, uppercased, with the
+    // "D" (Designer) fallback (the S146-C code-point repair).
     for (const source of [dashSource, recentSource]) {
       expect(source).toContain("userInitial=");
-      expect(source).toContain('user.name.trim().charAt(0).toUpperCase() || "D"');
+      expect(source).toContain('[...user.name.trim()][0]?.toUpperCase() ?? "D"');
     }
   });
 

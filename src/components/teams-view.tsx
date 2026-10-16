@@ -253,7 +253,7 @@ function TeamCard({
               style={{ backgroundColor: member.avatarColor || memberColorFor(member.name) }}
               aria-hidden
             >
-              {member.name.trim().charAt(0).toUpperCase() || "M"}
+              {[...member.name.trim()][0]?.toUpperCase() ?? "M"}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-gray-800">{member.name}</p>

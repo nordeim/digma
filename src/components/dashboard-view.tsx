@@ -242,7 +242,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       // carries the real-user initial (RA-53) — derived from
                       // the signed-in name with the "D" (Designer) fallback,
                       // the greetingName convention.
-                      userInitial={user.name.trim().charAt(0).toUpperCase() || "D"}
+                      userInitial={[...user.name.trim()][0]?.toUpperCase() ?? "D"}
                       onRenamed={() => refresh()}
                       onDeleted={handleDeleted}
                     />
@@ -345,7 +345,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                     <ProjectCard
                       key={project.id}
                       project={project}
-                      userInitial={user.name.trim().charAt(0).toUpperCase() || "D"}
+                      userInitial={[...user.name.trim()][0]?.toUpperCase() ?? "D"}
                       onRenamed={() => refresh()}
                       onDeleted={handleDeleted}
                     />

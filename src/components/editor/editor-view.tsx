@@ -2005,11 +2005,11 @@ export function EditorView({ user }: { user: HeaderUser }) {
               >
                 {/* Session 77 (S77-D / A-L3 — the user-initial family's
                     fourth site): the guarded form — trim + upper + the
-                    "Designer" fallback. The pre-fix bare
-                    user.name.charAt(0) rendered a blank chip on a
-                    whitespace-leading name (the family's other three
-                    sites are pinned by tests/user-initial.test.ts). */}
-                {user.name.trim().charAt(0).toUpperCase() || "D"}
+                    "Designer" fallback. Session 146 (S146-C / A146-L1):
+                    the code-point spread — an astral-plane first
+                    character renders whole, never a lone-surrogate
+                    broken glyph (pinned by tests/lows-s146.test.ts). */}
+                {[...user.name.trim()][0]?.toUpperCase() ?? "D"}
               </div>
               {/* Second collaborator chip — the reference's VERBATIM identity
                   (session 37, RA-41, bundle-decoded): its avatar stack renders

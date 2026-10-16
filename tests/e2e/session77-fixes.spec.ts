@@ -27,7 +27,25 @@ test.describe("session 77 — the modifier-click preservation (S77-B)", () => {
     // source page never ran the SPA navigation (stays on /Recent).
     const pagesBefore = page.context().pages().length;
     await link.click({ modifiers: ["Control"] });
-    await page.waitForTimeout(1000);
+
+    // The bounded causal poll (session 146, S146-A / B146-M1): the new
+    // tab's creation is an async context event — the pre-fix fixed
+    // 1000ms sleep only HOPED it had happened (it failed 2 of 3
+    // full-suite runs under cumulative single-worker load while passing
+    // 4/4 in isolation). Poll the URL predicate, never the count: the
+    // count increments while the new page is still about:blank (the
+    // navigation commits after creation), so the URL discriminator
+    // subsumes both the creation and the navigation.
+    await expect
+      .poll(
+        () =>
+          page
+            .context()
+            .pages()
+            .some((p) => p.url().includes("/Editor?projectId=")),
+        { timeout: 15_000 },
+      )
+      .toBe(true);
 
     const pages = page.context().pages();
     expect(pages.length).toBeGreaterThan(pagesBefore);

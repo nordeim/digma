@@ -191,7 +191,16 @@ export function CanvasThumbnail({
                     ? textAlignToJustify(el.textAlign)
                     : undefined) as React.CSSProperties["justifyContent"],
                   whiteSpace: el.type === "text" ? "pre-wrap" : undefined,
-                  overflow: "hidden",
+                  // The text-only overflow gate (session 146, S146-B /
+                  // A146-L2 — the F88 form-alignment with canvas.tsx
+                  // and the PresentOverlay): the line element's
+                  // absolutely-positioned SVG stroke must NOT be clipped
+                  // by the transformed containing block — a fresh
+                  // 0-height line (defaultGeometry height: 0) rendered
+                  // invisible in the thumbnail under the unconditional
+                  // form while fully rendered in the editor, present,
+                  // and both export formats.
+                  overflow: el.type === "text" ? "hidden" : undefined,
                 }}
               >
                 {el.type === "text" ? el.text : null}

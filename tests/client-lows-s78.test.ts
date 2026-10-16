@@ -376,7 +376,10 @@ describe("the teams member avatar's guarded initial (S78-G / A-I2)", () => {
     // THE DEFECT PIN: pre-fix the bare member.name.charAt(0) — safe
     // today (memberDisplayFor normalizes), but the guarded form is the
     // family convention at every other initial site.
-    expect(teams).toMatch(/member\.name\.trim\(\)\.charAt\(0\)\.toUpperCase\(\) \|\| "M"/);
+    // The S146-C honest repair (A146-L1): the guarded form moved onto
+    // the code-point spread — the same trim + upper + fallback
+    // contract, the first CODE POINT never the first UTF-16 code unit.
+    expect(teams).toMatch(/\[\.\.\.member\.name\.trim\(\)\]\[0\]\?\.toUpperCase\(\) \?\? "M"/);
     expect(teams).not.toMatch(/\{member\.name\.charAt\(0\)\}/);
   });
 });

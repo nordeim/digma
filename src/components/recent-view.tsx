@@ -447,7 +447,7 @@ export function RecentView({ user }: { user: HeaderUser }) {
                       // Session 63 (S63-C / A-L2): the first avatar chip
                       // carries the real-user initial (RA-53) — the
                       // greetingName "D" (Designer) fallback convention.
-                      userInitial={user.name.trim().charAt(0).toUpperCase() || "D"}
+                      userInitial={[...user.name.trim()][0]?.toUpperCase() ?? "D"}
                       onRenamed={(updated) =>
                         setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
                       }

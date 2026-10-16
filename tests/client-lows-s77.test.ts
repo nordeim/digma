@@ -194,7 +194,11 @@ describe("the editor header avatar's guarded initial (S77-D / A-L3)", () => {
     // THE DEFECT PIN: pre-fix the chip rendered the bare
     // user.name.charAt(0) — a whitespace-leading name rendered a blank
     // chip (the user-initial family's fourth site, the last unguarded).
-    const m = editor.match(/\{user\.name\.trim\(\)\.charAt\(0\)\.toUpperCase\(\) \|\| "D"\}/);
+    // The S146-C honest repair (A146-L1): the guarded expression moved
+    // onto the code-point spread — the same trim + upper + fallback
+    // contract, the first CODE POINT never the first UTF-16 code unit
+    // (an astral-plane first character renders whole).
+    const m = editor.match(/\{\[\.\.\.user\.name\.trim\(\)\]\[0\]\?\.toUpperCase\(\) \?\? "D"\}/);
     expect(m).not.toBeNull();
     expect(editor).not.toMatch(/\{user\.name\.charAt\(0\)\}/);
   });

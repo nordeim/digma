@@ -1110,6 +1110,16 @@ S154 = dict(S153)
 # observable behavior on every seeded flow).
 S155 = dict(S154)
 
+# s156 mapping (session 146 — the 122nd reference audit's evidence set + the
+# S146 capture set). The standing S155 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S146 tree); no NEW
+# witness this session (the S146 pass carries three render-only source
+# fixes — the thumbnail text-gated overflow, the avatar code-point
+# spread, and the two e2e poll forms — identical observable chrome on
+# every seeded flow; the 86-shot re-capture re-verifies each standing
+# witness against its birth dimensions).
+S156 = dict(S155)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1274,6 +1284,8 @@ def expected_for(name: str):
         return S154.get(Path(name).stem)
     if name.startswith("ref-audit-s155/"):
         return S155.get(Path(name).stem)
+    if name.startswith("ref-audit-s156/"):
+        return S156.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):

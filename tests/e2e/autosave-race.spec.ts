@@ -100,9 +100,28 @@ test.describe("the exit flush parity (session 56, S56-C / M-2)", () => {
     await page.getByRole("button", { name: "Back to dashboard" }).click();
     await expect(page).toHaveURL(/\/Dashboard/);
 
-    // The fire-and-forget exit flush completes in the background; give it
-    // generous settle time, then reopen the project.
-    await page.waitForTimeout(2_500);
+    // The fire-and-forget exit flush completes in the background; poll
+    // the PERSISTED STATE itself before reopening (session 146, S146-A
+    // / B146-L1): the pre-fix fixed 2500ms settle only HOPED the PUT
+    // had committed before the reopen GET — the same fixed-sleep race
+    // class the S77-B datum proved live under load. The projects API
+    // answers with the context's session, and the seeded project's
+    // backgroundColor IS the commit the discriminator waits for.
+    await expect
+      .poll(
+        async () => {
+          const res = await page.request.get("/api/projects");
+          if (!res.ok()) return "";
+          const body = (await res.json()) as {
+            ok: boolean;
+            data?: { projects?: Array<{ name?: string; backgroundColor?: string }> };
+          };
+          const seeded = body.data?.projects?.find((p) => p.name === SEEDED_PROJECT);
+          return seeded?.backgroundColor ?? "";
+        },
+        { timeout: 15_000 },
+      )
+      .toBe("#1a2b3c");
     await page.getByRole("button", { name: `Open ${SEEDED_PROJECT}` }).first().click();
     await expect(page).toHaveURL(/\/Editor\?projectId=/);
 
