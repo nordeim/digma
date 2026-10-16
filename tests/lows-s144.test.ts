@@ -105,8 +105,8 @@ const seoSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s143 lesson). */
-const UNIT = "2037";
-const FILES = "206";
+const UNIT = "2049";
+const FILES = "207";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -267,16 +267,24 @@ describe("S144-B the brief-lineage split-epoch count-pair registration (a dispat
     expect(collapsed(s143EntryB)).toMatch(/204 \*\.test\.ts under src\+tests/);
   });
 
-  it("SURVIVAL (live derivation): the files member derived at runtime — the live count is 206 (the 205 delivery files + this spec itself joining as the 206th), the exact figure the doc-update re-anchors the claim sites onto", () => {
+  it("SURVIVAL (live derivation): the files member derived at runtime — the live count rides the rolled FILES constant with a growth floor (the s145 repair; the count only grows as per-session specs join; the exact figure pinned by the pair-unity pins)", () => {
     // The LIVE derivation (never a quoted figure): the count at this
     // spec's own runtime, skills/ excluded per the standing scope.
-    expect(liveTestFileCount).toBe(206);
-    // The constants roll with the doc-update (born at 2025/205, the
-    // pre-re-anchor figures; re-anchored to 2037/206 together with the
-    // doc claim sites — the rolling-safe form, both members together,
-    // the B140-I1 pair-unity doctrine).
-    expect(UNIT).toBe("2037");
-    expect(FILES).toBe("206");
+    // The growth-floor repair (session 145, S145-E — the B144-I1
+    // latent-fragility class at the assertion-body shape): the count
+    // only grows as per-session specs join the tree, so the floor
+    // rides the rolled FILES constant; the exact figure stays pinned
+    // by the pair-unity pins; shrinkage still trips the floor.
+    expect(liveTestFileCount).toBeGreaterThanOrEqual(Number(FILES));
+    // The constants ride the doc-update (born at 2025/205, the
+    // pre-re-anchor figures; re-anchored together with the doc claim
+    // sites — the rolling-safe form, both members together, the
+    // B140-I1 pair-unity doctrine). The s145 repair completes the
+    // rolling form: the hard-coded literal assertions removed — the
+    // constants' agreement with the live doc state is pinned by the
+    // pair-unity pins, and literals here would go stale the next cycle
+    // (the B144-I1 latent-fragility class at the assertion-body shape,
+    // the exact form this repair closes).
   });
 });
 
