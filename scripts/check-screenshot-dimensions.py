@@ -1120,6 +1120,15 @@ S155 = dict(S154)
 # witness against its birth dimensions).
 S156 = dict(S155)
 
+# s157 mapping (session 147 — the 123rd reference audit's evidence set + the
+# S147 capture set). The standing S156 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S147 tree); no NEW
+# witness this session (the S147 pass is two record-only registrations —
+# the glyph-coordinate re-anchor, the sweep-enumeration completion —
+# no source file edited, the all-registration shape: identical
+# observable behavior on every seeded flow).
+S157 = dict(S156)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1286,6 +1295,8 @@ def expected_for(name: str):
         return S155.get(Path(name).stem)
     if name.startswith("ref-audit-s156/"):
         return S156.get(Path(name).stem)
+    if name.startswith("ref-audit-s157/"):
+        return S157.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
