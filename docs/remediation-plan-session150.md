@@ -30,9 +30,9 @@ The desktop nav 124/96/92 x 36; the greeting with the populated name + the time 
 
 ## Execution record
 
-- [ ] S150-A — the in-code cross-document citation repair (canvas.tsx:950: "PAD:1375" → the content-form anchor, zero line-count drift)
-- [ ] S150-B — the plan-execution-record tick pass (the s149 plan's seven boxes ticked in place)
-- [ ] S150-C — the per-session pin family (tests/lows-s150.test.ts — 7 pins: 3 RED / 4 survival)
-- [ ] The collateral family — the count family onto 2100 = 2093 + 7 / 212; the spec constants (31 UNIT + 30 FILES); the AGENTS session-150 bullet
-- [ ] The docs — the digma_SKILL v1.128.0 bump + F137; the PAD v1.129.0 — session_287.md + session_288.md
-- [ ] The full gate + the live verification + the capture + the docs alignment + the commit + the SSH-wrapper push
+- [x] S150-A — the in-code cross-document citation repair (canvas.tsx:950: "PAD:1375" → the content-form anchor, zero line-count drift)
+- [x] S150-B — the plan-execution-record tick pass (the s149 plan's seven boxes ticked in place)
+- [x] S150-C — the per-session pin family (tests/lows-s150.test.ts — 7 pins: 3 RED / 4 survival)
+- [x] The collateral family — the count family onto 2100 = 2093 + 7 / 212; the spec constants (31 UNIT + 30 FILES); the AGENTS session-150 bullet
+- [x] The docs — the digma_SKILL v1.128.0 bump + F137; the PAD v1.129.0 — session_287.md + session_288.md
+- [x] The full gate + the live verification + the capture + the docs alignment + the commit + the SSH-wrapper push

@@ -1155,6 +1155,14 @@ S159 = dict(S158)
 # geometry change on any seeded flow).
 S160 = dict(S159)
 
+# s161 mapping (session 151 — the 127th reference audit's evidence set + the
+# S151 capture set). The standing S160 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S151 tree); no NEW
+# witness this session (the S151 pass is the receipt-integrity cycle —
+# docs-only, zero source edits, no observable geometry change on any
+# seeded flow).
+S161 = dict(S160)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1329,6 +1337,8 @@ def expected_for(name: str):
         return S159.get(Path(name).stem)
     if name.startswith("ref-audit-s160/"):
         return S160.get(Path(name).stem)
+    if name.startswith("ref-audit-s161/"):
+        return S161.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
