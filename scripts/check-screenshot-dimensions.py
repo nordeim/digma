@@ -1138,6 +1138,15 @@ S157 = dict(S156)
 # geometry change on any seeded flow).
 S158 = dict(S157)
 
+# s159 mapping (session 149 — the 125th reference audit's evidence set + the
+# S149 capture set). The standing S158 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S149 tree); no NEW
+# witness this session (the S149 pass is one comment-token citation repair
+# + two record-only registrations — the glyph re-anchor, the sweep
+# completion — no source behavior change, no observable geometry change
+# on any seeded flow).
+S159 = dict(S158)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1308,6 +1317,8 @@ def expected_for(name: str):
         return S157.get(Path(name).stem)
     if name.startswith("ref-audit-s158/"):
         return S158.get(Path(name).stem)
+    if name.startswith("ref-audit-s159/"):
+        return S159.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):

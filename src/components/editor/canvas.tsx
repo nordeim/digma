@@ -860,8 +860,8 @@ export function Canvas() {
         )}
         {/* Marquee preview — Session 148 (S148-B / A148-I1 — the F88
             form-alignment family): the preview gate rides the commit's
-            OWN two-term threshold (drag.w > 2 && drag.h > 2, the :505
-            commit below) — the pre-fix w-only form painted a live
+            OWN two-term threshold (drag.w > 2 && drag.h > 2, the :503
+            commit above) — the pre-fix w-only form painted a live
             selection rectangle for a wide-but-thin drag (h ≤ 2) that
             the commit's own gate then refused, an affordance that lied
             about its outcome; the aligned form paints the preview only
