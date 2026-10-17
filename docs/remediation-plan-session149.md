@@ -33,10 +33,10 @@ The desktop nav 124/96/92 x 36; the greeting with the populated name + the time 
 
 ## Execution record
 
-- [ ] S149-A — the in-code citation repair (canvas.tsx: the ":505 commit below" → "the :503 commit above", zero line-count drift)
-- [ ] S149-B — the glyph-note re-anchor registration (the s149-glyph-reanchor-note: the teams-view members at content form)
-- [ ] S149-C — the fixed-sleep-note completion registration (the s149-sweep-completion-note: the :101 re-anchor + the two promise-wrapped members + the honest 21/13)
-- [ ] S149-D — the per-session pin family (tests/lows-s149.test.ts — 8 pins: 4 RED / 4 survival)
-- [ ] The collateral family — the count family onto 2093 = 2085 + 8 / 211; the spec constants (30 UNIT + 29 FILES); the AGENTS session-149 bullet
-- [ ] The docs — the digma_SKILL v1.127.0 bump + F136; the PAD v1.128.0 — session_283.md + session_284.md
-- [ ] The full gate + the live verification + the capture + the docs alignment + the commit + the SSH-wrapper push
+- [x] S149-A — the in-code citation repair (canvas.tsx: the ":505 commit below" → "the :503 commit above", zero line-count drift)
+- [x] S149-B — the glyph-note re-anchor registration (the s149-glyph-reanchor-note: the teams-view members at content form)
+- [x] S149-C — the fixed-sleep-note completion registration (the s149-sweep-completion-note: the :101 re-anchor + the two promise-wrapped members + the honest 21/13)
+- [x] S149-D — the per-session pin family (tests/lows-s149.test.ts — 8 pins: 4 RED / 4 survival)
+- [x] The collateral family — the count family onto 2093 = 2085 + 8 / 211; the spec constants (30 UNIT + 29 FILES); the AGENTS session-149 bullet
+- [x] The docs — the digma_SKILL v1.127.0 bump + F136; the PAD v1.128.0 — session_283.md + session_284.md
+- [x] The full gate + the live verification + the capture + the docs alignment + the commit + the SSH-wrapper push
