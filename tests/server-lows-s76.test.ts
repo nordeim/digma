@@ -8,6 +8,17 @@ import { readBoundedJson, REQUEST_BODY_LIMIT_BYTES } from "@/lib/validation";
 // audit's B-L2, B-L3, B-L4, and the rate-limit amortization the
 // deferred queue designed in session 75).
 //
+// HONEST PRIOR-SPEC REPAIR (session 148, S148-A / B148-L1 — the
+// S145-established convention): the readBoundedJson seam gained the
+// CONTENT-TYPE CSRF GATE at its head (a Content-Type not carrying
+// application/json is unparseable-by-policy — the login-CSRF closure),
+// so the fast-path stream-cancel Request below gained a
+// `content-type: application/json` header to match the first-party
+// contract every live consumer carries; the gate runs BEFORE the
+// content-length fast path, so a CT-less over-cap Request would now
+// answer the null form by design — the gate's own behavioral pins
+// live in tests/lows-s148.test.ts.
+//
 // S76-F — THE DEFECTS (the honesty batch): (1) the 32 MB ceiling's
 // doc comment claimed a 2000-element image-fill board sits far under
 // the cap — the elements route's own arithmetic (2000 x ~722KB =
@@ -74,7 +85,10 @@ describe("the honesty batch — the fast-path stream cancel (S76-F / B-L3)", () 
     const request = new Request("http://localhost/api", {
       method: "POST",
       body: stream,
-      headers: { "content-length": String(REQUEST_BODY_LIMIT_BYTES + 1) },
+      headers: {
+        "content-length": String(REQUEST_BODY_LIMIT_BYTES + 1),
+        "content-type": "application/json",
+      },
       duplex: "half",
     } as RequestInit);
     const result = await readBoundedJson(request);

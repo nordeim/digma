@@ -188,7 +188,16 @@ function TeamCard({
   async function deleteTeam() {
     if (deleting) return;
     setDeleting(true);
-    const data = await call<{ deleted: boolean }>(`/api/teams/${encodeURIComponent(team.id)}`, { method: "DELETE" });
+    // Session 148 (S148-C / A148-I2 — the S71-A errorTitle family's
+    // missed member): the delete surfaces carry their own failure-toast
+    // copy — the project-card and recent-view siblings both pass
+    // { errorTitle: "Delete failed" }; the pre-fix omission toasted the
+    // generic "Something went wrong" on a failed team delete.
+    const data = await call<{ deleted: boolean }>(
+      `/api/teams/${encodeURIComponent(team.id)}`,
+      { method: "DELETE" },
+      { errorTitle: "Delete failed" },
+    );
     if (data) {
       onDeleted(team.id);
       toast.success("Team deleted", team.name);

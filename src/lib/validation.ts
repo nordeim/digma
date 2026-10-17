@@ -240,6 +240,33 @@ type BoundedJson =
  * never see). The decode+parse tail keeps the null-on-unparseable
  * contract, so the call sites' field narrowing is untouched. */
 export async function readBoundedJson(request: Request): Promise<BoundedJson> {
+  // Session 148 (S148-A / B148-L1 — the ninety-sixth audit's Low): the
+  // CONTENT-TYPE CSRF GATE, ahead of every byte read. A JSON-parse
+  // seam blocks unparseable bodies, never form-originated transports:
+  // an HTML <form method="POST" enctype="text/plain"> (the classic
+  // name/value trick) posts a body that parses as valid JSON, so the
+  // parse alone never barred the cross-site form POST — and the public
+  // auth family MINTS cookies on POST (login/verify-otp), making the
+  // class a login-CSRF: the attacker's session planted in the victim's
+  // jar (sameSite:"lax" gates cookie SENDING on cross-site POSTs,
+  // never cookie SETTING — the exact asymmetry S136-A documented for
+  // the clear direction; the S136-A "JSON-body gate" claim over-covered
+  // this seam, the B125-I2 over-coverage class at the parse seam). The
+  // gate: a Content-Type not carrying application/json (case-
+  // insensitive; the "; charset=" suffix tolerated) is
+  // unparseable-by-policy — the null-on-unparseable contract below,
+  // the call sites' field narrowing untouched, zero call-site changes.
+  // First-party consumers all send application/json (the lead-verified
+  // census: the call() seam's body-conditional merge, the ten direct
+  // fetch sites, the smoke suite's curl -H family, Playwright's
+  // object-data default, the in-page e2e fetch headers). The stream is
+  // cancelled like the tooLarge fast path — a kept-open stream would
+  // hold the connection.
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    await request.body?.cancel().catch(() => {});
+    return { tooLarge: false, value: null };
+  }
   // Fast path: a declared content-length over the cap rejects before
   // any byte is read — and the unconsumed stream is cancelled (the
   // symmetric twin of the stream-counter path's own cancel below: a

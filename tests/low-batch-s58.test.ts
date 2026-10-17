@@ -47,7 +47,13 @@ describe("the session-58 Low batch (S58-F)", () => {
     // The deleting state exists in the TeamCard component…
     expect(teamsSource).toMatch(/const \[deleting, setDeleting\] = React\.useState\(false\);/);
     // …set around the flight (the async deleteTeam)…
-    expect(teamsSource).toMatch(/setDeleting\(true\);[\s\S]{0,600}?setDeleting\(false\);/);
+    // HONEST PRIOR-SPEC REPAIR (session 148, S148-C / A148-I2 — the
+    // S145-established convention): the window widened 600 → 900 — the
+    // deleteTeam seam gained the errorTitle registration comment (the
+    // S71-A family's missed member), pushing setDeleting(false) past
+    // the old window; the pin's intent (the in-flight guard brackets
+    // the flight) is unchanged.
+    expect(teamsSource).toMatch(/setDeleting\(true\);[\s\S]{0,900}?setDeleting\(false\);/);
     // …and the Yes-Delete button is disabled while in flight.
     expect(teamsSource).toMatch(
       /<Button variant="destructive" size="sm" disabled=\{deleting\} onClick=\{deleteTeam\}>/,

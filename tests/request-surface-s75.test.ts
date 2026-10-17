@@ -25,6 +25,17 @@ import { readBoundedJson, REQUEST_BODY_LIMIT_BYTES } from "@/lib/validation";
 // `.catch(() => null)` forms already carry. All fourteen parse sites
 // migrate onto the seam; the s68 per-site pins re-anchor onto the
 // seam-consumption form (the guard lives INSIDE the seam now).
+//
+// HONEST PRIOR-SPEC REPAIR (session 148, S148-A / B148-L1 — the
+// S145-established convention): the seam gained the CONTENT-TYPE CSRF
+// GATE at its head (a Content-Type not carrying application/json is
+// unparseable-by-policy — the login-CSRF closure), so the behavioral
+// Requests below gained `content-type: application/json` headers to
+// match the first-party contract every live consumer carries (the
+// call() seam's body-conditional merge, the smoke curls' -H family,
+// Playwright's object-data default); a CT-less Request now answers
+// null by design, and the gate's own behavioral pins live in
+// tests/lows-s148.test.ts.
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -36,6 +47,7 @@ describe("readBoundedJson — the behavioral contract (S75-B)", () => {
   it("parses a small JSON body", async () => {
     const request = new Request("http://localhost/api", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ email: "demo@digma.app" }),
     });
     const result = await readBoundedJson(request);
@@ -80,6 +92,7 @@ describe("readBoundedJson — the behavioral contract (S75-B)", () => {
       // Node's undici requires the duplex option for streaming request
       // bodies (the WHATWG fetch spec's streaming-request extension).
       duplex: "half",
+      headers: { "content-type": "application/json" },
     } as RequestInit);
     const result = await readBoundedJson(request);
     expect(result.tooLarge).toBe(true);
@@ -96,6 +109,7 @@ describe("readBoundedJson — the behavioral contract (S75-B)", () => {
       method: "POST",
       body: stream,
       duplex: "half",
+      headers: { "content-type": "application/json" },
     } as RequestInit);
     const result = await readBoundedJson(request);
     expect(result.tooLarge).toBe(false);

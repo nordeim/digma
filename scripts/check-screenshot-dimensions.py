@@ -1129,6 +1129,15 @@ S156 = dict(S155)
 # observable behavior on every seeded flow).
 S157 = dict(S156)
 
+# s158 mapping (session 148 — the 124th reference audit's evidence set + the
+# S148 capture set). The standing S157 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S148 tree); no NEW
+# witness this session (the S148 pass is the Content-Type CSRF gate at
+# the parse seam + two cosmetic form-alignments — the marquee preview's
+# two-term threshold and the deleteTeam errorTitle — no observable
+# geometry change on any seeded flow).
+S158 = dict(S157)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1297,6 +1306,8 @@ def expected_for(name: str):
         return S156.get(Path(name).stem)
     if name.startswith("ref-audit-s157/"):
         return S157.get(Path(name).stem)
+    if name.startswith("ref-audit-s158/"):
+        return S158.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
