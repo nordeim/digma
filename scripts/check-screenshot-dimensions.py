@@ -1201,6 +1201,16 @@ S164 = dict(S163)
 # worklog-doc-only).
 S165 = dict(S164)
 
+# s166 mapping (session 156 — the 132nd reference audit's evidence set + the
+# S156 capture set). The standing S165 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S156 tree); no NEW
+# witness this session (the S156 pass is the capture-script mechanical-
+# restore hardening + the guard-ordering citation repair — a scripts/-
+# only cycle that changes NO observable geometry on any seeded flow:
+# zero src/ lines move and the witness-restore script itself touches no
+# rendered surface; the citation repair is worklog-doc-only).
+S166 = dict(S165)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1385,6 +1395,8 @@ def expected_for(name: str):
         return S164.get(Path(name).stem)
     if name.startswith("ref-audit-s165/"):
         return S165.get(Path(name).stem)
+    if name.startswith("ref-audit-s166/"):
+        return S166.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1531,6 +1543,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s163").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s164").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s165").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s166").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
