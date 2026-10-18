@@ -44,6 +44,25 @@ export function clampNumber(value: unknown, min: number, max: number, fallback: 
   return Math.min(Math.max(n, min), max);
 }
 
+// Session 152 (S152-A / B148-I2 closed — the one-hundredth audit's
+// chosen work): the truncation family's UTF-16-safe seam. A raw
+// String.slice cap can split a surrogate pair at the boundary — a
+// stored name carrying a lone high surrogate renders a broken glyph
+// (cosmetic, self-healing on rename; registered at s148, closed here
+// at the nine censused members — the F139 class-census-at-fix
+// doctrine: the fix's census is the live derivation). The boundary
+// never stores a dangling half: an astral-plane character is kept
+// whole or dropped entirely, and the cap contract holds (the safe
+// form is never longer than the raw slice).
+export function truncateUtf16Safe(value: string, maxLength: number): string {
+  const sliced = value.slice(0, maxLength);
+  const last = sliced.charCodeAt(sliced.length - 1);
+  // A high surrogate at the end means a pair was split (or the input
+  // itself ended malformed) — drop the dangling half either way.
+  if (last >= 0xd800 && last <= 0xdbff) return sliced.slice(0, -1);
+  return sliced;
+}
+
 export function clampText(value: unknown, maxLength: number): string | null {
   // Session 71 (S71-D / L-A10 — the nineteenth audit's B-F4): the ONE
   // text clamp. The deleted "optional" twin was behaviorally identical
@@ -54,7 +73,7 @@ export function clampText(value: unknown, maxLength: number): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
-  return trimmed.slice(0, maxLength);
+  return truncateUtf16Safe(trimmed, maxLength);
 }
 
 // Session 99 (S99-B / A99-L2 — the forty-seventh audit's A-2): the
@@ -73,7 +92,7 @@ export function clampText(value: unknown, maxLength: number): string | null {
 // reconciles when the user LEAVES the field, never mid-composition).
 export function clampTextContent(value: unknown, maxLength: number): string | null {
   if (typeof value !== "string") return null;
-  return value.slice(0, maxLength);
+  return truncateUtf16Safe(value, maxLength);
 }
 
 const FONT_WEIGHTS = new Set(["300", "400", "500", "600", "700", "800"]);

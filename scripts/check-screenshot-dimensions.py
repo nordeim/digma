@@ -1163,6 +1163,15 @@ S160 = dict(S159)
 # seeded flow).
 S161 = dict(S160)
 
+# s162 mapping (session 152 — the 128th reference audit's evidence set + the
+# S152 capture set). The standing S161 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S152 tree); no NEW
+# witness this session (the S152 pass is the UTF-16-slice-closure cycle —
+# the truncateUtf16Safe seam changes NO observable geometry on any seeded
+# flow: the boundary-split behavior fires only on astral-plane input at
+# the cap, and every seeded name/description/text is BMP-only).
+S162 = dict(S161)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1339,6 +1348,8 @@ def expected_for(name: str):
         return S160.get(Path(name).stem)
     if name.startswith("ref-audit-s161/"):
         return S161.get(Path(name).stem)
+    if name.startswith("ref-audit-s162/"):
+        return S162.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):

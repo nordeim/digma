@@ -152,7 +152,7 @@ describe("the derived display names respect the 80-char cap (S84-D / B84-I2)", (
     // THE DEFECT PIN: pre-fix the create reads
     // `name: name || email.split("@")[0] || "Designer"` — uncapped.
     expect(registerSource).toMatch(
-      /name: \(name \|\| email\.split\("@"\)\[0\] \|\| "Designer"\)\.slice\(0, 80\)/,
+      /name: truncateUtf16Safe\(name \|\| email\.split\("@"\)\[0\] \|\| "Designer",\s*80\)/,
     );
   });
 

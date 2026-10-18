@@ -96,8 +96,8 @@ const seoSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s150 lesson). */
-const UNIT = "2108";
-const FILES = "213";
+const UNIT = "2120";
+const FILES = "214";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -210,8 +210,11 @@ describe("S151-B the receipt-integrity registration (a delivery-receipt conventi
   });
 
   it("DEFECT (docs): the F138 lesson registered in the digma_SKILL — the spec-pinned-receipt member inserted after F137, the version bumped to v1.129.0", () => {
-    // The version bump landed.
-    expect(skillSource).toMatch(/version: 1\.129\.0/);
+    // The version bump landed. [Session-152 re-anchor: the version field
+    // is a live claim that moves with every cycle's bump — the rolling
+    // form, the count-constant class; the s151 bump landed at v1.129.0,
+    // the pin rides the CURRENT figure.]
+    expect(skillSource).toMatch(/version: 1\.130\.0/);
     // The F138 lesson present, in the numbered-list form after F137.
     expect(skillSource).toMatch(/^137\. \*\*F137 —/m);
     expect(skillSource).toMatch(/^138\. \*\*F138 —/m);

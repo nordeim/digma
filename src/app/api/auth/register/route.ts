@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { generateVerifyCode, hashPassword } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
-import { normalizeEmail, readBoundedJson, USER_LIMIT } from "@/lib/validation";
+import { normalizeEmail, readBoundedJson, truncateUtf16Safe, USER_LIMIT } from "@/lib/validation";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -102,7 +102,9 @@ export async function POST(request: NextRequest) {
           // 80-char bound the explicit name path enforces above — an email
           // with a ~190-char local part (the 200-char email cap) previously
           // stored a ~190-char User.name, the one path around S62-G's cap.
-          name: (name || email.split("@")[0] || "Designer").slice(0, 80),
+          // Session 152 (S152-A / B148-I2): the cap rides the UTF-16-safe
+          // seam — an astral local part never stores a split pair.
+          name: truncateUtf16Safe(name || email.split("@")[0] || "Designer", 80),
           passwordHash,
           avatarColor: "#3B82F6",
           verified: false,

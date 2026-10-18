@@ -3,7 +3,7 @@
 // provides. "AI features degrade, never fail" (inherited doctrine): every
 // assistant utterance resolves to element operations + a reply string.
 
-import { clampNumber } from "@/lib/validation";
+import { clampNumber, truncateUtf16Safe } from "@/lib/validation";
 import { DEFAULT_FILL, SCALE_MAX, SCALE_MIN } from "@/lib/editor";
 
 // Session 78 (S78-G / B-L3): the S71-D fold's numeric leftover — this
@@ -291,7 +291,11 @@ export function parseFallbackCommand(
  */
 export function sanitizeElementSummary(raw: string): string {
   const flattened = raw.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
-  return flattened.slice(0, 500);
+  // Session 152 (S152-A / B148-I2): the 500-unit bound rides the
+  // UTF-16-safe seam (the F139 class-census-at-fix member — the AI
+  // sanitizer's four text bounds joined the class the s148
+  // registration's four-site snapshot missed).
+  return truncateUtf16Safe(flattened, 500);
 }
 
 // Session 104 (S104-I / B-I1 — the type-level F79 census): the export
@@ -306,7 +310,7 @@ export function sanitizeLlmOperations(
 ): AiCommand | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
-  const reply = typeof obj.reply === "string" ? obj.reply.trim().slice(0, 500) : "";
+  const reply = typeof obj.reply === "string" ? truncateUtf16Safe(obj.reply.trim(), 500) : "";
   const list = Array.isArray(obj.operations) ? obj.operations : [];
   const operations: AiOperation[] = [];
 
@@ -331,7 +335,7 @@ export function sanitizeLlmOperations(
           typeof el.fill === "string" && /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$/.test(el.fill)
             ? el.fill
             : null,
-        text: typeof el.text === "string" ? el.text.slice(0, 500) : null,
+        text: typeof el.text === "string" ? truncateUtf16Safe(el.text, 500) : null,
         fontSize: clamp(el.fontSize, 1, 200, 16),
         radius: clamp(el.radius, 0, 500, 0),
       };
@@ -372,7 +376,7 @@ export function sanitizeLlmOperations(
         // bound — buildElementRow's spelling is the same member (the
         // cross-file two-spelling closed).
         if (typeof patchRaw.scale === "number") patch.scale = clamp(patchRaw.scale, SCALE_MIN, SCALE_MAX, 1);
-        if (typeof patchRaw.text === "string") patch.text = patchRaw.text.slice(0, 500);
+        if (typeof patchRaw.text === "string") patch.text = truncateUtf16Safe(patchRaw.text, 500);
         if (Object.keys(patch).length === 0) continue;
         operations.push({ op: "update", ids, patch });
       }

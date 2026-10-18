@@ -120,8 +120,8 @@ const seoSource = readFileSync(
  *  the docs and these constants TOGETHER so the pair-unity pins stay
  *  green through the transition — the rolling-safe form at birth, the
  *  s140/s141/s142 lesson). */
-const UNIT = "2108";
-const FILES = "213";
+const UNIT = "2120";
+const FILES = "214";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -153,11 +153,17 @@ const padCommandRow = () =>
  *  Informational") or the compressed form ("0C/0H/0M/0L/0I"). */
 const planHistoryZeroFinding = (() => {
   const dir = path.resolve(import.meta.dirname, "../docs");
-  const plans = readdirSync(dir).filter(
-    (f) =>
-      /^remediation-plan-session\d+\.md$/.test(f) &&
-      f !== "remediation-plan-session143.md",
-  );
+  const plans = readdirSync(dir).flatMap((f) => {
+    const m = /^remediation-plan-session(\d+)\.md$/.exec(f);
+    if (!m) return [];
+    const n = Number(m[1]);
+    // Session-152 re-anchor (the second zero-finding cycle): the
+    // claim scopes to PRIOR plans (session < 143) — the later
+    // zero-finding carriers (s152 and any after) carry the combined
+    // form as their own registration's referent, never as competing
+    // census claims; the sweep's scope grows by the later carriers.
+    return n < 143 ? [f] : [];
+  });
   const carriers: string[] = [];
   for (const f of plans) {
     const src = readFileSync(path.join(dir, f), "utf8");

@@ -94,7 +94,7 @@ describe("the server Low batch (session 62, S62-G)", () => {
     // THE DEFECT PIN: pre-fix the name was `${source.name} (Copy)`
     // (127 chars from a 120-char source) and create+createMany were
     // separate awaits.
-    expect(duplicateSource).toMatch(/name: `\$\{source\.name\} \(Copy\)`\.slice\(0, 120\)/);
+    expect(duplicateSource).toMatch(/name: truncateUtf16Safe\(`\$\{source\.name\} \(Copy\)`\s*,\s*120\)/);
     expect(duplicateSource).toMatch(/db\.\$transaction\(async \(tx\) => \{/);
   });
 

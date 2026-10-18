@@ -2,14 +2,17 @@
 // name from an invite email — the part the Create Team dialog and the API
 // route must agree on.
 
+import { truncateUtf16Safe } from "./validation";
+
 export function memberDisplayFor(email: string): string {
   const local = email.trim().split("@")[0] ?? "";
   if (!local) return "Member";
-  return local
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ")
+  return truncateUtf16Safe(
+    local
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" "),
     // Session 84 (S84-D / B84-I2): the derived display name caps at the
     // stored-name bound. The member-creation fallbacks (teams POST +
     // members POST) store this string, and an email with a ~190-char
@@ -17,7 +20,10 @@ export function memberDisplayFor(email: string): string {
     // ~190-char stored name — the one path around the 80-char cap the
     // explicit name path enforces (S62-G's "every stored string is
     // capped" rationale, the derivation paths it missed).
-    .slice(0, 80);
+    // Session 152 (S152-A / B148-I2): the cap rides the UTF-16-safe
+    // seam — an astral local part never stores a split pair.
+    80,
+  );
 }
 
 const MEMBER_COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#06B6D4"];

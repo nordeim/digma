@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok, requireSession } from "@/lib/api";
 import { rowStoredBytes, THUMBNAIL_ELEMENT_SELECT, withThumbFills } from "@/lib/editor";
-import { PROJECT_LIMIT } from "@/lib/validation";
+import { PROJECT_LIMIT, truncateUtf16Safe } from "@/lib/validation";
 import { crudRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -76,7 +76,10 @@ export async function POST(request: NextRequest, { params }: Params) {
       }
       const created = await tx.project.create({
         data: {
-          name: `${source.name} (Copy)`.slice(0, 120),
+          // Session 152 (S152-A / B148-I2): the copy-name cap rides the
+          // UTF-16-safe seam — an astral source name never stores a
+          // split pair at the 120-unit boundary.
+          name: truncateUtf16Safe(`${source.name} (Copy)`, 120),
           description: source.description,
           template: source.template,
           backgroundColor: source.backgroundColor,
