@@ -56,8 +56,8 @@ const GLOBALS = readFileSync(
 // Session 92 (S92-E): re-anchored — 1150 unit / 154 files (the s92
 // delivery's lows-s92 +9); the intents (the docs carry the DELIVERED
 // counts, the family moves together) unchanged.
-const UNIT = "2171";
-const FILES = "218";
+const UNIT = "2182";
+const FILES = "219";
 
 // ---------------------------------------------------------------------------
 // The consumer probe (A91-L1's evidence base): a recursive walk of src/

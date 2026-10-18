@@ -8,9 +8,13 @@
 #
 # THE CONTRACT (the s153 lesson made mechanical):
 #   1. The NAMED list below is EVERY docs/screenshots path the e2e
-#      suite writes (16 paths, derived live from the spec grep —
-#      pinned by tests/lows-s156.test.ts's live-derivation guard: a
-#      new spec write goes RED until this list updates).
+#      spec sources REFERENCE (16 paths, derived live from the spec-text
+#      grep — comments included, so a comment-cited evidence path rides
+#      the list as a TRACKED NO-OP member; the actually-written set is
+#      the 15-and-varying subset — pinned by tests/lows-s156.test.ts's
+#      live-derivation guard: a new spec write goes RED until this list
+#      updates; the scope-honesty form S157-B / B157-I2: the mechanism
+#      and the claim name the same set).
 #   2. The restore touches EXACTLY the named list — never the
 #      modified-file list, never a broad checkout (the s153 over-catch
 #      class: a broad checkout over the modified files reverted the
@@ -26,10 +30,15 @@
 #   bash scripts/witness-restore.sh
 set -u
 
-# The named witness list — every docs/screenshots path the e2e suite
-# writes (the live derivation: grep -ohE 'docs/screenshots/...' over
-# tests/e2e/*.ts; each member names its spec site in birth order).
+# The named witness list — every docs/screenshots path the e2e spec
+# sources REFERENCE (the live derivation: grep -ohE
+# 'docs/screenshots/...' over tests/e2e/*.ts — a TEXT grep, comments
+# included; each member names its spec site in birth order; see the
+# first member's NO-OP registration).
 WITNESSES=(
+  # The NO-OP member (S157-B / B157-I2): a comment-cited evidence
+  # path — editor-mobile-header.spec.ts:10 cites it; the suite never
+  # writes it (the checkout restores a byte-stable tracked no-op).
   "docs/screenshots/ref-audit-s52/ref-02-mobile-editor-header-390.png"
   "docs/screenshots/ref-audit-s72/clone-09-slider-one-undo.png"
   "docs/screenshots/ref-audit-s72/clone-10-soft-leave-persisted.png"
