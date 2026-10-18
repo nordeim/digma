@@ -1,0 +1,25 @@
+# Session 320 — the final summary (Session 156: the capture-script mechanical-restore hardening + the guard-ordering citation repair, delivered and pushed)
+
+Session 156 — the 104th Mode C audit cycle — is complete. The delivery commit `f0ec04f` was pushed to `main` and verified (`refs/heads/main @ f0ec04f == local HEAD`, the HTTPS cross-check agreeing via `git ls-remote`).
+
+## What the cycle found
+
+The combined census **0C/0H/0M/0L/0I** — **the FOURTH zero-finding census in the plan history** (after S143's first, S152's second, S153's third) **and the FIRST with both auditors individually clean**. Auditor A verified every S155-A comment claim true at all three legs (the addElements unmatchability premise, the enumeration completeness with zero unnamed arms), the keep-form family and the memoization chain intact, and the legacy `flex-shrink-0` alias live-compiling in the installed Tailwind v4.3.3. Auditor B re-derived every census at its exact figure and closed the unit figure's static↔runtime arithmetic for the first time (2110 static line-start `it(` sites + 49 loop expansions = 2159 exactly), returning one verification note: the guard-ordering dispatch-phrasing inversion — the live tree holds **session → limiter → parse** at the six session-gated mutating handlers and **limiter → parse** at the public auth family, while the prior cycles' dispatch prose and frozen worklog entries said "limiter → session → parse"; the repo itself internally consistent and safe (session-first burns no limiter budget unauthenticated). Lead-verified live at projects/route.ts POST :63/:70 and auth/login POST :12.
+
+The F138 guard's **FIFTH verification PASSED** (the s155 plan 6/6 ticked at its own delivery commit 5b89b78 — the forward form held a fifth consecutive cycle). The id-stable PUT deferral carried with all four premises re-derived live and holding (the twenty-ninth consecutive cycle).
+
+## What the cycle delivered
+
+- **S156-A** — `scripts/witness-restore.sh` born: the B121-I1 capture-script mechanical-restore hardening closed (carried since session 121, sharpened by the s153 over-catch incident). The post-e2e witness restore is now a MECHANICAL named-list operation: the 16-path e2e write-set named (the 11-and-varying changing witnesses + the byte-stable no-ops), every path verified tracked, the restore touching EXACTLY the named list (never the modified-file list, never a broad checkout), the SAFETY ASSERTION aborting non-zero on any outside-list removal, and the before/after census printed. Its first live production run: 16 named, 53 modified before, **11 restored, 42 deliverables untouched** — the s153 over-catch class structurally impossible.
+- **S156-B** — the s156-guard-ordering-repair-note (landed before the spec's birth): the frozen-record inversion registered + the forward form born (an ordering claim is a count claim's sibling — derived live at the citing tree with the branch distinction, never quoted).
+- **S156-C** — `tests/lows-s156.test.ts` (12 pins: 7 RED incl. the pair-unity RED-until-collateral / 5 survival; the store-contract survival member added at birth, narrated) with the F138 guard's SIXTH instance (the s155 plan's record pinned 6/6 ticked) and the forward count-truth guard's THIRD instance (the live 22-file figure === the v1.135.0 quote).
+- **The collateral** — the count family onto **2171 = 2159 + 12 unit / 218 files**; the §7.1 row; the AGENTS session-156 bullet; the s154/s155 forward-guard rolling re-anchors onto v1.135.0; the spec-constants sweep 37 UNIT + 36 FILES; the s151..s155 SKILL-version pins onto v1.134.0 (the five missed re-anchors the first full-gate run exposed, repaired in the persisted idempotent script).
+- **The docs** — the PAD **v1.135.0** (the 22-file layer total STAYS 14,077 — a scripts/-only cycle); the digma_SKILL **v1.134.0 + F143** (the ordering-claim member).
+
+## The gates on the pushed tree
+
+lint 0 · typecheck 0 · unit **2171/2171 across 218 files** · build 27 routes · smoke **73/73** · e2e **262/262 zero flakes** (the first run's single session77 failure a load flake — isolated 4/4, full re-run 262/262) · mobile nav **9/9 the 133rd session** (the FINAL S156 build) · SEO **4/4** · pins S128..S156 **375/375** · the **132nd reference audit NO DRIFT** (the clip datum byte-identical the 93rd consecutive session; evidence in `docs/screenshots/ref-audit-s166/`) · the capture ALL CAPTURED (86 re-taken, 70 fresh, 16 byte-identical, ZERO outside-window residue) · the dimension checker **869/869** · the DB pristine **1/2/6/1/3** · the secret scan clean (zero newly-added secret lines).
+
+## The push
+
+The SSH-wrapper push per the runbook: the key materialized outside the repo (0600, `/home/z/.pushkeys/`), the fingerprint verified (**SHA256:3ddaNlFhMz1JXiGEDgVEaRsUzI4Ev0IpGEEB7NnU4PU** — matching the S152/S153/S154/S155 records), the dry-run confirming the fast-forward `bf8c698..f0ec04f`, the real push verified (`remote main @ f0ec04f == local HEAD`), the HTTPS cross-check agreeing, and the key shredded.
