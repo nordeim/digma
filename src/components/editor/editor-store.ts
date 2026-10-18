@@ -253,12 +253,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       // the first-save remap still replaces (new ids never match);
       // the selectedIds map+filter keeps its reference when the remap
       // is identity and the filter removes nothing. The honest
-      // exclusions (the F139 class-census-at-fix doctrine):
-      // loadProject/restoreSnapshot are by-definition real transitions
-      // (the boardEpoch lineage break; the history machinery's own
-      // arrays — restoreSnapshot's S114-B value-compare guard already
-      // covers its identical-restore window), and the eight
-      // S109-A/S110-A no-op-guarded mutation arms commit
+      // exclusions (the F139 class-census-at-fix doctrine, narrowed by
+      // S154-A): loadProject stays a by-definition real transition
+      // (the boardEpoch lineage break), while
+      // restoreSnapshot's ELEMENTS commit stays a real transition (the
+      // history machinery's own arrays — the S114-B value-compare
+      // guard already covers its identical-restore window) and its
+      // selectedIds member is identity-bounded since S154-A, and the
+      // eight S109-A/S110-A no-op-guarded mutation arms commit
       // content-different values by construction — their identity
       // churn is legitimate.
       const nextSelected = state.selectedIds
@@ -738,12 +740,23 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     set((state) => {
       if (state.past.length === 0) return state;
       const previous = state.past[state.past.length - 1]!;
+      // Session 154 (S154-A / A154-I2 — the identity-churn completion,
+      // the history-arm member): the elements commit is the real
+      // transition; the selectedIds filter is content-identical when
+      // the selection fully survives the restore (the common case:
+      // undoing a change with the selection retained) — the reference
+      // survives that churn too.
+      const nextSelected = state.selectedIds.filter((id) =>
+        previous.elements.some((el) => el.id === id),
+      );
       return {
         past: state.past.slice(0, -1),
         future: [snapshotOf(state), ...state.future].slice(0, 60),
         elements: previous.elements,
         backgroundColor: previous.backgroundColor,
-        selectedIds: state.selectedIds.filter((id) => previous.elements.some((el) => el.id === id)),
+        selectedIds: sameIdSequence(nextSelected, state.selectedIds)
+          ? state.selectedIds
+          : nextSelected,
         saveState: "unsaved",
       };
     }),
@@ -752,12 +765,21 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     set((state) => {
       if (state.future.length === 0) return state;
       const next = state.future[0]!;
+      // Session 154 (S154-A / A154-I2): the redo arm's own filter — the
+      // same keep-form as undo (a selection fully surviving the
+      // traversal keeps its reference; the elements commit stays the
+      // real transition).
+      const nextSelected = state.selectedIds.filter((id) =>
+        next.elements.some((el) => el.id === id),
+      );
       return {
         past: [...state.past, snapshotOf(state)].slice(-60),
         future: state.future.slice(1),
         elements: next.elements,
         backgroundColor: next.backgroundColor,
-        selectedIds: state.selectedIds.filter((id) => next.elements.some((el) => el.id === id)),
+        selectedIds: sameIdSequence(nextSelected, state.selectedIds)
+          ? state.selectedIds
+          : nextSelected,
         saveState: "unsaved",
       };
     }),
@@ -776,6 +798,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       // guard rides the S111-A value-compare seam: an identical
       // restore behaves as a no-op, never a phantom change.
       if (snapshotsEqual(snapshotOf(state), snapshot)) return {};
+      // Session 154 (S154-A / A154-I2 — the identity-churn completion):
+      // the ELEMENTS commit stays a real transition (the history
+      // machinery's own arrays; the S114-B value-compare guard above
+      // covers the identical-restore window) while the selectedIds
+      // member joins the identity-bounded class — a selection fully
+      // surviving the restore keeps its reference.
+      const nextSelected = state.selectedIds.filter((id) =>
+        snapshot.elements.some((el) => el.id === id),
+      );
       return {
         // A revert is a mutation like any other: the CURRENT state goes onto
         // `past` first, so Ctrl+Z undoes the revert itself (session 27).
@@ -783,7 +814,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         future: [],
         elements: snapshot.elements.map((el) => ({ ...el })),
         backgroundColor: snapshot.backgroundColor,
-        selectedIds: state.selectedIds.filter((id) => snapshot.elements.some((el) => el.id === id)),
+        selectedIds: sameIdSequence(nextSelected, state.selectedIds)
+          ? state.selectedIds
+          : nextSelected,
         saveState: "unsaved",
       };
     }),

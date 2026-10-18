@@ -1181,6 +1181,16 @@ S162 = dict(S161)
 # content-identical commits, and every visible state is byte-identical).
 S163 = dict(S162)
 
+# s164 mapping (session 154 — the 130th reference audit's evidence set + the
+# S154 capture set). The standing S163 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S154 tree); no NEW
+# witness this session (the S154 pass is the selectedIds identity-churn
+# completion + the count-truth repair — the three-arm keep-form changes NO
+# observable geometry on any seeded flow: the bound fires only when the
+# selection fully survives a history restore, and every visible state is
+# byte-identical; the count repair is doc-only).
+S164 = dict(S163)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1361,6 +1371,8 @@ def expected_for(name: str):
         return S162.get(Path(name).stem)
     if name.startswith("ref-audit-s163/"):
         return S163.get(Path(name).stem)
+    if name.startswith("ref-audit-s164/"):
+        return S164.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1497,6 +1509,15 @@ def main():
     + [p for p in (ROOT / "ref-audit-s153").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s154").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s155").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s156").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s157").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s158").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s159").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s160").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s161").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s162").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s163").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s164").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

@@ -1,0 +1,27 @@
+# Session 308 — the agent narrative (Session 154's continuation log: the full-cycle execution record)
+
+The continuation after the baseline review, executing Session 154 — the 102nd Mode C audit cycle — end to end.
+
+## The workspace rebuild
+
+The workspace had been RESET (the digma directory absent — a fresh environment). The clone brought `ffcff6d` = the S153 delivery `9be1d69` + the session_304/305/306 log pushes. The rebuild: `bun install` (481 packages), `prisma generate`, `db:push` + `db:seed` under `env -u DATABASE_URL` (the environment trap confirmed LIVE — the exported shell `DATABASE_URL` pointed at `/home/z/my-project/db/custom.db`, reproducing the documented `Error code 14` symptom exactly when un-sanitized), `.env` created from `.env.example` (diff-clean, `DATABASE_URL="file:../db/custom.db"`, the `db/` folder at the repo root). The chromium-1243 provision: the first e2e run failed 257/262 with `browserType.launch: Executable doesn't exist` — the fresh environment's missing Playwright browser, `bunx playwright install chromium` the fix (the infrastructure gap, not a code defect — the same run then green 262/262).
+
+## The parity phase
+
+The s154 script derivation (derive-s154-scripts.py): the exact **22/66/6** raw-diff-line convention, zero run-ordinal residue, exact on the FIRST derivation. The 130th reference audit against the live Base44 app: **NO DRIFT** — every standing datum held (the nav 124/96/92×36 PIN, the greeting, Quick Stats, the Recent sort, zero kbd, the Create-Team dead chrome, the mobile failure class A) and the clip datum **Share:L385-R458/Present:L466-R551 byte-identical the 91st consecutive session**; evidence in `docs/screenshots/ref-audit-s164/`. Mobile nav **9/9 the 131st session** — the Tailwind v4 class-A guard holds, verified on the FINAL S154 build. SEO **4/4**. The standing pins S128..S153 **338/338**.
+
+## The audit and the findings
+
+The dispatch figures derived live — and the 22-file layer derivation found the discrepancy immediately: the live tree holds 14,027 while the s153 collateral claims 13,967. The git archaeology confirmed it (b916639's layer was 13,899; `9be1d69` grew editor.ts +68 AND editor-store.ts +60; 13,899+128 = 14,027 ≠ 13,967 — the s153 total had summed only the +68). Two fresh-eyes auditors dispatched in parallel both found it independently (the dual observation) — and auditor A found the second, sharper finding: the S153-A fix's own census missed the THREE history arms (undo/redo/restoreSnapshot) whose `selectedIds.filter` commits churn identities even when the selection fully survives. The lead re-verified the three arms live at their coordinates before the plan's birth (the F78 doctrine). The F138 guard's third verification PASSED (the s153 plan 6/6 at 9be1d69).
+
+## The TDD execution
+
+The s154-count-repair-note landed BEFORE the spec's birth (the S151-B/S153-B precedent — the honest survival classification). The spec born with 13 pins: the honest **8 RED / 5 survival** form (the pair-unity member honestly RED-until-collateral — the plan's 7/6 forecast corrected at birth, narrated at the spec's comment and in the plan). GREEN S154-A: the sameIdSequence keep-form at the three arms, the comment narrowed, TWO prior-spec pins re-anchored (the s153 phrase + the s114 window-and-form — the F140 rider). GREEN collateral: the doc-update (the count family onto 2147 = 2134 + 13 / 216; the §11 rows; the s138/s139 figures; the version pins; the spec-constants sweep 35 UNIT + 34 FILES) and the version-bump (the PAD v1.133.0 + the SKILL v1.132.0 + F141). Two mid-execution repairs narrated at their artifacts: the version-bump's presence check false-positived on the §7.1 row's prose mention of "the v1.133.0 block" (the title-form anchor the fix), and the layer-total guard's first form compared the comma-spelled doc figure against the bare runtime number (the numeric comparison the fix — the guard compares the figure, never the spelling). The full unit gate **2147/2147 across 216 — the forecast held EXACTLY**.
+
+## The final gates and the capture
+
+All six gates green on the final tree (lint 0 after the spec's `require()` → ESM import repair · typecheck 0 · build 27 routes · smoke 73/73 · e2e 262/262 zero flakes at 6.7m). The post-e2e witness restore executed BY NAME — the 11 documented witnesses only, the s153 over-catch lesson applied at the operator side (the S147 doctrine: the restore filters by the NAMED witness list, never the modified-file list). The final parity gates on the FINAL build: nav 9/9, SEO 4/4, pins S128..S154 **351/351**. The capture derived (24 raw diff lines, zero residue) and run with port hygiene first: ALL CAPTURED. The dimension checker's glob-list gap closed (the s156..s163 evidence directories had dispatch mappings but no globs — 859/859 ALL DIMENSIONS OK, no latent defect among the unglobbed shots). The DB re-seeded pristine 1/2/6/1/3; `.env` ≡ `.env.example` verified diff-clean.
+
+## The delivery
+
+Session 154 delivered: the selectedIds identity-churn residual CLOSED (A154-I2), the count-truth defect CLOSED + guarded by the spec-born runtime derivation (B154-L1/A154-I1 — the forward count-truth guard's first instance), the F138 guard's third verification recorded and its fourth instance armed (the s154 spec pins the s153 plan's ticked record). The docs aligned: PAD v1.133.0, digma_SKILL v1.132.0 + F141, the AGENTS session-154 bullet, session_307/308.md. The s154 plan's own boxes ticked in the delivery commit (the F138 forward form — the final pre-commit act).

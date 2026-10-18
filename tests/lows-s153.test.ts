@@ -142,8 +142,8 @@ const seoSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s152 lesson). */
-const UNIT = "2134";
-const FILES = "215";
+const UNIT = "2147";
+const FILES = "216";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -425,9 +425,16 @@ describe("S153-A the identity-churn family closure (a content-identical commit k
     // The honest exclusions named at the census: loadProject and
     // restoreSnapshot stay reference-replacing (the lineage break and
     // the history machinery), the S110-A census comment updated in
-    // place (the comment-truth discipline).
+    // place (the comment-truth discipline). RE-ANCHORED by S154-A (the
+    // F140 prior-spec re-anchor rider: the claim stays true — the
+    // exclusions still live at the seam — while the pinned spelling
+    // moves with the narrowed live form restoreSnapshot's selectedIds
+    // member joined the identity-bounded class at S154-A).
     expect(collapsed(storeSource)).toContain(
-      "loadProject/restoreSnapshot are by-definition real transitions",
+      "loadProject stays a by-definition real transition",
+    );
+    expect(collapsed(storeSource)).toContain(
+      "selectedIds member is identity-bounded since S154-A",
     );
     // The plan's census section carries the seven-member enumeration.
     expect(collapsed(s153PlanSource)).toContain("SEVEN members across FIVE arms");
@@ -527,7 +534,7 @@ describe("S153-B/S153-C the third zero-finding census registration and the per-s
 
   it("DEFECT (docs): the F140 lesson registered in the digma_SKILL — the identity-stability member inserted after F139, the version bumped to v1.131.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.131\.0/);
+    expect(skillSource).toMatch(/version: 1\.132\.0/);
     // The lesson: the identity-stability member after F139.
     const f139At = skillSource.indexOf("F139");
     const f140At = skillSource.indexOf("F140");

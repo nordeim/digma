@@ -302,10 +302,19 @@ describe("S114-B the restoreSnapshot net-zero guard (A114-L1)", () => {
 
   it("SURVIVAL (source): the past-push, the redo wipe, and the selection filter keep their shapes", () => {
     const idx = storeSource.indexOf("restoreSnapshot: (snapshot)");
-    const arm = storeSource.slice(idx, idx + 1700);
+    // RE-ANCHORED by S154-A (the F140 prior-spec re-anchor rider): the
+    // window widened 1700 -> 2600 for the arm's S154-A registration
+    // comment + the hoisted filter, and the selection-filter form moved
+    // onto the identity-bounded keep-form (sameIdSequence, the multiline
+    // hoisted shape) — the CLAIM stays true (the past-push, the redo
+    // wipe, and the selection filter all keep their shapes at the arm).
+    const arm = storeSource.slice(idx, idx + 2600);
     expect(arm).toMatch(/past: \[\.\.\.state\.past, snapshotOf\(state\)\]\.slice\(-60\)/);
     expect(arm).toMatch(/future: \[\]/);
-    expect(arm).toMatch(/selectedIds: state\.selectedIds\.filter\(\(id\) => snapshot\.elements\.some\(\(el\) => el\.id === id\)\)/);
+    expect(arm).toMatch(
+      /const nextSelected = state\.selectedIds\.filter\(\(id\) =>\s*snapshot\.elements\.some\(\(el\) => el\.id === id\),\s*\);/,
+    );
+    expect(arm).toMatch(/selectedIds: sameIdSequence\(nextSelected, state\.selectedIds\)/);
   });
 
   it("SURVIVAL (source): undo/redo keep their empty-stack and traversal forms (no collateral)", () => {
