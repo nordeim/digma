@@ -864,6 +864,74 @@ export function patchDiffers<T extends object>(element: T, patch: Partial<T>): b
 }
 
 // ---------------------------------------------------------------------
+// Session 153 (S153-A — A117-I1 + A120-I1, the identity-churn family
+// closure): the store's array commits are identity-bounded. A
+// content-identical commit keeps the CURRENT reference so the
+// memoization layer downstream (the canvas's selectedIdSet memo, the
+// selectedElements filter memo, the MemoizedCanvasElement shallow
+// compare) bails instead of rebuilding — at ELEMENT_LIMIT a full
+// 2000-element re-render per save cycle was the A120-I1 registration's
+// own cost figure. These seams join patchDiffers in the pure domain
+// (the clampZoom/patchDiffers precedent home, S101-C).
+// ---------------------------------------------------------------------
+
+/** The ORDER-SENSITIVE string-array content compare (the selection's
+ * order is semantic state — a content-identical verdict requires the
+ * same length and the same ids in the same order). Consumed by the
+ * store's selection arms to keep the current selectedIds reference on
+ * content-identical commits (the S109-A/S110-A no-op family's
+ * identity-stable sibling). */
+export function sameIdSequence(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/** The keys-union complete content compare for two element rows.
+ * Every DesignElementDTO field is primitive (the 27-field shape
+ * carries no nested objects), so `===` per key IS a complete content
+ * compare. The keys-union form is future-proof — a new field added to
+ * the type is compared automatically — and conservative: a key-set
+ * asymmetry compares unequal (undefined !== value), so the verdict
+ * never wrongly preserves identity for differing rows. */
+export function elementContentIdentical(
+  a: DesignElementDTO,
+  b: DesignElementDTO,
+): boolean {
+  const keys = Object.keys(a);
+  if (keys.length !== Object.keys(b).length) return false;
+  for (const key of keys) {
+    if (a[key as keyof DesignElementDTO] !== b[key as keyof DesignElementDTO]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** The per-id reference-preserving projection for the save round-trip
+ * (the A120-I1 closure): the incoming order WINS — the replace
+ * contract's array order IS the sortOrder contract — and an incoming
+ * row whose id matches a current row with content-identical fields
+ * keeps the CURRENT object reference. Everything else (changed rows,
+ * new ids, remapped ids) takes the incoming reference, so the
+ * first-save id remap still replaces and the surgical re-render sees
+ * exactly the changed elements. An empty current list short-circuits
+ * to the incoming array (nothing to reuse). */
+export function reuseStableElements(
+  current: DesignElementDTO[],
+  incoming: DesignElementDTO[],
+): DesignElementDTO[] {
+  if (current.length === 0) return incoming;
+  const byId = new Map(current.map((el) => [el.id, el]));
+  return incoming.map((el) => {
+    const prior = byId.get(el.id);
+    return prior && elementContentIdentical(prior, el) ? prior : el;
+  });
+}
+
+// ---------------------------------------------------------------------
 // Session 41 (RA-54) — the Fill/Gradient/Image seams. The reference's
 // segmented control is a fully functional three-tab editor; these pure
 // seams serve its model, CSS rendering, sanitization, and the one paint

@@ -221,7 +221,7 @@ describe("scaleElements clamps the product to the server's bound (S86-B / A86-L2
 
   it("SOURCE — the store imports clampSizeField from the editor lib", () => {
     expect(storeSource).toMatch(
-      /import \{[\s\S]{0,200}?clampSizeField,[\s\S]{0,200}?\} from "@\/lib\/editor";/
+      /import \{[\s\S]{0,400}?clampSizeField,[\s\S]{0,400}?\} from "@\/lib\/editor";/
     );
   });
 });

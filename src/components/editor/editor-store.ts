@@ -13,6 +13,8 @@ import {
   DEFAULT_CANVAS_BACKGROUND,
   ELEMENT_LIMIT,
   patchDiffers,
+  reuseStableElements,
+  sameIdSequence,
   type DesignElementDTO,
   type EditorTool,
   type ElementType,
@@ -237,13 +239,39 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   setUnsaved: () => set({ saveState: "unsaved" }),
 
   markSaved: (elements, remap) =>
-    set((state) => ({
-      elements,
-      selectedIds: state.selectedIds
+    set((state) => {
+      // Session 153 (S153-A / A120-I1 — the identity-churn family
+      // closure): the save round-trip is a REAL transition (a save
+      // happened) but its committed VALUES may be content-identical —
+      // post-first-save the ids are stable and the wholesale replace
+      // was pure churn (a fresh identity for every element on every
+      // save, defeating the MemoizedCanvasElement shallow compare — at
+      // ELEMENT_LIMIT a 2000-element re-render per save cycle). The
+      // closure: reuseStableElements keeps the CURRENT references for
+      // content-identical ids (the incoming order still wins — the
+      // replace contract's array order IS the sortOrder contract);
+      // the first-save remap still replaces (new ids never match);
+      // the selectedIds map+filter keeps its reference when the remap
+      // is identity and the filter removes nothing. The honest
+      // exclusions (the F139 class-census-at-fix doctrine):
+      // loadProject/restoreSnapshot are by-definition real transitions
+      // (the boardEpoch lineage break; the history machinery's own
+      // arrays — restoreSnapshot's S114-B value-compare guard already
+      // covers its identical-restore window), and the eight
+      // S109-A/S110-A no-op-guarded mutation arms commit
+      // content-different values by construction — their identity
+      // churn is legitimate.
+      const nextSelected = state.selectedIds
         .map((id) => remap.get(id) ?? id)
-        .filter((id) => elements.some((el) => el.id === id)),
-      saveState: "saved",
-    })),
+        .filter((id) => elements.some((el) => el.id === id));
+      return {
+        elements: reuseStableElements(state.elements, elements),
+        selectedIds: sameIdSequence(nextSelected, state.selectedIds)
+          ? state.selectedIds
+          : nextSelected,
+        saveState: "saved",
+      };
+    }),
 
   setTool: (tool) => set({ tool }),
 
@@ -271,19 +299,43 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   // (select([id], true)) and the canvas marquee's shift commit
   // (S118-A — drag.shift rides the captured flag); the plain form
   // replaces (every other consumer). A117-I1's documented residual
-  // rides here: select/deselectAll always commit a fresh selectedIds
-  // array even when content-identical — outside the no-op family's
-  // doctrine (no saveState/history/PUT member is touched),
-  // noise-level cost only.
+  // rode here until Session 153 (S153-A — the identity-churn family
+  // closure): the content-identical commits now keep the current
+  // reference, the registration CLOSED.
+  // Session 153 (S153-A / A117-I1 — the identity-churn family closure,
+  // the selection arms): a content-identical selection commit keeps
+  // the CURRENT array reference (the no-op `{}` — the S109-A/S110-A
+  // family's own form), so the canvas's selectedIdSet memo and the
+  // useEditorStore selector bailouts skip the rebuild (a layers-row
+  // click on the singly-selected row rebuilt them for nothing — the
+  // A117-I1 registration's own example).
   select: (ids, additive) =>
-    set((state) => ({
-      selectedIds: additive
-        ? [...new Set([...state.selectedIds, ...ids])]
-        : ids,
-    })),
+    set((state) => {
+      if (additive) {
+        const merged = [...new Set([...state.selectedIds, ...ids])];
+        return sameIdSequence(merged, state.selectedIds)
+          ? {}
+          : { selectedIds: merged };
+      }
+      return sameIdSequence(ids, state.selectedIds) ? {} : { selectedIds: ids };
+    }),
 
-  deselectAll: () => set({ selectedIds: [] }),
-  selectAll: () => set({ selectedIds: get().elements.filter((el) => el.visible).map((el) => el.id) }),
+  deselectAll: () =>
+    set((state) =>
+      state.selectedIds.length === 0 ? {} : { selectedIds: [] },
+    ),
+  selectAll: () =>
+    set((state) => {
+      const next = state.elements
+        .filter((el) => el.visible)
+        .map((el) => el.id);
+      // The faithful 0/0 quirk survives: the no-op keeps both lengths
+      // unchanged, so the header's Deselect-All text still renders on
+      // an empty canvas with nothing selected.
+      return sameIdSequence(next, state.selectedIds)
+        ? {}
+        : { selectedIds: next };
+    }),
 
   addElement: (partial) => {
     // Session 61 (S61-F / A-L-5): the honest return — null when the cap
@@ -516,11 +568,19 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         return true;
       });
       if (!matched) return {};
+      // Session 153 (S153-A / A117-I1 — the identity-churn family
+      // closure, the matched-branch member): the elements change (the
+      // real transition) but the selectedIds filter is
+      // content-identical when no selected id was among the deleted —
+      // the reference survives that churn too.
+      const nextSelected = state.selectedIds.filter((id) => !idSet.has(id));
       return {
         past: [...state.past, snapshotOf(state)].slice(-60),
         future: [],
         elements: next,
-        selectedIds: state.selectedIds.filter((id) => !idSet.has(id)),
+        selectedIds: sameIdSequence(nextSelected, state.selectedIds)
+          ? state.selectedIds
+          : nextSelected,
         saveState: "unsaved",
       };
     }),

@@ -1172,6 +1172,15 @@ S161 = dict(S160)
 # the cap, and every seeded name/description/text is BMP-only).
 S162 = dict(S161)
 
+# s163 mapping (session 153 — the 129th reference audit's evidence set + the
+# S153 capture set). The standing S162 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S153 tree); no NEW
+# witness this session (the S153 pass is the identity-churn-closure cycle —
+# the sameIdSequence/reuseStableElements seams change NO observable
+# geometry on any seeded flow: the identity bounds fire only on
+# content-identical commits, and every visible state is byte-identical).
+S163 = dict(S162)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1350,6 +1359,8 @@ def expected_for(name: str):
         return S161.get(Path(name).stem)
     if name.startswith("ref-audit-s162/"):
         return S162.get(Path(name).stem)
+    if name.startswith("ref-audit-s163/"):
+        return S163.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):

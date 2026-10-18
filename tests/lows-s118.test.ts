@@ -193,7 +193,7 @@ describe("S118-A the shift+marquee additive commit (A118-L1 — the headline)", 
 
   it("SURVIVAL (source): the store's select union form stays (the one seam the commit now rides)", () => {
     expect(storeCollapsed).toMatch(
-      /additive \? \[\.\.\.new Set\(\[\.\.\.state\.selectedIds, \.\.\.ids\]\)\] : ids,/,
+      /const merged = \[\.\.\.new Set\(\[\.\.\.state\.selectedIds, \.\.\.ids\]\)\];/,
     );
   });
 });
