@@ -1191,6 +1191,16 @@ S163 = dict(S162)
 # byte-identical; the count repair is doc-only).
 S164 = dict(S163)
 
+# s165 mapping (session 155 — the 131st reference audit's evidence set + the
+# S155 capture set). The standing S164 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S155 tree); no NEW
+# witness this session (the S155 pass is the census-enumeration completion
+# + the env-census citation repair — the comment-only registration changes
+# NO observable geometry on any seeded flow: the addElements arm's
+# behavioral contract is byte-identical and the citation repair is
+# worklog-doc-only).
+S165 = dict(S164)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1373,6 +1383,8 @@ def expected_for(name: str):
         return S163.get(Path(name).stem)
     if name.startswith("ref-audit-s164/"):
         return S164.get(Path(name).stem)
+    if name.startswith("ref-audit-s165/"):
+        return S165.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1518,6 +1530,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s162").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s163").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s164").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s165").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

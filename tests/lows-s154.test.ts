@@ -113,8 +113,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s153 lesson). */
-const UNIT = "2147";
-const FILES = "216";
+const UNIT = "2159";
+const FILES = "217";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -156,12 +156,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.133.0 PAD block quotes for the layer total (the
+/** The figure the v1.134.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.133\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.134\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -427,11 +427,11 @@ describe("S154-B/S154-C the count-truth repair registration and the per-session 
     expect(commandRow).toContain(`${UNIT} checks`);
   });
 
-  it("DEFECT (docs — the forward count-truth guard): the LIVE 22-file layer total (derived at runtime) equals the figure the v1.133.0 block quotes — the count receipt riding the spec instead of prose (the F138 receipt-doctrine shape at the count family, its first instance)", () => {
+  it("DEFECT (docs — the forward count-truth guard): the LIVE 22-file layer total (derived at runtime) equals the figure the v1.134.0 block quotes — the count receipt riding the spec instead of prose (the F138 receipt-doctrine shape at the count family, its first instance; the version literal re-anchored onto the rolling current block by S155)", () => {
     // The live derivation NEVER quotes a figure: wc -l over the exact
     // 22-file composition at spec runtime.
     expect(liveLayerTotal).toBeGreaterThan(14000);
-    // The PAD's v1.133.0 block must quote exactly this figure (the
+    // The PAD's v1.134.0 block must quote exactly this figure (the
     // comma-spelled doc form and the bare runtime form are the same
     // NUMBER — the guard compares the figure, never the spelling).
     expect(padQuotedLayerTotal).not.toBe("");
@@ -473,7 +473,7 @@ describe("S154-B/S154-C the count-truth repair registration and the per-session 
 
   it("DEFECT (docs): the F141 lesson registered in the digma_SKILL — the count-family arithmetic + fix-census recurrence member inserted after F140, the version bumped to v1.132.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.132\.0/);
+    expect(skillSource).toMatch(/version: 1\.133\.0/);
     // The lesson: the count-family arithmetic member after F140.
     const f140At = skillSource.indexOf("F140");
     const f141At = skillSource.indexOf("F141");

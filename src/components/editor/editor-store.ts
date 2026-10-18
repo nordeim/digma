@@ -259,10 +259,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       // restoreSnapshot's ELEMENTS commit stays a real transition (the
       // history machinery's own arrays — the S114-B value-compare
       // guard already covers its identical-restore window) and its
-      // selectedIds member is identity-bounded since S154-A, and the
+      // selectedIds member is identity-bounded since S154-A, the
       // eight S109-A/S110-A no-op-guarded mutation arms commit
       // content-different values by construction — their identity
-      // churn is legitimate.
+      // churn is legitimate — and addElements' selectedIds commit
+      // (named since S155-A, the F139 enumeration-completeness
+      // corollary) is a real transition by construction the same
+      // way: its created ids are fresh local ids no prior selection
+      // can carry, so the keep-form's premise (a content-identical
+      // commit) is unconstructible there.
       const nextSelected = state.selectedIds
         .map((id) => remap.get(id) ?? id)
         .filter((id) => elements.some((el) => el.id === id));
@@ -388,6 +393,18 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       };
       return el;
     });
+    // Session 155 (S155-A / A155-I1 — the census-enumeration
+    // completion): this arm's selectedIds commit (created.map below)
+    // is a real transition BY CONSTRUCTION — the created ids are fresh
+    // nextLocalId() values (local-<timestamp36>-<counter>) whose
+    // module-lifetime monotonic counter no id already in selectedIds
+    // can ever match (server ids are Prisma cuids, never local-
+    // prefixed; prior local ids carry smaller counters), so the
+    // keep-form's premise — a content-identical commit — is
+    // unconstructible here. Named in the markSaved family exclusion
+    // census since S155-A (the F139 doctrine's enumeration-
+    // completeness corollary: the provably-safe arm named AS safe,
+    // never left unnamed).
     set({
       past: [...state.past, snapshotOf(state)].slice(-60),
       future: [],

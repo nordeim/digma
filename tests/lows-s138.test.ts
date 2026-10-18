@@ -115,8 +115,8 @@ describe("S138-A the dispatch-brief path-truth registration (A138-I1 — the fiv
     expect(collapsed(note)).toMatch(/count-truth|F124/i);
   });
 
-  it("SURVIVAL (tree): the five true paths exist at their real locations with the §11 figures exact — 823/1013/159/160/86 (the live-pin doctrine: paths AND counts derived from the tree)", () => {
-    expect(lineCount("../src/components/editor/editor-store.ts")).toBe(823);
+  it("SURVIVAL (tree): the five true paths exist at their real locations with the §11 figures exact — 840/1013/159/160/86 (the live-pin doctrine: paths AND counts derived from the tree)", () => {
+    expect(lineCount("../src/components/editor/editor-store.ts")).toBe(840);
     expect(lineCount("../tests/e2e/parity.spec.ts")).toBe(1013);
     expect(lineCount("../tests/e2e/mobile-navigation.spec.ts")).toBe(159);
     expect(lineCount("../tests/theme.test.ts")).toBe(160);
@@ -135,7 +135,7 @@ describe("S138-A the dispatch-brief path-truth registration (A138-I1 — the fiv
   });
 
   it("SURVIVAL (docs): the PAD §11 rows name the TRUE full paths — the repo doc was never wrong (the brief-only blast radius)", () => {
-    expect(padSource).toMatch(/\| `src\/components\/editor\/editor-store\.ts` \| 823 \|/);
+    expect(padSource).toMatch(/\| `src\/components\/editor\/editor-store\.ts` \| 840 \|/);
     expect(padSource).toMatch(/\| `tests\/e2e\/parity\.spec\.ts` \| 1013 \|/);
     expect(padSource).toMatch(/\| `tests\/e2e\/mobile-navigation\.spec\.ts` \| 159 \|/);
     expect(padSource).toMatch(/\| `tests\/theme\.test\.ts` \| 160 \|/);
