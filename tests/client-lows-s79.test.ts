@@ -172,7 +172,7 @@ describe("the load-aware transcript reset in the subscription (S79-A / A-M1)", (
     // 6245).
     const start = assistant.indexOf("async function send");
     expect(start).toBeGreaterThanOrEqual(0);
-    const body = assistant.slice(start, start + 7000);
+    const body = assistant.slice(start, start + 8500);
     expect(body).toMatch(/sendEpoch\s*!==\s*preApply\.boardEpoch/);
     expect(body).toMatch(/const sendScopeId\s*=\s*state\.projectId/);
     // The pinned S78-A refusal forms survive.

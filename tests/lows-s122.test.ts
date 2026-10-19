@@ -136,7 +136,7 @@ describe("the S122 defect set", () => {
     // NOWHERE.
     expect(catchBlock).toMatch(/if \(!aliveRef\.current\) return;/);
     const guardIdx = catchBlock.indexOf("if (!aliveRef.current) return;");
-    const restoreIdx = catchBlock.indexOf("setInput(message)");
+    const restoreIdx = catchBlock.indexOf('setInput((draft) => (draft === "" ? message : draft))');
     const toastIdx = catchBlock.indexOf('toast.error("Network error"');
     expect(restoreIdx).toBeGreaterThan(guardIdx);
     expect(toastIdx).toBeGreaterThan(guardIdx);
@@ -208,7 +208,7 @@ describe("the S122 survival set", () => {
   it("SURVIVAL (source): the s106 catch-restore contract survives the guard's insertion — the restore stays inside the catch body", () => {
     expect(catchAt).toBeGreaterThan(-1);
     expect(finallyAt).toBeGreaterThan(catchAt);
-    expect(catchBlock).toMatch(/setInput\(message\)/);
+    expect(catchBlock).toMatch(/setInput\(\(draft\) => \(draft === "" \? message : draft\)\)/);
     // Session 130 (S130-D — a legitimate widening, the S102-B
     // convention): the finally's own registration comment sits between
     // the block's opening and the guarded setSending — 120 -> 400.

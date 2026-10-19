@@ -226,7 +226,26 @@ export function LoginScreen() {
   // reference's live-measured behavior — typing into input[0] focuses
   // input[1]) and retreat on Backspace over an empty cell.
   function onDigitChange(index: number, value: string) {
-    const digit = value.replace(/\D/g, "").slice(-1);
+    const cleaned = value.replace(/\D/g, "");
+    // Session 160 (S160-D / I160-L4 — the OTP autofill-distribution
+    // member): the browser's SMS/password-manager autofill delivers
+    // the COMPLETE 6-digit code into the one-time-code field
+    // (input[0]) in ONE change event — the slice(-1)-only form kept
+    // the last digit and silently discarded the other five. The
+    // multi-digit value now distributes across the cells (the paste
+    // handler's own contract below); the single-digit path is
+    // unchanged.
+    if (cleaned.length > 1) {
+      const code = cleaned.slice(0, 6);
+      setDigits((prev) => {
+        const next = [...prev];
+        for (let i = 0; i < 6; i += 1) next[i] = code[i] ?? "";
+        return next;
+      });
+      document.getElementById(`otp-digit-${Math.min(code.length, 5)}`)?.focus();
+      return;
+    }
+    const digit = cleaned.slice(-1);
     setDigits((prev) => prev.map((d, i) => (i === index ? digit : d)));
     if (digit && index < 5) {
       document.getElementById(`otp-digit-${index + 1}`)?.focus();

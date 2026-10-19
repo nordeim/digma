@@ -346,7 +346,7 @@ describe("the standing seam survival set", () => {
       /\{presenting && !loading && <MemoizedPresentOverlay onExit=\{exitPresent\} \/>\}/,
     );
     const guards = layersSource.match(/if \(store\.gestureSnapshot\) return;/g) ?? [];
-    expect(guards.length).toBe(4);
+    expect(guards.length).toBe(5);
   });
 
   it("SURVIVAL (source): the S130 arms — the SLIDER_KEYS keyTick head and one onWheel twin", () => {

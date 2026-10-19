@@ -308,6 +308,44 @@ export function LayersPanel() {
                       aria-pressed={isSelected}
                       aria-label={`Layer ${el.name ?? el.type}`}
                       onClick={(event) => onRowClick(el.id, event)}
+                      // Session 160 (S160-B — the S159-C registered
+                      // candidate follow-up, DELIVERED — the layers
+                      // keyboard superset, the working-superset
+                      // doctrine): the row's REAL keyboard surface
+                      // gains the rename + reorder entries the
+                      // pointer-only forms lacked — F2 opens the
+                      // rename (the dblclick block's own triple) and
+                      // Alt+ArrowUp/Alt+ArrowDown reorder the layer by
+                      // one (the rows render in REVERSE element
+                      // order, so screen-up = later in the array: up
+                      // inserts at index + 1, down at index − 1 in
+                      // the elements-minus-self array — the DnD
+                      // branch's own reorderElements convention, the
+                      // store's clamp absorbing the boundary moves as
+                      // the S78-C identical-order no-op). The global
+                      // keydown's Alt bail (editor-view) means no
+                      // chord conflict; F2 unmapped. The S131-B
+                      // gesture stand-down twin refuses a keyboard
+                      // reorder interleaved with a live canvas
+                      // gesture (the drop's own form).
+                      onKeyDown={(event) => {
+                        if (event.key === "F2") {
+                          event.preventDefault();
+                          renameDiscarded.current = false;
+                          setRenaming(el.id);
+                          setRenameValue(el.name ?? "");
+                          return;
+                        }
+                        if (event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+                          event.preventDefault();
+                          const store = useEditorStore.getState();
+                          if (store.gestureSnapshot) return;
+                          const idx = store.elements.findIndex((e) => e.id === el.id);
+                          if (idx === -1) return;
+                          const target = event.key === "ArrowUp" ? idx + 1 : idx - 1;
+                          store.reorderElements([el.id], target);
+                        }
+                      }}
                       // Session 70 (S70-A / M-A2): the select surface — a
                       // REAL button (native Enter/Space activation replaces
                       // the row's hand-rolled S57-F/S59-A keydown pair; the

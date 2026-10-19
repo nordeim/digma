@@ -254,7 +254,14 @@ export function elementsToSvg(
       const shape = elementToSvg(el, gradientId);
       // Collect the defs AFTER the shape is built (the id allocation must
       // stay index-stable regardless of which elements carry gradients).
-      if (el.fillImage === null || el.fillImage === undefined) {
+      // Session 160 (S160-D / I160-L2 — the membership
+      // unification): the same field was checked two ways in one
+      // module — the paint chain's truthiness form (paintFor) and
+      // the explicit null/undefined form here — classifying the
+      // degenerate empty string OPPOSITELY; both sites on the
+      // truthiness family now (""/null/undefined uniformly
+      // no-image, the gradient def collected).
+      if (!el.fillImage) {
         const gradient = parseGradient(el.fillGradient);
         if (gradient) defs.push(gradientDefs(gradient, gradientId));
       }

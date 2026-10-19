@@ -318,8 +318,8 @@ describe("S114-B the restoreSnapshot net-zero guard (A114-L1)", () => {
   });
 
   it("SURVIVAL (source): undo/redo keep their empty-stack and traversal forms (no collateral)", () => {
-    expect(storeCollapsed).toMatch(/if \(state\.past\.length === 0\) return state;/);
-    expect(storeCollapsed).toMatch(/if \(state\.future\.length === 0\) return state;/);
+    expect(storeCollapsed).toMatch(/if \(state\.past\.length === 0\) return \{\};/);
+    expect(storeCollapsed).toMatch(/if \(state\.future\.length === 0\) return \{\};/);
   });
 });
 

@@ -1247,6 +1247,21 @@ S168 = dict(S167)
 # toolbar provenance COMMENT's divider clause (zero rendered movement)).
 S169 = dict(S168)
 
+# s170 mapping (session 160 — the 136th reference audit's evidence set + the
+# S160 capture set). The standing S169 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S160 tree); no NEW
+# witness this session (the S160 pass is the guarded draft restore + the
+# layers keyboard superset + the canvas draw-creation registration + the
+# Informational quintet — the edited src/ lines live in the AI panel's
+# failure-branch restores (the capture's flows never fail a send), the
+# layers select button's keyboard handlers (no pointer/rendered
+# movement), the canvas draw-preview gate (a sub-threshold speck the
+# standard shots never frame), the export-png membership unification
+# (behavior-identical), the store's no-op family form (behavior-
+# identical), and the OTP distribution (the standard auth card shots
+# use the single-digit path)).
+S170 = dict(S169)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1439,6 +1454,8 @@ def expected_for(name: str):
         return S168.get(Path(name).stem)
     if name.startswith("ref-audit-s169/"):
         return S169.get(Path(name).stem)
+    if name.startswith("ref-audit-s170/"):
+        return S170.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1589,6 +1606,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s167").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s168").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s169").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s170").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

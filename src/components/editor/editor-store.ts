@@ -755,7 +755,12 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   undo: () =>
     set((state) => {
-      if (state.past.length === 0) return state;
+      // Session 160 (S160-D / I160-L3 — the no-op family form): the
+      // empty-stack guards returned the full-state reference while
+      // the store's other eleven no-op guards return {} — the
+      // family form, thirteen-for-thirteen now (this guard and the
+      // redo twin below were the dialect's two members).
+      if (state.past.length === 0) return {};
       const previous = state.past[state.past.length - 1]!;
       // Session 154 (S154-A / A154-I2 — the identity-churn completion,
       // the history-arm member): the elements commit is the real
@@ -780,7 +785,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   redo: () =>
     set((state) => {
-      if (state.future.length === 0) return state;
+      // Session 160 (S160-D): the family form here too (the undo
+      // guard's own registration above).
+      if (state.future.length === 0) return {};
       const next = state.future[0]!;
       // Session 154 (S154-A / A154-I2): the redo arm's own filter — the
       // same keep-form as undo (a selection fully surviving the

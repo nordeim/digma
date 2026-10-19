@@ -855,8 +855,14 @@ export function Canvas() {
           />
         )}
 
-        {/* Draw preview */}
-        {drag.kind === "draw" && (
+        {/* Draw preview — Session 160 (S160-D / I160-A-I1 — the F88
+            form-alignment family's draw member): the preview gate
+            rides the commit's OWN OR-form threshold (drag.w > 3 ||
+            drag.h > 3, the commit above) — the marquee pair aligned
+            by S148-B, the draw pair now too; a micro-drag with both
+            dimensions under the threshold no longer paints a dashed
+            speck the commit itself refuses. */}
+        {drag.kind === "draw" && (drag.w > 3 || drag.h > 3) && (
           <div
             className="absolute border-2 border-dashed border-blue-400 bg-blue-400/10"
             style={{ left: drag.x, top: drag.y, width: drag.w, height: drag.h }}

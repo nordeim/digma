@@ -251,7 +251,7 @@ describe("the standing seam survival set", () => {
 
   it("SURVIVAL (source): the S131-B four-guard census — every layers-panel history-mutating pointer arm stands down", () => {
     const guards = layersSource.match(/if \(store\.gestureSnapshot\) return;/g) ?? [];
-    expect(guards.length).toBe(4);
+    expect(guards.length).toBe(5);
   });
 
   it("SURVIVAL (source): the S129-A/S130-A arms — the SLIDER_KEYS keyTick head and one onWheel twin", () => {

@@ -545,8 +545,16 @@ export function AiAssistant() {
       // fallback skips them on instruction-level deletes (the wall's AI
       // contract, S27-1) and the LLM's system prompt is told to leave them
       // alone — the replies stay honest about what actually happened.
+      // Session 160 (S160-D / I160-A-I2 — the Set-membership family's
+      // transpose-direction member, retired): the locked-target
+      // derivation iterated the selection scanning the elements per id
+      // (the transpose of the S73-H/S74-B/S77-G/S105-D/S159-D form);
+      // the family's own Set form — once per send.
+      const lockedIds = new Set(
+        state.elements.filter((el) => el.locked).map((el) => el.id),
+      );
       const lockedTargetIds = state.selectedIds.filter((id) =>
-        state.elements.some((el) => el.id === id && el.locked),
+        lockedIds.has(id),
       );
 
       const response = await fetch("/api/ai-assistant", {
@@ -598,7 +606,15 @@ export function AiAssistant() {
         // The restore lands beside the toast (the scope-refusal branch
         // stays exempt: a prompt sent under another canvas may not
         // apply, restoring it there would be a lie about scope).
-        setInput(message);
+        // Session 160 (S160-A / L160-L1 — the guarded draft restore):
+        // the send path cleared the draft BEFORE the await and the
+        // input stays editable through the async window (only the
+        // submit button disables), so the unconditional restore
+        // clobbered a draft typed during the wait — the S105-B/S106-B
+        // closures' own unguarded edge. The functional form: an empty
+        // input restores the old prompt, a draft typed during the
+        // wait SURVIVES.
+        setInput((draft) => (draft === "" ? message : draft));
         toast.error("Assistant unavailable", body?.error?.message ?? "Please try again.");
         return;
       }
@@ -682,7 +698,9 @@ export function AiAssistant() {
       // degraded to this toast and the operator's typed prompt was
       // gone — a dead control that lies. The catch restores the draft
       // (nothing was applied — the scope guards above never ran).
-      setInput(message);
+      // Session 160 (S160-A): the guarded form here too — the catch's
+      // restore keeps a draft typed during the wait.
+      setInput((draft) => (draft === "" ? message : draft));
       toast.error("Network error", "The assistant could not be reached.");
     } finally {
       // Session 130 (S130-D / A130-I4): the F108/F109 liveness census's

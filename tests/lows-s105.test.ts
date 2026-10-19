@@ -69,8 +69,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "2210";
-const FILES = "221";
+const UNIT = "2227";
+const FILES = "222";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -282,7 +282,7 @@ describe("S105-B the AI apply truth + the draft restore (A-M2 + A-L5)", () => {
     const finallyIdx = AI_PANEL.indexOf("} finally {", sendIdx);
     expect(finallyIdx).toBeGreaterThan(catchIdx);
     const catchBody = AI_PANEL.slice(catchIdx, finallyIdx);
-    expect(catchBody).toMatch(/setInput\(message\)/);
+    expect(catchBody).toMatch(/setInput\(\(draft\) => \(draft === "" \? message : draft\)\)/);
   });
 });
 

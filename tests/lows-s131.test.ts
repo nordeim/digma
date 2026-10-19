@@ -178,7 +178,7 @@ describe("S131-B the layers-panel pointer arms' gesture stand-down (A125-I1 — 
 
   it("DEFECT (source): the four-guard census — every layers-panel history-mutating pointer arm stands down", () => {
     const guards = layersSource.match(/if \(store\.gestureSnapshot\) return;/g) ?? [];
-    expect(guards.length).toBe(4);
+    expect(guards.length).toBe(5);
   });
 });
 

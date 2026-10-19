@@ -312,7 +312,7 @@ describe("S139-D the smoke-arithmetic registration (B139-I2 — a decomposed der
 
 describe("the standing survival set (the S138/S137 deliveries ride unchanged through the S139 registrations)", () => {
   it("SURVIVAL (tree): the S138-A path-truth delivery rides unchanged — the five true paths with the §11 figures exact", () => {
-    expect(lineCount("../src/components/editor/editor-store.ts")).toBe(840);
+    expect(lineCount("../src/components/editor/editor-store.ts")).toBe(847);
     expect(lineCount("../tests/e2e/parity.spec.ts")).toBe(1013);
     expect(lineCount("../tests/e2e/mobile-navigation.spec.ts")).toBe(159);
     expect(lineCount("../tests/theme.test.ts")).toBe(160);

@@ -246,7 +246,7 @@ describe("the S123 survival set", () => {
 
   it("SURVIVAL (source): the S122 delivery survives verbatim — the catch-head liveness guard and the Share guard's URL-truth composition", () => {
     expect(aiAssistantSource).toMatch(/if \(!aliveRef\.current\) return;/);
-    expect(aiAssistantSource).toMatch(/setInput\(message\)/);
+    expect(aiAssistantSource).toMatch(/setInput\(\(draft\) => \(draft === "" \? message : draft\)\)/);
     expect(aiAssistantSource).toMatch(/toast\.error\("Network error"/);
     expect(editorViewSource).toMatch(/if \(!store\.projectId \|\| urlId !== store\.projectId\) \{/);
     const collapsedKeydown = collapsed(keydownBlock);

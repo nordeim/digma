@@ -54,8 +54,8 @@ import { describe, expect, it } from "vitest";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "2210";
-const FILES = "221";
+const UNIT = "2227";
+const FILES = "222";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -187,9 +187,9 @@ describe("S106-B the AI HTTP-error draft restore (A-L1 — the S105-B closure's 
     expect(idx).toBeGreaterThan(-1);
     // the comment block documents the S105-B/S106-B lineage — the
     // window must span it to reach the restore + the return.
-    const branch = AI_PANEL.slice(idx, idx + 800);
+    const branch = AI_PANEL.slice(idx, idx + 1400);
     expect(branch).toMatch(/toast\.error\("Assistant unavailable"/);
-    const restoreIdx = branch.indexOf("setInput(message)");
+    const restoreIdx = branch.indexOf('setInput((draft) => (draft === "" ? message : draft))');
     const returnIdx = branch.indexOf("return;");
     expect(restoreIdx).toBeGreaterThan(-1);
     expect(returnIdx).toBeGreaterThan(restoreIdx);
@@ -205,7 +205,7 @@ describe("S106-B the AI HTTP-error draft restore (A-L1 — the S105-B closure's 
     expect(catchIdx).toBeGreaterThan(-1);
     expect(finallyIdx).toBeGreaterThan(catchIdx);
     const catchBody = AI_PANEL.slice(catchIdx, finallyIdx);
-    expect(catchBody).toMatch(/setInput\(message\)/);
+    expect(catchBody).toMatch(/setInput\(\(draft\) => \(draft === "" \? message : draft\)\)/);
     // Session 130 (S130-D — a legitimate widening, the S102-B
     // convention): the finally's own registration comment (~280
     // chars) sits between the block's opening and the guarded
