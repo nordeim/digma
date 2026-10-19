@@ -120,8 +120,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s155 lesson). */
-const UNIT = "2195";
-const FILES = "220";
+const UNIT = "2210";
+const FILES = "221";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -163,12 +163,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.137.0 PAD block quotes for the layer total (the
+/** The figure the v1.138.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its third instance). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.137\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.138\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -345,7 +345,7 @@ describe("S156-A the capture-script mechanical-restore hardening (the B121-I1 cl
     expect(storeSource).toMatch(/restoreSnapshot: \(snapshot\) =>[\s\S]{0,2600}sameIdSequence/);
     // The live 22-file layer total rides the standing figure (a
     // scripts/-only cycle moves zero src/ lines).
-    expect(liveLayerTotal).toBe(14077);
+    expect(liveLayerTotal).toBe(14095);
   });
 });
 
@@ -490,7 +490,7 @@ describe("S156-B/S156-C the guard-ordering citation repair registration and the 
 
   it("DEFECT (docs): the F143 lesson registered in the digma_SKILL — the ordering-claim member inserted after F142, the version bumped to v1.134.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.136\.0/);
+    expect(skillSource).toMatch(/version: 1\.137\.0/);
     // The lesson: the ordering-claim member after F142.
     const f142At = skillSource.indexOf("F142");
     const f143At = skillSource.indexOf("F143");

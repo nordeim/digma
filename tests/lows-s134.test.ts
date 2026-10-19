@@ -126,7 +126,7 @@ describe("S134-A the resize arm's live-element read (A134-I1(a))", () => {
     // S109-A id-guard no-opping every tick, endGesture net-zero).
     expect(w).toMatch(/const store = useEditorStore\.getState\(\);/);
     expect(w).toMatch(
-      /const el = store\.elements\.find\(\(e\) => store\.selectedIds\.includes\(e\.id\)\) \?\? selected\[0\]!/,
+      /const selectedIdSet = new Set\(store\.selectedIds\);\s*const el = store\.elements\.find\(\(e\) => selectedIdSet\.has\(e\.id\)\) \?\? selected\[0\]!/,
     );
     // The live row feeds the drag's geometry AND identity — the
     // startBounds and the per-tick commit inherit the fresh id.

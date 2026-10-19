@@ -1234,6 +1234,19 @@ S167 = dict(S166)
 # COMMENT (zero rendered movement)).
 S168 = dict(S167)
 
+# s169 mapping (session 159 — the 135th reference audit's evidence set + the
+# S159 capture set). The standing S168 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S159 tree); no NEW
+# witness this session (the S159 pass is the describeRejection
+# string-honesty + the StrictMode-safe mount discriminator + the layers
+# pointer-only registration + the Informational pair — the edited src/
+# lines live in the validation helper's Error arm (server-side, no
+# rendered surface), the load effect's discriminator flip (a dev-only
+# StrictMode seam the production capture never exercises), the canvas
+# resize-handle Set membership form (behavior-identical), and the
+# toolbar provenance COMMENT's divider clause (zero rendered movement)).
+S169 = dict(S168)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1424,6 +1437,8 @@ def expected_for(name: str):
         return S167.get(Path(name).stem)
     if name.startswith("ref-audit-s168/"):
         return S168.get(Path(name).stem)
+    if name.startswith("ref-audit-s169/"):
+        return S169.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1573,6 +1588,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s166").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s167").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s168").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s169").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

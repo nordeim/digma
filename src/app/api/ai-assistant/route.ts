@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (error) {
       // SDK unavailable / malformed output — the deterministic fallback already
-      // holds a valid answer. Answer 200 either way, every rejection shape (S157-A/S158-A).
+      // holds a valid answer. Answer 200 either way, every rejection shape (S157-A/S158-A/S159-A).
       console.warn("[ai-assistant] LLM path failed, using deterministic fallback:", describeRejection(error));
     }
   }

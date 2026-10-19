@@ -255,7 +255,7 @@ describe("the standing seam survival set", () => {
     const w = canvasSource.slice(start, end + "startBounds: { x: el.x, y: el.y, w: el.width, h: el.height },".length);
     expect(w).toMatch(/const store = useEditorStore\.getState\(\);/);
     expect(w).toMatch(
-      /const el = store\.elements\.find\(\(e\) => store\.selectedIds\.includes\(e\.id\)\) \?\? selected\[0\]!/,
+      /const selectedIdSet = new Set\(store\.selectedIds\);\s*const el = store\.elements\.find\(\(e\) => selectedIdSet\.has\(e\.id\)\) \?\? selected\[0\]!/,
     );
     expect(w).toMatch(/startBounds: \{ x: el\.x, y: el\.y, w: el\.width, h: el\.height \},/);
   });

@@ -1557,8 +1557,13 @@ export function EditorView({ user }: { user: HeaderUser }) {
   // (the soft swap); only the SWAP needs the flush — a mount's previous
   // instance already owned its boundary through the unmount cleanup's
   // own captured-state PUT (flushing again here would double-PUT the
-  // same pending body — the S71-B discipline). The ref is consumed on
-  // the first run and stays false for the instance's lifetime.
+  // same pending body — the S71-B discipline). Session 159 (S159-B /
+  // L159-A-L2): the flip rides the run's LOAD COMMIT, never the sync
+  // prefix — a cancelled pre-commit run leaves the discriminator at
+  // mount (dev StrictMode's double-invoked effect otherwise misread
+  // its re-run as a swap over the stale singleton — the S85-A
+  // staleness class reborn in dev); once committed the ref stays
+  // false for the instance's lifetime.
   const firstRunRef = React.useRef(true);
 
   // Load the project once — setState lands INSIDE the async function
@@ -1609,7 +1614,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
       // load actually replaces it (the same-project adoption re-run is
       // the S61-I skip below — it never reaches a loadProject).
       // Session 81 (S81-B / A81-L2): the isMountRun capture — read
-      // BEFORE the boundary block flips firstRunRef below, so the
+      // BEFORE the run's load-commit flips firstRunRef below, so the
       // post-GET pair can discriminate the MOUNT (the previous
       // instance's unmount cleanup already transported the outgoing
       // state — the S71-B no-double-PUT discipline, now carried to the
@@ -1641,7 +1646,6 @@ export function EditorView({ user }: { user: HeaderUser }) {
           if (cancelled) return;
         }
       }
-      firstRunRef.current = false;
       if (projectId) {
         // Session 85 (S85-A / A85-M1): the at-unmount leave transport is
         // awaited when re-entering the SAME project — the registry's PUT
@@ -1689,8 +1693,8 @@ export function EditorView({ user }: { user: HeaderUser }) {
         // surface's writes invisible until the next local full-list PUT
         // wrote over them — deleting them), and cross-session undo
         // history (the "load is a lineage break" doctrine violated).
-        // The isMountRun discriminator (captured BEFORE the boundary
-        // block flips firstRunRef — the S81-B capture) separates the
+        // The isMountRun discriminator (captured BEFORE the run's
+        // load-commit flips firstRunRef — the S81-B capture) separates the
         // cases: only the ADOPTION re-run (an in-instance effect re-run,
         // isMountRun=false) keeps the skip; a fresh mount — same project
         // or not — routes through the standard GET + loadProject.
@@ -1775,6 +1779,13 @@ export function EditorView({ user }: { user: HeaderUser }) {
             }
             resetSliderGesture();
             useEditorStore.getState().loadProject(body.data.project as ProjectDTO);
+            // Session 159 (S159-B / L159-A-L2): the flip rides the
+            // COMMIT — a cancelled pre-commit run (dev StrictMode's
+            // simulated unmount mid-await) leaves the discriminator
+            // at mount, so the re-run loads fresh (the S85-A contract
+            // restored in dev); a committed run's flip sticks — the
+            // X→Y→X back-navigation adoption preserved.
+            firstRunRef.current = false;
             setLoading(false);
             return;
           }
@@ -1786,6 +1797,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
       if (!cancelled) {
         resetSliderGesture();
         useEditorStore.getState().loadProject(UNTITLED_PROJECT);
+        firstRunRef.current = false; // S159-B: the same commit-riding flip.
         setLoading(false);
       }
     })();

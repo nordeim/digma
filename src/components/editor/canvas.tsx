@@ -794,7 +794,12 @@ export function Canvas() {
                   // inheriting the fresh id; the memo fallback keeps the
                   // deleted-mid-window floor (the honest dead arm).
                   const store = useEditorStore.getState();
-                  const el = store.elements.find((e) => store.selectedIds.includes(e.id)) ?? selected[0]!;
+                  // Session 159 (S159-D / I159-A-I1): the Set
+                  // membership form — the S74-B family's own
+                  // convention at its one missed site (once per
+                  // handle press, the form-consistency doctrine).
+                  const selectedIdSet = new Set(store.selectedIds);
+                  const el = store.elements.find((e) => selectedIdSet.has(e.id)) ?? selected[0]!;
                   (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
                   // Session 56 (S56-A): the resize gesture captures its
                   // pre-gesture snapshot at the handle's pointer-down — the
