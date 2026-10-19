@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { fail, ok, requireSession } from "@/lib/api";
-import { readBoundedJson, clampText } from "@/lib/validation";
+import { describeRejection, readBoundedJson, clampText } from "@/lib/validation";
 import { parseFallbackCommand, sanitizeElementSummary, sanitizeLlmOperations, type AiCommand } from "@/lib/ai-assistant";
 import { aiRateLimit, clientIpOf } from "@/lib/rate-limit";
 
@@ -145,8 +145,8 @@ export async function POST(request: NextRequest) {
       }
     } catch (error) {
       // SDK unavailable / malformed output — the deterministic fallback already
-      // holds a valid answer. Answer 200 either way, every rejection shape (S157-A).
-      console.warn("[ai-assistant] LLM path failed, using deterministic fallback:", error instanceof Error ? error.message : String(error));
+      // holds a valid answer. Answer 200 either way, every rejection shape (S157-A/S158-A).
+      console.warn("[ai-assistant] LLM path failed, using deterministic fallback:", describeRejection(error));
     }
   }
 

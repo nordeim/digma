@@ -1222,6 +1222,18 @@ S166 = dict(S165)
 # rendered surface).
 S167 = dict(S166)
 
+# s168 mapping (session 158 — the 134th reference audit's evidence set + the
+# S158 capture set). The standing S167 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S158 tree); no NEW
+# witness this session (the S158 pass is the total rejection-description
+# hardening + the toolbar px-honesty + the PAD title-lag repair — the
+# edited src/ lines live in the ai-assistant route's CATCH LOG
+# description (a path the deterministic-fallback capture never exercises,
+# DIGMA_DISABLE_AI_LLM=1 answers before the LLM try), the validation
+# helper (server-side, no rendered surface), and the toolbar provenance
+# COMMENT (zero rendered movement)).
+S168 = dict(S167)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1410,6 +1422,8 @@ def expected_for(name: str):
         return S166.get(Path(name).stem)
     if name.startswith("ref-audit-s167/"):
         return S167.get(Path(name).stem)
+    if name.startswith("ref-audit-s168/"):
+        return S168.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1558,6 +1572,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s165").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s166").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s167").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s168").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

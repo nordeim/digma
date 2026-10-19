@@ -36,9 +36,9 @@ const TOOL_META: Array<{ id: EditorTool; icon: React.ComponentType<{ className?:
 const LABEL_FOR = new Map(TOOL_SHORTCUTS.map((entry) => [entry.id, entry.label]));
 const SHORTCUT_FOR = new Map(TOOL_SHORTCUTS.map((entry) => [entry.id, entry.shortcut]));
 
-// The w-12 icon toolbar — measured from the reference: dark rail, 8px
-// buttons with titles (accessible names), active = bg-blue-600 text-white,
-// a divider between navigate (select/hand) and shape tools.
+// The w-12 icon toolbar — measured from the reference: dark rail, h-8 w-8
+// (32px) buttons with titles (accessible names), active = bg-blue-600
+// text-white, a divider between navigate (select/hand) and shape tools.
 export function Toolbar() {
   const tool = useEditorStore((s) => s.tool);
   const setTool = useEditorStore((s) => s.setTool);

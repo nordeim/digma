@@ -353,3 +353,18 @@ export const MEMBER_LIMIT = 100;
  * credential-less loop the XFF-spoofable auth limiter cannot fully
  * stop at the default trust depth. */
 export const USER_LIMIT = 500;
+
+/** S158-A: a TOTAL description of an unknown rejection — the guarded
+ *  form of the S157-A dereference (String() itself throws on a
+ *  null-prototype object, a hostile toString/Symbol.toPrimitive
+ *  rethrows through the coercion, and an Error subclass can carry a
+ *  throwing message getter — B158-I1, the B157-I1 family's residual
+ *  closed at the coercion seam): the catch-side log line can never
+ *  itself escape as the bare 500 the catch exists to make impossible. */
+export function describeRejection(error: unknown): string {
+  try {
+    return error instanceof Error ? error.message : String(error);
+  } catch {
+    return "[unloggable rejection]";
+  }
+}
