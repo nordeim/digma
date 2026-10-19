@@ -117,8 +117,8 @@ const seoSource = readFileSync(
  *  the docs and these constants TOGETHER so the pair-unity pins stay
  *  green through the transition — the rolling-safe form at birth, the
  *  s140 lesson). */
-const UNIT = "2227";
-const FILES = "222";
+const UNIT = "2243";
+const FILES = "223";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");

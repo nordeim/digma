@@ -533,6 +533,21 @@ function useAutosave(): AutosaveHandle {
       // keepalive byte cap, pass the guard, and be silently rejected
       // by the browser.
       if (new Blob([payload]).size > 60_000) return;
+      // Session 161 (S161-A / L161-A-L1 — the honest-limits completion):
+      // the out-of-order residual. The soft-leave boundary chains its
+      // newer-state PUT2 on the machine's flightDone (S86-A) so the
+      // older PUT1 always lands first — a pagehide listener cannot
+      // await (the teardown is imminent), so when an edit lands inside
+      // PUT1's round-trip and the user closes instantly, an
+      // already-transmitted PUT1 can land AFTER this keepalive PUT2
+      // and regress the server to the older state (a narrow triple
+      // conjunction: edit-in-flight + instant close + server
+      // reordering — the residual the S86-A chain cannot reach here).
+      // The same-reference skip alternative is unsound: a regular
+      // in-flight fetch does NOT survive teardown (the S61-I
+      // observed-live lesson), so this "duplicate" IS the safety net
+      // carrying the state — skipping it when "saving" would regress
+      // the edit-loss S61-I itself fixed.
       void fetch(`/api/projects/${encodeURIComponent(projectId)}/elements`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -920,6 +935,52 @@ function useEditorShortcuts(onOpenShortcuts: () => void, loading: boolean) {
       if (event.key === "?") {
         event.preventDefault();
         onOpenShortcuts();
+        return;
+      }
+
+      // Session 161 (S161-B — the S160-C registered candidate follow-up
+      // DELIVERED, the working-superset doctrine): the insert-shape
+      // keyboard surface. The canvas's ELEMENT-CREATION gestures are
+      // pointer-only (the draw tools' drag, the pen's freehand stream —
+      // the S160-C registration); Insert gives the keyboard its own
+      // creation path: a default-sized element of the ACTIVE DRAW
+      // TOOL's type (rectangle/ellipse/frame/line; rectangle when a
+      // non-draw tool is active) at the canvas viewport CENTER, through
+      // the store's own addElements seam (the ELEMENT_LIMIT honest
+      // refusal + the selection commit by construction). The S123-A
+      // gesture stand-down above covers this branch by placement (a
+      // keyboard insert interleaved with a live canvas gesture refuses
+      // — the same tail-coverage the zoom and tool arms ride); Insert
+      // is single-key (it passes the modifier bail) and unmapped by
+      // the handler or the browser in the canvas context.
+      if (event.key === "Insert") {
+        event.preventDefault();
+        const surface = document.querySelector<HTMLDivElement>(
+          '[role="application"][aria-label="Design canvas"]',
+        );
+        if (surface) {
+          const rect = surface.getBoundingClientRect();
+          // The viewport center in canvas coordinates — the inverse of
+          // the canvas's own pointer transform (canvas.tsx :141-142).
+          const cx = (rect.width / 2 - store.panX) / store.zoom;
+          const cy = (rect.height / 2 - store.panY) / store.zoom;
+          const type: DesignElementDTO["type"] =
+            store.tool === "rectangle" ||
+            store.tool === "ellipse" ||
+            store.tool === "frame" ||
+            store.tool === "line"
+              ? store.tool
+              : "rectangle";
+          const w = 120;
+          const h = type === "line" ? 0 : 120;
+          store.addElement({
+            type,
+            x: cx - w / 2,
+            y: cy - h / 2,
+            width: w,
+            height: h,
+          });
+        }
         return;
       }
 

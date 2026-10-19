@@ -173,8 +173,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s158 lesson). */
-const UNIT = "2227";
-const FILES = "222";
+const UNIT = "2243";
+const FILES = "223";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -223,12 +223,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.139.0 PAD block quotes for the layer total (the
+/** The figure the v1.140.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its sixth instance). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.139\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.140\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -508,7 +508,7 @@ describe("S159-E the per-session pin family (the one-hundred-and-seventh audit's
     expect(validationRow).toContain("| 380 |");
     const viewRow =
       padSource.split("\n").find((l) => l.includes("| `src/components/editor/editor-view.tsx` |")) ?? "";
-    expect(viewRow).toContain("| 2371 |");
+    expect(viewRow).toContain("| 2432 |");
     const canvasRow =
       padSource.split("\n").find((l) => l.includes("| `src/components/editor/canvas.tsx` |")) ?? "";
     expect(canvasRow).toContain("| 1086 |");
@@ -560,7 +560,7 @@ describe("S159-E the per-session pin family (the one-hundred-and-seventh audit's
 
   it("DEFECT (docs): the F146 lesson registered in the digma_SKILL — the string-honesty + StrictMode-flip + registration members inserted after F145, the version bumped to v1.137.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.138\.0/);
+    expect(skillSource).toMatch(/version: 1\.139\.0/);
     // The lesson: the members after F145.
     const f145At = skillSource.indexOf("F145");
     const f146At = skillSource.indexOf("F146");

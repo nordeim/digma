@@ -110,6 +110,12 @@ export const EDITOR_SHORTCUTS: ReadonlyArray<{
       { label: "Redo", keys: ["Ctrl+Shift+Z", "Ctrl+Y"] },
       { label: "Delete selection", keys: ["Del"] },
       { label: "Deselect", keys: ["Esc"] },
+      // Session 161 (S161-B — the S160-C registered candidate follow-up
+      // delivered): the insert-shape keyboard surface — a default-sized
+      // element of the active draw tool's type at the canvas viewport
+      // center (the dialog's inventory advertises what the handler
+      // wires, the single-source doctrine).
+      { label: "Insert shape", keys: ["Ins"] },
     ],
   },
 ];

@@ -48,9 +48,9 @@ describe("HexColorRow's swatch (session 66, S66-B / A-3)", () => {
     const w = componentWindow(panelSource, "HexColorRow");
     const swatch = w.match(/type="color"[\s\S]*?\/>/);
     expect(swatch).not.toBeNull();
-    expect(swatch![0]).toMatch(/sliderGesture\.textTick\(\)/);
+    expect(swatch![0]).toMatch(/sliderGesture\.textTick\(`picker:/);
     expect(swatch![0]).toMatch(/onChange\(event\.target\.value\)/);
-    const tickIdx = swatch![0].indexOf("sliderGesture.textTick()");
+    const tickIdx = swatch![0].indexOf("sliderGesture.textTick(`picker:");
     const commitIdx = swatch![0].indexOf("onChange(event.target.value)");
     expect(tickIdx).toBeGreaterThan(-1);
     expect(commitIdx).toBeGreaterThan(tickIdx);
@@ -62,7 +62,7 @@ describe("HexColorRow's swatch (session 66, S66-B / A-3)", () => {
     const w = componentWindow(panelSource, "HexColorRow");
     const swatch = w.match(/type="color"[\s\S]*?\/>/);
     expect(swatch).not.toBeNull();
-    expect(swatch![0]).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\("text"\)\}/);
+    expect(swatch![0]).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\(`picker:/);
   });
 
   it("the hex TEXT input stays a discrete keyboard commit (no gesture wiring)", () => {
@@ -86,9 +86,9 @@ describe("the gradient stop colors (session 66, S66-B / A-3)", () => {
     // same way.
     const stop = panelSource.match(/aria-label=\{`Stop \$\{index \+ 1\} color`\}[\s\S]*?\/>/);
     expect(stop).not.toBeNull();
-    expect(stop![0]).toMatch(/sliderGesture\.textTick\(\)/);
-    expect(stop![0]).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\("text"\)\}/);
-    const tickIdx = stop![0].indexOf("sliderGesture.textTick()");
+    expect(stop![0]).toMatch(/sliderGesture\.textTick\(`picker:Stop/);
+    expect(stop![0]).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\(`picker:Stop/);
+    const tickIdx = stop![0].indexOf("sliderGesture.textTick(`picker:Stop");
     const commitIdx = stop![0].indexOf("setStop(index");
     expect(tickIdx).toBeGreaterThan(-1);
     expect(commitIdx).toBeGreaterThan(tickIdx);

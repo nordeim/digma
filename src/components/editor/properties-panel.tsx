@@ -377,11 +377,18 @@ function HexColorRow({
                 ? wouldCommit(event.target.value)
                 : event.target.value.toUpperCase() !== (expandShortHex(value) ?? "").toUpperCase())
             ) {
-              sliderGesture.textTick();
+              // Session 161 (S161-D / I161-A-I2 — the color-picker gesture
+              // tokens): the swatch's burst rides its OWN per-surface token
+              // — the label-derived picker:<label> (the S126-B per-input
+              // form the sliders carry, reaching the picker family; the
+              // shared default "text" token retired from the swatch — a
+              // future non-modal picker no longer re-opens the
+              // stale-release class across the picker sites).
+              sliderGesture.textTick(`picker:${label ?? "Background"}`);
               onChange(event.target.value);
             }
           }}
-          onBlur={() => sliderGesture.finish("text")}
+          onBlur={() => sliderGesture.finish(`picker:${label ?? "Background"}`)}
           className="h-8 w-8 rounded border border-editor-border bg-transparent"
         />
         <input
@@ -1056,11 +1063,15 @@ function GradientPanel({
                   // snapshot / wiped redo / phantom Unsaved /
                   // byte-identical PUT the family doctrine closes).
                   if (patchDiffers(stop, { color: event.target.value })) {
-                    sliderGesture.textTick();
+                    // Session 161 (S161-D / I161-A-I2 — the color-picker
+                    // gesture tokens): the stop color's own per-stop token
+                    // (the aria-label's own form — the S126-B per-input
+                    // doctrine at the gradient family).
+                    sliderGesture.textTick(`picker:Stop ${index + 1} color`);
                     setStop(index, { color: event.target.value });
                   }
                 }}
-                onBlur={() => sliderGesture.finish("text")}
+                onBlur={() => sliderGesture.finish(`picker:Stop ${index + 1} color`)}
                 className="h-6 w-6 rounded border border-editor-border bg-transparent"
               />
               <GuardedNumberInput

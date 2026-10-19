@@ -69,8 +69,8 @@ import * as editorLib from "../src/lib/editor";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "2227";
-const FILES = "222";
+const UNIT = "2243";
+const FILES = "223";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -125,7 +125,7 @@ describe("S105-A the color-swatch no-op commits (A-M1 — the headline, the fami
     // the guard WRAPS both the tick and the commit (a same-color pick
     // never arms, never commits).
     const guardIdx = swatch![0].indexOf("value === null ||");
-    const tickIdx = swatch![0].indexOf("sliderGesture.textTick()");
+    const tickIdx = swatch![0].indexOf("sliderGesture.textTick(`picker:");
     const commitIdx = swatch![0].indexOf("onChange(event.target.value)");
     expect(guardIdx).toBeGreaterThan(-1);
     expect(tickIdx).toBeGreaterThan(guardIdx);
@@ -159,7 +159,7 @@ describe("S105-A the color-swatch no-op commits (A-M1 — the headline, the fami
     expect(stop).not.toBeNull();
     expect(stop![0]).toMatch(/patchDiffers\(stop, \{ color: event\.target\.value \}\)/);
     const guardIdx = stop![0].indexOf("patchDiffers(stop, { color: event.target.value })");
-    const tickIdx = stop![0].indexOf("sliderGesture.textTick()");
+    const tickIdx = stop![0].indexOf("sliderGesture.textTick(`picker:Stop");
     const commitIdx = stop![0].indexOf("setStop(index");
     expect(guardIdx).toBeGreaterThan(-1);
     expect(tickIdx).toBeGreaterThan(guardIdx);
@@ -172,8 +172,8 @@ describe("S105-A the color-swatch no-op commits (A-M1 — the headline, the fami
     // the text branch's case-insensitive complete-hex compare are the
     // standing contracts the fix rides ON, not the ones it replaces.
     const w = componentWindow("HexColorRow");
-    expect(w).toMatch(/sliderGesture\.textTick\(\)/);
-    expect(w).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\("text"\)\}/);
+    expect(w).toMatch(/sliderGesture\.textTick\(`picker:/);
+    expect(w).toMatch(/onBlur=\{\(\) => sliderGesture\.finish\(`picker:/);
     expect(w).toMatch(/next\.toUpperCase\(\) !== \(value \?\? ""\)\.toUpperCase\(\)/);
     const text = w.match(/type="text"[\s\S]*?\/>/);
     expect(text).not.toBeNull();

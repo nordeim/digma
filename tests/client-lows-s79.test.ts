@@ -252,7 +252,7 @@ describe("the hex row's abandoned-draft blur-restore (S79-E / A-L1)", () => {
     // the same family's fourth widening): the A130-I1 by-design
     // registration comment lands above the empty-draft branch —
     // 6700 -> 8000 (the live-measured distance 7919).
-    const body = panel.slice(start, start + 8000);
+    const body = panel.slice(start, start + 8600);
     expect(body).toMatch(/onBlur=\{\(\)\s*=>\s*setDraft\(value\s*\?\?\s*""\)\}/);
   });
 

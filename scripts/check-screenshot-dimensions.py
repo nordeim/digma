@@ -1262,6 +1262,17 @@ S169 = dict(S168)
 # use the single-digit path)).
 S170 = dict(S169)
 
+# s171 mapping (session 161 — the 137th reference audit's evidence set + the
+# S161 capture set). The standing S170 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S161 tree); no NEW
+# witness this session (the S161 pass is the pagehide out-of-order
+# registration + the insert-shape keyboard surface + the picker gesture
+# tokens — the edited src/ lines live in the autosave comment block (zero
+# rendered movement), the global keydown's Insert branch (the standard
+# shots never press Insert), and the picker token spellings (behavior-
+# identical — the tokens are gesture bookkeeping keys, never rendered)).
+S171 = dict(S170)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1456,6 +1467,8 @@ def expected_for(name: str):
         return S169.get(Path(name).stem)
     if name.startswith("ref-audit-s170/"):
         return S170.get(Path(name).stem)
+    if name.startswith("ref-audit-s171/"):
+        return S171.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1607,6 +1620,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s168").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s169").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s170").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s171").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
