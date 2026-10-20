@@ -163,8 +163,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s160 lesson). */
-const UNIT = "2243";
-const FILES = "223";
+const UNIT = "2257";
+const FILES = "224";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -213,12 +213,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.140.0 PAD block quotes for the layer total (the
+/** The figure the v1.141.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its eighth instance). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.140\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.141\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -300,9 +300,11 @@ describe("S161-B the insert-shape keyboard surface (the S160-C registered candid
     expect(collapsed(branch)).toContain(
       "(rect.height / 2 - store.panY) / store.zoom",
     );
-    // The element centered on the computed point.
-    expect(branch).toContain("x: cx - w / 2");
-    expect(branch).toContain("y: cy - h / 2");
+    // The element centered on the computed point (the S162-A clamp
+    // wrap — the centered form now rides clampPositionField, the
+    // F140 re-anchor rider's spelling).
+    expect(branch).toContain("clampPositionField(cx - w / 2)");
+    expect(branch).toContain("clampPositionField(cy - h / 2)");
   });
 
   it("DEFECT (lib source): the EDITOR_SHORTCUTS Editing group carries the insert-shape entry — the dialog's inventory advertises what the handler wires (the single-source doctrine)", () => {
@@ -507,7 +509,7 @@ describe("S161-F the per-session pin family (the survival members + the doc-side
 
   it("DEFECT (docs): the F148 lesson registered in the digma_SKILL — the registration-over-unsound-fix + per-surface-token + keyboard-superset-delivery members inserted after F147, the version bumped to v1.139.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.139\.0/);
+    expect(skillSource).toMatch(/version: 1\.140\.0/);
     // The lesson: the members after F147.
     const f147At = skillSource.indexOf("F147");
     const f148At = skillSource.indexOf("F148");

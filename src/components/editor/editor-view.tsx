@@ -18,7 +18,7 @@ import { useEditorStore } from "./editor-store";
 import { toast } from "@/hooks/use-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { HeaderUser } from "@/components/app-header";
-import { ProjectDTO, canvasFontFamily, DEFAULT_CANVAS_BACKGROUND, EDITOR_SHORTCUTS, FALLBACK_WHITE, fillPaintFor, isTypingTarget, textAlignToJustify, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
+import { ProjectDTO, canvasFontFamily, DEFAULT_CANVAS_BACKGROUND, EDITOR_SHORTCUTS, ELEMENT_LIMIT, FALLBACK_WHITE, clampPositionField, fillPaintFor, isTypingTarget, textAlignToJustify, toolForShortcut, type DesignElementDTO } from "@/lib/editor";
 import {
   EXPORT_BOARD_HEIGHT,
   EXPORT_BOARD_WIDTH,
@@ -941,9 +941,13 @@ function useEditorShortcuts(onOpenShortcuts: () => void, loading: boolean) {
       // Session 161 (S161-B — the S160-C registered candidate follow-up
       // DELIVERED, the working-superset doctrine): the insert-shape
       // keyboard surface. The canvas's ELEMENT-CREATION gestures are
-      // pointer-only (the draw tools' drag, the pen's freehand stream —
-      // the S160-C registration); Insert gives the keyboard its own
-      // creation path: a default-sized element of the ACTIVE DRAW
+      // pointer-only (the draw tools' drag, the text tool's
+      // click-to-place — the live creation census; the S162-C
+      // correction of the S160-C registration's phantom pen member:
+      // TOOL_TO_TYPE maps only the four draw types, so the pen tool
+      // creates nothing — the registration's phantom phrase named
+      // a gesture that does not exist); Insert gives the keyboard its
+      // own creation path: a default-sized element of the ACTIVE DRAW
       // TOOL's type (rectangle/ellipse/frame/line; rectangle when a
       // non-draw tool is active) at the canvas viewport CENTER, through
       // the store's own addElements seam (the ELEMENT_LIMIT honest
@@ -953,6 +957,16 @@ function useEditorShortcuts(onOpenShortcuts: () => void, loading: boolean) {
       // — the same tail-coverage the zoom and tool arms ride); Insert
       // is single-key (it passes the modifier bail) and unmapped by
       // the handler or the browser in the canvas context.
+      //
+      // Session 162 (S162-A — L162-A-L1 + L162-A-L3, the honest
+      // completion): the branch now carries the creation family's own
+      // guards — the POSITION CLAMP (the draw commit's S87-B/S84-B
+      // form: panBy is unbounded, so a deep-panned viewport center
+      // past ±100000 would otherwise commit off-bound and visibly
+      // teleport to the server's buildElementRow bound on the
+      // store-replacing save) and the CAP-REFUSED TOAST (the S61-F
+      // contract both canvas siblings already honor — a silent dead
+      // Insert on a full board is the pre-fix behavior class).
       if (event.key === "Insert") {
         event.preventDefault();
         const surface = document.querySelector<HTMLDivElement>(
@@ -973,13 +987,20 @@ function useEditorShortcuts(onOpenShortcuts: () => void, loading: boolean) {
               : "rectangle";
           const w = 120;
           const h = type === "line" ? 0 : 120;
-          store.addElement({
-            type,
-            x: cx - w / 2,
-            y: cy - h / 2,
-            width: w,
-            height: h,
-          });
+          if (
+            store.addElement({
+              type,
+              x: clampPositionField(cx - w / 2),
+              y: clampPositionField(cy - h / 2),
+              width: w,
+              height: h,
+            }) === null
+          ) {
+            toast.error(
+              "Element limit reached",
+              `Boards hold at most ${ELEMENT_LIMIT} elements.`,
+            );
+          }
         }
         return;
       }

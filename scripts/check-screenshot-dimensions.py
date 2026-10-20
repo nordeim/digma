@@ -1273,6 +1273,17 @@ S170 = dict(S169)
 # identical — the tokens are gesture bookkeeping keys, never rendered)).
 S171 = dict(S170)
 
+# s172 mapping (session 162 — the 138th reference audit's evidence set + the
+# S162 capture set). The standing S171 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S162 tree); no NEW
+# witness this session (the S162 pass is the insert-branch honest
+# completion + the text-tool sibling promotion + the phantom-freehand
+# correction — the edited src/ lines are the clamp pair and the toast
+# (behavior-identical inside the standard shots' coordinate range — the
+# clamp only changes values beyond the bound, the toast only fires on a
+# full board) and the comment reword (zero rendered movement)).
+S172 = dict(S171)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1469,6 +1480,8 @@ def expected_for(name: str):
         return S170.get(Path(name).stem)
     if name.startswith("ref-audit-s171/"):
         return S171.get(Path(name).stem)
+    if name.startswith("ref-audit-s172/"):
+        return S172.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1621,6 +1634,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s169").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s170").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s171").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s172").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

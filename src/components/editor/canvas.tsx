@@ -223,7 +223,13 @@ export function Canvas() {
       // Session 61 (S61-F / A-L-5): the cap-refused add answers the user
       // (the store returns null — a silent dead click would be the
       // pre-fix behavior class).
-      if (addElement({ type: "text", x: point.x, y: point.y, width: 200, height: 40 }) === null) {
+      // Session 162 (S162-B — L162-A-L1's unregistered sibling): the
+      // text add joins the draw commit's S84-B position clamp (the
+      // one-line form at the :492 commit — a deep-panned click past
+      // ±100000 would otherwise commit off-bound and visibly teleport
+      // to the server's buildElementRow bound on the store-replacing
+      // save; the family's five prior members never named this arm).
+      if (addElement({ type: "text", x: clampPositionField(point.x), y: clampPositionField(point.y), width: 200, height: 40 }) === null) {
         toast.error("Element limit reached", `Boards hold at most ${ELEMENT_LIMIT} elements.`);
       }
       useEditorStore.getState().setTool("select");
