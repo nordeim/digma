@@ -975,7 +975,7 @@ function useEditorShortcuts(onOpenShortcuts: () => void, loading: boolean) {
         if (surface) {
           const rect = surface.getBoundingClientRect();
           // The viewport center in canvas coordinates — the inverse of
-          // the canvas's own pointer transform (canvas.tsx :141-142).
+          // the canvas's own pointer transform (canvas.tsx's toCanvas).
           const cx = (rect.width / 2 - store.panX) / store.zoom;
           const cy = (rect.height / 2 - store.panY) / store.zoom;
           const type: DesignElementDTO["type"] =
@@ -1991,7 +1991,7 @@ export function EditorView({ user }: { user: HeaderUser }) {
     <div className="relative flex h-screen flex-col overflow-hidden bg-editor-bg">
       {/* Top bar — measured: h-12, back, name, Saved badge, undo/redo, avatars, Share/Present.
           Mobile wrap (session 48, S48-2): at <sm the right group wraps onto its
-          own row — pre-fix Share (L413) and Present (L493) rendered OFF-SCREEN
+          own row — pre-fix Share and Present rendered OFF-SCREEN
           at 390×844 inside the root overflow-hidden, so a phone could neither
           present nor share. At ≥sm the content fits one row inside the fixed
           48px — pixel-identical to the pre-fix rendering (flex-wrap is inert

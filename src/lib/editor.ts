@@ -611,10 +611,10 @@ type ElementStyle = Record<string, string>;
 /** The Corner Radius slider's DYNAMIC max — half the element's smaller side
  * (session 33, RA-29 — triple-measured on the reference: a 200x150 rectangle
  * reads aria-valuemax="75" = 150/2; a 46x23.366 rectangle reads
- * 11.68298487339743 = 23.366/2; a 156x117 frame reads 58.41492436698704 =
- * 117/2). The historical "fixed 75" reading was the 200x150-class audit
- * rectangle's own min/2 — the cap is a FUNCTION of the element, never a
- * constant.
+ * 11.68298487339743 = the unrounded 23.36596.../2 (the prose dims
+ * are rounded displays); a 156x117 frame reads 58.41492436698704 =
+ * the unrounded 116.82984.../2). The historical "fixed 75" was the
+ * audit rectangle's own min/2 — the cap is a FUNCTION, never a constant.
  *
  * Session 88 (S88-A / A88-L1): the dynamic max COMPOSES with the server's
  * radius ceiling — buildElementRow clamps the field at 2000

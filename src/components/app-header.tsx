@@ -254,7 +254,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
                * mobile header controls — it sits beside the 44px hamburger
                * at 390) and announces its dialog semantics
                * (aria-haspopup="dialog"); the popover keeps its pinned
-               * role/Escape contract (workspace.spec.ts:94). */}
+               * role/Escape contract (the workspace.spec bell-Escape test). */}
               {/* Session 65 (S65-D — the thirteenth audit's A-3): the glyph
                   meets the non-text contrast floor (the S61-B family — the
                   lightest gray measured 2.54:1 on white against the 3:1

@@ -2195,7 +2195,7 @@ export function selectionWouldCommit(
   // SIBLINGS keep the RAW patchDiffers compare (they are structural
   // nulls, never color strings — a gradient/image-painting member
   // still commits on the fill patch, the S78-D paint-precedence
-  // form), and the seam's own census stays ELEVEN (patchDiffers
+  // form), and the panel's own census stays ELEVEN (patchDiffers
   // remains the entry compare).
   const key = kind === "fill" ? "fill" : "stroke";
   return selected.some((el) => {
