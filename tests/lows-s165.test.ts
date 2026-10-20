@@ -118,8 +118,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s164 lesson). */
-const UNIT = "2315";
-const FILES = "228";
+const UNIT = "2330";
+const FILES = "229";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -168,12 +168,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.145.0 PAD block quotes for the layer total (the
+/** The figure the v1.146.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its twelfth instance). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.145\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.146\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -376,7 +376,10 @@ describe("S165-C the per-session pin family (the survival members + the doc-side
     expect(viewSource).toContain('event.key === "Insert"');
     // The layer total STAYS at 14,295 — zero source changes this
     // registration cycle (the third consecutive STAYS cycle).
-    expect(liveLayerTotal).toBe(14295);
+    // RE-ANCHORED onto 14307 by the S167-A rider (teams-view +12 —
+    // the F40 prior-spec re-anchor: the claim stays true, the pinned
+    // figure moves with the live tree).
+    expect(liveLayerTotal).toBe(14307);
   });
 
   it("DEFECT (docs): the AGENTS session-165 bullet carries the registration members — the FIFTH ZERO-FINDING CENSUS, the first zero-false comment-truth sampling, and the 38th deferral cycle", () => {
@@ -418,7 +421,10 @@ describe("S165-C the per-session pin family (the survival members + the doc-side
     // the spec's head (wc -l over the exact 22-file composition —
     // 8 editor + 8 components + 2 hooks + the 3 named lib members +
     // globals.css, the composition pinned by tests/lows-s142.test.ts).
-    expect(liveLayerTotal).toBe(14295);
+    // RE-ANCHORED onto 14307 by the S167-A rider (teams-view +12 —
+    // the F40 prior-spec re-anchor: the claim stays true, the pinned
+    // figure moves with the live tree).
+    expect(liveLayerTotal).toBe(14307);
     // The PAD's v1.144.0 block must quote exactly this figure (the
     // comma-spelled doc form and the bare runtime form are the same
     // NUMBER — the guard compares the figure, never the spelling).
@@ -428,7 +434,7 @@ describe("S165-C the per-session pin family (the survival members + the doc-side
 
   it("DEFECT (docs): the F152 lesson registered in the digma_SKILL — the zero-false-sampling + registration-cycle members inserted after F151, the version bumped to v1.143.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.144\.0/);
+    expect(skillSource).toMatch(/version: 1\.145\.0/);
     // The lesson: the members after F151.
     const f151At = skillSource.indexOf("F151");
     const f152At = skillSource.indexOf("F152");

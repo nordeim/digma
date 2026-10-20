@@ -322,16 +322,23 @@ function CreateTeamDialog({
     if (submitting || !name.trim()) return;
     setSubmitting(true);
     try {
-      const data = await call<{ team: TeamDTO }>("/api/teams", {
-        method: "POST",
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-          color,
-          memberEmail: memberEmail.trim() || null,
-          memberRole: memberRole.trim() || null,
-        }),
-      });
+      // Session 167 (S167-A / A167-L-1 — the S71-A errorTitle family's
+      // completion, the S148-C delete member's create/invite siblings):
+      // a failed create toasts the site's own copy, never the generic.
+      const data = await call<{ team: TeamDTO }>(
+        "/api/teams",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: name.trim(),
+            description: description.trim() || null,
+            color,
+            memberEmail: memberEmail.trim() || null,
+            memberRole: memberRole.trim() || null,
+          }),
+        },
+        { errorTitle: "Could not create the team" },
+      );
       if (data) {
         onCreated();
         onOpenChange(false);
@@ -467,10 +474,15 @@ function InviteMemberDialog({
     if (!team || submitting) return;
     setSubmitting(true);
     try {
-      const data = await call<{ member: TeamMemberDTO }>(`/api/teams/${encodeURIComponent(team.id)}/members`, {
-        method: "POST",
-        body: JSON.stringify({ email: email.trim(), role: role.trim() || null }),
-      });
+      // Session 167 (S167-A — the invite member of the same family).
+      const data = await call<{ member: TeamMemberDTO }>(
+        `/api/teams/${encodeURIComponent(team.id)}/members`,
+        {
+          method: "POST",
+          body: JSON.stringify({ email: email.trim(), role: role.trim() || null }),
+        },
+        { errorTitle: "Invite failed" },
+      );
       if (data) {
         onInvited();
         onOpenChange(false);
