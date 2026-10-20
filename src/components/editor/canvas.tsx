@@ -225,7 +225,7 @@ export function Canvas() {
       // pre-fix behavior class).
       // Session 162 (S162-B — L162-A-L1's unregistered sibling): the
       // text add joins the draw commit's S84-B position clamp (the
-      // one-line form at the :492 commit — a deep-panned click past
+      // one-line form at the draw commit below — a deep-panned click past
       // ±100000 would otherwise commit off-bound and visibly teleport
       // to the server's buildElementRow bound on the store-replacing
       // save; the family's five prior members never named this arm).
@@ -877,7 +877,7 @@ export function Canvas() {
         )}
         {/* Marquee preview — Session 148 (S148-B / A148-I1 — the F88
             form-alignment family): the preview gate rides the commit's
-            OWN two-term threshold (drag.w > 2 && drag.h > 2, the :503
+            OWN two-term threshold (drag.w > 2 && drag.h > 2, the
             commit above) — the pre-fix w-only form painted a live
             selection rectangle for a wide-but-thin drag (h ≤ 2) that
             the commit's own gate then refused, an affordance that lied

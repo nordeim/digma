@@ -122,8 +122,8 @@ export function aiRateLimit(ip: string, now: number = Date.now()): RateLimitResu
 // run (the S112-B burn probe rides its own dedicated XFF identity),
 // and the e2e suite's is ~31 (the fixture-creating specs plus the
 // UI-driven dialog pair — comfortably under 60; the `page.route`
-// interception sites in the specs are route MOCKS, never server
-// calls).
+// interception sites are NON-creation pass-throughs/delays (the
+// PUT bucket-excluded), one fulfill-mock, one external abort).
 const CRUD_LIMIT = 60;
 const CRUD_WINDOW_MS = 5 * 60 * 1000;
 

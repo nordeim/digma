@@ -104,8 +104,8 @@ const seoSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s148 lesson). */
-const UNIT = "2257";
-const FILES = "224";
+const UNIT = "2270";
+const FILES = "225";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -161,7 +161,9 @@ describe("S149-A the S148-B comment's born-drifted citation repair (a live comme
   it("DEFECT (source): the S148-B registration comment cites the commit at :503 as ABOVE — both born-drifts corrected in place (the :505 coordinate AND the below directional word), zero line-count drift, the gates and the comment's own registration forms unchanged", () => {
     // The corrected citation (the two-token repair, whitespace-collapsed
     // across the comment's line wrap).
-    expect(collapsed(canvasSource)).toMatch(/the :503 commit above/);
+    expect(collapsed(canvasSource)).toMatch(
+      /\(drag\.w > 2 && drag\.h > 2, the commit above\)/,
+    );
     // The born-drifted form is GONE (the :505 coordinate and the
     // "below" directional word — the commit at :503 precedes the
     // comment at :861 in the file).
