@@ -4,17 +4,34 @@ import { toast } from "@/hooks/use-toast";
 
 /**
  * The ONE client-side envelope unwrapper (session 65, S65-E — the
- * thirteenth audit's A-5). Every client view fetches through this
- * seam: the `{ ok, data } | { ok, error }` envelope unwraps to the
- * data payload, and a non-ok response (or a network failure) becomes
- * a DESTRUCTIVE toast + `null` — never a thrown error into render.
+ * thirteenth audit's A-5). The seam serves the envelope-consuming
+ * list views (Dashboard, Recent, Teams, project-card — the
+ * errorTitle/silent/load consumers): the `{ ok, data } | { ok,
+ * error }` envelope unwraps to the data payload, and a non-ok
+ * response (or a network failure) becomes a DESTRUCTIVE toast +
+ * `null` — never a thrown error into render.
  *
  * THE DEFECT this closes: the helper lived as THREE per-view copies —
  * two identical init-aware twins and a files-view variant that had
  * already LOST the request-init parameter. Duplicated domain helpers
  * drift by construction (the single-sourced predicate lesson the
- * editor learned the session before); the documented contract is ONE
- * unwrap seam for every client view.
+ * editor learned the session before); the consolidated contract is
+ * ONE unwrap seam for the views that consume the envelope.
+ *
+ * Session 168 (S168-A / A168-L-1 — the docblock scope correction):
+ * the seam does NOT serve every client view. Eleven deliberate
+ * raw-fetch bypass sites live outside it, each correct and
+ * self-documented at its own site — the auth cards' inline-alert
+ * flows (login-screen x4, reset-password-screen x1 — the RA-60
+ * reference contract: a failed sign-in renders the inline red alert
+ * inside the form, never a toast, so these MUST NOT migrate through
+ * this seam); the AI send's operations envelope (ai-assistant.tsx —
+ * its own ok/error contract with the scope belts); and the editor's
+ * serialized autosave machine plus its load effect and boundary
+ * transports (editor-view.tsx x5 — the ordering/terminal machinery
+ * owns its own fetch lifecycle). A future contributor migrating
+ * these through call() would regress the reference's inline
+ * sign-in alerts into destructive toasts.
  *
  * The init-aware form is the superset: a body-carrying init gets the
  * JSON content type merged into its headers; a body-less init (the
