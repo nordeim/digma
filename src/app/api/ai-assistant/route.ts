@@ -136,8 +136,8 @@ export async function POST(request: NextRequest) {
         const jsonStart = text.indexOf("{");
         const jsonEnd = text.lastIndexOf("}");
         if (jsonStart >= 0 && jsonEnd > jsonStart) {
-          const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
-          const sanitized = sanitizeLlmOperations(parsed, targetIds);
+          const modelReply = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+          const sanitized = sanitizeLlmOperations(modelReply, targetIds);
           if (sanitized) command = sanitized;
         }
       } finally {

@@ -35,8 +35,12 @@ import { toast } from "@/hooks/use-toast";
  *
  * The init-aware form is the superset: a body-carrying init gets the
  * JSON content type merged into its headers; a body-less init (the
- * plain GET) passes through unchanged — the files view's GET-only
- * call sites are behavior-identical through this form.
+ * plain GET) passes through unchanged — the long-deleted files view's
+ * GET-only call sites were behavior-identical through this form.
+ * Session 169 (S169-A / A169-I-2 — the era-scoping correction): the
+ * clause carries its era now — the view was deleted sessions ago while
+ * this trailing clause kept the present tense (the GET successors
+ * carry the same body-less passthrough form).
  */
 /**
  * The per-call options (session 71, S71-A — the nineteenth audit's

@@ -1332,6 +1332,15 @@ S177 = dict(S176)
 # in the captured surfaces by construction).
 S178 = dict(S177)
 
+# s179 mapping (session 169 — the 145th reference audit's evidence set + the
+# S169 capture set). The standing S178 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S169 tree); no NEW
+# witness this session (the S169 pass is the docblock era-scoping
+# correction + binding-shadow rename cycle — a comment-only change plus a
+# line-neutral rename, zero rendered-movement classes in the captured
+# surfaces by construction).
+S179 = dict(S178)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1542,6 +1551,8 @@ def expected_for(name: str):
         return S177.get(Path(name).stem)
     if name.startswith("ref-audit-s178/"):
         return S178.get(Path(name).stem)
+    if name.startswith("ref-audit-s179/"):
+        return S179.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1701,6 +1712,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s176").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s177").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s178").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s179").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
