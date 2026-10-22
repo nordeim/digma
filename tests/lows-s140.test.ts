@@ -114,8 +114,8 @@ const seoSource = readFileSync(
 /** The per-session count-family constants (the standing convention —
  *  re-anchored onto the delivery counts by the doc-update script; the
  *  S140-B pair-unity pins read them so the pair stays ONE claim). */
-const UNIT = "2377";
-const FILES = "232";
+const UNIT = "2392";
+const FILES = "233";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -251,7 +251,7 @@ describe("S140-B the count-pair unity registration (B140-I1 — both members of 
       [readmeSource, /\| Unit tests \| Vitest \| 5 \| (\d{4}) checks/g],
       [readmeSource, /# unit tests — (\d{4}) checks/g],
       [skillSource, /project_state: "(\d{4}) unit checks green/g],
-      [skillSource, /\| Unit tests \| Vitest \| ≥5\.0\.1 \| (\d{4}) checks/g],
+      [skillSource, /\| Unit tests \| Vitest \| ≥5\.0\.5 \| (\d{4}) checks/g],
       [skillChecklistRegion, /bun run test {2,}# (\d{4})\/\d{4}/g],
       [padSource, /- \[ \] `bun run test` → (\d{4})\/\d{4}/g],
       [padCommandRow(), /unit tests \((\d{4}) checks/g],

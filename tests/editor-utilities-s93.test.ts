@@ -69,8 +69,8 @@ const rawHexSites = (SRC_TEXT.match(RAW_HEX_CLASS) ?? []).length;
 // 1150 -> 1158 unit / 154 -> 155 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "2377";
-const FILES = "232";
+const UNIT = "2392";
+const FILES = "233";
 
 // ---------------------------------------------------------------------------
 // S93-A — the editor-* utility migration (the deferred queue's top row)

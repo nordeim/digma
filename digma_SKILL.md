@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite traced-schema trap trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.148.0
+version: 1.149.0
 last_updated: 2026-10-22
-project_state: "2377 unit checks green · 262 Playwright checks green · 73 smoke checks green · build 27 routes"
+project_state: "2392 unit checks green · 262 Playwright checks green · 73 smoke checks green · build 27 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -59,19 +59,19 @@ project_state: "2377 unit checks green · 262 Playwright checks green · 73 smok
 
 | Layer | Technology | Version (locked) | Notes |
 |---|---|---|---|
-| Framework | Next.js (App Router, Turbopack, standalone output) | ≥16.3.6 | Server components for pages; route handlers double as the API |
-| UI runtime | React | ≥19.3.0 | `useSyncExternalStore` for cross-chunk stores |
+| Framework | Next.js (App Router, Turbopack, standalone output) | ≥16.4.2 | Server components for pages; route handlers double as the API |
+| UI runtime | React | ≥19.3.1 | `useSyncExternalStore` for cross-chunk stores |
 | Language | TypeScript (fully strict) | ≥5.9.3 | `bun run typecheck` is the type gate (build has `ignoreBuildErrors`) |
 | Styling | Tailwind CSS (CSS-first) | ≥4.3.3 | NO `tailwind.config.js`; `@theme` in `globals.css` |
 | Animation | tw-animate-css | ≥1.4.0 | CSS import, not a JS plugin |
-| Primitives | shadcn/ui on Radix | Radix ^1.x per package.json | dialog, dropdown-menu, select, sheet, tabs, toaster (custom), button, input, label, textarea |
+| Primitives | shadcn/ui on Radix | Radix ^1.x/^2.x per package.json | dialog, dropdown-menu, select, sheet, tabs, toaster (custom), button, input, label, textarea |
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.1 | 2377 checks; `*.test.ts` only |
-| E2E tests | Playwright | ≥1.63.0 | 262 checks; standalone server on :3100 with its own `db/e2e.db` |
+| Unit tests | Vitest | ≥5.0.5 | 2392 checks; `*.test.ts` only |
+| E2E tests | Playwright | ≥1.64.1 | 262 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
-| Runtime | Bun | ≥1.4.x | Dev + prod server; scripts in `package.json` |
+| Runtime | Bun | 1.3.x runtime (bun-types ^1.4.3) | Dev + prod server; scripts in `package.json` |
 
 **Environment variables (complete — matches `.env.example` exactly):**
 
@@ -80,6 +80,11 @@ project_state: "2377 unit checks green · 262 Playwright checks green · 73 smok
 | `DATABASE_URL` | yes | `src/lib/db.ts` via `db-path.ts` | SQLite URL; relative `file:../db/custom.db` resolves against `prisma/` |
 | `AUTH_SECRET` | prod | `src/lib/auth.ts` | HMAC key for session tokens (insecure dev-only fallback when unset). NOT "SESSION_SECRET" — that was a doc drift, fixed |
 | `DIGMA_REPO_ROOT` | no | `src/lib/db-path.ts` | Explicit repo-root anchor (container escape hatch); blank adds nothing |
+| `DIGMA_PROXY_HOPS` | no | `src/lib/rate-limit.ts` | Declared appending-proxy depth for the per-IP limiter's client key (unset = 1) |
+| `DIGMA_DISABLE_IN_APP_RESET` | no | `src/app/api/auth/forgot-password/route.ts` | Suppresses the self-hosted in-app password-reset link |
+| `DIGMA_DISABLE_IN_APP_OTP` | no | register/login/resend routes | Nulls the in-response verification code |
+| `DIGMA_DISABLE_AI_LLM` | no | `src/app/api/ai-assistant/route.ts` | Force-degrades the assistant to the deterministic fallback parser |
+| `DIGMA_SITE_URL` | no | `src/app/robots.ts` + `src/app/sitemap.ts` | The public origin the SEO surfaces declare |
 
 **Commands (from `package.json`):**
 
@@ -239,7 +244,7 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 2377/2377
+bun run test          # 2392/2392
 bun run build         # 27 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 73/73 (health, auth gate, CRUD, AI, rate limit, logout, the S82-D body-cap pair, the S111-D invite-dedup trio, the S112-B crud-limiter trio, the S112-C fillImage pair, the S112-C fillImageThumb projection pair)
 bun run test:e2e      # 262/262 (39 spec files + the setup project; the mobile-nav 10-check suite, the sessionNN-fixes discriminators)
@@ -480,6 +485,7 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 155. **F155 — the session-168 family: the DOCBLOCK-UNIVERSALITY member (the comment-truth family's docblock arm).** The session-168 audit found A168-L-1: src/lib/call.ts's docblock claimed "Every client view fetches through this seam" / "the documented contract is ONE unwrap seam for every client view" while ELEVEN deliberate raw-fetch bypass sites lived in client components (the auth cards' RA-60 inline-alert flows in login-screen x4 + reset-password-screen x1, the AI send's operations envelope, the editor's serialized autosave machine + load + boundary transports x5) — every bypass correct and self-documented at its own site, the docblock's UNIVERSAL the false member (the comment-truth census 142 sampled, 141 TRUE / 1 FALSE — the FALSE one IS the finding, the first false comment in four samplings). THE LESSON: a shared seam's docblock universality claim is itself a comment-truth claim — when the seam accretes deliberate bypass consumers, the universal goes false while every bypass stays correct; re-derive a seam's docblock scope at every census of its consumers (the consumer census and the docblock scope must close together), and the comment-truth sampling must cover the shared seams' own docblocks, not only inline comments — the S65-E docblock written when the claim was true went false three audit eras later without any code defect, and the prospective harm was real: a contributor trusting the universal and migrating the auth fetches through call() would regress the reference's inline sign-in alerts into destructive toasts.**
 156. **F156 — the session-169 family: the NAMES-OUTLIVE-THEIR-CONCEPTS member (the binding-shadow class + the docblock tense arm).** The session-169 audit found B169-I-1: src/app/api/ai-assistant/route.ts:139 declared `const parsed = JSON.parse(...)` inside the LLM try block, SHADOWING the handler's outer `const parsed = await readBoundedJson(request)` at :48 — two concepts (the bounded body parse vs the model-reply JSON scan) sharing one name in one function scope, zero behavioral impact today, the hazard a future edit referencing `parsed` in good faith and silently receiving the model's parsed reply (the S71-D two-spellings class at the binding level); and A169-I-2: src/lib/call.ts's retained trailing clause spoke of the long-deleted files view's GET-only call sites in the present tense while its recent-view/dashboard-view siblings tensed the same history as history. THE LESSON: a shadowed binding and a stale-tense docblock clause are the same drift class — the NAME survives after the CONCEPT it named is gone or redefined, and the next reader's good-faith grep meets a lie; when the audit finds either, close it in-cycle when the closure is mechanical (a line-neutral rename, a one-clause tense reword) — never let the shadow or the stale tense survive a second census; and a deletion edit must sweep the seams that NAME the deleted thing (the F155 docblock-scope lesson's tense arm: the consumer census and the docblock's tense close together).**
 157. **F157 — the session-170 family: the COUNT-AND-ENUMERATION-CLOSURE member (the count-truth family's frozen-record arm).** The session-170 audit found A170A-I-2: the S169-A frozen worklog entry stated "my live count is 15 return-{} sites across 13 arms" while its own parenthetical enumeration totaled SIXTEEN sites (2+1+1+2+2+1+1+1+1+1+1+1+1 = 16) — the stated figure matching neither the literal-statement unit (13 sites) nor the ternary-inclusive unit its own enumeration rode (16); and B170-I-1: the S169-B frozen entry split the e2e tree as "(43 files: 36 spec + helpers/setup/backdate)" while the live tree holds 39 spec + 4 helpers = 43 — the total exact, the split member born-drifted against its own s168 predecessor's coherent form. THE LESSON: a recorded count and its own enumeration must close arithmetically IN THE SAME UNIT — an entry that enumerates the ternary-inclusive form must state the ternary-inclusive figure, and a split that names a count must derive both sides; the A144-I1/S145-C doctrine's frozen-record arm: the drift class does not die at the doc boundary — a worklog entry is as much a count-truth surface as a code comment; and the correction form for a frozen record is ALWAYS the NEXT generation's registration, never a rewrite (the evidence-truth family: the frozen entry is the audit's own artifact, its drift a recorded fact about the audit, not a live claim about the tree — rewriting it would falsify the audit's own history).**
+158. **F158 — the session-171 family: the DEPENDENCY-BUMP VERSION-TRUTH member (the count-truth family's manifest arm).** The session-171 audit found that the operator's 129e49df — the repo's FIRST-EVER dependency-range bump (next ^16.3.6->^16.4.2, react ^19.3.0->^19.3.1, @playwright/test ^1.63.0->^1.64.1, vitest ^5.0.1->^5.0.5, bun-types ^1.4.2->^1.4.3, the six radix members) plus the package-lock.json creation — landed its manifest and lockfiles WITHOUT its doc/registration collateral: AGENTS's "bun.lock is the only lockfile" claim born-false the same commit, README's version cells born-stale, the PAD/SKILL tech-stack floors under-specifying the manifest's ^ floors (a reader taking the floor from the doc installs a version the range now rejects), the bump unregistered at the worklog, and the commit's own message ("update session log") misdescribing its content. THE LESSON: a dependency-range bump joins every version-claim site its family holds IN THE SAME COMMIT — the manifest's ^ floors are live claims quoted by the tech-stack tables (PAD §1.2, SKILL §2, README's cells) and the lockfile count is a live claim of the operative doc (AGENTS); a bump that lands without its doc sweep leaves every one of those sites stale-born, and the FIRST bump in a repo's history has no prior form to copy — so the bump commit must carry: (1) the doc-floor re-anchors, (2) the lockfile-count truth (which lockfile is canonical, what the mirror's verification posture is — a second lockfile resolves its own transitive snapshot and is NOT gate-verified by riding the canonical's gates), (3) the infrastructure consequences (a Playwright bump moves the chromium revision — provision BEFORE the first e2e run, never let the suite discover the missing browser), and (4) the registration note at the worklog. The F157 count-and-enumeration-closure lesson's manifest arm: the count-truth family does not die at the doc boundary, and it does not die at the manifest boundary either — the manifest is as much a count-truth surface as a code comment, and every doc that quotes its figures rides the same commit as the bump.**
 
 ## §13 Pitfalls to Avoid
 

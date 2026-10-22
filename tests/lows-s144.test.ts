@@ -105,8 +105,8 @@ const seoSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s143 lesson). */
-const UNIT = "2377";
-const FILES = "232";
+const UNIT = "2392";
+const FILES = "233";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -339,7 +339,7 @@ describe("the standing survival set (the S143 delivery rides unchanged through t
       [readmeSource, /\| Unit tests \| Vitest \| 5 \| (\d{4}) checks/g],
       [readmeSource, /# unit tests — (\d{4}) checks/g],
       [skillSource, /project_state: "(\d{4}) unit checks green/g],
-      [skillSource, /\| Unit tests \| Vitest \| ≥5\.0\.1 \| (\d{4}) checks/g],
+      [skillSource, /\| Unit tests \| Vitest \| ≥5\.0\.5 \| (\d{4}) checks/g],
       [skillChecklistRegion, /bun run test {2,}# (\d{4})\/\d{4}/g],
       [padSource, /- \[ \] `bun run test` → (\d{4})\/\d{4}/g],
       [padCommandRow(), /unit tests \((\d{4}) checks/g],

@@ -127,8 +127,8 @@ const seoSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s147 lesson). */
-const UNIT = "2377";
-const FILES = "232";
+const UNIT = "2392";
+const FILES = "233";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -456,7 +456,7 @@ describe("S148-E the per-session pin family and the collateral (the count re-anc
     expect(readmeSource).toMatch(new RegExp(`Vitest \\| 5 \\| ${UNIT} checks`));
     expect(readmeSource).toMatch(new RegExp(`# unit tests — ${UNIT} checks`));
     expect(skillSource).toContain(`project_state: "${UNIT} unit checks green`);
-    expect(skillSource).toMatch(new RegExp(`≥5\\.0\\.1 \\| ${UNIT} checks`));
+    expect(skillSource).toMatch(new RegExp(`≥5\\.0\\.5 \\| ${UNIT} checks`));
     expect(skillSource).toMatch(new RegExp(`bun run test\\s+# ${UNIT}/${UNIT}`));
     expect(padUnitTotalRow()).toContain(`**${FILES} files**`);
     expect(padUnitTotalRow()).toContain(`**${UNIT}**`);
