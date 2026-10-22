@@ -1359,6 +1359,15 @@ S180 = dict(S179)
 # construction).
 S181 = dict(S180)
 
+# s182 mapping (session 172 — the 148th reference audit's evidence set + the
+# S172 capture set). The standing S181 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S172 tree); no NEW
+# witness this session (the S172 pass is the README noun-unit repair +
+# below-threshold/premises registrations cycle — the zero-source-change
+# form, zero rendered-movement classes in the captured surfaces by
+# construction).
+S182 = dict(S181)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1575,6 +1584,8 @@ def expected_for(name: str):
         return S180.get(Path(name).stem)
     if name.startswith("ref-audit-s181/"):
         return S181.get(Path(name).stem)
+    if name.startswith("ref-audit-s182/"):
+        return S182.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1737,6 +1748,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s179").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s180").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s181").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s182").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
