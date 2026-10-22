@@ -1,0 +1,35 @@
+Session 173 — the agent narrative (the 121st Mode C audit cycle, 英文执行叙述).
+
+## The session that had to be run twice
+
+The operator's directive arrived referencing session_421 + remediation-plan-session172 + worklog + session_422 — the S172 delivery record. But the workspace had been reset, and the git log told the rest: the prior session's S173 had reached the registration/plan stages in ITS workspace, and none of it was ever committed. Everything from the interrupted cycle was gone. This cycle therefore re-executed S173 in full — environment rebuild, six baseline gates, parity phase, audit with freshly dispatched auditors, registrations, TDD spec, collateral, capture, docs, commit, push. The re-derived census (A 3I + B 3I) matched the interrupted cycle's shape (A 3I + B 2I) with one additional registration member B naturally surfacing (B173-I-3, the frozen-record coordinate drift) — the cycle's character unchanged: zero-source-finding, all-Informational, the sixth consecutive STAYS.
+
+## Phase 0 — the rebuild
+
+Fresh clone at `c66d20ae`; `.env` from `.env.example` diff-clean; bun install 477 packages; prisma client at 6.19.3; `db/` at the repo root; the DB seeded pristine 1/2/6/1/3 on the first census. The exported-shell `DATABASE_URL` trap live again — every DB-touching gate under `env -u DATABASE_URL` in the same command. The chromium probe fired the known shape: Playwright 1.64.1 requires chromium-1248, the cache held 1200 — provisioned BEFORE the first e2e run, the fifth consecutive cycle the S167-shape incident was pre-empted, the source never at fault.
+
+## Phases 1–2 — gates and parity
+
+Six baseline gates green: lint 0 · typecheck 0 · unit 2404/2404 across 234 · build 27 routes with the `[db]` anchor at the repo root · smoke 73/73 · e2e 262/262 zero flakes (6.6m). The s173 parity scripts derived at the exact 22/66/6 convention with zero residue on the first derivation. The 149th reference audit CLEAN ON THE FIRST RUN — the clip datum byte-identical the 110th consecutive session (evidence in ref-audit-s183/). Mobile nav 9/9 at the 150th session. SEO 4/4. Pins S128..S172 608/608.
+
+## Phase 3 — the audit
+
+The dispatch figures all matched live (14,307 · 18/2,450 · 23/14 · 25/24/17 · 17/16+1 · 16/9). The F138 guard's 24th verification passed — the s172 plan 6/6 ticked at its own delivery commit f37fe6aa, the working tree identical. The post-F138 sweep s151..s172 needed one honest instrument repair: the first sweep form counted prose literals inside backticks (the s151/s168 plans' own descriptions of prior departures carry `- [ ]` in prose) — the S168 cycle's own documented repair recurring; corrected onto the line-start carrier convention, the sweep closed at 135 ticked / 0 unticked.
+
+Two fresh-eyes auditors dispatched in parallel, both consulting the repo skills/ checklists with skills/ itself excluded from scope. Auditor A returned 0C/0H/0M/0L/3I: the 22-file layer at 14,307 exact; the comment-truth census 141/141 TRUE (the eighth consecutive zero-false); the security sweep zero across all seven patterns; the Tailwind probe 148/150 with zero oklch for consumed classes — and THE CYCLE'S MOST VALUABLE FIND: 26 generated utility rules carrying oklch for classes consumed nowhere in src/, sourced from the operator's skills/ catalog through v4 automatic content detection. Auditor B returned 0C/0H/0M/0L/3I: every S172 repair seam verified TRUE live; the count family re-run green (the strongest form); the e2e write-set arithmetic closing; the four deferral premises holding their 47th consecutive cycle; plus the ELEMENT_LIMIT message-literal family, the directive-side decomposition correction, and the frozen-record coordinate drift.
+
+Every finding lead-verified at its seams per the F78 doctrine: the three phantom classes confirmed present in the compiled production chunk with zero src/ consumption and their skills/ sources named; the three message literals confirmed against the shared enforcement seam; the 227/7 file decomposition confirmed by find; the PAD coordinates confirmed by grep.
+
+## Phase 4 — registrations and TDD
+
+The registration pair landed BEFORE the spec's birth: the s173-below-threshold-note (the six-member batch) and the s173-id-stable-premises-note (the 47th cycle). The remediation plan landed. The spec was born with 12 pins — and on its first run came back 6 failed / 6 passed: RED 6/6 EXACT with ZERO spec-form repairs, the F143 phrase-case class avoided at birth by taking every pin phrase from the records' own spellings. The GREEN collateral followed: the count family onto 2416/235 (the spec-constants sweep at 54 UNIT + 53 FILES — the +1 arithmetic of the spec's own rolling-safe birth), the §7.1 row, the AGENTS session-173 bullet, 22 SKILL-version pins onto v1.151.0, 19 forward-guard rolling re-anchors onto v1.152.0, the s158 title pin, the PAD v1.152.0 with its POST-RUN VERIFICATION PASSED (the sixteenth cycle), the SKILL v1.151.0 + F160 (the content-detection-perimeter member). GREEN 12/12; the full unit gate 2416/2416 across 235 with zero missed riders.
+
+## Phase 5 — final gates, capture, and the push
+
+All six final gates green (e2e 262/262 zero flakes at 6.7m); nav 9/9 and SEO 4/4 re-verified on the FINAL S173 build; pins S128..S173 620/620. The capture derived at the exact 24-line convention (one honest header-wording pass bringing all ten header lines off the s172 form) and ran ALL CAPTURED; the census 86 re-taken (65 fresh + 21 byte-identical, zero residue); the dimension checker 954/954 with the s183 mapping added at all three sites. The closing sequence: session_423/424 written; the lead entry landed; the s173 plan's five boxes ticked (the F138 forward form — this cycle's execution record carries five boxes, the docs member riding the collateral box); the delivery commit `05836930` created.
+
+The push rode the SSH wrapper with `--remote git@github.com:nordeim/digma.git` from the start (the S164 lesson): paramiko 5.1.0 installed on python3.13, the shim deployed with the user@ split, the operator key written 0600 outside the repo and verified Ed25519 with the historical fingerprint, the dry-run fast-forward `c66d20ae..05836930` clean on the first attempt, the real push verified `refs/heads/main @ 0583693 == local HEAD`. The HTTPS cross-verification confirmed the plan 5/5 live-ticked, the spec, the session logs, and the PAD title v1.152.0 all served live from main. The operator key shredded.
+
+## The lesson that outlives the cycle
+
+F160 — the content-detection-perimeter member: a build tool's automatic content detection scans the REPO, not the APP. Every file the repo carries contributes candidate classes, including catalogs the audit itself excludes from its own scope. The registered posture was true of the consumed set but one rule-shape short of the live artifact — because "unconsumed classes" is a claim about every file the detector reads, not only the app's sources. The compiled artifact is itself a live claim surface; when it carries rules nobody in src/ asked for, the honest forms are the tool's own exclusion lever or a registered posture extension — never a silent posture edit.
