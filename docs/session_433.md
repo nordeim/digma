@@ -1,0 +1,23 @@
+Session 174 — the turn-by-turn record (the 122nd Mode C audit cycle).
+
+1. 工作区完好（无沙箱重置；HEAD `57f3af41` = S173 交付 `05836930` + 日志 `f49edfd3` + session-log `57f3af41`）。git pull 拉入操作者的 session_428 记录。审阅四指定记录（session_427 · s173 计划 5/5 @ 05836930 · worklog 尾部 · session_428）与五核心文档（AGENTS · CLAUDE · README · PAD v1.152.0 · digma_SKILL v1.151.0 + F160）。状态确认：S173 已完整交付推送；本指令发起 Session 174（第 122 次 Mode C 审计周期），预置 F138 第二十五个实例。
+2. Phase 0 环境核对：.env diff-clean（`DATABASE_URL="file:../db/custom.db"`）· db/ 仓库根 · DB pristine **1/2/6/1/3** 首次普查即中（bun scripts/db-census-s173.ts）· chromium-1248 在场（S167 形态连续第六个周期未发生）。交叉验证：layer **14,307** · routes **18/2,450** · unit files 235 · ELEMENT_LIMIT 三字面量接缝 —— 全匹配。
+3. Phase 1 六项 gates：lint 0 · typecheck 0 · unit **2416/2416 across 235** · build 27 routes（[db] anchor）· smoke **73/73**（父 shell 守卫按设计触发一次后通过）· e2e **262/262 零 flake（6.7m）**。E2e 后 witness 恢复 + DB 重播种 1/2/6/1/3。
+4. Phase 2 parity：derive-s174-scripts.py —— **22/66/6 精确零残留首次派生**。第 150 次参考审计无漂移首次运行即无误（clip `Share:L385-R458,Present:L466-R551` 第 **111** 次字节一致；证据 ref-audit-s184/）。mobile nav **9/9 第 151 次**（Tailwind v4 class-A 守卫）。SEO 4/4。pins S128..S173 **620/620**（46 文件）。
+5. Phase 3 审计：dispatch 图表实时重推导全匹配（14,307 · 18/2,450 · 23/14=21+2 · 25/24/17 · 17/16+1 · 16/9）。F138 第二十五次验证：s173 计划 @ 05836930 **5/5 勾选**、工作树一致、前向形态第 23 个连续周期。后扫描 s151..s173 **全净（140/0，零仪表修复）**。双审计员并行派发（A：22 文件客户端层 + comment-truth + 安全扫描 + Tailwind 探针 + S173 注册接缝 + 正确性焦点；B：18 路由 + src/lib + **S173 注册接缝验证（本周期重点维度）** + live 普查 + e2e write-set + deferral 前提 + F138 扫描 + worklog 注册在场）。
+6. 双审计员返回：A 0C/0H/0M/0L/3I + B 0C/0H/0M/0L/3I。F78 主导验证：B174-I-1（ELEMENT_LIMIT 家族复验）· A174-I-2 + B174-I-3（**计数单位数据：26 color-valued / 27 raw-substring，+1 为 .bg-linear-to-r/oklch 修饰符变体；skills/ 源头五文件确认；产物 chunk 交叉核验 minifier oklch→lab() 实测 4 vs 68**）· **B174-I-2（冻结记录坐标下一代：B173-I-3 注册载体于 c66d20ae 为真、被同会话交付 05836930 两次插入位移至 :2823/:2825/:2884/:2953；brief 引用交付前坐标 —— 家族第三次实例）** · A174-I-1/I-3（连续性对）于接缝处全部为真。
+7. Phase 4：worklog-notes-s174.py 落地双审计员条目 + 两注册（s174-below-threshold-note 六成员批次 · s174-id-stable-premises-note 第 48 周期）—— 均先于 spec 诞生（worklog 6153 → 6260）。remediation-plan-session174.md 落地。Spec 诞生：tests/lows-s174.test.ts 12 pins。首跑 7 failed / 5 passed → **一次 spec-form 修复**（PAD:2823 pin 校正至 note 自身拼写 —— F143 类自身实例）→ **RED 6/6 精确**。
+8. GREEN collateral：doc-update-s174.py（count 家族 **2428 = 2416 + 12 / 236** + spec-constants **55 UNIT + 54 FILES** + §7.1 行 + AGENTS session-174 bullet + 23 SKILL pin 至 v1.152.0 + 20 滚动 re-anchor 至 v1.153.0 + s158 title pin）+ version-bump-s174.py（PAD **v1.153.0** POST-RUN VERIFICATION PASSED 第 17 周期 + SKILL **v1.152.0 + F161** counting-unit-explicitness 成员）→ GREEN 12/12。全量 unit gate 首跑 **2427/2428 —— 一个诚实遗漏 rider（s173 spec 的 PAD-title pin）被 gate 捕获**，doc-update 幂等补丁（2 位点）修复 → **2428/2428 across 236**。
+9. Phase 5 最终 gates：lint 0 · typecheck 0 · build 27 · smoke 73/73 · e2e **262/262 零 flake（6.7m）** · witness 恢复 + DB 重播种 · nav **9/9 第 151 次（最终 S174 构建）** · SEO 4/4 · pins S128..S174 **632/632**（47 文件）。
+10. Capture：derive-capture-s174.py 首次派生 **24 精确零残留**（10 行 header 全异于 s173 形态）。dimension checker s184 mapping 三位点添加。capture 运行 ALL CAPTURED · census **86 重拍（60 fresh + 26 字节相同，零残留）** · dimensions **959/959**（954 + 5 为 ref-audit-s184 证据集）。
+11. 完整性核查：141 变更文件全部为本周期自身交付物（5 操作文档 + 60 截图 witness + 54 测试 sweep + 13 新增脚本 + spec + plan + session docs + ref-audit-s184 证据）· **零 src/ 变更** · .env ≡ .env.example（ignored）。
+12. 收尾：session_429（执行摘要）+ session_430（推送前叙述）编写 · worklog-lead-s174.py 落地 lead entry（worklog 6287 行）· s174 计划 5 框以交付数据勾选（F138 forward form）· 交付提交 `752bb0ad` 创建（141 文件，+4343/−189）。
+13. SSH-wrapper push：paramiko 5.1.0 于 python3.13（--break-system-packages，pip 首次调用静默失败后显式安装）· shim 于 PATH（/home/z/my-project/bin/ssh，user@ 剥离修复在内）· 操作者密钥 0600 仓库外写入 · Ed25519 指纹验证（SHA256: 3ddaNlFhMz1JXiGEDgVEaRsUzI4Ev0IpGEEB7NnU4PU，与历史记录一致）· dry-run（--remote git@github.com:nordeim/digma.git 从一开始）fast-forward 57f3af41..752bb0ad **首试即干净** · 正式推送成功（远端验证 refs/heads/main @ 752bb0a == local HEAD）。
+14. HTTPS 交叉验证：s174 计划 **5/5 live 已勾选** · spec · session_429 · session_430 · PAD 标题 **v1.153.0** · SKILL **F161** 均从 main 服务（HTTP 200）。操作者密钥销毁（三次随机覆写后删除）。
+15. Post-push 日志（session_431/432/433）编写并以 logs commit 提交推送。
+
+**Session 174（第 122 次审计周期）已完成、提交并推送至 main。**
+
+核心成果：普查 0C/0H/0M/0L/6I（零源码发现的全 Informational 周期，连续第七个 STAYS）· S174-A 六成员注册批次（**计数单位扩展** + **冻结记录坐标下一代**）+ S174-B 前提注册（第 48 周期）+ S174-C 12-pin spec（RED 6/6 经一次 spec-form 修复 → GREEN 12/12；一个诚实 rider 被 gate 捕获并修复）· **F161 教训**（counting-unit-explicitness）· unit 2428/236 · pins 632/632 · 第 150 次参考审计无漂移（clip 第 111 次）· nav 9/9（第 151 次）· capture 86/959 · 交付 `752bb0ad` 已推送验证。
+
+**建议下一步**：GitHub 验证提交；Session 175 候选 id-stable PUT 重写（前提 48 周期）或再审计 —— F138 第二十六个实例已预置（s175 spec 应锁定 s174 计划在 752bb0ad 的 5/5 勾选记录）。
