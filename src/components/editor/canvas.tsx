@@ -931,8 +931,8 @@ function isSpaceActivationTarget(target: EventTarget | null): boolean {
 
 // ---------------------------------------------------------------------------
 // A single rendered element — mirrors the reference's inline-style rendering
-// (transform translate/rotate, opacity, blend, width/height, fill, border,
-// radius). Locked elements dim slightly; hidden ones don't render at all.
+// (transform translate/rotate, opacity, width/height, fill, border, radius).
+// Locked elements carry the not-allowed cursor; hidden ones don't render at all.
 
 function CanvasElement({
   element,
