@@ -1,0 +1,419 @@
+import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+
+// The session-174 spec (the one-hundred-and-twenty-second audit's chosen
+// work — the ZERO-SOURCE-FINDING all-Informational cycle: every actionable
+// member of the auditors' census A 0C/0H/0M/0L/3I + B 0C/0H/0M/0L/3I
+// lives on the DOC/DIRECTIVE/REGISTRATION surface, the SEVENTH
+// consecutive STAYS cycle — the layer total STAYING 14,307, the route
+// figure STAYING 2,450):
+//
+// S174-A — THE BELOW-THRESHOLD + POSTURE-PRECISION +
+//   COORDINATE-NEXT-GENERATION REGISTRATION (the registration form): the
+//   bracketed s174-below-threshold-note at the worklog — B174-I-1 (the
+//   ELEMENT_LIMIT message-literal family with the promotion form),
+//   A174-I-2 + B174-I-3 (the Tailwind posture-precision datum with its
+//   counting-unit extension: 26 phantom rules under the color-valued
+//   unit / 27 under the raw-substring unit, the +1 being the
+//   .bg-linear-to-r/oklch interpolation-modifier variant — sourced from
+//   the operator's skills/ catalog via v4 automatic content detection;
+//   the posture must name the consumed set, the scanner's source
+//   perimeter, AND the counting unit), B174-I-2 (the frozen-record PAD
+//   coordinate next-generation: the B173-I-3 registration's own carriers
+//   shifted by the S173 delivery's two insertions — the live carriers
+//   :2823/:2825/:2884/:2953; frozen records never rewritten), the
+//   A174-I-1/I-3 continuity pair, the pre-existing families carried.
+//
+// S174-B — THE PREMISES REGISTRATION: the bracketed
+//   s174-id-stable-premises-note — the 48th consecutive cycle, the four
+//   premises at their seams, the judgment carried unchanged.
+//
+// S174-C — THE PER-SESSION PIN FAMILY: 12 pins — 6 RED doc-side members
+//   (the AGENTS session-174 bullet, the count re-anchor, the forward
+//   count-truth guard, the F161 lesson, the PAD v1.153.0 title, the
+//   pair-unity RED-until-collateral) / 6 green-at-birth (the two
+//   worklog-registration members, the F138 guard's TWENTY-FIFTH
+//   instance — the s173 plan's record pinned 5/5 ticked at 05836930 per
+//   the pre-armed session_427/428 directive, the script provenance, the
+//   audit entries, the source-survival member).
+//
+// The collateral family: the count re-anchor 2428 = 2416 + 12 / 236 files;
+// the layer-total family STAYING at 14,307 (the SEVENTH consecutive STAYS
+// cycle, the zero-source-change form); the route figure STAYING at 2,450;
+// PAD v1.153.0; digma_SKILL v1.152.0 + F161 (the counting-unit-
+// explicitness member).
+
+const worklogSource = readFileSync(
+  path.resolve(import.meta.dirname, "../worklog.md"),
+  "utf8",
+);
+const padSource = readFileSync(
+  path.resolve(import.meta.dirname, "../Project_Architecture_Document.md"),
+  "utf8",
+);
+const skillSource = readFileSync(
+  path.resolve(import.meta.dirname, "../digma_SKILL.md"),
+  "utf8",
+);
+const s173PlanSource = readFileSync(
+  path.resolve(import.meta.dirname, "../docs/remediation-plan-session173.md"),
+  "utf8",
+);
+
+const refAuditSource = readFileSync(
+  path.resolve(import.meta.dirname, "../scripts/ref-audit-s174.sh"),
+  "utf8",
+);
+const navSource = readFileSync(
+  path.resolve(import.meta.dirname, "../scripts/verify-nav-s174.sh"),
+  "utf8",
+);
+const seoSource = readFileSync(
+  path.resolve(import.meta.dirname, "../scripts/seo-check-s174.sh"),
+  "utf8",
+);
+
+/** The per-session count-family constants (the standing convention —
+ *  born at the POST-spec figures: the 2416 delivery checks + this
+ *  spec's 12 = 2428 unit, the 235 delivery files + this spec = 236;
+ *  the doc-update script re-anchors the docs and these constants
+ *  TOGETHER so the pair-unity pins stay green through the transition
+ *  — the rolling-safe form at birth, the s140–s174 lesson). */
+const UNIT = "2428";
+const FILES = "236";
+
+/** Collapse whitespace for comment-token matching (the standing form). */
+const collapsed = (s: string) => s.replace(/\s+/g, " ");
+
+/** Collapse a TS source's docblock body: strip the leading ' * '
+ *  markers from every line, then collapse whitespace — so a phrase
+ *  spanning docblock continuation lines matches as contiguous text
+ *  (the s168 arm of the same standing form: the docblock IS a
+ *  comment member). */
+const strippedDocblockComments = (s: string) =>
+  s.replace(/^[ \t]*\*[ \t]?/gm, "").replace(/\s+/g, " ");
+
+/** The audit entries, found by their Task-ID anchors (the s143
+ *  spec-form lesson: back up to the line start so the "Task ID:" prefix
+ *  rides the slice; the census lines ride kilobytes past the anchor). */
+const auditEntry = (anchor: string) => {
+  const at = worklogSource.indexOf(anchor);
+  if (at === -1) return "";
+  const lineStart = worklogSource.lastIndexOf("\n", at) + 1;
+  const end = worklogSource.indexOf("\n---\n", at);
+  return worklogSource.slice(lineStart, end === -1 ? at + 16000 : end);
+};
+
+/** The live 22-file layer total, derived at runtime (the S154-B
+ *  forward count-truth guard — NEVER a quoted figure): the exact
+ *  composition pinned by tests/lows-s142.test.ts — 8 files at
+ *  src/components/editor/ + 8 at src/components/ + 2 at src/hooks/ +
+ *  the 3 named lib members + src/app/globals.css. */
+const liveLayerTotal = (() => {
+  const root = path.resolve(import.meta.dirname, "..");
+  const groups = [
+    "src/components/editor/*.tsx",
+    "src/components/editor/*.ts",
+    "src/components/*.tsx",
+    "src/hooks/*.ts",
+    "src/lib/editor.ts",
+    "src/lib/ai-assistant.ts",
+    "src/lib/export-png.ts",
+    "src/app/globals.css",
+  ];
+  let total = 0;
+  for (const glob of groups) {
+    const out = execSync(`wc -l ${glob}`, { cwd: root, encoding: "utf8" });
+    const line = out.trim().split("\n").pop()!;
+    total += Number(line.trim().split(/\s+/)[0]);
+  }
+  return total;
+})();
+
+/** The figure the v1.153.0 PAD block quotes for the layer total (the
+ *  doc-side claim this spec's forward guard holds to the live tree —
+ *  the F138 receipt shape at the count family, its TWENTY-FIRST
+ *  instance, this cycle in its STAYS form: 14,307 unchanged, the
+ *  zero-source-change cycle touching zero source files). */
+const padQuotedLayerTotal = (() => {
+  const m = padSource.match(
+    /v1\.153\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+  );
+  return m ? m[1] : "";
+})();
+
+// ---------------------------------------------------------------------------
+// S174-A + S174-B — the registrations (the below-threshold + premises notes)
+// ---------------------------------------------------------------------------
+
+describe("S174-A/B the below-threshold + premises registrations (a deferral decision's premises are live claims, re-derived every cycle the item stays deferred; a posture about generated output must name its detection perimeter AND its counting unit; a frozen record's coordinates are era-scoped — the next generation re-anchors, never rewrites)", () => {
+  it("SURVIVAL (worklog): the bracketed s174-below-threshold-note registers the six-member batch — B174-I-1's ELEMENT_LIMIT message-literal family with the promotion form, A174-I-2 + B174-I-3's posture-precision datum with the counting-unit extension and the named exclusion lever, B174-I-2's frozen-record coordinate next-generation with the standing re-anchor disposition, the A174-I-1/I-3 continuity pair", () => {
+    const noteAt = worklogSource.indexOf("[s174-below-threshold-note:");
+    expect(noteAt).toBeGreaterThan(-1);
+    const note = worklogSource.slice(noteAt, noteAt + 12000);
+    // The ELEMENT_LIMIT member and its promotion form.
+    expect(collapsed(note)).toContain("B174-I-1");
+    expect(collapsed(note)).toContain("ELEMENT_LIMIT");
+    expect(collapsed(note)).toContain("${ELEMENT_LIMIT} interpolation");
+    // The posture-precision member with its counting-unit extension.
+    expect(collapsed(note)).toContain("A174-I-2");
+    expect(collapsed(note)).toContain(
+      "the detection perimeter is the REPO, not the app",
+    );
+    expect(collapsed(note)).toContain("@source not '../skills'");
+    expect(collapsed(note)).toContain("26 rules under the color-valued unit");
+    expect(collapsed(note)).toContain("27 under the raw-substring unit");
+    expect(collapsed(note)).toContain(".bg-linear-to-r/oklch");
+    // The frozen-record coordinate next-generation member (the note's own
+    // spelling — the next-generation carrier list; the F143 phrase-case
+    // lesson: the pin rides the record, never the family's prior form).
+    expect(collapsed(note)).toContain("B174-I-2");
+    expect(collapsed(note)).toContain(
+      "the live carriers are :2823/:2825/:2884/:2953",
+    );
+    // The continuity pair.
+    expect(collapsed(note)).toContain("A174-I-1");
+    expect(collapsed(note)).toContain("A174-I-3");
+  });
+
+  it("SURVIVAL (worklog): the bracketed s174-id-stable-premises-note registers the premises — the four premises at their seams, the FORTY-EIGHTH ordinal, the carried judgment, the premises-pinning doctrine", () => {
+    const noteAt = worklogSource.indexOf("[s174-id-stable-premises-note:");
+    expect(noteAt).toBeGreaterThan(-1);
+    const note = worklogSource.slice(noteAt, noteAt + 6000);
+    expect(collapsed(note)).toContain("FORTY-EIGHTH CONSECUTIVE CYCLE");
+    expect(collapsed(note)).toContain("all four premises re-derived LIVE");
+    expect(collapsed(note)).toContain("P1 the churn-consuming registrations");
+    expect(collapsed(note)).toContain("P2 the index-stable remap");
+    expect(collapsed(note)).toContain("P3 the replace-transaction seams");
+    expect(collapsed(note)).toContain("P4 the value-based perimeter");
+    expect(collapsed(note)).toContain("The judgment carried unchanged");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The prior-cycle source-survival members (zero source changes this cycle)
+// ---------------------------------------------------------------------------
+
+describe("The prior-cycle source-survival members (the S172 source delivery intact through the zero-source-change cycles — the layer total STAYS 14,307, the route figure STAYS 2,450)", () => {
+  it("SURVIVAL (source): the S172 delivery intact — the README noun-unit sites at :133/:184, call.ts's era-scoped past-tense clause + the seam at 80 lines, the ai-assistant route's modelReply rename, the layer STAYING 14,307 and the route layer STAYING 2,450 (both derived live, never quoted)", () => {
+    const readme = readFileSync(
+      path.resolve(import.meta.dirname, "../README.md"),
+      "utf8",
+    );
+    // The S172-A delivery: the noun-unit re-word, both sites.
+    expect(readme).toContain(
+      "18 API route files (25 exported handlers), standalone output",
+    );
+    expect(readme).toContain("# 18 route files / 25 handlers (auth,");
+    expect(readme).not.toContain("18 API route handlers");
+    expect(readme).not.toContain("# 18 route handlers");
+    // The S169-A delivery: the era-scoped past-tense clause + the file at
+    // 80 (the docblock matcher strips the ' * ' continuation markers
+    // first — the s168 standing form).
+    const callSource = readFileSync(
+      path.resolve(import.meta.dirname, "../src/lib/call.ts"),
+      "utf8",
+    );
+    expect(strippedDocblockComments(callSource)).toContain(
+      "the long-deleted files view's GET-only call sites were behavior-identical through this form",
+    );
+    const callLines = execSync("wc -l src/lib/call.ts", {
+      cwd: path.resolve(import.meta.dirname, ".."),
+      encoding: "utf8",
+    });
+    expect(Number(callLines.trim().split(/\s+/)[0])).toBe(80);
+    // The S169-B delivery: the modelReply rename at its seam.
+    const aiRouteSource = readFileSync(
+      path.resolve(import.meta.dirname, "../src/app/api/ai-assistant/route.ts"),
+      "utf8",
+    );
+    expect(aiRouteSource).toContain("const modelReply = JSON.parse(");
+    const routeLines = execSync("wc -l src/app/api/ai-assistant/route.ts", {
+      cwd: path.resolve(import.meta.dirname, ".."),
+      encoding: "utf8",
+    });
+    expect(Number(routeLines.trim().split(/\s+/)[0])).toBe(154);
+    // The layer + route figures, derived live (the STAYS form — the
+    // cycle touched zero src/ files, so both totals hold by construction).
+    expect(liveLayerTotal).toBe(14307);
+    const root = path.resolve(import.meta.dirname, "..");
+    const routeOut = execSync(
+      "find src/app/api -name route.ts | xargs wc -l | tail -1",
+      { cwd: root, encoding: "utf8" },
+    );
+    expect(Number(routeOut.trim().split(/\s+/)[0])).toBe(2450);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// S174-C — the per-session pin family
+// ---------------------------------------------------------------------------
+
+describe("S174-C the per-session pin family (the survival members + the doc-side members that stay RED until the collateral)", () => {
+  it("SURVIVAL (plan): the F138 guard's TWENTY-FIFTH instance — the s173 plan's execution record shipped 5/5 ticked, zero unticked (the pre-armed guard per the session_427/428 directive; the twenty-third consecutive cycle of the forward form) + the plan-history zero-finding carriers still exactly FIVE (s174 not among them — the honest 0C/0H/0M/0L/6I census) + the pin-family arithmetic (the S128..S174 total rides the spec's own census: 620 + 12 = 632)", () => {
+    // The s173 plan's execution record, read live: every box ticked.
+    const ticked = s173PlanSource.match(/^- \[x\]/gm)?.length ?? 0;
+    const unticked = s173PlanSource.match(/^- \[ \]/gm)?.length ?? 0;
+    expect(ticked).toBe(5);
+    expect(unticked).toBe(0);
+    // The plan-history zero-finding claim derived LIVE: exactly five
+    // carriers of the combined 0I census form, s174 NOT among them.
+    const root = path.resolve(import.meta.dirname, "..");
+    const out = execSync(
+      'grep -l "0 Critical / 0 High / 0 Medium / 0 Low / 0 Informational" docs/remediation-plan-session*.md | sort',
+      { cwd: root, encoding: "utf8" },
+    );
+    const carriers = out
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => l.trim());
+    expect(carriers).toEqual([
+      "docs/remediation-plan-session143.md",
+      "docs/remediation-plan-session152.md",
+      "docs/remediation-plan-session153.md",
+      "docs/remediation-plan-session156.md",
+      "docs/remediation-plan-session165.md",
+    ]);
+    // The pin-family arithmetic (the S128..S174 total rides the spec's
+    // own census: 620 + 12 = 632).
+    expect(620 + 12).toBe(632);
+  });
+
+  it("SURVIVAL (scripts): the s174 script provenance — live174/nav174/digma-seo-s174 tokens, the 150th/151st/111th ordinals, the S173 delivery at 05836930, zero s173 run-ordinal residue (the F89 family)", () => {
+    // The ref-audit script: the new session's tokens.
+    expect(refAuditSource).toContain("live174");
+    expect(refAuditSource).toContain("150th reference audit");
+    expect(refAuditSource).toContain("the S173 delivery at HEAD 05836930");
+    expect(refAuditSource).toContain("byte-identical the 111th");
+    expect(refAuditSource).toContain("ref-audit-s184");
+    // The nav script: its own tokens + the never-up gate's session.
+    expect(navSource).toContain("nav174");
+    expect(navSource).toContain("151st session, S174-cycle");
+    expect(navSource).toContain("the S173 delivery 05836930 + the S174 remediation");
+    expect(navSource).toContain("Session 174 (S174): the never-up gate");
+    // The seo script: its own tokens.
+    expect(seoSource).toContain("digma-seo-s174");
+    expect(seoSource).toContain("session 174, S174-cycle");
+    // ZERO s173 run-ordinal residue in the derived scripts (the F89
+    // evidence-truth family — fixed-history phrases name their own
+    // event, never this run's ordinal).
+    for (const src of [refAuditSource, navSource, seoSource]) {
+      expect(src).not.toContain("live173");
+      expect(src).not.toContain("nav173");
+      expect(src).not.toContain("seo-s173");
+      expect(src).not.toContain("s183");
+      expect(src).not.toContain("149th");
+      expect(src).not.toContain("150th session");
+      expect(src).not.toContain("150th consecutive");
+      expect(src).not.toContain("byte-identical the 110th");
+      expect(src).not.toContain("f37fe6aa");
+    }
+  });
+
+  it("SURVIVAL (worklog): the two s174 audit entries ride at their Task-ID anchors with their census lines — auditor A's 0C/0H/0M/0L/3I (with the 141 TRUE / 0 FALSE comment-truth census, the NINTH consecutive zero-false) and auditor B's 0C/0H/0M/0L/3I (with the 48th premises cycle and the S173 registration-seam verification)", () => {
+    const aEntry = auditEntry("Task ID: audit-A-s174");
+    expect(aEntry).not.toBe("");
+    expect(collapsed(aEntry)).toContain("THE CENSUS: 0 Critical / 0 High / 0 Medium / 0 Low / 3 Informational");
+    expect(collapsed(aEntry)).toContain("141 TRUE / 0 FALSE");
+    expect(collapsed(aEntry)).toContain("NINTH consecutive zero-false census");
+    expect(collapsed(aEntry)).toContain("A174-I-1");
+    expect(collapsed(aEntry)).toContain("A174-I-2");
+    expect(collapsed(aEntry)).toContain("A174-I-3");
+    const bEntry = auditEntry("Task ID: audit-B-s174");
+    expect(bEntry).not.toBe("");
+    expect(collapsed(bEntry)).toContain("THE CENSUS: 0 Critical / 0 High / 0 Medium / 0 Low / 3 Informational");
+    expect(collapsed(bEntry)).toContain("B174-I-1");
+    expect(collapsed(bEntry)).toContain("B174-I-2");
+    expect(collapsed(bEntry)).toContain("B174-I-3");
+    expect(collapsed(bEntry)).toContain("48th consecutive cycle");
+    // The registration-seam focus, in the record's own spelling (the
+    // PASS 3 header form — the F143 phrase-case lesson).
+    expect(collapsed(bEntry)).toContain("THE S173 REGISTRATION-SEAM VERIFICATION");
+  });
+
+  it("DEFECT (docs): the AGENTS session-174 bullet carries the completion members — the per-auditor census lines, the S174-A registration batch, the 141 TRUE / 0 FALSE comment-truth census, and the 48th deferral cycle", () => {
+    const agents = readFileSync(
+      path.resolve(import.meta.dirname, "../AGENTS.md"),
+      "utf8",
+    );
+    const at = agents.indexOf("session 174, S174-A..S174-C");
+    expect(at).toBeGreaterThan(-1);
+    const bullet = agents.slice(at, at + 12000);
+    // The completion members' key phrases (the bullet's own spelling —
+    // the s156 F143 phrase-case lesson).
+    expect(collapsed(bullet)).toContain("A 0C/0H/0M/0L/3I + B 0C/0H/0M/0L/3I");
+    expect(collapsed(bullet)).toContain("S174-A");
+    expect(collapsed(bullet)).toContain("counting-unit");
+    expect(collapsed(bullet)).toContain("141 TRUE / 0 FALSE");
+    expect(collapsed(bullet)).toContain("48th consecutive cycle");
+    expect(collapsed(bullet)).toContain("14,307");
+  });
+
+  it("DEFECT (docs): the count re-anchor — the v1.153.0 chain entry carries the S174 derivation (2428 = 2416 + 12 unit / 236 files) + the §7.1 row for the s174 spec, the layer-total family STAYING at 14,307 (the seventh consecutive STAYS cycle — the zero-source-change form, zero F40 riders)", () => {
+    expect(padSource).toMatch(/v1\.153\.0/);
+    expect(padSource).toContain("2428 = 2416 + 12 unit / 236 files");
+    // The §7.1 row for this spec.
+    expect(padSource).toContain("`tests/lows-s174.test.ts`");
+    // The count-family live rows re-anchored (found by CONTENT).
+    const unitTotalRow =
+      padSource.split("\n").find((l) => l.includes("**Unit total**")) ?? "";
+    expect(unitTotalRow).toContain(UNIT);
+    const checklistRow =
+      padSource.split("\n").find((l) => l.startsWith("- [ ] `bun run test` →")) ?? "";
+    expect(checklistRow).toContain(UNIT);
+    const commandRow =
+      padSource
+        .split("\n")
+        .find((l) => l.includes("| `bun run test` / `bun run test:watch` |")) ?? "";
+    expect(commandRow).toContain(`${UNIT} checks`);
+  });
+
+  it("DEFECT (docs — the forward count-truth guard's twenty-first instance, this cycle in its STAYS form): the LIVE 22-file layer total (derived at runtime) equals the figure the v1.153.0 block quotes — 14,307 unchanged (the zero-source-change cycle touching zero source files; the seventh consecutive STAYS cycle)", () => {
+    expect(padQuotedLayerTotal).not.toBe("");
+    expect(Number(padQuotedLayerTotal.replace(/,/g, ""))).toBe(liveLayerTotal);
+    expect(liveLayerTotal).toBe(14307);
+  });
+
+  it("DEFECT (docs): the F161 lesson registered in the digma_SKILL — the counting-unit-explicitness member inserted after F160, the version bumped to v1.152.0", () => {
+    expect(skillSource).toMatch(/version: 1\.152\.0/);
+    expect(skillSource).toContain("F161");
+    expect(collapsed(skillSource)).toContain(
+      "COUNTING-UNIT-EXPLICITNESS member",
+    );
+    // F160 still present (the insertion is additive).
+    expect(skillSource).toContain("F160");
+  });
+
+  it("DEFECT (docs): the PAD title on the new chain head — v1.153.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
+    expect(padSource).toMatch(
+      /^# Digma — Master Project Architecture Document \(PAD\) v1\.153\.0$/m,
+    );
+    const lastUpdated =
+      padSource.split("\n").find((l) => l.startsWith("**Last Updated:**")) ?? "";
+    expect(lastUpdated).toContain("v1.153.0");
+  });
+
+  it("DEFECT (docs): the pair-unity claim forms riding the constants at every doc — every live claim site the same members (the rolling-safe form: this spec's constants equal the prior specs' constants after the doc-update sweep re-anchors them TOGETHER)", () => {
+    // The s173 spec's constants, re-anchored onto this cycle's figures.
+    const s173Spec = readFileSync(
+      path.resolve(import.meta.dirname, "./lows-s173.test.ts"),
+      "utf8",
+    );
+    const s173Unit = s173Spec.match(/const UNIT = "(\d+)"/)?.[1] ?? "";
+    const s173Files = s173Spec.match(/const FILES = "(\d+)"/)?.[1] ?? "";
+    expect(s173Unit).toBe(UNIT);
+    expect(s173Files).toBe(FILES);
+    // And the s172 spec's constants ride the same figures.
+    const s172Spec = readFileSync(
+      path.resolve(import.meta.dirname, "./lows-s172.test.ts"),
+      "utf8",
+    );
+    const s172Unit = s172Spec.match(/const UNIT = "(\d+)"/)?.[1] ?? "";
+    const s172Files = s172Spec.match(/const FILES = "(\d+)"/)?.[1] ?? "";
+    expect(s172Unit).toBe(UNIT);
+    expect(s172Files).toBe(FILES);
+  });
+});
