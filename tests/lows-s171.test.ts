@@ -106,8 +106,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s171 lesson). */
-const UNIT = "2476";
-const FILES = "240";
+const UNIT = "2488";
+const FILES = "241";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -157,14 +157,14 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.157.0 PAD block quotes for the layer total (the
+/** The figure the v1.158.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its eighteenth
  *  instance, this cycle in its STAYS form: 14,307 unchanged, the
  *  dependency-bump cycle touching zero source files). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.157\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.158\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -478,7 +478,7 @@ describe("S171-D the per-session pin family (the survival members + the doc-side
   });
 
   it("DEFECT (docs): the F158 lesson registered in the digma_SKILL — the dependency-bump version-truth member inserted after F157, the version bumped to v1.149.0", () => {
-    expect(skillSource).toMatch(/version: 1\.156\.0/);
+    expect(skillSource).toMatch(/version: 1\.157\.0/);
     expect(skillSource).toContain("F158");
     expect(collapsed(skillSource)).toContain("DEPENDENCY-BUMP VERSION-TRUTH member");
     // F157 still present (the insertion is additive).
