@@ -4,8 +4,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // import); this module re-exports it so the routes' existing import
 // surface (import { hashPassword } from "@/lib/auth") survives
 // byte-identically.
-import { generateVerifyCode, hashPassword, timingEqualizerHash, verifyPassword } from "@/lib/password";
-export { generateVerifyCode, hashPassword, timingEqualizerHash, verifyPassword };
+import { generateVerifyCode, hashPassword, hashResetToken, timingEqualizerHash, verifyPassword } from "@/lib/password";
+export { generateVerifyCode, hashPassword, hashResetToken, timingEqualizerHash, verifyPassword };
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "./db";
@@ -35,6 +35,17 @@ const SESSION_TTL_DAYS = 7;
 let warnedInsecureSecret = false;
 function secret(): string {
   const from = process.env.AUTH_SECRET;
+  // Session 181 (S181-C / B181-L-2): production FAILS HARD — the master
+  // skill §5 contract (forgeable sessions must never ship silently).
+  // A missing/short secret throws at the mint/verify seam: every login
+  // and cookie-carrying request 500s loudly instead of minting tokens
+  // forgeable by anyone who reads the repo. Dev/test keeps the S66-C
+  // warned fallback below for DX.
+  if (process.env.NODE_ENV === "production" && (!from || from.length < 16)) {
+    throw new Error(
+      "[auth] AUTH_SECRET is missing or shorter than 16 characters in production — refusing to mint session tokens. Generate one: openssl rand -hex 32",
+    );
+  }
   if (!from && !warnedInsecureSecret) {
     warnedInsecureSecret = true;
     console.warn(

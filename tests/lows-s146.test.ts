@@ -159,8 +159,8 @@ const seoSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s145 lesson). */
-const UNIT = "2501";
-const FILES = "242";
+const UNIT = "2521";
+const FILES = "243";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -552,8 +552,9 @@ describe("S146-E the per-session pin family and the collateral (the count re-anc
     // The chain entry itself names the session (the version bump landed).
     expect(padSource).toMatch(/v1\.125\.0/);
     // The §11 globals.css row carries the S95-B posture re-verification
-    // (the duplicate-census finding; the count UNCHANGED at 267).
-    expect(padGlobalsRow()).toContain("| 267 |");
+    // (the duplicate-census finding; the count re-anchored 267 -> 273 by
+    // the S181-A cursor rule — the F40 rider lockstep).
+    expect(padGlobalsRow()).toContain("| 273 |");
     expect(padGlobalsRow()).toContain("globals.css");
     expect(padGlobalsRow()).toContain("S146-D");
   });

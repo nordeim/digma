@@ -1,9 +1,9 @@
 ---
 name: digma
 description: "Complete engineering skill for the Digma design-workspace clone (Next.js 16 App Router + React 19 + Tailwind 4 CSS-first + Zustand + Prisma/SQLite). Captures every hard-won lesson from building and parity-remediating the app: the mobile-nav Sheet fix, the standalone-server SQLite traced-schema trap trap, the Turbopack singleton-split toast bug, the Next 16 case-insensitive redirect loop, the Untitled-editor create-on-first-save contract, and the full local quality gate."
-version: 1.158.0
+version: 1.159.0
 last_updated: 2026-10-22
-project_state: "2501 unit checks green · 262 Playwright checks green · 73 smoke checks green · build 27 routes"
+project_state: "2521 unit checks green · 262 Playwright checks green · 73 smoke checks green · build 27 routes"
 ---
 
 # Digma — Design-Workspace Clone: Complete Engineering Skill
@@ -68,7 +68,7 @@ project_state: "2501 unit checks green · 262 Playwright checks green · 73 smok
 | Client state | Zustand | ≥5.0.15 | ONE editor store |
 | ORM / DB | Prisma / SQLite | ≥6.19.3 / file | `db-path.ts` anchor resolution; `DIGMA_REPO_ROOT` env override |
 | AI | z-ai-web-dev-sdk | ≥0.0.18 | Server-side only; deterministic fallback |
-| Unit tests | Vitest | ≥5.0.5 | 2501 checks; `*.test.ts` only |
+| Unit tests | Vitest | ≥5.0.5 | 2521 checks; `*.test.ts` only |
 | E2E tests | Playwright | ≥1.64.1 | 262 checks; standalone server on :3100 with its own `db/e2e.db` |
 | Lint | ESLint + eslint-config-next | ≥9.39.5 | React 19 hook rules are errors |
 | Runtime | Bun | 1.3.x runtime (bun-types ^1.4.3) | Dev + prod server; scripts in `package.json` |
@@ -189,7 +189,7 @@ client applies operations: add | update (may carry scale) | delete
 
 ## §8 Auth & Security Implementation
 
-**Hand-rolled (ADR-003), 147 lines in `src/lib/auth.ts`:** scrypt password hashes (N=16384, salt:hash format, constant-time compare) + HMAC-SHA256 stateless tokens `userId.version.expiry.signature` in an httpOnly `digma_session` cookie (7-day TTL, `secure` in production) — the four-part versioned form (session 67, S67-A): a password reset increments `tokenVersion` and evicts every previously minted cookie. `getSessionUser()` verifies signature + expiry + user existence + the tokenVersion match on every request.
+**Hand-rolled (ADR-003), 158 lines in `src/lib/auth.ts`:** scrypt password hashes (N=16384, salt:hash format, constant-time compare) + HMAC-SHA256 stateless tokens `userId.version.expiry.signature` in an httpOnly `digma_session` cookie (7-day TTL, `secure` in production) — the four-part versioned form (session 67, S67-A): a password reset increments `tokenVersion` and evicts every previously minted cookie. `getSessionUser()` verifies signature + expiry + user existence + the tokenVersion match on every request.
 
 **Gates:** every page calls `getSessionUser()` + `redirect("/login?from_url=…")`; every data route's first statement is `requireSession()` → 401 envelope. Only `/api/health` and `/api/auth/*` are public.
 
@@ -244,7 +244,7 @@ client applies operations: add | update (may carry scale) | delete
 ```bash
 bun run lint          # clean — React 19 hook rules are errors
 bun run typecheck     # clean — the build will NOT catch types
-bun run test          # 2501/2501
+bun run test          # 2521/2521
 bun run build         # 27 routes; static+public copied into standalone
 ./scripts/smoke-test.sh   # 73/73 (health, auth gate, CRUD, AI, rate limit, logout, the S82-D body-cap pair, the S111-D invite-dedup trio, the S112-B crud-limiter trio, the S112-C fillImage pair, the S112-C fillImageThumb projection pair)
 bun run test:e2e      # 262/262 (39 spec files + the setup project; the mobile-nav 10-check suite, the sessionNN-fixes discriminators)
@@ -494,6 +494,7 @@ git status            # no .env, *.key, db/*.db, dev.log, server.log staged
 165. **F165 — the session-178 family: the DISPATCH-BRIEF CONVENTION-NAMING member (the record-truth family at the dispatch-brief layer).** The session-178 audit found the dispatch brief's "zod validation at boundaries" dimension naming a library the repo deliberately does not use — validation.ts:1-3 declares "Manual guards … no schema library, per the inherited conventions", zero zod in the dependency tree, every one of the 14 route parse sites riding readBoundedJson + the clamp family. THE LESSON: a dispatch brief's dimension names are claims about the tree — derive them from the tree's own conventions, never from a generic checklist's vocabulary; a dimension citing a library the repo deliberately does not use is a naming drift that costs an auditor's verification cycle before the substance verifies clean (the boundary-validation dimension PASSED in substance — only the prose drifted). The convention: read the seam's declaration comment before naming the dimension (the repo's own words are the authority); when auditing, treat a dimension's library nouns as claims and verify them the same way (grep the dependency tree before the checklist). The companion shape (the F164 family's milder form, observed the same cycle at d1fbe8eb "update session log"): a record may be true-of-one-event yet incomplete-of-its-diff — a commit message naming the session log while its diff also carries a 52-file skills update; derive names from the FULL diff, not from the one file the author had in mind.**
 166. **F166 — the session-179 family: the DISPLAY-MANGLING member (the record-truth family at the tool-output layer).** The session-179 lead's own dispatch forensics: the valid slice expression "text[m.end():m.end() + 300]" at dispatch-s178.py:125 displayed as "text.end():m.end() + 300]" — apparently a syntax error — while ast.parse accepted the file and the script ran to its registered figures; the tool-output display pipeline had STRIPPED '[m'-shaped byte pairs (pseudo-ANSI escape residue) from the displayed content; the byte-level forensics (od -c + a char-code dump: 0x5b '[' present at position 13) settled it — no bug existed. THE LESSON: terminal-output display is a LOSSY channel — '[m'-shaped pairs can vanish from displayed code and file content alike; when displayed code 'looks' broken but a parser or compiler accepts it, VERIFY AT THE BYTE LEVEL before diagnosing (od -c, a char-code dump, or a parse check — the parser is the authority, the display is not); never edit from possibly-mangled display output (an Edit old_string match fails safely, but a diagnosis built on mangled display wastes a verification cycle chasing a phantom defect). The convention generalizes the F165 family to the tool-output layer: every layer between the file and the reasoning — dispatch prose, commit messages, now terminal display — can corrupt a claim; anchor every surprising observation to the bytes before believing it.**
 167. **F167 — the session-180 family: the DISPATCHED-OBSERVATION member (the record-truth family at the dispatch-claim layer).** The session-180 lead dispatched a fresh-clone observation to the auditors — "the S99-G pin FAILS on a fresh clone because a cp-produced .env lacks DIGMA_SITE_URL" — and BOTH auditors independently REFUTED it at the mechanical level: the pin is expect(ENV).toMatch(/DIGMA_SITE_URL/), a SUBSTRING regex with no comment stripping, and .env.example carries the knob COMMENTED — the commented line still contains the literal substring, so the documented cp-form .env MATCHES and the pin PASSES (node-simulated: /DIGMA_SITE_URL/.test(example) === true). The kernel of truth — no ACTIVE assignment in the cp form — was behaviorally null (unset === the localhost default) and gate-null (only one spec reads .env). The actual first-run failure that spawned the observation was the LEAD'S OWN printf-minimal .env staging deviation, honestly recorded. THE LESSON: an observation dispatched to auditors is ITSELF a claim about the tree — simulate the claimed failure mode at the mechanical level (the exact regex against the exact bytes) BEFORE registering or dispatching it as a finding; a refuted dispatch costs two auditors' verification cycles and, worse, invites registering a phantom defect in the remediation plan. The convention extends the F165/F166 family to the dispatch-claim layer: every layer between the observation and the record — dispatch prose, commit messages, terminal display, now the dispatched premise itself — can carry a false claim; anchor every surprising observation to the bytes (or the simulation) before believing it, and when an auditor refutes a dispatched premise, verify the refutation the same way before registering EITHER form.**
+168. **F168 — the session-181 family: the DISPATCHED-FIGURE member (the record-truth family at the figure layer — the F167 sibling).** The session-181 lead's dispatch brief carried HAND-TYPED per-file route figures — 4 of 18 wrong (logout 60 vs the live 37, me 27 vs 9, register 240 vs 146, resend-otp 87 vs 122), and the brief's own list was internally inconsistent (its figures summed to 2,550 while the same brief asserted "total EXACTLY 2,450"). The LIVE tree was correct and matched the standing record; auditor B caught the errors by counting every file. THE LESSON: a dispatch brief's PER-FILE figures derive from the live tree (`wc -l` at dispatch time), never from memory or a prior record's recall — every figure in a dispatch brief is a live-derived claim about the tree, exactly as its scope and pattern wordings are (the B179-I-1 zod member, the B180-I-3 pattern-reading member, now generalized to the figure layer). A hand-typed figure that contradicts the tree sends the auditor hunting a defect that does not exist — or worse, anchors a phantom figure in the record. The mechanical form: derive the per-file census from the tree in the same command that writes the brief (the dispatch script's own output), and if a figure must be quoted from memory, label it UNVERIFIED in the brief itself.**
 finding lives on.**
 
 ## §13 Pitfalls to Avoid
@@ -644,7 +645,7 @@ Rule: portal layers stack Radix-default (`z-50`); the Toaster outranks dialogs s
 
 ## §19 Color & Token Reference (Complete)
 
-The single source is the `@theme` block in `src/app/globals.css` (267 lines). Full table in PAD §5.2. Editor accent colors used on canvas elements (fill defaults): `DEFAULT_FILL` and named colors in `src/lib/editor.ts` — clamped/verified through `src/lib/validation.ts` (hex regex) and `sanitizeLlmOperations` for AI-originated values.
+The single source is the `@theme` block in `src/app/globals.css` (273 lines). Full table in PAD §5.2. Editor accent colors used on canvas elements (fill defaults): `DEFAULT_FILL` and named colors in `src/lib/editor.ts` — clamped/verified through `src/lib/validation.ts` (hex regex) and `sanitizeLlmOperations` for AI-originated values.
 
 Contrast (measured): foreground `#0f172a` on white ≈ 15.9:1 (AAA); muted-foreground `#6b7280` ≈ 5.9:1 (AA); editor text `#e6edf3` on `#0d1117` ≈ 13.4:1 (AAA). Top-bar avatars: `#3B82F6` (user) + `#10B981` ("S") on white text.
 

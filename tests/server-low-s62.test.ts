@@ -69,7 +69,7 @@ describe("the server Low batch (session 62, S62-G)", () => {
     // timingEqualizerHash joined the trio (the login route's constant-
     // work envelope); the single-generator contract is unchanged.
     expect(authSource).toMatch(
-      /export \{ generateVerifyCode, hashPassword, timingEqualizerHash, verifyPassword \}/,
+      /export \{ generateVerifyCode, hashPassword, hashResetToken, timingEqualizerHash, verifyPassword \}/,
     );
   });
 

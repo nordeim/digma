@@ -102,7 +102,7 @@ describe("the pure password seam (S70-D / L-A5)", () => {
     // timingEqualizerHash joined the trio (the login route's constant-
     // work envelope); the seam's single-source contract is unchanged.
     expect(auth).toMatch(
-      /export \{ generateVerifyCode, hashPassword, timingEqualizerHash, verifyPassword \}/,
+      /export \{ generateVerifyCode, hashPassword, hashResetToken, timingEqualizerHash, verifyPassword \}/,
     );
     // The duplicated scrypt implementation is deleted from auth.ts (the
     // single seam owns it).

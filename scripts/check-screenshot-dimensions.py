@@ -1447,6 +1447,16 @@ S189 = dict(S188)
 # registration-surface member, never a rendered truth).
 S190 = dict(S189)
 
+# s191 mapping (session 181 — the 157th reference audit's evidence set + the
+# S181 capture set). The standing S190 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S181 tree); no NEW
+# witness this session (the S181 pass carries three code remediations
+# with zero rendered-movement classes in the captured surfaces — the
+# cursor rule paints no pixels (cursors do not render in captures), the
+# two auth hardenings live behind the login surface — every captured
+# surface byte-stable by construction).
+S191 = dict(S190)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1681,6 +1691,8 @@ def expected_for(name: str):
         return S189.get(Path(name).stem)
     if name.startswith("ref-audit-s190/"):
         return S190.get(Path(name).stem)
+    if name.startswith("ref-audit-s191/"):
+        return S191.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1852,6 +1864,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s188").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s189").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s190").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s191").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:

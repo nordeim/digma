@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, hashResetToken } from "@/lib/auth";
 import { fail, ok } from "@/lib/api";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 import { readBoundedJson, resetTokenAlive } from "@/lib/validation";
@@ -52,7 +52,13 @@ export async function POST(request: NextRequest) {
   if (!resetToken) {
     return fail("VALIDATION", INVALID_TOKEN_MESSAGE, 400);
   }
-  const user = await db.user.findFirst({ where: { resetToken } });
+  // Session 181 (S181-B / B181-L-1): the stored column carries the
+  // SHA-256 hash — the submitted raw token is hashed ONCE here and the
+  // same hashedToken rides the pre-read below and the atomic consume's
+  // where-clause (the S76-A single-use contract unchanged — only the
+  // compared value is now the hash).
+  const hashedToken = hashResetToken(resetToken);
+  const user = await db.user.findFirst({ where: { resetToken: hashedToken } });
   if (!user || !resetTokenAlive(user.resetTokenExpiresAt)) {
     return fail("VALIDATION", INVALID_TOKEN_MESSAGE, 400);
   }
@@ -92,7 +98,7 @@ export async function POST(request: NextRequest) {
   // covers it; the code never throws P2025.
   try {
     const result = await db.user.updateMany({
-      where: { id: user.id, resetToken, resetTokenExpiresAt: { gt: new Date() } },
+      where: { id: user.id, resetToken: hashedToken, resetTokenExpiresAt: { gt: new Date() } },
       data: {
         passwordHash: hashPassword(newPassword),
         resetToken: null,

@@ -31,8 +31,10 @@ describe("the reset-password single-use atomicity (S76-A / B-L1)", () => {
   it("the success-path write is the conditional form (the where-clause carries the token + the live expiry)", () => {
     // THE DEFECT PIN: pre-fix the write keyed on the row id alone —
     // the interleaving replay could overwrite a just-reset password.
+    // S181-B lockstep: the compared value is now the SHA-256 hash
+    // (hashResetToken) — the atomicity intent unchanged.
     expect(route).toMatch(
-      /const result = await db\.user\.updateMany\(\{\s*where: \{ id: user\.id, resetToken, resetTokenExpiresAt: \{ gt: new Date\(\) \} \},/,
+      /const result = await db\.user\.updateMany\(\{\s*where: \{ id: user\.id, resetToken: hashedToken, resetTokenExpiresAt: \{ gt: new Date\(\) \} \},/,
     );
   });
 
@@ -58,7 +60,9 @@ describe("the preserved reset contract (S76-A — the pre-read + the measured or
   it("the pre-read stays (the token lookup precedes the write)", () => {
     // PRESERVATION: the findFirst pre-read carries the measured
     // token-first 400 ordering and the token-before-password checks.
-    const readIdx = route.indexOf("findFirst({ where: { resetToken } })");
+    // S181-B lockstep: the lookup hashes the submitted token first
+    // (the stored column carries the SHA-256 hash since S181-B).
+    const readIdx = route.indexOf("findFirst({ where: { resetToken: hashedToken } })");
     const writeIdx = route.indexOf("updateMany");
     expect(readIdx).toBeGreaterThan(-1);
     expect(writeIdx).toBeGreaterThan(readIdx);

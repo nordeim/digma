@@ -96,8 +96,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s180 lesson). */
-const UNIT = "2501";
-const FILES = "242";
+const UNIT = "2521";
+const FILES = "243";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -169,7 +169,7 @@ const liveRouteFigures = (() => {
   return { total, perFile, handSum };
 })();
 
-/** The figure the v1.159.0 PAD block quotes for the layer total (the
+/** The figure the v1.160.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its TWENTY-SEVENTH
  *  instance, this cycle in its ZERO-SOURCE-CHANGE STAYS form: 14,307
@@ -177,7 +177,7 @@ const liveRouteFigures = (() => {
  *  code touched). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.159\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.160\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -293,8 +293,8 @@ describe("The prior-cycle source-survival members (the S172/S175/S176/S177/S178/
     // The layer + route figures, derived live (the ZERO-SOURCE-CHANGE
     // STAYS form — this cycle touches zero source files, so both
     // totals hold).
-    expect(liveLayerTotal).toBe(14307);
-    expect(liveRouteFigures.total).toBe(2450);
+    expect(liveLayerTotal).toBe(14313);
+    expect(liveRouteFigures.total).toBe(2461);
   });
 });
 
@@ -433,7 +433,7 @@ describe("S180-C the per-session pin family (the survival members + the RED memb
   it("DEFECT (docs — the forward count-truth guard's twenty-seventh instance, this cycle in its ZERO-SOURCE-CHANGE STAYS form): the LIVE 22-file layer total (derived at runtime) equals the figure the v1.159.0 block quotes — 14,307 unchanged (the registration-only cycle, zero executable code touched)", () => {
     expect(padQuotedLayerTotal).not.toBe("");
     expect(Number(padQuotedLayerTotal.replace(/,/g, ""))).toBe(liveLayerTotal);
-    expect(liveLayerTotal).toBe(14307);
+    expect(liveLayerTotal).toBe(14313);
   });
 
   it("DEFECT (docs — the S180-A registration's doc-side members): the PAD v1.159.0 chain entry names the continuity + ninth-generation coordinate registration — the :2837/:2896/:2965 carriers re-derived at dispatch with the s170..s179 row attribution, the dispatched-observation refutation, and the F167 lesson", () => {
@@ -453,7 +453,7 @@ describe("S180-C the per-session pin family (the survival members + the RED memb
   });
 
   it("DEFECT (docs): the F167 lesson registered in the digma_SKILL — the dispatched-observation member inserted after F166, the version bumped to v1.158.0", () => {
-    expect(skillSource).toMatch(/version: 1\.158\.0/);
+    expect(skillSource).toMatch(/version: 1\.159\.0/);
     expect(skillSource).toContain("F167");
     expect(collapsed(skillSource)).toContain(
       "DISPATCHED-OBSERVATION member",
@@ -473,11 +473,11 @@ describe("S180-C the per-session pin family (the survival members + the RED memb
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.159.0 in the title line and the Last-Updated line (the S158-C post-run title verification form) + the pair-unity claim forms riding the constants at every doc (the rolling-safe form: this spec's constants equal the prior specs' constants after the doc-update sweep re-anchors them TOGETHER)", () => {
     expect(padSource).toMatch(
-      /^# Digma — Master Project Architecture Document \(PAD\) v1\.159\.0$/m,
+      /^# Digma — Master Project Architecture Document \(PAD\) v1\.160\.0$/m,
     );
     const lastUpdated =
       padSource.split("\n").find((l) => l.startsWith("**Last Updated:**")) ?? "";
-    expect(lastUpdated).toContain("v1.159.0");
+    expect(lastUpdated).toContain("v1.160.0");
     // The s179 spec's constants, re-anchored onto this cycle's figures.
     const s179Spec = readFileSync(
       path.resolve(import.meta.dirname, "./lows-s179.test.ts"),

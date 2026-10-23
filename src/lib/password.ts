@@ -6,7 +6,7 @@
 // 64-byte key): a change in one place silently broke demo login in the
 // other. This module is node:crypto ONLY — both consumers import it, and
 // auth.ts re-exports for the routes' existing import surface.
-import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 
 const KEY_LENGTH = 64;
 
@@ -23,6 +23,15 @@ export function verifyPassword(password: string, stored: string): boolean {
   const a = Buffer.from(candidate, "hex");
   const b = Buffer.from(hash, "hex");
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// Session 181 (S181-B / B181-L-1): reset tokens are HASHED AT REST
+// (SHA-256 hex) — the raw token lives only in the delivery URL. A
+// DB-at-rest read (backup leak / file-read misconfig) must never
+// expose a directly-usable credential (the passwords are scrypt; the
+// reset token was the one raw-capable column).
+export function hashResetToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 // Session 62 (S62-G / B-L1): the single crypto-random verify-code

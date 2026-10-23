@@ -106,8 +106,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s171 lesson). */
-const UNIT = "2501";
-const FILES = "242";
+const UNIT = "2521";
+const FILES = "243";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -157,14 +157,14 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.159.0 PAD block quotes for the layer total (the
+/** The figure the v1.160.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its eighteenth
  *  instance, this cycle in its STAYS form: 14,307 unchanged, the
  *  dependency-bump cycle touching zero source files). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.159\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.160\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -336,13 +336,13 @@ describe("The prior-cycle source-survival members (the S169/S170 deliveries inta
     expect(Number(routeLines.trim().split(/\s+/)[0])).toBe(154);
     // The layer + route figures, derived live (the STAYS form — the
     // bump touched zero src/ files, so both totals hold by construction).
-    expect(liveLayerTotal).toBe(14307);
+    expect(liveLayerTotal).toBe(14313);
     const root = path.resolve(import.meta.dirname, "..");
     const routeOut = execSync(
       "find src/app/api -name route.ts | xargs wc -l | tail -1",
       { cwd: root, encoding: "utf8" },
     );
-    expect(Number(routeOut.trim().split(/\s+/)[0])).toBe(2450);
+    expect(Number(routeOut.trim().split(/\s+/)[0])).toBe(2461);
   });
 });
 
@@ -474,11 +474,11 @@ describe("S171-D the per-session pin family (the survival members + the doc-side
   it("DEFECT (docs — the forward count-truth guard's eighteenth instance, this cycle in its STAYS form): the LIVE 22-file layer total (derived at runtime) equals the figure the v1.150.0 block quotes — 14,307 unchanged (the dependency-bump cycle touching zero source files; the fourth consecutive STAYS cycle)", () => {
     expect(padQuotedLayerTotal).not.toBe("");
     expect(Number(padQuotedLayerTotal.replace(/,/g, ""))).toBe(liveLayerTotal);
-    expect(liveLayerTotal).toBe(14307);
+    expect(liveLayerTotal).toBe(14313);
   });
 
   it("DEFECT (docs): the F158 lesson registered in the digma_SKILL — the dependency-bump version-truth member inserted after F157, the version bumped to v1.149.0", () => {
-    expect(skillSource).toMatch(/version: 1\.158\.0/);
+    expect(skillSource).toMatch(/version: 1\.159\.0/);
     expect(skillSource).toContain("F158");
     expect(collapsed(skillSource)).toContain("DEPENDENCY-BUMP VERSION-TRUTH member");
     // F157 still present (the insertion is additive).

@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { normalizeEmail, readBoundedJson } from "@/lib/validation";
+import { hashResetToken } from "@/lib/auth";
 import { authRateLimit, clientIpOf } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -101,7 +102,11 @@ export async function POST(request: NextRequest) {
       await db.user.update({
         where: { id: user.id },
         data: {
-          resetToken: token,
+          // Session 181 (S181-B / B181-L-1): the token persists as its
+          // SHA-256 hash — the raw 64-hex lives only in the delivery
+          // URL (the in-response resetUrl / the mail transport's link);
+          // reset-password hashes the submitted token for the lookup.
+          resetToken: hashResetToken(token),
           resetTokenExpiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
         },
       });

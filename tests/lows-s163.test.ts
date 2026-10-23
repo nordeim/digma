@@ -124,8 +124,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s162 lesson). */
-const UNIT = "2501";
-const FILES = "242";
+const UNIT = "2521";
+const FILES = "243";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -174,12 +174,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.159.0 PAD block quotes for the layer total (the
+/** The figure the v1.160.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its tenth instance). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.159\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.160\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -372,7 +372,7 @@ describe("S163-C the per-session pin family (the survival members + the doc-side
     // RE-ANCHORED onto 14307 by the S167-A rider (teams-view +12 —
     // the F40 prior-spec re-anchor: the claim stays true, the pinned
     // figure moves with the live tree).
-    expect(liveLayerTotal).toBe(14307);
+    expect(liveLayerTotal).toBe(14313);
   });
 
   it("DEFECT (docs): the AGENTS session-163 bullet carries the chosen-work members — the STALE LINE-CITATION reword and the phantom ROUTE-MOCK census reword (the comment-truth pair)", () => {
@@ -418,7 +418,7 @@ describe("S163-C the per-session pin family (the survival members + the doc-side
     // RE-ANCHORED onto 14307 by the S167-A rider (teams-view +12 —
     // the F40 prior-spec re-anchor: the claim stays true, the pinned
     // figure moves with the live tree).
-    expect(liveLayerTotal).toBe(14307);
+    expect(liveLayerTotal).toBe(14313);
     // The PAD's v1.142.0 block must quote exactly this figure (the
     // comma-spelled doc form and the bare runtime form are the same
     // NUMBER — the guard compares the figure, never the spelling).
@@ -428,7 +428,7 @@ describe("S163-C the per-session pin family (the survival members + the doc-side
 
   it("DEFECT (docs): the F150 lesson registered in the digma_SKILL — the stale-citation + census-justification members inserted after F149, the version bumped to v1.141.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.158\.0/);
+    expect(skillSource).toMatch(/version: 1\.159\.0/);
     // The lesson: the members after F149.
     const f149At = skillSource.indexOf("F149");
     const f150At = skillSource.indexOf("F150");

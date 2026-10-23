@@ -1,0 +1,27 @@
+Session 181 — the execution summary (the 129th Mode C audit cycle).
+
+工作区**本周期沙箱重置后重建（fresh clone）**：git clone 至 HEAD **bd9a505c**（= S180 交付 `510dfd10` + 日志 `1ad583b2` + 操作者 session_470 提交 `3ff4bcf1` + 操作者 skills 修订提交 `bd9a505c` —— 交付以来操作者全部变更仅在 docs/ + skills/ 面，`git diff 510dfd10 HEAD --stat -- src/ tests/` 为空，零源码变更形态进入本周期）；bun install 477 包；**.env 以文档化 cp 形落位（S180 教训前向应用 —— S99-G pin 首跑即绿）**；db/ 仓库根 push + seed pristine **1/2/6/1/3**（Prisma-client census 确认）；**chromium-1248 + chromium_headless_shell-1248 于 e2e 前配给（S180 配给教训前向应用 —— 首跑 262/262 零收集错误）**；导出 shell DATABASE_URL trap 存活（指向仓库外）—— 所有 DB gate 同命令 env -u 防护。
+
+**Phase 1 六项基线 gates（首跑全绿）**：Lint 0 ✓ · Typecheck 0 ✓ · Unit **2501/2501 across 242** ✓ · Build 27 routes（28 表行含 /_not-found，`[db]` 锚定仓库根）✓ · Smoke **73/73** ✓（DB 重播种 1/2/6/1/3）· E2e **262/262 zero flakes (6.5m)** ✓。Post-e2e witness 限定路径恢复 + DB 重播种。
+
+**Phase 2 parity**：s181 派生脚本（derive-s181-scripts.py）—— **22/66/6 精确，零残留，首次派生** ✓。**第 157 次参考审计：无漂移（exit 0，双运行确认；clip `Share:L385-R458,Present:L466-R551` 第 118 次字节一致；证据 ref-audit-s191/）**。mobile nav **9/9 第 158 次会话**（Tailwind v4 class-A 守卫；live + 按构造双验证）。SEO 4/4。pins S128..S180 **692+13=705/705 across 53**。
+
+**Phase 3 审计**：dispatch 图表实时重推导（layer **14,307**（审计相位第 14 个连续 STAYS）· routes **18/2,450 且内部一致性探针通过 —— 修正后 elements-route 图 420 第五次随 dispatch 重引** · write 23/14 = 10 db. + 11 tx. + 2 SDK · handler 25/24/17 · catch 17/16+1 · env 16/9 · 文件普查 242 = 235 tests/ + 7 src/lib · spec constants 61 UNIT + 60 FILES）—— 零源码漂移。**F138 第三十二次验证：通过**（s180 计划 @ `510dfd10` **6/6 已勾选**、sweep s151..s180 全净 30 计划 176/0）。**第十代坐标 live 验证**：**:2839/:2898/:2967**，s180 行 :2838，窗口 :2828..:2838 —— 与预注册完全一致。
+
+**双审计员并行派发（A：22 文件客户端层 + comment-truth + 安全扫描 + Tailwind v4 姿态 + **新主技能 §8/§9/§12/§13 合同检查** + S180 注册接缝 + 正确性焦点 + mobile nav 按构造；B：18 路由逐文件 + src/lib 全读 + 路由层正确性清单 + **新主技能 §5/§6/§7/§16/§17 合同检查** + live 普查 + S180 接缝 + 第十代坐标 + 前提第 55 周期 + e2e write-set）—— 两者均以**指令点名的 `skills/web-application/SKILL.md` v1.1.0（操作者 2026-10-23 修订）为新审计透镜**。
+
+**合并普查 0C/0H/0M/3L/7I —— A 0C/0H/0M/1L/4I + B 0C/0H/0M/2L/3I：六个周期以来首批非 Informational 成员，全部三个 Low 由新主技能合同词汇表发现**（对五个前周期以旧词汇审计为干净的代码 —— 连胜是词汇相对的，词汇增长的那一刻即终止）：**A181-L-1** 按钮 cursor 基础规则缺失（v4 preflight 不设 cursor:pointer —— 对 tailwindcss@4.3.3 自身 preflight.css 机械验证；参考站 v3 CDN preflight 设了 —— 每个真实按钮桌面 hover 显示箭头光标，截图 clip 不可见的 parity 偏差）；**B181-L-1** 重置令牌明文落库（forgot-password:104 原始存储 + reset-password:55 原始等值查找 —— 数据库落盘读取暴露 User 行唯一可直接使用的凭证）；**B181-L-2** AUTH_SECRET 生产环境软失败（auth.ts:36-47 每环境警告 + 回退到公开仓库常量）。lead 的 F78 验证逐项确认。comment-truth **22/22**（第六连续周期）。前提第 55 周期全部保持。
+
+**Phase 4 注册、计划与 TDD**：审计员条目移植至仓库 worklog（:6826/:6860）+ 两个括号注册**先于 spec 诞生**（s181-id-stable-premises-note 第 55 周期 + s181-below-threshold-note：第十代再锚定 + **第十一代预注册 :2841/:2900/:2969** + **F168 派发数字教训**（lead 自身派发简报 4/18 逐文件数字错误 —— 被审计员 B 逐文件计数捕获：派发简报的逐文件数字源自 live tree（dispatch 时 wc -l），绝非记忆）+ 主技能透镜记录：**新合同词汇表本身就是一个审计维度**）。remediation-plan-session181.md 落地。Spec 诞生：tests/lows-s181.test.ts **20 pins（15 RED / 5 green-at-birth，首跑 RED 精确）**；实测形修正（20-pin 算术 + 注释文档形保留后的 138/130/2,461 实测路由图 —— count-truth 教义：计数跟随树，绝不树跟随计数）。
+
+**三项代码修复（十四个周期以来首批 src/ 变更）**：**S181-A** globals.css @layer base 光标规则（+6 行 —— **layer 总量 14,307 → 14,313，十四个周期以来首次移动，F40 rider 全面启动**）；**S181-B** password.ts hashResetToken SHA-256 纯加密接缝（+9）+ auth.ts 再导出 + forgot-password 哈希存储（+5）+ reset-password hashedToken 预读/消费（+6）—— **路由 2,450 → 2,461**，S76 原子性合同不变，S76 spec 两个字面量 lockstep（意图 pin 全保留）；**S181-C** auth.ts 生产 throw（+11）+ smoke/nav harness AUTH_SECRET 配给 + .env.example 注释强化（playwright webServer 原已配给）。
+
+**GREEN collateral**：doc-update-s181.py（count family **2521 = 2501 + 20 / 243** 至每一 live claim 位点 + §7.1 行 + AGENTS session-181 bullet + README AUTH_SECRET 执法注记 + s151..s180 SKILL-version pins 至 v1.159.0 + s154..s180 前向守卫滚动 re-anchor 至 v1.160.0 + s158 title pin + **s173..s180 per-spec title-pin riders 预置**（rider 家族第九成员）+ spec-constants sweep **62 UNIT + 61 FILES**）+ version-bump-s181.py（PAD **v1.160.0** 链行 + SKILL **v1.159.0 + F168**）+ **f40-riders-s181.py**（21 个 layer 图 spec 的 toBe(14307)→toBe(14313) + 10 个路由图 spec 的 toBe(2450)→toBe(2461) + SKILL 两个 live 行数主张（auth.ts 158、globals.css 273）+ s126 两个字面量 lockstep）+ 全量 gate sweep 伤亡修复（PAD §11 live 行：forgot 138/reset 130/auth 158/globals 273 —— s86 live 推导 spec 逐一暴露；s62+s70 再导出 pin 扩展 hashResetToken；s146 globals 行字面量 lockstep）→ **GREEN 20/20 → 全量 unit gate 2521/2521 across 243**。
+
+**Phase 5 最终 gates、capture 与收尾**：Lint 0 · Typecheck 0 · Build 27 · Smoke **73/73**（AUTH_SECRET 配给启动；哈希重置往返通过）· E2e **262/262 zero flakes (6.5m)** · Nav **9/9 第 158 次会话（最终 S181 构建）** · SEO 4/4 · pins S128..S181 **725/725 across 54**。**Capture：ALL CAPTURED (EXIT=0)**（一次重跑 —— 后台首试被沙箱回收，单次调用纪律）· census **86 重拍（65 fresh + 21 字节相同，零残留）** · **dimensions 994/994 ALL OK**（989 + 5 for ref-audit-s191）。lead entry 落地（worklog 6920 行）。
+
+**Session 181（第 129 次审计周期）已完成。**
+
+本轮核心成果：**新技能透镜周期** —— 双审计员普查 **0C/0H/0M/3L/7I**，六个周期以来首批非 Informational 成员全部由指令点名的 `skills/web-application/SKILL.md` v1.1.0 合同词汇表发现并于同周期修复（**S181-A** 光标基础规则 —— **layer 十四个周期以来首次移动 14,307 → 14,313，F40 rider 全面启动**；**S181-B** SHA-256 落库哈希 + S76 原子性保持；**S181-C** AUTH_SECRET 生产 fail-hard + harness 级联配给）· **F168 派发数字教训**（lead 自身 4/18 逐文件数字错误诚实记录）· 第十代坐标验证 + 第十一代预注册 · 前提第 55 周期 · comment-truth 22/22（第六连续）· 第 157 次参考审计无漂移（clip 第 118 次，双运行确认）· nav 9/9（第 158 次）· pins 725/725 · capture 86 · dimensions 994/994 · 路由 2,450 → 2,461 · count family 2521/243。
+
+**建议下一步**：GitHub 验证交付提交；Session 182 候选 id-stable PUT 重写（前提 55 周期保持）或再审计 —— F138 第三十三个实例已预置（s182 spec 应锁定 s181 计划在交付提交的勾选记录）。

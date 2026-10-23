@@ -171,6 +171,12 @@
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
+  /* Tailwind v4's preflight sets no cursor:pointer on buttons (the
+     reference's v3 CDN preflight did) — S181-A / A181-L-1. */
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
 }
 
 /* Accessibility: users who opt out of motion get none. */

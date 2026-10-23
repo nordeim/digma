@@ -192,13 +192,13 @@ describe("lows-s126 — the seventy-fourth audit's chosen work", () => {
     expect(skillSource).not.toMatch(/editor-store\.ts` \(483 lines\)/);
   });
 
-  it("DEFECT (docs): the SKILL's auth.ts line claim matches the live count (147)", () => {
-    expect(skillSource).toMatch(/147 lines in `src\/lib\/auth\.ts`/);
+  it("DEFECT (docs): the SKILL's auth.ts line claim matches the live count (158)", () => {
+    expect(skillSource).toMatch(/158 lines in `src\/lib\/auth\.ts`/);
     expect(skillSource).not.toMatch(/127 lines in `src\/lib\/auth\.ts`/);
   });
 
-  it("DEFECT (docs): the SKILL's globals.css line claim matches the live count (267)", () => {
-    expect(skillSource).toMatch(/src\/app\/globals\.css` \(267 lines\)/);
+  it("DEFECT (docs): the SKILL's globals.css line claim matches the live count (273)", () => {
+    expect(skillSource).toMatch(/src\/app\/globals\.css` \(273 lines\)/);
     expect(skillSource).not.toMatch(/src\/app\/globals\.css` \(138 lines\)/);
   });
 

@@ -83,7 +83,7 @@ step "Booting the standalone production server on :${PORT}…"
 # one trap that must refuse rather than silently unset. The AI knob is
 # SET, never unset (the S81-C posture: the smoke checks pin the
 # deterministic fallback's exact output).
-env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u DIGMA_SITE_URL -u HOSTNAME -u KEEP_ALIVE_TIMEOUT PORT="$PORT" NODE_ENV=production DIGMA_DISABLE_AI_LLM=1 bun .next/standalone/server.js >/tmp/smoke-server.log 2>&1 &
+env -u DIGMA_PROXY_HOPS -u DIGMA_DISABLE_IN_APP_RESET -u DIGMA_DISABLE_IN_APP_OTP -u DIGMA_REPO_ROOT -u DIGMA_SITE_URL -u HOSTNAME -u KEEP_ALIVE_TIMEOUT PORT="$PORT" NODE_ENV=production DIGMA_DISABLE_AI_LLM=1 AUTH_SECRET="smoke-suite-session-secret" bun .next/standalone/server.js >/tmp/smoke-server.log 2>&1 &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" >/dev/null 2>&1; pkill -f "standalone/server.js" >/dev/null 2>&1' EXIT
 
