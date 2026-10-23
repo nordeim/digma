@@ -1397,6 +1397,16 @@ S184 = dict(S183)
 # the repaired clause never described a rendered truth).
 S185 = dict(S184)
 
+# s186 mapping (session 176 — the 152nd reference audit's evidence set + the
+# S176 capture set). The standing S185 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S176 tree); no NEW
+# witness this session (the S176 pass is the dispatch-figure correction —
+# a registration-only cycle, zero source files touched, zero executable
+# code touched, zero rendered-movement classes in the captured surfaces
+# by construction; the corrected figure a dispatch-record member, never
+# a rendered truth).
+S186 = dict(S185)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1621,6 +1631,8 @@ def expected_for(name: str):
         return S184.get(Path(name).stem)
     if name.startswith("ref-audit-s185/"):
         return S185.get(Path(name).stem)
+    if name.startswith("ref-audit-s186/"):
+        return S186.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1787,6 +1799,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s183").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s184").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s185").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s186").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
