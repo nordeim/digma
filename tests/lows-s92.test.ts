@@ -61,8 +61,8 @@ const PAD = readFileSync(
 // §7.1 Unit-total row — so the whole family moves together in the same
 // commit). Session 93 (S93-E): re-anchored — 1158 / 155 (the s93
 // delivery's editor-utilities-s93 +8).
-const UNIT = "2545";
-const FILES = "245";
+const UNIT = "2562";
+const FILES = "246";
 
 // ---------------------------------------------------------------------------
 // S92-A — the export seam's single-derivation contract (A92-L1)

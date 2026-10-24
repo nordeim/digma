@@ -286,7 +286,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
 
             <div className="flex items-center gap-3">
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600"
+                className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "linear-gradient(90deg, var(--color-blue-500), var(--color-purple-600))" }}
                 aria-hidden
               >
                 <User className="h-4 w-4 text-white" />

@@ -137,8 +137,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s157 lesson). */
-const UNIT = "2545";
-const FILES = "245";
+const UNIT = "2562";
+const FILES = "246";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -191,12 +191,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.162.0 PAD block quotes for the layer total (the
+/** The figure the v1.163.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its fifth instance). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.162\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.163\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -284,7 +284,7 @@ describe("S158-B the toolbar comment px-honesty repair (A158-I1 — a pixel clai
 describe("S158-C the PAD title-lag repair (L158-L1 — a live claim site carrying a stale figure: the title never again lags the chain head)", () => {
   it("DEFECT (docs): the PAD title names the current chain head — v1.137.0 (the S157 gap closed at the live seam; the title diffed against the chain head after every bump run, never trusted from the patch list)", () => {
     expect(padSource.split("\n")[0]).toBe(
-      "# Digma — Master Project Architecture Document (PAD) v1.162.0",
+      "# Digma — Master Project Architecture Document (PAD) v1.163.0",
     );
   });
 
@@ -386,7 +386,7 @@ describe("S158-D the per-session pin family (the one-hundred-and-sixth audit's 0
     // RE-ANCHORED onto 14307 by the S167-A rider (teams-view +12 —
     // the F40 prior-spec re-anchor: the claim stays true, the pinned
     // figure moves with the live tree).
-    expect(liveLayerTotal).toBe(14313);
+    expect(liveLayerTotal).toBe(14359);
   });
 
   it("DEFECT (docs): the count re-anchor — the v1.137.0 chain entry carries the S158 derivation (2195 = 2182 + 13 unit / 220 files) + the §7.1 row for the s158 spec + the §11 validation.ts row re-anchored (355 → 370)", () => {
@@ -454,7 +454,7 @@ describe("S158-D the per-session pin family (the one-hundred-and-sixth audit's 0
 
   it("DEFECT (docs): the F145 lesson registered in the digma_SKILL — the total-coercion member inserted after F144, the version bumped to v1.136.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.161\.0/);
+    expect(skillSource).toMatch(/version: 1\.162\.0/);
     // The lesson: the total-coercion member after F144.
     const f144At = skillSource.indexOf("F144");
     const f145At = skillSource.indexOf("F145");

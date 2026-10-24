@@ -153,8 +153,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s163 lesson). */
-const UNIT = "2545";
-const FILES = "245";
+const UNIT = "2562";
+const FILES = "246";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -210,12 +210,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.162.0 PAD block quotes for the layer total (the
+/** The figure the v1.163.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its eleventh instance). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.162\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.163\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -507,7 +507,7 @@ describe("S164-E the per-session pin family (the survival members + the doc-side
     // RE-ANCHORED onto 14307 by the S167-A rider (teams-view +12 —
     // the F40 prior-spec re-anchor: the claim stays true, the pinned
     // figure moves with the live tree).
-    expect(liveLayerTotal).toBe(14313);
+    expect(liveLayerTotal).toBe(14359);
   });
 
   it("DEFECT (docs): the AGENTS session-164 bullet carries the chosen-work members — the CROSS-FILE citation reword, the panel-scoped census, and the honest projects-POST census (the comment-truth family's cross-file completion)", () => {
@@ -553,7 +553,7 @@ describe("S164-E the per-session pin family (the survival members + the doc-side
     // RE-ANCHORED onto 14307 by the S167-A rider (teams-view +12 —
     // the F40 prior-spec re-anchor: the claim stays true, the pinned
     // figure moves with the live tree).
-    expect(liveLayerTotal).toBe(14313);
+    expect(liveLayerTotal).toBe(14359);
     // The PAD's v1.143.0 block must quote exactly this figure (the
     // comma-spelled doc form and the bare runtime form are the same
     // NUMBER — the guard compares the figure, never the spelling).
@@ -563,7 +563,7 @@ describe("S164-E the per-session pin family (the survival members + the doc-side
 
   it("DEFECT (docs): the F151 lesson registered in the digma_SKILL — the cross-file-citation + census-scope + correction-echo members inserted after F150, the version bumped to v1.142.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.161\.0/);
+    expect(skillSource).toMatch(/version: 1\.162\.0/);
     // The lesson: the members after F150.
     const f150At = skillSource.indexOf("F150");
     const f151At = skillSource.indexOf("F151");

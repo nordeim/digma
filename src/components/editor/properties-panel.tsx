@@ -492,6 +492,11 @@ function HexColorRow({
 // signal pushes the ONE snapshot — and a gesture that changed nothing
 // cancels (no no-op entry). Single-pointer-safe: only one slider can be
 // dragged at a time, so one module-level closure serves them all.
+// (Session 184, S184-C / A-I-3 — the comment-truth repair: the
+// single-pointer rationale above is a STALE session-62 clause,
+// superseded by the S123-C/S125-B/S126-B multi-touch token guards —
+// two sliders, two fingers; the per-input tokens are what make the
+// shared closure safe, not single-pointer-ness.)
 //
 // The TextSection Content input shares the seam over focus/blur with
 // IDLE COALESCING (the en-route lesson from the mobile-properties pins:

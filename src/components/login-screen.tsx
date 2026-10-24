@@ -235,7 +235,15 @@ export function LoginScreen() {
     // multi-digit value now distributes across the cells (the paste
     // handler's own contract below); the single-digit path is
     // unchanged.
-    if (cleaned.length > 1) {
+    // Session 184 (S184-A / A-L-1): the distribution branch is
+    // SCOPED to input[0] — the only autoComplete="one-time-code"
+    // field (the input row's own conditional at render). A
+    // multi-char value arriving at any OTHER cell is an
+    // append-into-a-filled-cell (click a filled middle cell, type
+    // one char): the pre-fix form rebuilt the code from cell 0 and
+    // WIPED the other cells; the append path falls through to the
+    // slice(-1) form below, landing the digit in the typed cell.
+    if (index === 0 && cleaned.length > 1) {
       const code = cleaned.slice(0, 6);
       setDigits((prev) => {
         const next = [...prev];

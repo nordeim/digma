@@ -152,6 +152,16 @@
      default ("Times New Roman" — observed in dev AND the production build).
      Pinned by tests/theme.test.ts. */
   --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Session 184 (S184-B / A-L-2 — the §12 trap-5 pin): Tailwind v4's
+     shadow scale moved one notch heavier — the installed 4.3.3
+     theme.css carries --shadow-sm byte-identical to --shadow (the
+     v3 DEFAULT geometry) while the v3 sm the shadcn chrome was
+     designed against lives at v4's `shadow-xs`. Pinned here to the
+     v3 geometry so the 23 shadow-sm sites render the intended
+     notch. md/lg/xl/2xl verified v3-identical in the installed
+     theme.css — no further pins needed. */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 @layer base {
@@ -189,6 +199,23 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Session 184 (S184-B / A-L-2 — the §12 trap-3 brand-gradient
+   contract): the CTA gradient renders sRGB — the reference's
+   interpolation family (the 160th reference audit's hero-banner
+   midzone sampled 4x closer to sRGB than oklab: dist 101 vs 405);
+   the bg-gradient-to-* utilities would interpolate oklab. The
+   stops reference the @theme tokens (the S96-A inline-style-hex
+   closed set preserved — the hexes live in the tokens, the inline
+   styles and this class carry var() references only). Unlayered —
+   the strong cascade form (the .editor-scroll/.editor-range
+   precedent). */
+.brand-cta-gradient {
+  background: linear-gradient(90deg, var(--color-purple-600), var(--color-pink-600));
+}
+.brand-cta-gradient:hover {
+  background: linear-gradient(90deg, var(--color-purple-700), var(--color-pink-700));
 }
 
 /* Custom scrollbar for the editor's dark panels. The thumb rides the

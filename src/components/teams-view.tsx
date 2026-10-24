@@ -222,8 +222,11 @@ function TeamCard({
           its dead ellipsis right; the clone's Delete-confirm cluster is the
           working superset in the right slot. */}
       <div className="mb-4 flex items-start justify-between">
+        {/* Session 184 (S184-B): sRGB inline paint (the §12 trap-3
+            contract); the bg-gradient-to-r class KEPT as the e2e query
+            hook (the parity.spec team-card chip query). */}
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-purple-600"
+          className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r" style={{ background: "linear-gradient(90deg, var(--color-blue-500), var(--color-purple-600))" }}
           aria-hidden
         >
           <Users className="h-6 w-6 text-white" />
@@ -368,7 +371,7 @@ function CreateTeamDialog({
     >
       <DialogContent className="sm:max-w-[480px] [&>button]:h-11 [&>button]:w-11">
         <DialogHeader>
-          <DialogTitle className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <DialogTitle style={{ background: "linear-gradient(90deg, var(--color-purple-600), var(--color-pink-600))" }} className="bg-clip-text text-transparent">
             Create a Team
           </DialogTitle>
           <DialogDescription>Group collaborators and invite your first member.</DialogDescription>

@@ -765,7 +765,7 @@ export function AiAssistant() {
                snapshot restored through restoreSnapshot; the footer settles
                away with the reverted message). */
             <div key={message.id} className="flex justify-start gap-2">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600">
+              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(90deg, var(--color-blue-500), var(--color-purple-600))" }}>
                 <Bot className="h-3 w-3 text-white" aria-hidden />
               </div>
               <div className="max-w-[80%]">
@@ -799,7 +799,7 @@ export function AiAssistant() {
         )}
         {sending && (
           <div className="flex justify-start gap-2">
-            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600">
+            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(90deg, var(--color-blue-500), var(--color-purple-600))" }}>
               <Bot className="h-3 w-3 text-white" aria-hidden />
             </div>
             <div className="rounded-lg bg-[#21262d] p-2 text-xs text-gray-400">Working on it...</div>

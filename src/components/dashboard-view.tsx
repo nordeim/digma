@@ -124,7 +124,10 @@ export function DashboardView({ user }: { user: HeaderUser }) {
            * flex-1 max-w-sm stats wrapper (content-width at mobile). The
            * pre-fix responsive downsizing diverged below sm/lg while
            * desktop stayed equal. */}
-          <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white">
+          {/* Session 184 (S184-B): the hero banner renders sRGB — the
+              reference's interpolation family (the §12 trap-3 contract;
+              the utilities interpolate oklab). */}
+          <div style={{ background: "linear-gradient(90deg, var(--color-purple-600), var(--color-pink-600), var(--color-blue-600))" }} className="text-white">
             <div className="mx-auto max-w-7xl px-6 py-12">
               <div className="flex flex-col items-center justify-between gap-8 lg:flex-row">
                 <div className="flex-1">
@@ -163,7 +166,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                       className="flex h-10 items-center gap-2 rounded-lg border border-white/30 bg-transparent px-6 py-3 font-medium text-white backdrop-blur-sm transition-all duration-200 hover:border-white/50 hover:bg-white/10"
                     >
                       <span
-                        className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 to-orange-500"
+                        className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: "linear-gradient(90deg, var(--color-yellow-400), var(--color-orange-500))" }}
                         aria-hidden
                       >
                         <Sparkles className="h-3 w-3 text-white" />
@@ -250,7 +253,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                 </div>
               ) : (
                 <div className="py-16 text-center">
-                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
+                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full" style={{ background: "linear-gradient(90deg, var(--color-purple-500), var(--color-pink-500))" }}>
                     <FileText className="h-8 w-8 text-white" aria-hidden />
                   </div>
                   <h3 className="mb-3 text-xl font-bold text-gray-900">
@@ -263,7 +266,7 @@ export function DashboardView({ user }: { user: HeaderUser }) {
                   <Button
                     type="button"
                     onClick={() => setCreateOpen(true)}
-                    className="h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white hover:from-purple-700 hover:to-pink-700"
+                    className="brand-cta-gradient h-10 rounded-lg px-6 py-3 font-semibold text-white"
                   >
                     <Plus className="mr-2 h-5 w-5" />
                     Create Your First Project

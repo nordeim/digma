@@ -162,7 +162,7 @@ function RecentListCard({
   return (
     <div className="group flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 transition-all duration-200 hover:shadow-sm">
       <div className="flex min-w-0 flex-1 items-center gap-4">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-blue-100 to-purple-100">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-md" style={{ background: "linear-gradient(135deg, var(--color-blue-100), var(--color-purple-100))" }}>
           <CanvasThumbnail project={project} elements={project.elements ?? []} />
         </div>
         <div className="min-w-0">

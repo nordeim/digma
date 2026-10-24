@@ -550,12 +550,12 @@ export function ProjectCard({
               superset family) but adopts the reference's gradient paint. */}
           <div className="flex -space-x-2">
             <div
-              className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-blue-500 to-purple-600"
+              className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white" style={{ background: "linear-gradient(90deg, var(--color-blue-500), var(--color-purple-600))" }}
               title="You"
             >
               <span className="text-[9px] font-medium text-white">{userInitial}</span>
             </div>
-            <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-green-500 to-teal-600">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white" style={{ background: "linear-gradient(90deg, var(--color-green-500), var(--color-teal-600))" }}>
               <span className="text-[9px] font-medium text-white">B</span>
             </div>
           </div>
@@ -685,7 +685,7 @@ export function CreateProjectDialog({
     >
       <DialogContent className="max-h-[90vh] w-[95vw] overflow-y-auto sm:w-full sm:max-w-4xl [&>button]:h-11 [&>button]:w-11">
         <DialogHeader>
-          <DialogTitle className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-xl text-transparent sm:text-2xl">
+          <DialogTitle style={{ background: "linear-gradient(90deg, var(--color-purple-600), var(--color-pink-600))" }} className="bg-clip-text text-xl text-transparent sm:text-2xl">
             Create New Design File
           </DialogTitle>
           <DialogDescription>Set up a canvas, then pick a starting point.</DialogDescription>
@@ -839,7 +839,7 @@ export function CreateProjectDialog({
             <Button
               type="submit"
               disabled={!valid || submitting}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 font-semibold hover:from-purple-700 hover:to-pink-700"
+              className="brand-cta-gradient px-6 font-semibold"
             >
               {/* Session-15 parity: the reference's submit button is text-only. */}
               {submitting ? "Creating…" : "Create Project"}
