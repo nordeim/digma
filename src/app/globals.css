@@ -153,14 +153,14 @@
      Pinned by tests/theme.test.ts. */
   --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* Session 184 (S184-B / A-L-2 — the §12 trap-5 pin): Tailwind v4's
-     shadow scale moved one notch heavier — the installed 4.3.3
-     theme.css carries --shadow-sm byte-identical to --shadow (the
-     v3 DEFAULT geometry) while the v3 sm the shadcn chrome was
-     designed against lives at v4's `shadow-xs`. Pinned here to the
-     v3 geometry so the 23 shadow-sm sites render the intended
-     notch. md/lg/xl/2xl verified v3-identical in the installed
-     theme.css — no further pins needed. */
+  /* Session 184 (S184-B / A-L-2 — the §12 trap-5 pin; the count
+     corrected at Session 185 per S185-A / A-L-1, the F172
+     receipt-count lesson): v4's installed 4.3.3 theme.css carries
+     --shadow-sm identical to --shadow (the v3 DEFAULT) while the
+     v3 sm the shadcn chrome targets lives at `shadow-xs`. Pinned
+     to the v3 geometry so the 21 shadow-sm class sites render the
+     intended notch (the honest comment-excluding count; the
+     born-stale 23 the grep form) — md/lg/xl/2xl v3-identical. */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
