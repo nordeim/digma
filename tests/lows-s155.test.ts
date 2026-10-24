@@ -108,8 +108,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s154 lesson). */
-const UNIT = "2533";
-const FILES = "244";
+const UNIT = "2545";
+const FILES = "245";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -151,12 +151,12 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.161.0 PAD block quotes for the layer total (the
+/** The figure the v1.162.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its second instance). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.161\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.162\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -435,7 +435,7 @@ describe("S155-B/S155-C the env-census citation repair registration and the per-
 
   it("DEFECT (docs): the F142 lesson registered in the digma_SKILL — the enumeration-arithmetic member inserted after F141, the version bumped to v1.133.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.160\.0/);
+    expect(skillSource).toMatch(/version: 1\.161\.0/);
     // The lesson: the enumeration-arithmetic member after F141.
     const f141At = skillSource.indexOf("F141");
     const f142At = skillSource.indexOf("F142");
