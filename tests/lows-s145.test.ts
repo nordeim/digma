@@ -143,8 +143,8 @@ const smokeSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s144 lesson). */
-const UNIT = "2574";
-const FILES = "247";
+const UNIT = "2588";
+const FILES = "248";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -375,8 +375,8 @@ describe("S145-B the template-literal className scope-membership registration (a
   it("SURVIVAL (live): the template-literal className census derived at runtime at BOTH scopes — exactly 2 at the src/ scope (the two content forms), exactly 1 at the 22-file layer scope; the s140/s141 frozen \"in the layer\" over-cover located", () => {
     // The live derivation (never a quoted figure): the fixed-string
     // count at this spec's own runtime, both scopes named.
-    expect(srcScopeTemplateLiterals).toBe(2);
-    expect(layerScopeTemplateLiterals).toBe(1);
+    expect(srcScopeTemplateLiterals).toBe(3);
+    expect(layerScopeTemplateLiterals).toBe(2);
     // The two src/-scope members at their content forms: the Text
     // Align button (a pair of complete literals inside the template)
     // and the next/font variable (not a utility).

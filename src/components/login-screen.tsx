@@ -302,7 +302,13 @@ export function LoginScreen() {
                   form — no logo chip, no social buttons, no "or" divider.
                   Only the sign-in state carries the full branded card. The
                   sent card carries NO top back-link — its "Back to sign in"
-                  is the reference's FULL-WIDTH bottom button (RA-59). */}
+                  is the reference's FULL-WIDTH bottom button (RA-59).
+                  Session 186 (S186-A / A-L-1, the §12 trap-4 subtractive
+                  member + F173): the v3-born -mb-2 on the back-link composed
+                  with the LATER sibling's space-y margin under v3 (24-8=16)
+                  but REPLACES v4's :where() margin-block-end (an 8px
+                  overlap); the skill's form restores it — the explicit -mt-2
+                  rides the header wrapper below, minimal-only (16px/24px). */}
               {minimal && (
                 <button
                   type="button"
@@ -311,7 +317,7 @@ export function LoginScreen() {
                     setConfirmError("");
                     setAuthError("");
                   }}
-                  className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors -mb-2"
+                  className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden />
                   Back to sign in
@@ -330,7 +336,7 @@ export function LoginScreen() {
                 </div>
               )}
 
-              <div className="space-y-2 sm:space-y-3">
+              <div className={`space-y-2 sm:space-y-3${minimal ? " -mt-2" : ""}`}>
                 {mode === "verify" ? (
                   /* Session 43, RA-58 — the reference's verify-email header:
                    * the shield-check icon circle + the h2 + the email line. */

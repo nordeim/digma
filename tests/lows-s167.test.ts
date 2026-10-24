@@ -133,8 +133,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s166 lesson). */
-const UNIT = "2574";
-const FILES = "247";
+const UNIT = "2588";
+const FILES = "248";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -183,14 +183,14 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.164.0 PAD block quotes for the layer total (the
+/** The figure the v1.165.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its fourteenth instance,
  *  this cycle in its MOVES form: 14,295 -> 14,307, the first movement
  *  since S162). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.164\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.165\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -461,7 +461,7 @@ describe("S167-C the per-session pin family (the survival members + the doc-side
     // the spec's head (wc -l over the exact 22-file composition —
     // 8 editor + 8 components + 2 hooks + the 3 named lib members +
     // globals.css, the composition pinned by tests/lows-s142.test.ts).
-    expect(liveLayerTotal).toBe(14359);
+    expect(liveLayerTotal).toBe(14365);
     // The PAD's v1.146.0 block must quote exactly this figure (the
     // comma-spelled doc form and the bare runtime form are the same
     // NUMBER — the guard compares the figure, never the spelling).
@@ -471,7 +471,7 @@ describe("S167-C the per-session pin family (the survival members + the doc-side
 
   it("DEFECT (docs): the F154 lesson registered in the digma_SKILL — the family-completion-census member inserted after F153, the version bumped to v1.145.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.163\.0/);
+    expect(skillSource).toMatch(/version: 1\.164\.0/);
     // The lesson: the members after F153.
     const f153At = skillSource.indexOf("F153");
     const f154At = skillSource.indexOf("F154");

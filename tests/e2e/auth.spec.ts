@@ -106,6 +106,21 @@ test.describe("auth card state structure (reference parity)", () => {
     await expect(page.getByRole("heading", { name: "Create your account", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Back to sign in" })).toBeVisible();
 
+    // S186-A (A-L-1) geometry pin: the back-link→header gap composes on
+    // OPPOSITE children under v4 (the :where() margin-block-end on the
+    // button + the explicit -mt-2 on the header wrapper) — at this 1280px
+    // viewport sm:space-y-8 applies, so the honest gap is 32-8=24px (the
+    // v3-born -mb-2 replaced it with -8px, an 8px overlap).
+    const backLinkGap = await page.evaluate(() => {
+      const btn = [...document.querySelectorAll("button")].find(
+        (b) => b.textContent?.includes("Back to sign in") && !b.className.includes("w-full"),
+      );
+      const header = btn?.nextElementSibling;
+      if (!btn || !header) return -99;
+      return Math.round(header.getBoundingClientRect().top - btn.getBoundingClientRect().bottom);
+    });
+    expect(backLinkGap).toBe(24);
+
     // The logo chip and social buttons are GONE in signup mode.
     await expect(page.locator("span.rounded-full.ring-4")).toHaveCount(0);
     for (const label of ["Continue with Google", "Continue with Microsoft", "Continue with Facebook"]) {
@@ -273,9 +288,11 @@ test.describe("the forgot submit round-trip (RA-59, session 43)", () => {
       hasText: "Please check your email for the password reset link. It may take a few minutes to arrive.",
     });
     await expect(greenAlert).toBeVisible();
-    // No top back-link (the minimal family's -mb-2 arrow button) on the
-    // sent state — the reference's bottom button is the only way back.
-    await expect(page.locator("button.-mb-2")).toHaveCount(0);
+    // No TOP back-link (the minimal family's arrow button) on the sent
+    // state — the reference's bottom button is the only way back. S186-A:
+    // the -mb-2 locator retired with the class (the composition mirrored
+    // onto the header wrapper); the count pins the one-button form.
+    await expect(page.getByRole("button", { name: "Back to sign in" })).toHaveCount(1);
 
     // The full-width bottom button returns to the sign-in card.
     await page.getByRole("button", { name: /Back to sign in/ }).last().click();

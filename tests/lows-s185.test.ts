@@ -91,8 +91,8 @@ const cssSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s185 lesson). */
-const UNIT = "2574";
-const FILES = "247";
+const UNIT = "2588";
+const FILES = "248";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -273,15 +273,17 @@ describe("lows-s185: the count-truth repair + the receipt-count registrations", 
   });
 
   it("SURVIVAL (source): the post-remediation tree's measured figures — the layer total STAYING at 14,359 (the first zero-movement cycle since S182 — the comment-text repair painting no lines) derived LIVE with the PER-FILE probe closing, the route total 2,461 derived LIVE with the internal-consistency probe passing, the elements route still exactly 420 (the tenth re-quote cycle pre-armed), call.ts still exactly 80 lines, and the env census's attribution (17 sites across 9 vars)", () => {
-    // The layer STAYS: 14,359 — derived live, never quoted.
-    expect(liveLayerTotal).toBe(14359);
+    // The layer at the S186 figure: 14,365 — derived live, never quoted
+    // (ridden from 14,359 by the S186-A F40 rider — the s185 STAYS form
+    // was the s185 cycle's own live claim, now the s186 rider's).
+    expect(liveLayerTotal).toBe(14365);
     const layerHandSum = Object.values(liveLayerPerFile).reduce(
       (a, b) => a + b,
       0,
     );
     expect(layerHandSum).toBe(liveLayerTotal);
     expect(liveLayerPerFile["src/app/globals.css"]).toBe(300);
-    expect(liveLayerPerFile["src/components/login-screen.tsx"]).toBe(741);
+    expect(liveLayerPerFile["src/components/login-screen.tsx"]).toBe(747);
     expect(liveLayerPerFile["src/components/editor/editor-view.tsx"]).toBe(2453);
     expect(liveLayerPerFile["src/components/editor/editor-store.ts"]).toBe(847);
     // The routes STAY: 2,461 — derived live with the probe.
@@ -309,38 +311,38 @@ describe("lows-s185: the count-truth repair + the receipt-count registrations", 
     expect(padSource).toContain("lows-s185.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,359");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **247 files** | **2574** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2574/2574");
+    expect(padSource).toContain("| **Unit total** | **248 files** | **2588** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2588/2588");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2574 checks / 247 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2588 checks / 248 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.164.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.164\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.165\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.164.0");
-    expect(lastUpdated).toContain("the one-hundred-and-thirty-third audit");
+    expect(lastUpdated).toContain("v1.165.0");
+    expect(lastUpdated).toContain("the one-hundred-and-thirty-fourth audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.163.0 + the F172 receipt-count truth lesson (a count claim embedded in a remediation's own receipt comment derives by the comment-excluding class-site enumeration, never a raw grep) + the globals.css line-count claim re-anchored onto the live count (300)", () => {
-    expect(skillSource).toContain("version: 1.163.0");
+    expect(skillSource).toContain("version: 1.164.0");
     expect(skillSource).toContain("172. **F172");
     expect(collapsed(skillSource)).toContain("THE RECEIPT-COUNT TRUTH MEMBER");
     expect(collapsed(skillSource)).toContain("never a raw grep");
-    expect(skillSource).toContain('project_state: "2574 unit checks green');
+    expect(skillSource).toContain('project_state: "2588 unit checks green');
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s184 + s183 pair as the standing witnesses) + the anchored declaration census pins 66 UNIT / 65 FILES", () => {
-    expect(UNIT).toBe("2574");
-    expect(FILES).toBe("247");
+    expect(UNIT).toBe("2588");
+    expect(FILES).toBe("248");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      'rg -l \'^const UNIT = "2574";$\' tests/ src/lib/ | wc -l && rg -l \'^const FILES = "247";$\' tests/ src/lib/ | wc -l',
+      'rg -l \'^const UNIT = "2588";$\' tests/ src/lib/ | wc -l && rg -l \'^const FILES = "248";$\' tests/ src/lib/ | wc -l',
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(66);
-    expect(filesFiles).toBe(65);
+    expect(unitFiles).toBe(67);
+    expect(filesFiles).toBe(66);
   });
 });

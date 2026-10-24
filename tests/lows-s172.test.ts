@@ -83,8 +83,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s172 lesson). */
-const UNIT = "2574";
-const FILES = "247";
+const UNIT = "2588";
+const FILES = "248";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -134,14 +134,14 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.164.0 PAD block quotes for the layer total (the
+/** The figure the v1.165.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its NINETEENTH
  *  instance, this cycle in its STAYS form: 14,307 unchanged, the
  *  zero-source-change cycle touching zero source files). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.164\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.165\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -237,7 +237,7 @@ describe("The prior-cycle source-survival members (the S169/S170/S171 deliveries
     expect(Number(routeLines.trim().split(/\s+/)[0])).toBe(154);
     // The layer + route figures, derived live (the STAYS form — the
     // cycle touched zero src/ files, so both totals hold by construction).
-    expect(liveLayerTotal).toBe(14359);
+    expect(liveLayerTotal).toBe(14365);
     const root = path.resolve(import.meta.dirname, "..");
     const routeOut = execSync(
       "find src/app/api -name route.ts | xargs wc -l | tail -1",
@@ -372,11 +372,11 @@ describe("S172-D the per-session pin family (the survival members + the doc-side
   it("DEFECT (docs — the forward count-truth guard's nineteenth instance, this cycle in its STAYS form): the LIVE 22-file layer total (derived at runtime) equals the figure the v1.151.0 block quotes — 14,307 unchanged (the zero-source-change cycle touching zero source files; the fifth consecutive STAYS cycle)", () => {
     expect(padQuotedLayerTotal).not.toBe("");
     expect(Number(padQuotedLayerTotal.replace(/,/g, ""))).toBe(liveLayerTotal);
-    expect(liveLayerTotal).toBe(14359);
+    expect(liveLayerTotal).toBe(14365);
   });
 
   it("DEFECT (docs): the F159 lesson registered in the digma_SKILL — the noun-unit closure member inserted after F158, the version bumped to v1.150.0", () => {
-    expect(skillSource).toMatch(/version: 1\.163\.0/);
+    expect(skillSource).toMatch(/version: 1\.164\.0/);
     expect(skillSource).toContain("F159");
     expect(collapsed(skillSource)).toContain("NOUN-UNIT CLOSURE member");
     // F158 still present (the insertion is additive).

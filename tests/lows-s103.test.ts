@@ -48,8 +48,8 @@ import * as exportLib from "../src/lib/export-png";
 // constants ride the count family's live anchor — the PAD §7.1
 // Unit-total row — so the whole family moves together in the same
 // commit).
-const UNIT = "2574";
-const FILES = "247";
+const UNIT = "2588";
+const FILES = "248";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
