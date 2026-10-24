@@ -32,7 +32,7 @@ model User {
   // The token is email-only on the reference; the clone carries the
   // in-app delivery (the ADR-014 family — the resetUrl travels in the
   // forgot-password response). Single-use: cleared on a successful reset.
-  resetToken           String?   // 64-hex crypto-random, null once consumed
+  resetToken           String?   // SHA-256 hex hash of the crypto-random token (S181-B hashed-at-rest), null once consumed
   resetTokenExpiresAt  DateTime? // the 60-minute window ("invalid or has expired")
   // Session 67 (S67-A — the fifteenth audit's M-1, the documented B-5):
   // the stateless session's revocation dimension. The token embeds the

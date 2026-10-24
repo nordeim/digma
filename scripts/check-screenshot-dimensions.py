@@ -1457,6 +1457,15 @@ S190 = dict(S189)
 # surface byte-stable by construction).
 S191 = dict(S190)
 
+# s192 mapping (session 182 — the 158th reference audit's evidence set + the
+# S182 capture set). The standing S191 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S182 tree); no NEW
+# witness this session (the S182 pass is the same-vocabulary-hold cycle —
+# zero source-code findings, the one remediation a prisma/schema.prisma
+# COMMENT line painting no pixels, every captured surface byte-stable
+# by construction).
+S192 = dict(S191)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1693,6 +1702,8 @@ def expected_for(name: str):
         return S190.get(Path(name).stem)
     if name.startswith("ref-audit-s191/"):
         return S191.get(Path(name).stem)
+    if name.startswith("ref-audit-s192/"):
+        return S192.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -1865,6 +1876,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s189").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s190").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s191").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s192").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
