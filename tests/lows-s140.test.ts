@@ -114,8 +114,8 @@ const seoSource = readFileSync(
 /** The per-session count-family constants (the standing convention —
  *  re-anchored onto the delivery counts by the doc-update script; the
  *  S140-B pair-unity pins read them so the pair stays ONE claim). */
-const UNIT = "2625";
-const FILES = "251";
+const UNIT = "2637";
+const FILES = "252";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
