@@ -78,8 +78,8 @@ const seoSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s173 lesson). */
-const UNIT = "2600";
-const FILES = "249";
+const UNIT = "2613";
+const FILES = "250";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -129,14 +129,14 @@ const liveLayerTotal = (() => {
   return total;
 })();
 
-/** The figure the v1.166.0 PAD block quotes for the layer total (the
+/** The figure the v1.167.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its TWENTIETH
  *  instance, this cycle in its STAYS form: 14,307 unchanged, the
  *  zero-source-change cycle touching zero source files). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.166\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.167\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -230,7 +230,7 @@ describe("The prior-cycle source-survival members (the S172 delivery intact thro
     expect(Number(routeLines.trim().split(/\s+/)[0])).toBe(154);
     // The layer + route figures, derived live (the STAYS form — the
     // cycle touched zero src/ files, so both totals hold by construction).
-    expect(liveLayerTotal).toBe(14365);
+    expect(liveLayerTotal).toBe(14373);
     const root = path.resolve(import.meta.dirname, "..");
     const routeOut = execSync(
       "find src/app/api -name route.ts | xargs wc -l | tail -1",
@@ -367,11 +367,11 @@ describe("S173-C the per-session pin family (the survival members + the doc-side
   it("DEFECT (docs — the forward count-truth guard's twentieth instance, this cycle in its STAYS form): the LIVE 22-file layer total (derived at runtime) equals the figure the v1.152.0 block quotes — 14,307 unchanged (the zero-source-change cycle touching zero source files; the sixth consecutive STAYS cycle)", () => {
     expect(padQuotedLayerTotal).not.toBe("");
     expect(Number(padQuotedLayerTotal.replace(/,/g, ""))).toBe(liveLayerTotal);
-    expect(liveLayerTotal).toBe(14365);
+    expect(liveLayerTotal).toBe(14373);
   });
 
   it("DEFECT (docs): the F160 lesson registered in the digma_SKILL — the content-detection-perimeter member inserted after F159, the version bumped to v1.151.0", () => {
-    expect(skillSource).toMatch(/version: 1\.165\.0/);
+    expect(skillSource).toMatch(/version: 1\.166\.0/);
     expect(skillSource).toContain("F160");
     expect(collapsed(skillSource)).toContain(
       "CONTENT-DETECTION-PERIMETER member",
@@ -382,11 +382,11 @@ describe("S173-C the per-session pin family (the survival members + the doc-side
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.152.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
     expect(padSource).toMatch(
-      /^# Digma — Master Project Architecture Document \(PAD\) v1\.166\.0$/m,
+      /^# Digma — Master Project Architecture Document \(PAD\) v1\.167\.0$/m,
     );
     const lastUpdated =
       padSource.split("\n").find((l) => l.startsWith("**Last Updated:**")) ?? "";
-    expect(lastUpdated).toContain("v1.166.0");
+    expect(lastUpdated).toContain("v1.167.0");
   });
 
   it("DEFECT (docs): the pair-unity claim forms riding the constants at every doc — every live claim site the same members (the rolling-safe form: this spec's constants equal the prior specs' constants after the doc-update sweep re-anchors them TOGETHER)", () => {

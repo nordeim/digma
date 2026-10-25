@@ -83,14 +83,14 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s187 lesson). */
-const UNIT = "2600";
-const FILES = "249";
+const UNIT = "2613";
+const FILES = "250";
 
 /** The MEASURED layer figures (the s159 measured form — the
  *  zero-movement cycle: the layer STAYS at the post-S186 figure
  *  14,365, login-screen at 747; no source-code movement this cycle,
  *  no F40 rider needed). */
-const LAYER_TOTAL = 14365;
+const LAYER_TOTAL = 14373;
 const LOGIN_LINES = 747;
 
 /** Collapse whitespace for comment-token matching (the standing form). */
@@ -188,38 +188,38 @@ describe("lows-s187: the window-start-label correction + the v1.2.0 vocabulary-c
     expect(padSource).toContain("lows-s187.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,365");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **249 files** | **2600** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2600/2600");
+    expect(padSource).toContain("| **Unit total** | **250 files** | **2613** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2613/2613");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2600 checks / 249 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2613 checks / 250 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.166.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.166\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.167\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.166.0");
-    expect(lastUpdated).toContain("the one-hundred-and-thirty-fifth audit");
+    expect(lastUpdated).toContain("v1.167.0");
+    expect(lastUpdated).toContain("the one-hundred-and-thirty-sixth audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.165.0 + the F174 window-start-label truth lesson (a row-window's start label is itself a coordinate claim — when an insertion lands above the window, BOTH the end composition AND the start label must be re-derived, and a window phrase that names its extent in sessions must be internally consistent with its line-span) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.165.0");
+    expect(skillSource).toContain("version: 1.166.0");
     expect(skillSource).toContain("174. **F174");
     expect(collapsed(skillSource)).toContain("THE WINDOW-START-LABEL TRUTH MEMBER");
-    expect(skillSource).toContain("2600 unit checks green");
+    expect(skillSource).toContain("2613 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s186 + s185 pair as the standing witnesses) + the anchored declaration census pins 68 UNIT / 67 FILES", () => {
-    expect(UNIT).toBe("2600");
-    expect(FILES).toBe("249");
+    expect(UNIT).toBe("2613");
+    expect(FILES).toBe("250");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2600";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "249";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2613";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "250";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(68);
-    expect(filesFiles).toBe(67);
+    expect(unitFiles).toBe(69);
+    expect(filesFiles).toBe(68);
   });
 
   it("SURVIVAL (layer): the zero-movement form — the layer total at 14,365 (no source-code movement this cycle, no F40 rider needed) derived LIVE with the PER-FILE probe closing, login-screen.tsx at exactly 747, globals.css STAYING at 300", () => {

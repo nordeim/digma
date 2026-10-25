@@ -508,9 +508,17 @@ function HexColorRow({
 // to Saved without waiting for a blur that may never come.
 // Session 129 (S129-A / A129-L1 — the seventy-seventh audit's Low):
 // the range input's value-changing keys. The keyboard arm below fires
-// ONLY on these — Tab / F5 / modifier combos must never arm (the arm
-// captures a snapshot and starts the 150ms idle; a non-value key has
-// no change to coalesce).
+// ONLY on these — Tab / F5 never arm (the arm captures a snapshot and
+// starts the 150ms idle; a non-value key has no change to coalesce).
+// Session 188 (S188-A / A-I-1 — the 136th audit's Informational, the
+// comment-truth repair): the prior clause's "modifier combos" member
+// corrected — the gate reads event.key alone, so a modifier HELD WITH
+// a member key (Ctrl/Cmd/Alt+Arrow…) DOES arm: no engine applies a
+// value change under held modifiers, so the idle terminal runs the
+// changed===false cancel — net-zero, the at-bound residual's sibling,
+// and the DELIBERATE robust form (arming on any member key keeps a
+// hypothetical modifier-adjusting engine coalesced — the S130-A wheel
+// posture; narrowing the gate would re-open the flooding class).
 const SLIDER_KEYS = new Set([
   "ArrowLeft",
   "ArrowRight",
