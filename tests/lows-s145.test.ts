@@ -143,8 +143,8 @@ const smokeSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s144 lesson). */
-const UNIT = "2613";
-const FILES = "250";
+const UNIT = "2625";
+const FILES = "251";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");

@@ -87,8 +87,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s188 lesson). */
-const UNIT = "2613";
-const FILES = "250";
+const UNIT = "2625";
+const FILES = "251";
 
 /** The MEASURED layer figures (the s159 measured form — the MOVING
  *  form this cycle: the S188-A comment-truth amendment's own +8
@@ -242,38 +242,38 @@ describe("lows-s188: the exclusion-clause comment-truth repair + the F175 regist
     expect(padSource).toContain("lows-s188.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family MOVING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **250 files** | **2613** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2613/2613");
+    expect(padSource).toContain("| **Unit total** | **251 files** | **2625** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2625/2625");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2613 checks / 250 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2625 checks / 251 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.167.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.167\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.168\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.167.0");
-    expect(lastUpdated).toContain("the one-hundred-and-thirty-sixth audit");
+    expect(lastUpdated).toContain("v1.168.0");
+    expect(lastUpdated).toContain("the one-hundred-and-thirty-seventh audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.166.0 + the F175 exclusion-clause truth lesson (an enumeration guard's prose exclusion clause is itself a behavior claim about the guard's discrimination — when the gate tests only the enumerated dimension, any orthogonal dimension held WITH a member value passes at the letter; and when the over-inclusive arm is the deliberate robust form, the honest repair amends the CLAUSE, never the guard) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.166.0");
+    expect(skillSource).toContain("version: 1.167.0");
     expect(skillSource).toContain("175. **F175");
     expect(collapsed(skillSource)).toContain("THE EXCLUSION-CLAUSE TRUTH MEMBER");
-    expect(skillSource).toContain("2613 unit checks green");
+    expect(skillSource).toContain("2625 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s187 + s186 pair as the standing witnesses) + the anchored declaration census pins 69 UNIT / 68 FILES", () => {
-    expect(UNIT).toBe("2613");
-    expect(FILES).toBe("250");
+    expect(UNIT).toBe("2625");
+    expect(FILES).toBe("251");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2613";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "250";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2625";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "251";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(69);
-    expect(filesFiles).toBe(68);
+    expect(unitFiles).toBe(70);
+    expect(filesFiles).toBe(69);
   });
 
   it("SURVIVAL (worklog): the bracketed s188-below-threshold-note registers the seventeenth-generation verification (:2834..:2852 = s169..s187, 19 rows, :2833 the S168 row — the F174-corrected window form verified at its own generation) + the F175 EXCLUSION-CLAUSE TRUTH lesson + the A-I-1 comment-truth member (repaired in-cycle by S188-A) + the A-I-2 §8 letter posture + the B-I-1 host-worklog environment note + the vocabulary-HOLD registration + the honest environment record (the trap caught BEFORE the first db operation)", () => {

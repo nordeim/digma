@@ -146,8 +146,8 @@ for (const f of TSX_FILES) {
 // 1174 -> 1183 unit / 157 -> 158 files (the F68/F70 discipline: the
 // constants ride the count family's live anchor — the PAD §7.1 Unit-total
 // row — so the whole family moves together in the same commit).
-const UNIT = "2613";
-const FILES = "250";
+const UNIT = "2625";
+const FILES = "251";
 
 // ---------------------------------------------------------------------------
 // S96-A — the TSX inline-style token indirection (the F81/F82 class at
