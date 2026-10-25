@@ -1,119 +1,127 @@
-Clone successful. HEAD is at `b40d034` with a v116 parity commit already in history — need to understand the exact state. Let me examine the recent commit history and the docs the user referenced:
-v115 and v116 are both already delivered in the repo history (commits `0e8874d`/`3e1c2e8` for v115, `1a3553d`/`b40d034` for v116). Since the current instruction references `session_283.md` (v116's own log) and `remediation-plan-v116.md`, this is the **v117 cycle**. The v116 commit message documents the v117 queue: *the v111-era LOGIN + CALCULATOR pair, NINTH re-run*.
+Workspace has been reset. Cloning the digma repo fresh:
+Clone complete. S186 已交付（2fa13d7e 已推送，日志位于 fd2037e3）。本轮为 **S187 — 第 135 次 Mode C 审计周期**。我来制定任务计划并开始评审。
+S186 已确认交付（2fa13d7e + 日志 fd2037e3）。本轮为 **S187 — 第 135 次 Mode C 审计循环**。现在正在检查工作区（worklog）尾部和核心文档：
+工作日志确认 S186 交付。现在正在验证核心文档状态 (PAD v1.165.0, SKILL v1.164.0 + F173) 以及代码库结构：
+S186 状态已完全确认。现在正在审查关键配置界面（.env、db/、tests、package.json）：
+.env 和 db/ 需要配置（工作区已重置）。测试计数已验证：241 个测试/ + 7 个 src/lib = 248 ✓（与 S186 交付匹配）。开始 **阶段 0 — 环境重建**：
+数据库已按原始形式 1/2/6/1/3 进行播种 ✓。正在检查 chromium 配置（在 e2e 之前应用 S180 课程）：
+缓存中是 chromium-1200，但 repo 固定为 1.64.1 (需要 1248)。现在正在配置：
+Chromium-1248 + headless shell 已配置 ✓。正在检查 exported-shell DATABASE_URL 陷阱：
+DATABASE_URL 陷阱已生效 —— 所有数据库操作关口均由 `env -u` 保护。**阶段 1 — 六个基线关口。** 关口 1 lint + 关口 2 typecheck：
+Gate 1 lint: **0 errors** ✓. Gate 2 typecheck: **0 errors** ✓. Gate 3 unit (expect 2588/2588 across 248):
+Gate 3 unit: **2588/2588 across 248 files** ✓. Gate 4 build:
+Gate 4 build: **27 routes**, `[db]` anchored at repo root ✓. Gate 5 smoke (73 checks, guarded):
+Smoke shows 16/50 failed — investigating the failures:
+登录失败并返回 500 错误 —— 正在检查服务器日志以找出根本原因：
+已找到根本原因 —— 会话开始时的 db push/seed 运行时没有带 `env -u` 保护，因此它们填充了外部 shell 变量 `DATABASE_URL` 所指向的路径（`/home/z/my-project/db/`），而不是仓库的 `db/` 目录。这正是文档中记录的陷阱。正在重新进行正确的防护设置：
+Repo DB now seeded (57,344 bytes, pristine form). Re-running Gate 5 smoke:
+Gate 5 smoke: **73/73** ✓. Re-seeding pristine (smoke's documented non-hermeticity), then Gate 6 e2e:
+Gate 6 e2e: **262/262 zero flakes (6.5m)** ✓. **Phase 1 complete — all six gates green.** Now post-e2e witness restore + DB re-seed:
+Witnesses restored (12), tree clean, DB pristine. **Phase 2 — parity.** Examining the s186 script derivation form:
+The derivation form is understood. Extracting exact anchor strings from the three s186 scripts:
+所有锚点已映射。正在编写 s187 推导脚本：
+**22/66/6 精确，零运行序数残留，首次推导** ✓（grep exit-1 = 零匹配，预期结果）。现在针对线上参考进行**第163次参考审计**：
+第 163 次参考审计，所有数据均处于标准值。正在确认三重运行 + 剪辑基准（第 124 个连续会话）：
+**163rd reference audit NO DRIFT** — exit 0 triple-run, clip byte-identical the 124th consecutive session, evidence in ref-audit-s197/ ✓. Now mobile nav 9/9 (the 164th session — the directive's particular focus):
+移动端导航 **9/9 第 164 次会话** ✓ (Tailwind v4 class-A 防护机制生效 — 该指令的特别关注点)。接下来 SEO 4/4：
+SEO **4/4** ✓。正在验证 pin 系列 S128..S186（预计在 59 个 spec 文件中通过率为 792/792）：
+74 个文件包括 s120–s127。正在筛选至确切的 S128..S186 家族（59 个规格）：
+**第二阶段对等性已完成** (22/66/6 · ref audit 163rd no drift · nav 9/9 164th · SEO 4/4 · pins 792/792 across 59)。**第三阶段 — 使用 live-derived dispatch 数据进行审计** (F170 规范)。正在检查 s186 dispatch 脚本：
+正在检查我在 `catch census` 部分发现的一个潜在语法问题：
+尽管第 125 行看起来有些奇怪，脚本依然运行了。正在检查具体内容：
+dispatch 脚本使用了一个语法可疑的行却成功运行，而我的独立测试却报错。正在直接调查这一矛盾：
+完整文件解析正常，但该行单独解析时失败——上下文必然改变了解析结果。正在隔离该代码块：
+The AST shows `text[m.end():m.end()+300]` but the text reads `text.end():m.end() + 300]` — checking for invisible characters:
+十六进制转储显示 `text[m.end():m.end() + 300]` —— 第 125 行是有效的 Python 代码；之前显示的 `.end()` 是工具输出中的渲染伪影。正在进行三次验证：
+调度脚本有效（hexdump + AST 确认 `text[m.end():...]` —— 之前的 `.end()` 读取是显示伪影）。完整运行时的数字与现存的 S186 状态一致。正在推导成对的 spec-constants 探针：
+Spec constants live: **67 UNIT (all "2588") + 66 FILES (all "248")** ✓. Creating dispatch-s187.py:
+All dispatch figures LIVE EXACT. Now **F138 38th verification** (s186 plan 5/5 @ 2fa13d7e) + sweep:
+**F138 38th PASSED** (s186 5/5 @ 2fa13d7e; sweep 36 plans, 210/0). Verifying the master skill vocabulary:
+**重要**：主技能已升级至 **v1.2.0**（在操作员最新的提交 `fd2037e3` 中已修改）—— 在连续六个相同版本的周期后，这是一个**词汇变更周期**。正在检查变更内容：
+主技能已升级至 **v1.2.0** —— 这是一个词汇表变更循环（六个周期以来的首次）。关键的新条款：关于 digma 单元测试段（unit-leg）`.env` 引导风险（"使 pristine 路径生效，或在需要它的第一条命令之前放置 `cp` 命令行"），将 digma 的限流形状/生存时间（TTL）/失败即停止（fail-hard）引用为 sanctioned pattern，外加原子递增计数器 + smoke executed-vs-passed 规则。正在检查目录状态：
+Catalog refreshed (340 skills; master skill v1.2.0). The v1.2.0 rule registers a digma-specific hazard — the unit leg requires `cp .env.example .env` before running. Checking digma's documented quickstart order:
+README/AGENTS 已将 `cp` 放置在正确的位置（符合 v1.2.0 fresh-clone 规则）。现在正在验证周期开始时第十六代 PAD 坐标：
+Sixteenth-generation coordinates verified EXACT (:2851/:2910/:2979 + s186 row :2850 + window :2833..:2850). Getting per-file figures for the dispatch briefs:
+All dispatch figures LIVE EXACT. Dispatching two fresh-eyes auditors in parallel with F170-compliant live-derived briefs — **both on the NEW v1.2.0 vocabulary** (first vocabulary-change cycle since 2026-10-23):
+两位审计人员均已返回：**A 0C/0H/0M/0L/2I + B 0C/0H/0M/0L/1I —— 合并 0C/0H/0M/0L/3I**（自 S183 以来的首个 zero-Low 周期；所有三个 I 均属于 F170 坐标精度系列）。应用 F78 原则 —— 在 seams 处对每个发现进行 Lead 验证：
+A-I-1 and A-I-2 VERIFIED live. Now B-I-1 — the PAD window row labels:
+All three findings VERIFIED live at their seams. Combined census: **0C/0H/0M/0L/3I** — all F170 coordinate-precision members. Checking the host worklog state for the auditors' entries:
+Auditor A 的条目已写入；B 的追加操作未生效（这是 S185/S186 已知的模式）。正在从其返回的报告中重建 B 的条目：
+Both entries landed. **Phase 4** — writing the remediation plan (the honest 0C/0H/0M/0L/3I census):
+Plan landed. Examining the worklog-notes script form to model s187:
+The form is understood. Writing worklog-notes-s187.py (the registration pair + auditors' entries transplant):
+Notes landed (7,392 → 7,447; both entries transplanted; no internal brackets). Verifying the transplant form:
+Registrations landed. Now birthing the TDD spec. Examining the s186 spec form:
+The spec form is understood. Checking the AGENTS s186 bullet and count claim sites to model the s187 collateral:
+Checking the doc-update and version-bump script forms:
+Now checking all live count-claim sites across the docs to scope the re-anchor:
+All sites mapped. Checking the transplanted audit entries' exact census spellings (the s159 pin-form lesson):
+All tokens verified. Writing the s187 spec — the TDD RED birth:
+Single-spec run timed out — retrying with verbose diagnostics:
+The `--reporter=basic` flag caused the error. Running with the default reporter:
+Still hanging. Testing whether it's my spec or the environment — running the s186 spec:
+s186 runs in 0.6s — the hang is in my spec. Testing the execSync commands standalone:
+All commands fine standalone. Redirecting output to a file to isolate the hang:
+运行在 369ms 内完成 —— “挂起”是因为 `failure-diff` 输出过大导致管道阻塞。**初始红色（失败）：6 个失败 / 6 个通过** —— 比预期的 5 个多了一个。正在检查是哪个 `green-at-birth` pin 失败了：
+The log has megabyte-long diff lines choking the pipe. Extracting just headers with truncated lines:
+5 expected RED exact + 1 unexpected failure (the below-threshold-note pin — an s159 pin-form mismatch). Diagnosing the exact assertion:
+经典的 s159 pin-form 不匹配 —— 正在将 pin 修复为该 note 的实际拼写：
+**RED birth EXACT: 5 RED / 7 green** ✓ (one pin-form correction at birth — the window-phrase spelling, the s159 family). Now the GREEN collateral. Mapping the version-pin forms across specs:
+Mapping complete. Writing doc-update-s187.py (GREEN collateral part 1):
+Fixing the title-rider loop — s185/s186 use the toMatch form, not the two-line form:
+正在检查所有 s151–s186 规范中的版本锁定表单，以确认扫描范围：
+所有 36 个 specs 已映射（30 个 escaped-regex + 4 个 toContain + 2 个 version-toContain）。正在验证 forward-guard 表单，然后运行 doc-update：
+Doc-update almost complete — the constants sweep hit a multi-occurrence assertion. Finding the spec with duplicate UNIT declarations:
+s185 规范中包含一个 rg-census 探针（s186 周期的 lockstep rider 系列），也需要使用 s187 rider。正在检查 s181–s184 的见证表单：
+只有 s185/s186 携带了 rg-census 形式。正在将 s185 rider 添加到脚本中（幂等重新运行）：
+Re-running the doc-update script (idempotent):
+Doc-update complete: **68 UNIT + 67 FILES** on the new figures. Now the version-bump script — checking F173's tail anchor for the F174 insertion:
+Writing version-bump-s187.py (PAD v1.166.0 + SKILL v1.165.0 + F174):
+计数计算为 2600 ✓，但有 12 个 rider-family 失败。正在识别它们：
+rider-family 的预期成员。正在检查 s181–s186 规范中的精确字面形式，以设计 rides：
+Rider surface 已完全映射。正在编写 rider-fixes-s187.py：
+还有三个字面量形式。正在 s185/s186 中寻找它们确切的拼写：
+追加的第三波在 s185 上需要正确的按规格设置表单。正在修复：
+**FULL UNIT GATE: 2600/2600 across 249 — ALL GREEN** ✓. **Phase 5 — final gates.** Lint + typecheck:
+e2e **262/262 zero flakes (6.4m)** ✓. Witness restore + nav 9/9 (final S187 build) + SEO + pins:
+**所有最终检查均已通过** (单元测试 2600/249 · e2e 262 · 导航 9/9 第164次 · SEO 4/4 · 固定测试 804/804，分布在 60 个文件中)。正在测量 **第十七代坐标**：
+**第十七代实测值：:2853/:2912/:2981，s187 行 :2852** —— 正如预注册的那样完全一致（F174 修正的窗口形式：:2834..:2852 = s169..s187 共 19 行，:2833 为 s168 行）。将实测数据附加到注释中：
+现在进入**捕获阶段**。正在检查 `capture` 推导形式：
+正在检查 s186 捕获脚本的头部，以编写 s187 形式：
+正在写入 s187 捕获推导：
+Capture **EXIT=0 — ALL CAPTURED**. Running the census + dimensions:
+**捕获统计：86（73 张最新 + 13 张字节相同，零残留）—— 正好符合 s185 零像素周期形式（既定的、与时间相关的像素规范）。尺寸：1024/1024 全部正常（+5 = ref-audit-s197）** ✓。正在重新植入初始数据并编写会话文档：
+正在写入 session_507.md（执行摘要）：
+现在查看工作日志主要条目。正在检查主导脚本形式：
+正在编写 s187 主要条目：
+Lead entry landed (7,476 lines). Ticking the s187 plan boxes (the F138 forward form):
+165 项变更（147 项已修改 + 18 项新增）。正在验证 source-side 变更集是否准确包含了零源文件：
+Source side exact: **zero src/ + zero e2e changes** — the registration-only form ✓. Staging and committing:
+**Delivery commit `33123311` created** (169 files, clean tree). Now the SSH-wrapper push — reading the runbook:
+PEP 668 blocked — creating a venv with paramiko (the S186 form):
+**指纹与历史记录匹配** (SHA256:3ddaNlFhMz1JXiGEDgVEaRsUzI4Ev0IpGEEB7NnU4PU) ✓。使用明确的 digma 远程仓库进行试运行：
+Dry-run 超时 —— shim 可能没有转发 stdin（git SSH 协议是双向的）。正在阅读 runbook 的 Appendix A shim：
+我简化的 shim 缺少了 stdin 网桥。正将其替换为 runbook 中准确的 Appendix A 格式：
+Dry-run **在首次尝试时清理干净** (fd2037e3..33123311 fast-forward)。正在执行实际推送：
+**PUSH SUCCESSFUL — remote verified: refs/heads/main @ 3312331 == local HEAD** ✓。正在销毁操作员密钥（进行三次随机覆盖）：
+Key destroyed. HTTPS cross-check — verifying the artifacts served live from main:
+**HTTPS 交叉检查全部通过**（计划已实时更新 4/4 · spec · session docs · PAD v1.166.0 · SKILL v1.165.0 + F174 · AGENTS bullet · worklog notes）。正在编写推送后的日志（session_509/510/511）：
+All pushed and verified. Updating the host worklog with the final lead record:
+**Session 187（第 135 次 Mode C 审计循环）已完成并推送至 main** ✅
 
-Let me set up the task plan and read the core documents:
-`session_283.md` confirms v116 delivered at `1a3553d`, and the v117 queue: **the v111-era LOGIN + CALCULATOR pair, NINTH re-run**. Let me read the remaining referenced docs and core documentation:
-现在让我查看 v111 谱系文件（v117 重跑目标）和 v116 持久化派生脚本：
-The v111 lineage files all exist. Now let me read the core documents — starting with AGENTS.md and CLAUDE.md:
-Core docs understood. Now let me study the v111 lineage (the v117 re-run target) — the probe header and the probe README's v117 queue:
-v111 header confirms the pair: **the v105-era LOGIN + CALCULATOR pair** — LOGIN view + CALCULATOR dialog @ 1280×800, EIGHTH bracket [v59→…→v111], so v117 is the NINTH. Now let me read the probe README's v117 queue and the v116 derivation scripts (my templates):
-v117 queue confirmed. Now let me read the v111 cycle's README section to understand the LOGIN+CALCULATOR pair's documented verdicts and census contract:
-Now let me study the derivation scripts — `derive-v111-series.py` (my direct template since v117 derives from v111 the same way v111 derived from v105) and `derive-v116-series.py` (latest discipline):
-这是我的模板。现在让我读取所有六个 v111 系列文件和 two-half 构建器的标头：
-Now let me study the two-half builder derivation and standing-checks derivation scripts:
-Now the standing-checks derivation pattern:
-The v111 plan is my complete template. Now let me check the environment and start F0 provisioning:
-Environment: fresh clone, no node_modules, playwright cache holds only old v1200 binaries (the v111 provisioning lesson applies). Starting `npm ci` in the foreground with a long timeout:
-zod check shows 332 .ts files vs the documented 840 — let me verify the exact counting method:
-zod 840/840 INTACT with src/v4 present, single entry (dedupe holds). Now installing the v1243 playwright binaries (both, per the provisioning lesson):
-Both v1243 binaries verified directly. Now configuring `.env` + database + seed:
-Seedcheck exact (7/1850/2235/0/3/2). Running baseline gates — lint, typecheck, unit:
-108/108 unit green. Now the build:
-Build ✓ with robots + sitemap prerendered. Getting the authoritative e2e count:
-319 tests in 24 files — matches the v116 ship state. Let me get per-file counts to build the 4-chunk split:
-319 = 318 spec + 1 setup. Let me find how prior cycles defined the 4-chunk split:
-Chunk split reconstructed from session logs: ch1=dashboard+networth+networth-error (84), ch2=items+login-parity+calculator-error (79), ch3=calculator+dialog-buttons+tokens+mobile-navigation+item-details+not-found (77), ch4=a11y+rest (82). Running chunk 1:
-One failure in chunk 3 — the document head parity test. Let me isolate and reproduce:
-Spec passes standalone — the failure was a flake. Re-running full chunk 3 to confirm zero flakes:
-All chunks green (84+79+77+82 = 322 = 319 unique; one isolated head-metadata flake in chunk 3's first run, green on re-run). Now the smoke test:
-F0 gates all green. Now the post-push commit audit, npm-audit watch (F0b), and axe-core watch (F1):
-The post-push commit `b40d034` shows 29 files changed — NOT session-log-only. Investigating:
-`b40d034` = session log + **skills/ tree cleanup** (owner pruned unused skills) — zero src/tests/prisma/lockfile deltas, audit passes. F0b: **0 vulnerabilities** (eighth re-check). F1: **axe NO DRIFT** (npm latest 4.14.0, only canary beyond; engine 4.14.0; dedupe holds). Now the skills audit step — checking the updated catalog:
-The skill is the generalized engineering standard (v1.2.0, re-validated same day). Running the focused production-seams audit per the F0 discipline:
-F0 complete — all seams verified. Now F2: deriving the 111th standing-checks pair. Writing `derive-standing-v117.py`:
-111th pair derived clean. Running the reference side:
-Reference side: all four bugs live, census clean on first reads, SEO pair live. Reaping zombies between halves, then clone side:
-Clone side R1–R4 all green — **mobile menu verified working the 111th consecutive time**. Seedcheck after the clone half:
-F2 complete. Now F3 — first, verifying all `v111` token occurrences in the six source files to confirm the generic swap is safe:
-All bare `v111` tokens are legitimate version references. Checking `v110` occurrences for the residual scan design:
-Correction sites are clean. Writing `derive-v117-series.py` with the exact post-swap fragments:
-All 6/6 corrections applied on the first run, residuals clean, line counts preserved. Syntax-checking the derived files:
-Header verified correct. Now deriving the two-half census builder:
-The lineage fragment missed — checking the exact line break position:
-The line wraps after "from" — the fragment must target the line-internal form (the BARE-FRAGMENT LINE-WRAP lesson instance). Fixing:
-The md5 line-block contracts hold EXACTLY (e1092d12 / 9e5a52d2 — the v99/v105/v111 census blocks verbatim). Verifying the halves and checking the VLM compare mechanism:
-The VLM compare uses z-ai-web-dev-sdk. Executing the reference-side shots (calculator first):
-Reference shots captured. Reaping, then clone-side calculator shots (includes the fixture add + full restore):
-Clone calculator shots done with full fixture restore verified. Clone login shots:
-All four screenshots captured. Running the VLM pairwise comparison:
-VLM verdicts: CALCULATOR DIFFERENT (documented class — the will-update note + hover-action perception flags) + LOGIN DIFFERENT (FAB flag only — requires the standing disproof census since the flag was raised). Running the two-half census — reference half first:
-Reference census matches the documented contract exactly (hasWillUpdateSpan false, actionsAtRest opacity 0/btnCount 2). Reaping + clone half:
-Clone half done with exact seedcheck and verified restore. Re-running both halves with full log capture for the axis-by-axis comparator:
-Both halves logged. Now the FAB disproof (the flag was raised on the login pair) — checking the v115 pattern:
-Writing the FAB disproof one-shot for the login surface (v117's flagged pair):
-FAB disproof live: fabCount 0 + bodyHasBase44 false on both sides — platform-chrome class confirmed. Now extracting both census JSONs for the axis-by-axis comparison:
-Writing the persisted axis-by-axis comparator:
-The comparator surfaced deltas needing classification. Let me check the v111-era records for the login card border/shadow values:
-The shadow zero-layer classes are documented (v99/v111 records). Investigating the login card border delta — reading the clone's login page source:
-The clone's card declares `border-0` (width 0); the delta is the computed border-COLOR at zero width — ref rgb(229,231,235)=Tailwind v3 gray-200 default vs clone rgb(229,231,227)=the app's `--color-border` token. Checking what the login-parity pins hold on the card:
-The shadow construct class is documented (v45/v10 accepted-leads convention). Checking the v111 session log for the raw census record to confirm the border axis history:
-Confirmed: the card's `border-0` dates to the v7 pin — unchanged since. The deltas are all documented construct classes. Updating the comparator's whitelist:
-**F3 complete — 106 axes: 97 identical + 9 documented-class deltas, ZERO NEW.** Now F4: the pin survey. Checking what the existing login/calculator pins hold:
-The totalCard is fully held by v93. The best candidate: **the login card's top accent strip** — the absolute h-1 slate gradient bar. Verifying no spec holds it:
-The v7 G2 pin holds the strip's gradient COLORS (toContain) but NOT its height/position/width — a genuine never-pinned family. Verifying the mutation target's uniqueness + spec-alias coverage:
-Mutation target unique (login-card.tsx:564, the only h-1), no spec holds the strip's geometry. Now the one-shot both-sides census — checking the standing census's card finder for reuse:
-Writing the one-shot both-sides census for the strip family:
-Strip's own axes are byte-identical, but the `bottom` delta reveals a 4px card-height difference (ref 746 vs clone 742). Before pinning, I must locate and classify this 4px. Writing a quick content-block census:
-Page state broke. Re-opening fresh and re-running the census:
-Reference: card 746 = inner 746 (pad 48/40/40) + content 658; form = email block 172 + actions 80. Now the clone side:
-Delta isolated: the mode container (ref 658 vs clone 654); form blocks identical (172+80). Drilling into the container's children:
-The 4px lives in the h1 text block (ref 108 vs clone 104). Measuring the h1 + subtitle lines precisely on both sides:
-Both h1 (72) and subtitle (24) identical — the 4px is the block's internal gap: ref 12px (sm:space-y-3 tier) vs clone 8px (base space-y-2). This smells like the Tailwind v4 space-y trap. Measuring the h1's computed margin on both sides:
-Confirmed: clone subtitle mt 8px (base tier) vs ref 12px (sm: tier) — the `sm:space-y-3` variant is not winning in the clone's Tailwind v4 build. Examining the generated CSS:
-The mechanism emerges: a v3-semantics override (`.space-y-2>*+*{margin-block-start:.5rem}`) coexists with the v4-native `:where()` form. Checking whether the sm: variant has an override too:
-**ROOT CAUSE FOUND — a real Tailwind v4 parity bug**: the v9 G3 mitigation restores v3 space-y semantics for BASE tiers only (class-specificity `>*+*` rules), which FREEZES OUT the zero-specificity v4-native `sm:space-y-3` variant at ≥640. The reference computes 12px; the clone 8px. Checking all `sm:space-y` usages in src/:
-The bug is isolated to `space-y-2 sm:space-y-3` (the only sm-paired tier with a mitigation override). Checking for other affected combos:
-Exactly ONE affected line in the whole codebase. Checking the repo's own Tailwind v4 trap documentation for the solution form:
-The fix must respect the cascade-layer structure. Reading globals.css around the mitigation:
-The fix follows the v50 zb-sm6 precedent's exact form. But first — cascade check: does the fix shift the sign-up/forgot panels (the v50 pins)? Checking the other mode containers:
-The fix is surgical — only line 574's block carries `sm:space-y-3`. Checking whether the v99/v105 pins assert anything the +4px shift would redden:
-v99 is structurally immune (element-local + relative axes only). Checking v105 for absolute-y assertions:
-Cascade map complete — the fix breaks zero existing pins. Writing the remediation plan FIRST (the discipline), then the pin (TDD red), then the fix:
-Plan saved. Now the pin — checking the end of login-parity.spec.ts:
-Pin appended, typecheck clean. Running the TDD RED run (pre-fix build — the pin must fail at the sm:TIER axes alone):
-**TDD RED confirmed** — the pin fails at the sm:TIER axes alone (subMt 8px vs 12px; the strip axes passed). Now applying the fix:
-**TDD GREEN.** Running the surface regression check (login-parity + auth + verify-email + glyph-parity):
-All 52 green — the fix is surgical. Updating the plan and starting the F5 ship chain:
-320 authoritative. Chunk 1 ✓ (84). Running chunks 2–4:
-Ship chain: **323 executions = 320 unique, zero flakes · 35/35 smoke**. Now the screenshots — regenerating and byte-comparing (the login shots will shift by the fix's 4px, per the v50 precedent):
-9 diffs — the login shots (the fix's own effect) plus 7 item-view shots (unexpected). Investigating: the seed's date logic and the actual diff regions:
-Seed uses relative dates — the item-view diffs are the DATE-DRIFT class. Verifying the login diff is the fix's own region:
-All 9 diffs arbitrated: 2 fix-effects (login shots) + 7 date-drifts + forgot-reset untouched (surgical confirmation). Now deriving the dev-shots scripts v116→v117:
-F5 complete. Now D1–D7 docs alignment — studying the v116 alignment scripts as templates:
-Let me extract the exact current anchors for the v117 alignment:
-Anchor unique. Writing the D1–D5 alignment script:
-D1–D5 aligned. Now D6 — the probe README's v117 section. Studying the v116 pattern:
-The v116 script needed a separate queue append. Let me verify the v112 lineage header (the v118 queue target) before writing the complete v117 D6 script:
-Writing the D6 script with the complete v117 section + v118 queue:
-D6 done. Now D7 — writing session_284.md and the worklog Session 152 entry:
-Writing session_284.md (the formal delivery record):
-Now the worklog Session 152 insertion script:
-D7 done. Pre-ship verification — the worklog plan-list header and the full change review:
-Updating the plan's final ToDo items and verifying the .env.example contract:
-Full change set verified. Final gates before commit:
-All gates green. Writing the commit message off-tree (the v112 hygiene lesson) and committing:
-Commit `0f657e9` created, tree clean. Now the SSH wrapper push — reading the runbook:
-No ssh binary and no paramiko — deploying the shim path per the runbook:
-Paramiko 5.1.0 in the venv. Writing the ssh shim outside the repo:
-Dry-run clean — fast-forward `b40d034..0f657e9`. Real push:
-Push verified via wrapper (`main @ 0f657e9`). HTTPS double verification + key destruction:
-The HTTPS check failed (broke the chain) and the key wasn't shredded. Destroying the key immediately, then re-verifying:
-Key destroyed. Using `git ls-remote` over HTTPS for the double verification (API is rate-limited):
-**HTTPS double verification passed** — remote main = `0f657e9` = local HEAD. Writing the workspace worklog and closing out:
-## ✅ v117 cycle delivered and pushed — `main @ 0f657e9` (wrapper + HTTPS double-verified, key destroyed)
+## 本周期核心成果
 
-**The headline: this cycle found and fixed a real Tailwind v4 parity bug.** The strip census exposed a 4px login-card height delta, root-caused to **THE SM:TIER FREEZE** — the v9 G3 mitigation's class-specificity `space-y-2` restore was permanently beating v4's zero-specificity `:where(.sm\:space-y-3)` media variant (the reference's subtitle gap 12px vs the clone's frozen 8px at ≥640). The fix follows the v50 zb-sm6 precedent, was cascade-verified surgical (one element, zero existing pins redden, 52/52 surface regression), and is pinned by a new TDD e2e (RED→GREEN).
+**普查 0C/0H/0M/0L/3I** —— S183 以来首个零 Low 周期（三连续测量深度 Low 周期后），全部为 F170 坐标精度家族，零源码缺陷：
 
-Everything else held: baseline fully green on the fresh clone, **mobile menu verified working the 111th consecutive time**, census 106 axes with zero new gaps, FAB flag disproven live, audit 0 vulnerabilities, **320 e2e zero flakes** + 35 smoke, all docs/session logs/plan aligned.
+| 交付 | 内容 |
+|------|------|
+| **首个 v1.2.0 词汇周期** | 操作者修订主技能（fd2037e3）—— 三个注册偏差转为**认可模式**（共享桶限流、S181-C fail-hard、hops 契约），两条新规则族行级验证 digma 已合规 |
+| **B-I-1 窗口更正 + F174** | 逐行读驳斥注册窗口短语（:2832 = S168 行非 s169）；**窗口起始标签真理教训**诞生 |
+| **trap-4 猎查关闭 CLEAN** | 全层负 margin 穷举恰一处 live = S186-A 修复自身 |
+| **S187-B 12-pin spec** | RED 5/5 精确；2600/2600 across 249 全绿 |
 
-**Next:** reply "continue v118" to run the v112-era **NETWORTH + drill-down-DASHBOARD pair** (ninth re-run), or suggest any adjustments.
+**全绿**：unit 2600/249 · e2e 262 零 flake · nav 9/9（第 164 次，指令重点）· 参考审计第 163 次无漂移（clip 第 124 次字节一致）· pins 804/804 · F138 第 38 次通过 · capture 86 · dimensions 1024/1024 · 第十七代坐标 **:2853/:2912/:2981** 精确（F174 修正窗口形在自身世代验证一致）。
+
+**推送**：交付 `33123311`（169 文件，源侧零变更）+ 日志 `9d366728`，远端验证 + HTTPS 交叉确认（计划 4/4 live · PAD v1.166.0 · SKILL v1.165.0 + F174），密钥两次三覆写销毁。诚实环境记录：首次未防护 seed 被 DATABASE_URL trap 咬中（smoke 16/50 诚实回执），防护重播后全绿。
+
+**建议下一步**：可在 GitHub 验证两提交；S188 已预置 F138 第 39 实例（s187 计划 4/4 @ `33123311`）+ 第十七代坐标。
