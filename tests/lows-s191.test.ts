@@ -81,8 +81,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s191 lesson). */
-const UNIT = "2649";
-const FILES = "253";
+const UNIT = "2661";
+const FILES = "254";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the registration-only cycle moves no source
@@ -189,38 +189,38 @@ describe("lows-s191: the repair-verification truth registrations (the registrati
     expect(padSource).toContain("lows-s191.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **253 files** | **2649** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2649/2649");
+    expect(padSource).toContain("| **Unit total** | **254 files** | **2661** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2661/2661");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2649 checks / 253 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2661 checks / 254 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.170.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.170\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.171\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.170.0");
-    expect(lastUpdated).toContain("the one-hundred-and-thirty-ninth audit");
+    expect(lastUpdated).toContain("v1.171.0");
+    expect(lastUpdated).toContain("the one-hundred-and-fortieth audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.169.0 + the F178 repair-verification truth lesson (a prescribed repair's first full-cycle test is itself a recordable event — when a lesson prescribes a repaired form, the next cycle's dispatch must carry it, and when the test passes, the honest registration records the verification AND promotes the repaired form to the standing convention, so the pre-repair form can never silently return) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.169.0");
+    expect(skillSource).toContain("version: 1.170.0");
     expect(skillSource).toContain("178. **F178");
     expect(collapsed(skillSource)).toContain("THE REPAIR-VERIFICATION TRUTH MEMBER");
-    expect(skillSource).toContain("2649 unit checks green");
+    expect(skillSource).toContain("2661 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s190 + s189 pair as the standing witnesses) + the anchored declaration census pins 72 UNIT / 71 FILES", () => {
-    expect(UNIT).toBe("2649");
-    expect(FILES).toBe("253");
+    expect(UNIT).toBe("2661");
+    expect(FILES).toBe("254");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2649";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "253";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2661";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "254";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(72);
-    expect(filesFiles).toBe(71);
+    expect(unitFiles).toBe(73);
+    expect(filesFiles).toBe(72);
   });
 
   it("SURVIVAL (worklog): the bracketed s191-below-threshold-note registers the twenty-first-generation verification (:2837..:2858 = s169..s190, 22 rows, :2836 the S168 row — the F174-corrected window form verified at its own generation) + the F178 REPAIR-VERIFICATION TRUTH lesson + the dispatch-currency-honored registration + the A-I-1 carried §8 letter posture + the vocabulary-HOLD registration + the honest environment record (the trap caught BEFORE the first db operation) + the F138 FORTY-SECOND instance + the twenty-second-generation pre-registration", () => {
