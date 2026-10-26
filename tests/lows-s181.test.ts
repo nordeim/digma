@@ -134,8 +134,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s181 lesson). */
-const UNIT = "2637";
-const FILES = "252";
+const UNIT = "2649";
+const FILES = "253";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -437,16 +437,16 @@ describe("S181-E the per-session collateral (the doc-side members — RED until 
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.160.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
     expect(padSource).toMatch(
-      /^# Digma — Master Project Architecture Document \(PAD\) v1\.169\.0$/m,
+      /^# Digma — Master Project Architecture Document \(PAD\) v1\.170\.0$/m,
     );
     const lastUpdated =
       padSource.split("\n").find((l) => l.startsWith("**Last Updated:**")) ?? "";
-    expect(lastUpdated).toContain("v1.169.0");
+    expect(lastUpdated).toContain("v1.170.0");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.160.0 + the F168 dispatched-figure lesson (a dispatch brief's per-file figures derive from the live tree, never from memory)", () => {
     const versionLine = skillSource.split("\n").find((l) => l.startsWith("version:")) ?? "";
-    expect(versionLine).toContain("1.168.0");
+    expect(versionLine).toContain("1.169.0");
     expect(collapsed(skillSource)).toContain("F168");
   });
 
@@ -476,12 +476,12 @@ describe("S181-E the per-session collateral (the doc-side members — RED until 
       `grep -rhE '^const UNIT = "[0-9]+";$' tests/ --include="*.test.ts" | sort | uniq -c`,
       { cwd: root, encoding: "utf8" },
     );
-    expect(unitOut.trim()).toBe(`71 const UNIT = "${UNIT}";`);
+    expect(unitOut.trim()).toBe(`72 const UNIT = "${UNIT}";`);
     const filesOut = execSync(
       `grep -rhE '^const FILES = "[0-9]+";$' tests/ --include="*.test.ts" | sort | uniq -c`,
       { cwd: root, encoding: "utf8" },
     );
-    expect(filesOut.trim()).toBe(`70 const FILES = "${FILES}";`);
+    expect(filesOut.trim()).toBe(`71 const FILES = "${FILES}";`);
   });
 
   it("DEFECT (source-survival): the post-remediation tree's measured figures — the layer total 14,313 derived LIVE (the F40 rider's own receipt: the deliberate +6 globals.css movement), the route total 2,461 derived LIVE with the internal-consistency probe passing, call.ts still exactly 80 lines, the elements route still exactly 420 (the sixth re-quote cycle pre-armed), and the three remediation seams intact", () => {

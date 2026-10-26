@@ -91,8 +91,8 @@ const cssSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s185 lesson). */
-const UNIT = "2637";
-const FILES = "252";
+const UNIT = "2649";
+const FILES = "253";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -311,38 +311,38 @@ describe("lows-s185: the count-truth repair + the receipt-count registrations", 
     expect(padSource).toContain("lows-s185.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,359");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **252 files** | **2637** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2637/2637");
+    expect(padSource).toContain("| **Unit total** | **253 files** | **2649** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2649/2649");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2637 checks / 252 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2649 checks / 253 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.164.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.169\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.170\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.169.0");
-    expect(lastUpdated).toContain("the one-hundred-and-thirty-eighth audit");
+    expect(lastUpdated).toContain("v1.170.0");
+    expect(lastUpdated).toContain("the one-hundred-and-thirty-ninth audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.163.0 + the F172 receipt-count truth lesson (a count claim embedded in a remediation's own receipt comment derives by the comment-excluding class-site enumeration, never a raw grep) + the globals.css line-count claim re-anchored onto the live count (300)", () => {
-    expect(skillSource).toContain("version: 1.168.0");
+    expect(skillSource).toContain("version: 1.169.0");
     expect(skillSource).toContain("172. **F172");
     expect(collapsed(skillSource)).toContain("THE RECEIPT-COUNT TRUTH MEMBER");
     expect(collapsed(skillSource)).toContain("never a raw grep");
-    expect(skillSource).toContain('project_state: "2637 unit checks green');
+    expect(skillSource).toContain('project_state: "2649 unit checks green');
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s184 + s183 pair as the standing witnesses) + the anchored declaration census pins 66 UNIT / 65 FILES", () => {
-    expect(UNIT).toBe("2637");
-    expect(FILES).toBe("252");
+    expect(UNIT).toBe("2649");
+    expect(FILES).toBe("253");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      'rg -l \'^const UNIT = "2637";$\' tests/ src/lib/ | wc -l && rg -l \'^const FILES = "252";$\' tests/ src/lib/ | wc -l',
+      'rg -l \'^const UNIT = "2649";$\' tests/ src/lib/ | wc -l && rg -l \'^const FILES = "253";$\' tests/ src/lib/ | wc -l',
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(71);
-    expect(filesFiles).toBe(70);
+    expect(unitFiles).toBe(72);
+    expect(filesFiles).toBe(71);
   });
 });
