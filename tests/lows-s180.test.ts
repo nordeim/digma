@@ -96,8 +96,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s180 lesson). */
-const UNIT = "2661";
-const FILES = "254";
+const UNIT = "2673";
+const FILES = "255";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -169,7 +169,7 @@ const liveRouteFigures = (() => {
   return { total, perFile, handSum };
 })();
 
-/** The figure the v1.171.0 PAD block quotes for the layer total (the
+/** The figure the v1.172.0 PAD block quotes for the layer total (the
  *  doc-side claim this spec's forward guard holds to the live tree —
  *  the F138 receipt shape at the count family, its TWENTY-SEVENTH
  *  instance, this cycle in its ZERO-SOURCE-CHANGE STAYS form: 14,307
@@ -177,7 +177,7 @@ const liveRouteFigures = (() => {
  *  code touched). */
 const padQuotedLayerTotal = (() => {
   const m = padSource.match(
-    /v1\.171\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
+    /v1\.172\.0[\s\S]{0,6000}?the 22-file layer at \*\*(\d[\d,]*) lines?\*\*/,
   );
   return m ? m[1] : "";
 })();
@@ -453,7 +453,7 @@ describe("S180-C the per-session pin family (the survival members + the RED memb
   });
 
   it("DEFECT (docs): the F167 lesson registered in the digma_SKILL — the dispatched-observation member inserted after F166, the version bumped to v1.158.0", () => {
-    expect(skillSource).toMatch(/version: 1\.170\.0/);
+    expect(skillSource).toMatch(/version: 1\.171\.0/);
     expect(skillSource).toContain("F167");
     expect(collapsed(skillSource)).toContain(
       "DISPATCHED-OBSERVATION member",
@@ -473,11 +473,11 @@ describe("S180-C the per-session pin family (the survival members + the RED memb
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.159.0 in the title line and the Last-Updated line (the S158-C post-run title verification form) + the pair-unity claim forms riding the constants at every doc (the rolling-safe form: this spec's constants equal the prior specs' constants after the doc-update sweep re-anchors them TOGETHER)", () => {
     expect(padSource).toMatch(
-      /^# Digma — Master Project Architecture Document \(PAD\) v1\.171\.0$/m,
+      /^# Digma — Master Project Architecture Document \(PAD\) v1\.172\.0$/m,
     );
     const lastUpdated =
       padSource.split("\n").find((l) => l.startsWith("**Last Updated:**")) ?? "";
-    expect(lastUpdated).toContain("v1.171.0");
+    expect(lastUpdated).toContain("v1.172.0");
     // The s179 spec's constants, re-anchored onto this cycle's figures.
     const s179Spec = readFileSync(
       path.resolve(import.meta.dirname, "./lows-s179.test.ts"),
