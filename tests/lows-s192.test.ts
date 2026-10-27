@@ -84,8 +84,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s192 lesson). */
-const UNIT = "2673";
-const FILES = "255";
+const UNIT = "2685";
+const FILES = "256";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the registration-only cycle moves no source
@@ -192,38 +192,38 @@ describe("lows-s192: the convention-graduation truth registrations (the registra
     expect(padSource).toContain("lows-s192.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **255 files** | **2673** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2673/2673");
+    expect(padSource).toContain("| **Unit total** | **256 files** | **2685** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2685/2685");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2673 checks / 255 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2685 checks / 256 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.171.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.172\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.173\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.172.0");
-    expect(lastUpdated).toContain("the one-hundred-and-forty-first audit");
+    expect(lastUpdated).toContain("v1.173.0");
+    expect(lastUpdated).toContain("the one-hundred-and-forty-second audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.170.0 + the F179 convention-graduation truth lesson (a promoted convention's second full-cycle verification graduates it from repair-under-observation to standing infrastructure — from that point the audit's registration duty inverts: the convention's absence from a dispatch becomes itself reportable drift, not merely the presence of a carried form; a convention graduated but unwatched is a convention that can be silently retired) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.171.0");
+    expect(skillSource).toContain("version: 1.172.0");
     expect(skillSource).toContain("179. **F179");
     expect(collapsed(skillSource)).toContain("THE CONVENTION-GRADUATION TRUTH MEMBER");
-    expect(skillSource).toContain("2673 unit checks green");
+    expect(skillSource).toContain("2685 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s191 + s190 pair as the standing witnesses) + the anchored declaration census pins 73 UNIT / 72 FILES", () => {
-    expect(UNIT).toBe("2673");
-    expect(FILES).toBe("255");
+    expect(UNIT).toBe("2685");
+    expect(FILES).toBe("256");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2673";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "255";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2685";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "256";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(74);
-    expect(filesFiles).toBe(73);
+    expect(unitFiles).toBe(75);
+    expect(filesFiles).toBe(74);
   });
 
   it("SURVIVAL (worklog): the bracketed s192-below-threshold-note registers the twenty-second-generation verification (:2838..:2860 = s169..s191, 23 rows, :2837 the S168 row — the F174-corrected window form verified at its own generation) + the F179 CONVENTION-GRADUATION TRUTH lesson + the dispatch-currency-honored registration + the A-I-1 carried §8 letter posture + the vocabulary-HOLD registration + the honest environment record (the trap caught BEFORE the first db operation) + the F138 FORTY-THIRD instance + the twenty-third-generation pre-registration", () => {

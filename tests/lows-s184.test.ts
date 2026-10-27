@@ -120,8 +120,8 @@ const teamsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s184 lesson). */
-const UNIT = "2673";
-const FILES = "255";
+const UNIT = "2685";
+const FILES = "256";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -491,16 +491,16 @@ describe("S184-E the per-session collateral (the doc-side members — RED until 
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.163.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
     expect(padSource).toMatch(
-      /^# Digma — Master Project Architecture Document \(PAD\) v1\.172\.0$/m,
+      /^# Digma — Master Project Architecture Document \(PAD\) v1\.173\.0$/m,
     );
     const lastUpdated =
       padSource.split("\n").find((l) => l.startsWith("**Last Updated:**")) ?? "";
-    expect(lastUpdated).toContain("v1.172.0");
+    expect(lastUpdated).toContain("v1.173.0");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.162.0 + the F171 rendered-output evidence lesson (a posture claim about rendered output is verified against the reference's rendered pixels, never against the source classes' letter alone) + the globals.css line-count claim re-anchored onto the live count (300)", () => {
     const versionLine = skillSource.split("\n").find((l) => l.startsWith("version:")) ?? "";
-    expect(versionLine).toContain("1.171.0");
+    expect(versionLine).toContain("1.172.0");
     expect(collapsed(skillSource)).toContain("F171");
     expect(skillSource).toMatch(/src\/app\/globals\.css` \(300 lines\)/);
   });
@@ -531,11 +531,11 @@ describe("S184-E the per-session collateral (the doc-side members — RED until 
       `grep -rhE '^const UNIT = "[0-9]+";$' tests/ --include="*.test.ts" | sort | uniq -c`,
       { cwd: root, encoding: "utf8" },
     );
-    expect(unitOut.trim()).toBe(`74 const UNIT = "${UNIT}";`);
+    expect(unitOut.trim()).toBe(`75 const UNIT = "${UNIT}";`);
     const filesOut = execSync(
       `grep -rhE '^const FILES = "[0-9]+";$' tests/ --include="*.test.ts" | sort | uniq -c`,
       { cwd: root, encoding: "utf8" },
     );
-    expect(filesOut.trim()).toBe(`73 const FILES = "${FILES}";`);
+    expect(filesOut.trim()).toBe(`74 const FILES = "${FILES}";`);
   });
 });

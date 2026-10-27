@@ -45,7 +45,7 @@
   /* Reference-palette pins. The reference app ships Tailwind v3 (via CDN),
      whose default palette is sRGB hex; Tailwind v4's default palette is
      oklch-tuned and renders VISIBLY different (v4 blue-600 = #155DFC vs the
-     reference's #2563EB; v4 purple-600 = #8200DB vs #9333EA; grays shift
+     reference's #2563EB; v4 purple-600 = #9810FA vs #9333EA; grays shift
      cooler too). The clone must look like the reference, so every palette
      scale the app consumes is pinned here to the v3 values — measured against
      the live reference DOM (Share/Present/active tool = #2563EB/#16A34A). */

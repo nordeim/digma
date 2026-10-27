@@ -142,8 +142,8 @@ const seoSource = readFileSync(
  *  re-anchors the docs and these constants TOGETHER so the pair-unity
  *  pins stay green through the transition — the rolling-safe form at
  *  birth, the s140–s152 lesson). */
-const UNIT = "2673";
-const FILES = "255";
+const UNIT = "2685";
+const FILES = "256";
 
 /** Collapse whitespace for comment-token matching (the standing form). */
 const collapsed = (s: string) => s.replace(/\s+/g, " ");
@@ -534,7 +534,7 @@ describe("S153-B/S153-C the third zero-finding census registration and the per-s
 
   it("DEFECT (docs): the F140 lesson registered in the digma_SKILL — the identity-stability member inserted after F139, the version bumped to v1.131.0", () => {
     // The version chain: the frontmatter bumped.
-    expect(skillSource).toMatch(/version: 1\.171\.0/);
+    expect(skillSource).toMatch(/version: 1\.172\.0/);
     // The lesson: the identity-stability member after F139.
     const f139At = skillSource.indexOf("F139");
     const f140At = skillSource.indexOf("F140");
