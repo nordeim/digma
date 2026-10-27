@@ -383,7 +383,7 @@ export const FILL_IMAGE_PROJECT_LIMIT_BYTES = 24_000_000;
 // fields at their JSON-ESCAPED lengths — the wire form the autosave
 // PUT actually serializes (a backslash doubles, a control char
 // expands 1 -> 6; a 2000-char control-char text measures 2000 raw
-// but 12006 on the wire). Pre-fix the counter summed the fills
+// but 12002 on the wire). Pre-fix the counter summed the fills
 // alone, so a scripted client stacked ~9.8 MB of max-length text
 // rows through full-list PUTs the counter scored 0, then drove the
 // fill gate to its ceiling — a board whose next full-list PUT

@@ -1565,6 +1565,14 @@ S203 = dict(S202)
 # time-dependent-pixel norm).
 S204 = dict(S203)
 
+# s205 mapping (session 195 — the 171st reference audit's evidence set + the
+# S195 capture set). The standing S204 witnesses carry their birth labels
+# (the capture script re-verifies them LIVE on the S195 tree); no NEW
+# witness this session (the comment-correction cycle paints no pixels;
+# the capture set honestly expects byte-identical files at the standing
+# time-dependent-pixel norm).
+S205 = dict(S204)
+
 def png_size(path: Path):
     with path.open("rb") as f:
         header = f.read(24)
@@ -1827,6 +1835,8 @@ def expected_for(name: str):
         return S203.get(Path(name).stem)
     if name.startswith("ref-audit-s204/"):
         return S204.get(Path(name).stem)
+    if name.startswith("ref-audit-s205/"):
+        return S205.get(Path(name).stem)
     if name.startswith("ref-audit-s111/"):
         return S111.get(Path(name).stem)
     if name.startswith("ref-audit-s79/"):
@@ -2012,6 +2022,7 @@ def main():
     + [p for p in (ROOT / "ref-audit-s202").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s203").glob("*.png")]
     + [p for p in (ROOT / "ref-audit-s204").glob("*.png")]
+    + [p for p in (ROOT / "ref-audit-s205").glob("*.png")]
         + [p for p in (ROOT / "ref-audit-s70").glob("*.png")]
     )
     for p in shots:
