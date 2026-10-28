@@ -77,8 +77,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s189 lesson). */
-const UNIT = "2697";
-const FILES = "257";
+const UNIT = "2709";
+const FILES = "258";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the registration-only cycle moves no source
@@ -187,38 +187,38 @@ describe("lows-s189: the premise-label truth registrations (the registration-onl
     expect(padSource).toContain("lows-s189.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **257 files** | **2697** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2697/2697");
+    expect(padSource).toContain("| **Unit total** | **258 files** | **2709** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2709/2709");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2697 checks / 257 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2709 checks / 258 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.168.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.174\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.175\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.174.0");
-    expect(lastUpdated).toContain("the one-hundred-and-forty-third audit");
+    expect(lastUpdated).toContain("v1.175.0");
+    expect(lastUpdated).toContain("the one-hundred-and-forty-fourth audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.167.0 + the F176 premise-label truth lesson (a deferral-premise quartet's member labels are themselves record claims — when the same cycle's records carry different quartet compositions, every underlying fact can be true in both while the composition dilutes the canonical form; the honest repair registers the canonical composition in exactly one place and registers the divergence, never editing frozen records; and the dispatch brief must QUOTE the canonical quartet verbatim, never paraphrase it) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.173.0");
+    expect(skillSource).toContain("version: 1.174.0");
     expect(skillSource).toContain("176. **F176");
     expect(collapsed(skillSource)).toContain("THE PREMISE-LABEL TRUTH MEMBER");
-    expect(skillSource).toContain("2697 unit checks green");
+    expect(skillSource).toContain("2709 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s188 + s187 pair as the standing witnesses) + the anchored declaration census pins 70 UNIT / 69 FILES", () => {
-    expect(UNIT).toBe("2697");
-    expect(FILES).toBe("257");
+    expect(UNIT).toBe("2709");
+    expect(FILES).toBe("258");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2697";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "257";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2709";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "258";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(76);
-    expect(filesFiles).toBe(75);
+    expect(unitFiles).toBe(77);
+    expect(filesFiles).toBe(76);
   });
 
   it("SURVIVAL (worklog): the bracketed s189-below-threshold-note registers the eighteenth-generation verification (:2835..:2854 = s169..s188, 20 rows, :2834 the S168 row — the F174-corrected window form verified at its own generation) + the F176 PREMISE-LABEL TRUTH lesson + the A-I-1 carried §8 letter posture + the B-I-1 premise-label registration + the vocabulary-HOLD registration + the honest environment record (the trap caught BEFORE the first db operation) + the F138 FORTIETH instance", () => {

@@ -306,7 +306,7 @@ export const TEMPLATE_META: Record<string, { label: string; description: string;
 
 // Session 104 (S104-C / A-L3 — the S97-A FALLBACK_WHITE class): the
 // single source for the default canvas background — the datum was
-// hand-spelled at eight sites (the store initial, UNTITLED_PROJECT,
+// hand-spelled at nine sites (the store initial, UNTITLED_PROJECT,
 // the export fallback, the create-route default, the presets[0] entry,
 // the dialog's four belt fallbacks) with no named constant, the exact
 // datum-shape the forty-fifth audit closed for the render white. The
