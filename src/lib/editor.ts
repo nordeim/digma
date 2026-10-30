@@ -362,9 +362,9 @@ export const ELEMENT_LIMIT = 2000;
 // doubles, a control char expands 1 -> 6 under the slice-only S99-B
 // clamp that admits both), so a board constructed under this bound
 // always fits the autosave PUT with the FIXED per-row serialization
-// (~380 chars measured — ids, coordinates, timestamps, field names,
+// (~510 chars measured — ids, coordinates, timestamps, field names,
 // JSON syntax) left outside the count: at ELEMENT_LIMIT the whole
-// fixed slack is ~0.76 MB, bounded inside the 8 MB headroom this
+// fixed slack is ~1.02 MB, bounded inside the 8 MB headroom this
 // constant holds under the 32 MB body cap; the PUT itself
 // deliberately enforces only its body cap (the ~25 MB
 // heaviest-legitimate form — the census bound + the fixed slack,

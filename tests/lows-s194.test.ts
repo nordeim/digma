@@ -95,8 +95,8 @@ const globalsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s194 lesson). */
-const UNIT = "2709";
-const FILES = "258";
+const UNIT = "2721";
+const FILES = "259";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the L-1 comment fix is the in-place
@@ -205,38 +205,38 @@ describe("lows-s194: the comment-truth repair + prose-figures-are-claims registr
     expect(padSource).toContain("lows-s194.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **258 files** | **2709** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2709/2709");
+    expect(padSource).toContain("| **Unit total** | **259 files** | **2721** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2721/2721");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2709 checks / 258 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2721 checks / 259 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.173.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.175\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.176\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.175.0");
-    expect(lastUpdated).toContain("the one-hundred-and-forty-fourth audit");
+    expect(lastUpdated).toContain("v1.176.0");
+    expect(lastUpdated).toContain("the one-hundred-and-forty-fifth audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.172.0 + the F181 prose-figures-are-claims truth lesson (every figure quoted in prose is a live claim about the current tree; provenance is not proof — a carried figure is a claim that stopped being checked the day it was written; the guard: numeric re-derivation of every figure a sampled comment carries, illustrative figures included) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.174.0");
+    expect(skillSource).toContain("version: 1.175.0");
     expect(skillSource).toContain("181. **F181");
     expect(collapsed(skillSource)).toContain("THE PROSE-FIGURES-ARE-CLAIMS MEMBER");
-    expect(skillSource).toContain("2709 unit checks green");
+    expect(skillSource).toContain("2721 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s193 + s192 pair as the standing witnesses) + the anchored declaration census pins 75 UNIT / 74 FILES + the L-1 fix's own regression pin (the corrected figure at the comment and both doc mirrors, the stale figure gone from every live claim site)", () => {
-    expect(UNIT).toBe("2709");
-    expect(FILES).toBe("258");
+    expect(UNIT).toBe("2721");
+    expect(FILES).toBe("259");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2709";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "258";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2721";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "259";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(77);
-    expect(filesFiles).toBe(76);
+    expect(unitFiles).toBe(78);
+    expect(filesFiles).toBe(77);
     // the L-1 fix: the corrected figure at the comment, the stale figure gone
     // from all three live claim sites (the frozen session_8/9 records stay).
     expect(globalsSource).toContain("#9810FA");
