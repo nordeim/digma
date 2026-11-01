@@ -116,8 +116,8 @@ const elementsRouteSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s199 lesson). */
-const UNIT = "2757";
-const FILES = "262";
+const UNIT = "2770";
+const FILES = "263";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the below-threshold remediation touches zero
@@ -225,38 +225,38 @@ describe("lows-s199: the below-threshold registrations + the derivation-method l
     expect(padSource).toContain("lows-s199.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **262 files** | **2757** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2757/2757");
+    expect(padSource).toContain("| **Unit total** | **263 files** | **2770** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2770/2770");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2757 checks / 262 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2770 checks / 263 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.178.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.179\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.180\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.179.0");
-    expect(lastUpdated).toContain("the one-hundred-and-forty-eighth audit");
+    expect(lastUpdated).toContain("v1.180.0");
+    expect(lastUpdated).toContain("the one-hundred-and-forty-ninth audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.177.0 + the F186 derivation-method truth lesson (a measured figure that rides a session record carries its derivation command — construction, scope, command line — never a bare number; an unreproducible prior figure registers as a derivation-method gap in the record, never a defect claim against it) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.178.0");
+    expect(skillSource).toContain("version: 1.179.0");
     expect(skillSource).toContain("186. **F186");
     expect(collapsed(skillSource)).toContain("THE DERIVATION-METHOD MEMBER");
-    expect(skillSource).toContain("2757 unit checks green");
+    expect(skillSource).toContain("2770 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s198 + s197 pair as the standing witnesses) + the anchored declaration census pins 80 UNIT / 79 FILES", () => {
-    expect(UNIT).toBe("2757");
-    expect(FILES).toBe("262");
+    expect(UNIT).toBe("2770");
+    expect(FILES).toBe("263");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2757";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "262";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2770";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "263";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(81);
-    expect(filesFiles).toBe(80);
+    expect(unitFiles).toBe(82);
+    expect(filesFiles).toBe(81);
   });
 
   it("SURVIVAL (worklog): the bracketed s199-below-threshold-note registers the twenty-ninth-generation verification (:2850..:2874 = s174..s198, 25 rows, :2849 the s173 row, :2848 the s172 row — the F174-corrected window form verified at its own generation) + the F186 DERIVATION-METHOD truth lesson + the second all-TRUE comment-truth census registration + the A-I-1 frozen-record nuance registration + the dispatch-currency-honored registration + the §8 letter posture carry + the honest folder-level vocabulary-HOLD registration + the honest environment record (the CONTINUATION form) + the F138 FIFTIETH instance + the thirtieth-generation pre-registration", () => {
