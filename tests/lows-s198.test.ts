@@ -109,8 +109,8 @@ const elementsRouteSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s198 lesson). */
-const UNIT = "2733";
-const FILES = "260";
+const UNIT = "2745";
+const FILES = "261";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the below-threshold remediation touches zero
@@ -218,38 +218,38 @@ describe("lows-s198: the below-threshold registrations + the brief-paraphrase le
     expect(padSource).toContain("lows-s198.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **260 files** | **2733** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2733/2733");
+    expect(padSource).toContain("| **Unit total** | **261 files** | **2745** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2745/2745");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2733 checks / 260 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2745 checks / 261 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.177.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.177\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.178\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.177.0");
-    expect(lastUpdated).toContain("the one-hundred-and-forty-sixth audit");
+    expect(lastUpdated).toContain("v1.178.0");
+    expect(lastUpdated).toContain("the one-hundred-and-forty-seventh audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.176.0 + the F185 brief-paraphrase truth lesson (a dispatch brief's own definitions, lists, and labels are claims too; the brief QUOTES the standing registration's forms verbatim — axes, file lists, arithmetic labels — never paraphrases from recall) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.176.0");
+    expect(skillSource).toContain("version: 1.177.0");
     expect(skillSource).toContain("185. **F185");
     expect(collapsed(skillSource)).toContain("THE BRIEF-PARAPHRASE MEMBER");
-    expect(skillSource).toContain("2733 unit checks green");
+    expect(skillSource).toContain("2745 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s197 + s196 pair as the standing witnesses) + the anchored declaration census pins 79 UNIT / 78 FILES", () => {
-    expect(UNIT).toBe("2733");
-    expect(FILES).toBe("260");
+    expect(UNIT).toBe("2745");
+    expect(FILES).toBe("261");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2733";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "260";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2745";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "261";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(79);
-    expect(filesFiles).toBe(78);
+    expect(unitFiles).toBe(80);
+    expect(filesFiles).toBe(79);
   });
 
   it("SURVIVAL (worklog): the bracketed s198-below-threshold-note registers the twenty-eighth-generation verification (:2848..:2872 = s173..s197, 25 rows, :2847 the s172 row, :2846 the s171 row — the F174-corrected window form verified at its own generation) + the F185 BRIEF-PARAPHRASE truth lesson + the first all-TRUE comment-truth census registration + the B-I-3 frozen-birth-record nuance registration + the dispatch-currency-honored registration + the A-I-1 carried §8 letter posture + the honest folder-level vocabulary-HOLD registration + the honest environment record (the SANDBOX-RESET form) + the F138 FORTY-NINTH instance + the twenty-ninth-generation pre-registration", () => {

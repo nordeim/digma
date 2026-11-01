@@ -83,8 +83,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s187 lesson). */
-const UNIT = "2733";
-const FILES = "260";
+const UNIT = "2745";
+const FILES = "261";
 
 /** The MEASURED layer figures (the s159 measured form — the
  *  zero-movement cycle: the layer STAYS at the post-S186 figure
@@ -188,38 +188,38 @@ describe("lows-s187: the window-start-label correction + the v1.2.0 vocabulary-c
     expect(padSource).toContain("lows-s187.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,365");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **260 files** | **2733** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2733/2733");
+    expect(padSource).toContain("| **Unit total** | **261 files** | **2745** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2745/2745");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2733 checks / 260 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2745 checks / 261 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.166.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.177\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.178\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.177.0");
-    expect(lastUpdated).toContain("the one-hundred-and-forty-sixth audit");
+    expect(lastUpdated).toContain("v1.178.0");
+    expect(lastUpdated).toContain("the one-hundred-and-forty-seventh audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.165.0 + the F174 window-start-label truth lesson (a row-window's start label is itself a coordinate claim — when an insertion lands above the window, BOTH the end composition AND the start label must be re-derived, and a window phrase that names its extent in sessions must be internally consistent with its line-span) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.176.0");
+    expect(skillSource).toContain("version: 1.177.0");
     expect(skillSource).toContain("174. **F174");
     expect(collapsed(skillSource)).toContain("THE WINDOW-START-LABEL TRUTH MEMBER");
-    expect(skillSource).toContain("2733 unit checks green");
+    expect(skillSource).toContain("2745 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s186 + s185 pair as the standing witnesses) + the anchored declaration census pins 68 UNIT / 67 FILES", () => {
-    expect(UNIT).toBe("2733");
-    expect(FILES).toBe("260");
+    expect(UNIT).toBe("2745");
+    expect(FILES).toBe("261");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2733";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "260";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2745";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "261";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(79);
-    expect(filesFiles).toBe(78);
+    expect(unitFiles).toBe(80);
+    expect(filesFiles).toBe(79);
   });
 
   it("SURVIVAL (layer): the zero-movement form — the layer total at 14,365 (no source-code movement this cycle, no F40 rider needed) derived LIVE with the PER-FILE probe closing, login-screen.tsx at exactly 747, globals.css STAYING at 300", () => {
