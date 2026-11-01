@@ -84,8 +84,8 @@ const agentsSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s193 lesson). */
-const UNIT = "2745";
-const FILES = "261";
+const UNIT = "2757";
+const FILES = "262";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the registration-only cycle moves no source
@@ -192,38 +192,38 @@ describe("lows-s193: the steady-state watch registrations (the registration-only
     expect(padSource).toContain("lows-s193.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **261 files** | **2745** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2745/2745");
+    expect(padSource).toContain("| **Unit total** | **262 files** | **2757** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2757/2757");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2745 checks / 261 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2757 checks / 262 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.172.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.178\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.179\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.178.0");
-    expect(lastUpdated).toContain("the one-hundred-and-forty-seventh audit");
+    expect(lastUpdated).toContain("v1.179.0");
+    expect(lastUpdated).toContain("the one-hundred-and-forty-eighth audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.171.0 + the F180 steady-state watch truth lesson (under the graduated watch, the convention's third full-cycle verification and beyond is the steady-state form — the record shifts from event to infrastructure-confirmation; the question inverts a third time, from is the convention carried? (F178) through is the graduated convention watched? (F179) to is the watch itself still recorded? — a watch that no longer appears in the record is a watch that stopped) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.177.0");
+    expect(skillSource).toContain("version: 1.178.0");
     expect(skillSource).toContain("180. **F180");
     expect(collapsed(skillSource)).toContain("THE STEADY-STATE WATCH MEMBER");
-    expect(skillSource).toContain("2745 unit checks green");
+    expect(skillSource).toContain("2757 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s192 + s191 pair as the standing witnesses) + the anchored declaration census pins 74 UNIT / 73 FILES", () => {
-    expect(UNIT).toBe("2745");
-    expect(FILES).toBe("261");
+    expect(UNIT).toBe("2757");
+    expect(FILES).toBe("262");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2745";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "261";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2757";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "262";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(80);
-    expect(filesFiles).toBe(79);
+    expect(unitFiles).toBe(81);
+    expect(filesFiles).toBe(80);
   });
 
   it("SURVIVAL (worklog): the bracketed s193-below-threshold-note registers the twenty-third-generation verification (:2839..:2862 = s169..s192, 24 rows, :2838 the S168 row — the F174-corrected window form verified at its own generation) + the F180 STEADY-STATE WATCH truth lesson + the dispatch-currency-honored registration + the A-I-1 carried §8 letter posture + the vocabulary-HOLD registration + the honest environment record (the STANDING-WORKSPACE form — the carried state verified before the gates rode it) + the F138 FORTY-FOURTH instance + the twenty-fourth-generation pre-registration", () => {
