@@ -95,8 +95,8 @@ const editorSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s197 lesson). */
-const UNIT = "2783";
-const FILES = "264";
+const UNIT = "2796";
+const FILES = "265";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the L-1 comment fix is the in-place figure
@@ -205,38 +205,38 @@ describe("lows-s197: the comment-truth repair + born-stale-coordinate registrati
     expect(padSource).toContain("lows-s197.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
     expect(collapsed(padSource)).toContain("the route figure STAYING at 2,461");
-    expect(padSource).toContain("| **Unit total** | **264 files** | **2783** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2783/2783");
+    expect(padSource).toContain("| **Unit total** | **265 files** | **2796** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2796/2796");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2783 checks / 264 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2796 checks / 265 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.176.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.181\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.182\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.181.0");
-    expect(lastUpdated).toContain("the one-hundred-and-fiftieth audit");
+    expect(lastUpdated).toContain("v1.182.0");
+    expect(lastUpdated).toContain("the one-hundred-and-fifty-first audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.175.0 + the F184 born-stale-coordinate truth lesson (a cycle's plan-time coordinates are PRE-collateral measurements, and the delivery that creates the record can itself falsify the coordinates the record claims; at delivery every stated coordinate is RE-MEASURED at the DELIVERED tree before the record ships) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.180.0");
+    expect(skillSource).toContain("version: 1.181.0");
     expect(skillSource).toContain("184. **F184");
     expect(collapsed(skillSource)).toContain("THE BORN-STALE COORDINATE MEMBER");
-    expect(skillSource).toContain("2783 unit checks green");
+    expect(skillSource).toContain("2796 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s196 + s195 pair as the standing witnesses) + the anchored declaration census pins 78 UNIT / 77 FILES + the L-1 fix's own regression pin (the corrected figures at all SIX live claim sites — the code site + the two AGENTS mirrors + the three PAD mirrors — the stale figures gone from each, the frozen records staying)", () => {
-    expect(UNIT).toBe("2783");
-    expect(FILES).toBe("264");
+    expect(UNIT).toBe("2796");
+    expect(FILES).toBe("265");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2783";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "264";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2796";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "265";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(83);
-    expect(filesFiles).toBe(82);
+    expect(unitFiles).toBe(84);
+    expect(filesFiles).toBe(83);
     // the L-1 fix: the corrected figures at all six live claim sites,
     // the stale figures gone from each (the frozen session-117/118
     // records stay — the s117/s118 specs' birth-record comments, the

@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { resolveDatabaseUrl, candidateRoots, redactDatabaseUrl } from "./db-path";
 
-// Normalize the SQLite URL BEFORE the first client is constructed (Pattern B
-// in the architecture doc). Session 74 (S74-D — B74-F1): the mechanism
+// Normalize the SQLite URL BEFORE the first client is constructed (PAD §3.3
+// Pattern 1). Session 74 (S74-D — B74-F1): the mechanism
 // corrected to match db-path.ts — the Prisma CLI AND the Prisma 6 runtime
 // both anchor relative file: URLs against the schema directory (the CLI
 // against prisma/schema.prisma; the runtime against the schema directory

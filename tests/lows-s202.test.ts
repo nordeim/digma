@@ -115,8 +115,8 @@ const elementsRouteSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s202 lesson). */
-const UNIT = "2783";
-const FILES = "264";
+const UNIT = "2796";
+const FILES = "265";
 
 /** The MEASURED layer figures (the s159 measured form — the STAYS
  *  form this cycle: the below-threshold registration-only remediation
@@ -223,37 +223,37 @@ describe("lows-s202: the below-threshold registrations + the F188 first-full-cyc
     expect(collapsed(padSource)).toContain("2783 = 2770 + 13 unit / 264 files");
     expect(padSource).toContain("lows-s202.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
-    expect(padSource).toContain("| **Unit total** | **264 files** | **2783** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2783/2783");
+    expect(padSource).toContain("| **Unit total** | **265 files** | **2796** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2796/2796");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2783 checks / 264 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2796 checks / 265 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.181.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.181\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.182\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.181.0");
-    expect(lastUpdated).toContain("the one-hundred-and-fiftieth audit");
+    expect(lastUpdated).toContain("v1.182.0");
+    expect(lastUpdated).toContain("the one-hundred-and-fifty-first audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.180.0 + the F188 first-full-cycle census registration (the all-TRUE census restored at the largest sample yet — 627 sampled / 627 TRUE / 0 FALSE with 53 pointers followed, every target carrying its promised content) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.180.0");
+    expect(skillSource).toContain("version: 1.181.0");
     expect(collapsed(skillSource)).toContain("THE F188 POINTER-FOLLOWING GUARD'S FIRST FULL-CYCLE TEST");
-    expect(skillSource).toContain("2783 unit checks green");
+    expect(skillSource).toContain("2796 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s201 + s200 pair as the standing witnesses) + the anchored declaration census pins 83 UNIT / 82 FILES", () => {
-    expect(UNIT).toBe("2783");
-    expect(FILES).toBe("264");
+    expect(UNIT).toBe("2796");
+    expect(FILES).toBe("265");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2783";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "264";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2796";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "265";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(83);
-    expect(filesFiles).toBe(82);
+    expect(unitFiles).toBe(84);
+    expect(filesFiles).toBe(83);
   });
 
   it("SURVIVAL (worklog): the bracketed s202-below-threshold-note registers the thirty-second-generation verification (:2856..:2880 = s177..s201, 25 rows, :2855 the s176 row, :2854 the s175 row — the F174-corrected window form verified at its own generation) + the F188 POINTER-FOLLOWING GUARD'S FIRST FULL-CYCLE TEST + the below-threshold census registration + the B202-I-1 label-precision registration + the B202-I-2 precision registration + the B202-I-5 enumeration-precision registration carried + the dispatch-currency-honored registration + the honest folder-level vocabulary-HOLD registration + the honest environment record (the REBUILT form) + the F138 FIFTY-THIRD instance + the thirty-third-generation pre-registration", () => {
