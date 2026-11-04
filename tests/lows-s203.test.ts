@@ -133,8 +133,8 @@ const elementsRouteSource = readFileSync(
  *  the doc-update script re-anchors the docs and these constants
  *  TOGETHER so the pair-unity pins stay green through the transition
  *  — the rolling-safe form at birth, the s140–s203 lesson). */
-const UNIT = "2796";
-const FILES = "265";
+const UNIT = "2809";
+const FILES = "266";
 
 /** The MEASURED layer figure (the s159 measured form — the STAYS
  *  form this cycle: the comment-only remediation touching zero layer
@@ -241,37 +241,37 @@ describe("lows-s203: the F188 second-cycle catch + the B202-I-5 landing + the B2
     expect(collapsed(padSource)).toContain("2796 = 2783 + 13 unit / 265 files");
     expect(padSource).toContain("lows-s203.test.ts");
     expect(collapsed(padSource)).toContain("the layer-total family STAYING at 14,373");
-    expect(padSource).toContain("| **Unit total** | **265 files** | **2796** | | Vitest |");
-    expect(padSource).toContain("- [ ] `bun run test` → 2796/2796");
+    expect(padSource).toContain("| **Unit total** | **266 files** | **2809** | | Vitest |");
+    expect(padSource).toContain("- [ ] `bun run test` → 2809/2809");
     expect(padSource).toContain(
-      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2796 checks / 265 files) |",
+      "| `bun run test` / `bun run test:watch` | repo root | unit tests (2809 checks / 266 files) |",
     );
   });
 
   it("DEFECT (docs): the PAD title on the new chain head — v1.182.0 in the title line and the Last-Updated line (the S158-C post-run title verification form)", () => {
-    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.182\.0$/m);
+    expect(padSource).toMatch(/^# Digma — Master Project Architecture Document \(PAD\) v1\.183\.0$/m);
     const lastUpdated = padSource.match(/\*\*Last Updated:\*\* .*/)?.[0] ?? "";
-    expect(lastUpdated).toContain("v1.182.0");
-    expect(lastUpdated).toContain("the one-hundred-and-fifty-first audit");
+    expect(lastUpdated).toContain("v1.183.0");
+    expect(lastUpdated).toContain("the one-hundred-and-fifty-second audit");
   });
 
   it("DEFECT (docs): the digma_SKILL carries v1.181.0 + THE F188 SECOND-FULL-CYCLE CATCH registration (the complete-population census's first FALSE pointer — the stale Pattern B target caught at the guard's first full-coverage route/lib dispatch) + the project_state re-anchored onto the live count", () => {
-    expect(skillSource).toContain("version: 1.181.0");
+    expect(skillSource).toContain("version: 1.182.0");
     expect(collapsed(skillSource)).toContain("THE F188 POINTER-FOLLOWING GUARD'S SECOND FULL-CYCLE TEST — AND ITS FIRST CATCH");
-    expect(skillSource).toContain("2796 unit checks green");
+    expect(skillSource).toContain("2809 unit checks green");
   });
 
   it("DEFECT (pair-unity): every spec's count constants carry the new figures — the prior specs' constants equal this spec's (the rolling re-anchor; the s202 + s201 pair as the standing witnesses) + the anchored declaration census pins 84 UNIT / 83 FILES", () => {
-    expect(UNIT).toBe("2796");
-    expect(FILES).toBe("265");
+    expect(UNIT).toBe("2809");
+    expect(FILES).toBe("266");
     const root = path.resolve(import.meta.dirname, "..");
     const out = execSync(
-      `rg -l '^const UNIT = "2796";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "265";$' tests/ src/lib/ | wc -l`,
+      `rg -l '^const UNIT = "2809";$' tests/ src/lib/ | wc -l && rg -l '^const FILES = "266";$' tests/ src/lib/ | wc -l`,
       { cwd: root, encoding: "utf8" },
     );
     const [unitFiles, filesFiles] = out.trim().split("\n").map(Number);
-    expect(unitFiles).toBe(84);
-    expect(filesFiles).toBe(83);
+    expect(unitFiles).toBe(85);
+    expect(filesFiles).toBe(84);
   });
 
   it("SURVIVAL (worklog): the bracketed s203-census-note registers the thirty-third-generation verification (:2858..:2882 = s178..s202, 25 rows, :2857 the s177 row, :2856 the s176 row — the F174-corrected window form verified at its own generation) + THE F188 SECOND-FULL-CYCLE CATCH + the LOW-CARRYING census registration + the B203-L-1 stale-pointer registration + the B202-I-5 landing registration + the dispatch-currency-honored registration + the honest folder-level vocabulary-HOLD registration + the honest environment record (the REBUILT form) + the F138 FIFTY-FOURTH instance + the thirty-fourth-generation pre-registration", () => {

@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""version-bump-s204.py — the Session 204 GREEN collateral, part 2: the
+PAD v1.183.0 bump (the title + the new Last-Updated chain line, the
+v1.182.0 line retained as frozen history) and the digma_SKILL v1.182.0
+bump with the F188 third-full-cycle-pass registration (the guard's own
+test record appended to the F188 entry — the complete-population forms
+holding on both sides, the all-TRUE census restored).
+
+Idempotent: every patch skips if already applied.
+Run from the repo root:  python3 scripts/version-bump-s204.py
+"""
+from pathlib import Path
+
+ROOT = Path("/home/z/my-project/digma")
+
+# --- The PAD title + the new chain line ---------------------------------------
+pad = ROOT / "Project_Architecture_Document.md"
+text = pad.read_text()
+
+old_title = "# Digma — Master Project Architecture Document (PAD) v1.182.0"
+new_title = "# Digma — Master Project Architecture Document (PAD) v1.183.0"
+if new_title not in text:
+    assert old_title in text, "PAD title anchor not found"
+    text = text.replace(old_title, new_title, 1)
+
+CHAIN = (
+    "**Last Updated:** 2026-11-04 (v1.183.0 — the below-threshold registrations + the F188 third-full-cycle pass, the one-hundred-and-fifty-second audit's chosen work, the EIGHTEENTH consecutive cycle under the SAME skills/web-application/SKILL.md v1.2.0 vocabulary (the vocabulary-HOLD cycle in the HONEST FOLDER-LEVEL FORM — the master skill's own file byte-unchanged since the operator's 2026-10-25 fd2037e3 revision) — 0C/0H/0M/0L/3I, a BELOW-THRESHOLD cycle, the fifth zero-Low census in seven cycles, zero behavioral source-code defect, zero comment-truth defect; the comment-truth census 550 sampled — 234 client-layer + 316 route/lib — 550 TRUE / 0 FALSE, THE ALL-TRUE CENSUS RESTORED (the streak at one — the s203 FALSE member's fix holding); THE F188 POINTER-FOLLOWING GUARD'S THIRD FULL-CYCLE PASS: 54 pointer members followed to their targets (20 client-layer + 34 route/lib), ALL TRUE — both prior catches confirmed standing, not recurring (auth.ts:27-29 → README:349 the AUTH_SECRET rotation row; db.ts:4-5 → PAD §3.3 Pattern 1 the minifier-safe anchor collection at PAD:2319); three members, all label-precision class, zero source-side defect — B204-I-1 the enumeration-precision member (elements/route.ts:31-33's S124-C full-row-registration parenthetical — the family fact TRUE (all four list-family routes ride THUMBNAIL_ELEMENT_SELECT + withThumbFills: projects GET :51, projects POST :135, the detail route's PATCH :95, duplicate :141), the label imprecise at two points (the thumbnail include lives on the detail route's PATCH response — the detail GET keeping full rows by documented contract, editor.ts:247-249 + the detail route's own comment at :91-94; \"recent\" a client view, not a route) — the phrase quoted verbatim from the PAD's canonical record at PAD:120, pin-safe (zero test pins the phrase; server-lows-s74.test.ts:82 pins the accurate FOUR list-family count); the comment-only one-clause amendment + the PAD:120 re-anchor REGISTERED AND CARRIED under the below-threshold zero-source-change discipline (the B202-I-5 precedent)), B204-I-2 the lead's-own-brief label-precision member (the e2e-count pin singularly attributed to server-lows-s81 while the tree carries TWO members of the const E2E \"262\" form — server-lows-s81:159 + doc-lows-s84:66, both DIFFERENT constants, both correctly excluded from the FILES census; the corrected phrasing registered: \"the two E2E-count pins, server-lows-s81:159 + doc-lows-s84:66, a DIFFERENT constant, excluded from the FILES census\"), and A204-I-1 the lead's-own-brief label-precision member (the brief's \"api.ts:48-50\" label — the registered line-count figure \"api.ts 48 → 50\" written in colon-delimited coordinate form while the promised content sits at api.ts:23-24; the FACT TRUE (the naming present, api.ts at 50 lines, the followed targets verify-otp:118/:160 carrying the promised content); the fix registered: the next dispatch quotes either the live coordinate (api.ts:23-24) or the registered line-count form (\"api.ts 48 → 50\"), never the colon-delimited form for a line-count figure), every claim lead-verified live at its seams: S204-A THE REGISTRATION PAIR (the below-threshold registration-cycle form — the s204-id-stable-premises-note at the 79th consecutive cycle carrying the CANONICAL quartet in exactly one place (the dispatch QUOTING it verbatim — the F176 prescription honored at its FIFTEENTH full-cycle test, zero label drift again; the graduated form watched per F179 and confirmed in the steady-state watch per F180 — the TWELFTH steady-state cycle) + the s204-below-threshold-note (the thirty-fourth-generation coordinate verification :2885/:2944/:3013 + the s203 row :2884 ALL EXACT with the F174-corrected window :2860..:2884 = s179..s203 (TWENTY-FIVE rows) :2859 the s178 row :2858 the s177 row + THE F188 THIRD-FULL-CYCLE PASS + the below-threshold census registration + the B204-I-1 registration CARRIED + the B204-I-2 + A204-I-1 registrations + the continuity registrations (the B-I-1 docblock-symmetry carry at its fifth) + the honest folder-level vocabulary-HOLD registration (eighteenth consecutive) + the dispatch-currency-honored registration (the TWELFTH steady-state cycle — the stated HEAD 2afb1f1c matching exactly; the honest dispatch-machinery record — the subagent channel's two-step brief-file form) + the honest environment record — THE REBUILT FORM (the FIFTH consecutive reset between sessions: the fresh clone at 2afb1f1c, the environment REBUILT — the 476-package bun install (bun 1.3.14's own counter — the s203 record's 477 that environment's own measured figure, both figures derived by the same command), the .env recreated from the tracked template, the schema pushed + the DB seeded to the pristine 1/2/6/1/3 census, chromium-1248 + headless shell re-provisioned, paramiko 5.1.0; the exported-shell DATABASE_URL trap ACTIVE and guarded with env -u from the first call) + the F138 FIFTY-FIFTH instance (the s203 plan 6/6 at 0d65640d, the sweep s151..s203 at 53 plans 285/0) + the thirty-fifth-generation pre-registration (:2887/:2946/:3015, the s204 row :2886, the window :2862..:2886 = s180..s204, :2861 the s179 row, :2860 the s178 row)) + S204-B the per-session pin family (tests/lows-s204.test.ts — 13 pins: the MEASURED birth form 5 RED (the AGENTS session-204 bullet, the count re-anchor + the §7.1 row, the PAD title, the SKILL version, the pair-unity constants) / 8 green-at-birth (the two worklog-registration notes, the audit-entry members, the F138 55th + the pin-family arithmetic 1000 + 13 = 1013, the script-provenance member, the standing-figures member, the carried-member receipt — the B204-I-1 phrase pinned VERBATIM as still present, the CARRY the receipt, the layer + frozen-record member); ONE en-route spec-form repair caught at the birth runs before any record shipped: the audit-entry pin's B-side ordinal phrase corrected to the entry's own numeral form (the s203 F143-class birth correction precedent); the constants born rolling-safe at the POST-spec figures 2809/266) and the collateral family (the count-family re-anchor 2809 = 2796 + 13 unit / 266 files across every live claim site; the spec-constants sweep 85 UNIT + 84 FILES with the census-literal lockstep riders for the s185..s203 specs' rg probes (nineteen members — s203 joining); the layer-total family STAYING at 14,373 — the registration-only form, no F40 rider; the route figure STAYING at 2,461 with the elements-route figure 420 unchanged — its thirtieth re-quote cycle; the s151..s203 SKILL-version pins onto v1.182.0; the s154..s203 forward-guard rolling re-anchors onto v1.183.0; the s158 title pin onto v1.183.0; the s173..s203 per-spec title-pin riders onto v1.183.0 — the family's thirty-second member; e2e stays 262; smoke stays 73) — the 22-file layer at **14,373 lines** (the STAYS form — the registration-only cycle: the registration pair + the spec + the collateral the only mutations, no F40 rider); the 180th reference audit NO DRIFT (the clip pin byte-identical the 141st consecutive session — exit 0 confirmed on a triple-run; evidence in docs/screenshots/ref-audit-s214/); mobile nav 9/9 the 181st session (the Tailwind v4 class-A guard holds — verified live on the build AND by construction in auditor A's pass — the directive's particular focus); SEO 4/4; the pin family S128..S203 1000/1000 across 76; the one-hundred-and-fifty-second Mode C audit with every claim lead-verified live at its seams (auditor A's 0C/0H/0M/0L/1I — the client layer line-by-line with every per-file figure verified live, the comment-truth audit 234 sampled with 234 TRUE / 0 FALSE and 20 pointer members followed to their targets all TRUE (the F188 guard's third full-cycle pass on the client side), the security sweep zero across all patterns, the Tailwind v4 posture sound with the F177 axis-named trap-4 hunt closing CLEAN at both axes EXACT, the §8/§9/§12/§13 contract check, the S203 registration seams verified (api.ts at 50 with the re-select-family naming at :23-24; db.ts at 33 anchored at PAD §3.3 Pattern 1), the mobile navigation menu verified by construction — the directive's particular focus, the client-layer pin subset 132/132 across the 12 rolled files in A's own live run (−lows-s195, +lows-s203), the deferral premises P1/P2 holding at every named coordinate with zero drift, the raw-fetch ELEVEN confirmed at the enumerated coordinates; auditor B's 0C/0H/0M/0L/2I — the 18 route files line-by-line with ALL 18 per-file figures EXACT and the family sum closing at 2,461, the src/lib full read (14 non-test files, 3,251 lines, call.ts at exactly 80 — the live list derived by command), the route-layer correctness checklist all-PASS, the live censuses all exact, the S203 amendments verified standing (the B203-L-1 re-anchor's target live at PAD:2319, not recurring; the B202-I-5 landing's re-select family followed to verify-otp:118/:160), the 34th-generation PAD carriers exact (independently confirmed), the deferral premises P3/P4 the 79th consecutive carrying cycle all four holding under the verbatim-quoted quartet (the F176 prescription's FIFTEENTH full-cycle test — zero label drift again), and the route/lib comment-truth census 316 sampled / 316 TRUE / 0 FALSE with 34 pointer members followed all TRUE — the F188 guard's third full-cycle pass on the route/lib side, the all-TRUE census restored)\n"
+)
+if "v1.183.0 — the below-threshold registrations + the F188 third-full-cycle pass" not in text:
+    anchor = "**Last Updated:** 2026-11-02 (v1.182.0 —"
+    at = text.index(anchor)
+    text = text[:at] + CHAIN + text[at:]
+    pad.write_text(text)
+    print("PAD: title v1.183.0 + the new chain line landed")
+else:
+    pad.write_text(text)
+    print("PAD: v1.183.0 already landed")
+
+# --- The digma_SKILL bump + the F188 third-full-cycle-pass registration -------------
+skill = ROOT / "digma_SKILL.md"
+stext = skill.read_text()
+stext = stext.replace("version: 1.181.0", "version: 1.182.0", 1)
+
+F188_PASS = (
+    " The guard's third test record (session 204, the one-hundred-and-fifty-second audit): THE F188 POINTER-FOLLOWING GUARD'S THIRD FULL-CYCLE PASS — the complete-population census forms holding on both sides at their third consecutive full-coverage dispatch: 54 pointer members followed to their targets (20 client-layer + 34 route/lib), ALL TRUE — the all-TRUE census restored at 550 sampled (234 client-layer + 316 route/lib) / 550 TRUE / 0 FALSE, the s203 FALSE member's fix holding; both prior catches confirmed standing, not recurring (auth.ts:27-29 → README:349 the AUTH_SECRET rotation row; db.ts:4-5 → PAD §3.3 Pattern 1 the minifier-safe anchor collection at PAD:2319); the cycle's three findings all label-precision class, zero source-side defect — the F185/F187 family's own form twice against the lead's own dispatch brief (the e2e-count pin's singular attribution — two members standing; the api.ts line-count figure written in coordinate form) and once against a frozen source comment phrase (the elements route's S124-C enumeration parenthetical, quoted verbatim from the PAD's canonical record — carried under the below-threshold zero-source-change discipline, the B202-I-5 precedent)."
+)
+if "THE F188 POINTER-FOLLOWING GUARD'S THIRD FULL-CYCLE PASS" not in stext:
+    # append to the F188 entry, just before its closing double-asterisk
+    anchor = "the fix the comment-side one-line re-anchor (the pointer onto the PAD's live target — Pattern 1 in PAD §3.3, the minifier-safe anchor collection), zero behavioral surface.**"
+    assert anchor in stext, "F188 tail anchor not found"
+    stext = stext.replace(
+        anchor,
+        "the fix the comment-side one-line re-anchor (the pointer onto the PAD's live target — Pattern 1 in PAD §3.3, the minifier-safe anchor collection), zero behavioral surface."
+        + F188_PASS
+        + "**",
+        1,
+    )
+    skill.write_text(stext)
+    print("digma_SKILL: v1.182.0 + the F188 third-full-cycle-pass registration landed")
+else:
+    skill.write_text(stext)
+    print("digma_SKILL: v1.182.0 + the F188 pass registration already present")
+
+# --- verify the title lines ------------------------------------------------------
+assert "# Digma — Master Project Architecture Document (PAD) v1.183.0" in (ROOT / "Project_Architecture_Document.md").read_text()
+assert "version: 1.182.0" in (ROOT / "digma_SKILL.md").read_text()
+print("title verification: PAD v1.183.0 + SKILL v1.182.0 both live")
